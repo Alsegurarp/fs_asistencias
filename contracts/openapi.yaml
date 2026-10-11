@@ -1,12 +1,12 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.6.0
+  version: 0.7.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo, aunque el
-    backend todavía sólo implementa las rutas de sistema, identidad, empresa,
-    personas, credenciales (sólo tarjetas) y auditoría.
+    backend todavía no implementa jornada, incidencias, cierres, exportes ni
+    integraciones: de `jornada` sólo atiende la lista de marcajes.
 
     Convenciones:
 
@@ -1203,6 +1203,8 @@ paths:
         La modalidad se fija aquí. `personal` liga el dispositivo a una persona
         y exige `employeeId`; `terminal` lo liga a una sede y exige `siteId`.
         El código sólo aparece en esta respuesta.
+        Vale 15 minutos y una sola vez. Una persona o una sede que no existe,
+        o que está dada de baja o desactivada, responde 422.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -1248,6 +1250,14 @@ paths:
         No lleva credencial: la autoriza el código de un solo uso. `proof`
         demuestra que el dispositivo posee la clave privada. En `personal`,
         activar un dispositivo cierra el anterior de la misma persona.
+
+        Un código que no existe, ya se usó o venció responde 410 con `code`
+        `enrollment_gone`, sin decir cuál. Responde 422 si falta el bloqueo de
+        pantalla (`screen_lock_required`), si la prueba no está firmada con
+        esa clave o no corresponde al código (`invalid_proof`), o si la clave
+        ya pertenece a otro dispositivo (`key_already_registered`). Tras
+        varios intentos fallidos seguidos desde la misma dirección responde
+        429.
       security: []
       requestBody:
         required: true
@@ -1364,7 +1374,9 @@ paths:
       tags: [credenciales]
       operationId: revokeDevice
       summary: Revoca un dispositivo
-      description: Invalida su clave. Sus marcajes anteriores se conservan.
+      description: |
+        Invalida su clave. Sus marcajes anteriores se conservan. Responde 409
+        con `code` `device_not_active` si ya estaba revocado o reemplazado.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -1399,6 +1411,10 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /device-sessions:
     post:
@@ -1514,6 +1530,26 @@ paths:
         una clave de idempotencia ya procesada o cuando la credencial se
         rechaza. Un rechazo viene con recibo y no se reintenta: no es un fallo
         de transporte.
+
+        La cabecera `Idempotency-Key` debe ser la misma clave que va firmada
+        en el sobre; si no coinciden responde 422. La misma clave con otro
+        sobre responde 409 con `code` `idempotency_conflict`.
+
+        Tipo de marcaje, mientras el equipo no decida otra cosa: sin
+        `declaredType`, el servidor lo deduce de la marca anterior de la
+        persona; un `declaredType` válido lo corrige. Una marca que no cuadra
+        con la anterior se guarda con incidencia `missing_pair`, y dos
+        lecturas de la misma persona en menos de un minuto son una sola, con
+        incidencia `duplicate`. Pasadas 16 horas sin marcar, la siguiente
+        abre una jornada nueva.
+
+        Ubicación: una terminal se evalúa contra su sede y un teléfono
+        personal contra la sede de su titular. Fuera de la geocerca abre
+        `foreign_site`; una muestra menos precisa que el radio, simulada o
+        ausente abre `location_inconclusive`. Quien marca en una terminal de
+        otra sede abre `foreign_site`. Un marcaje que llega más de 24 horas
+        después abre `late_sync`, y más de 72 horas después se rechaza con
+        `too_old`. `card_revoked` cubre también a la persona dada de baja.
       security:
         - deviceToken: []
       parameters:
@@ -1586,6 +1622,10 @@ paths:
         Cada sobre se procesa por separado y devuelve su propio recibo, en el
         mismo orden. El servidor conserva la hora observada y agrega la de
         recepción; nunca mueve un marcaje en silencio.
+
+        En un lote no hay 409: una clave repetida con otro contenido vuelve
+        como rechazo `payload_invalid`. Un sobre que no se puede leer no trae
+        clave que devolver: su recibo lleva la clave en ceros.
       security:
         - deviceToken: []
       requestBody:
@@ -3516,6 +3556,10 @@ components:
               description: |
                 `uid_sha256` es la señal no autenticada del prototipo y nunca
                 basta para aceptar un marcaje con datos reales.
+                El servidor sólo la acepta en un ambiente que la enciende a
+                propósito, con datos ficticios; ahí `proof` es la huella con
+                la que se registró la tarjeta. `desfire_ev3_aes` todavía no
+                se verifica: se rechaza con `card_unknown`.
             proof:
               type: string
               description: Resultado de la autenticación de la tarjeta, en base64url.

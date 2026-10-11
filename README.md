@@ -80,10 +80,12 @@ El segundo comando retira la base de pruebas sin tocar el entorno levantado.
 Una prueba de integración lleva `@Tag("integration")` y comprueba también lo
 que debe fallar: el caso negativo es parte de la prueba.
 
-`ApiIT` y `DirectoryIT` recorren el API por HTTP con dos empresas y tokens
-firmados por una clave de prueba, que el backend valida como los del proveedor
-de identidad. Comparten `ApiTestBase`. Una ruta nueva agrega su caso de
-aislamiento entre empresas y su fila en la matriz de roles.
+`ApiIT`, `DirectoryIT` y `CaptureIT` recorren el API por HTTP con dos empresas
+y tokens firmados por una clave de prueba, que el backend valida como los del
+proveedor de identidad. Comparten `ApiTestBase`. `CaptureTestBase` simula lo
+que hace la app: genera su clave, se activa, firma su aserción y firma cada
+marcaje. Una ruta nueva agrega su caso de aislamiento entre empresas y su fila
+en la matriz de roles.
 
 ## Identidad
 
@@ -163,6 +165,37 @@ Todo es de una empresa y se consulta con la empresa de quien llama.
   segunda tarjeta a alguien reemplaza la anterior en la misma operación.
 - Cambiar los encabezados del CSV sube `TEMPLATE_VERSION` en `ImportService`
   y se documenta en el contrato.
+
+## Dispositivos y captura
+
+Un dispositivo no tiene cuenta ni contraseña: se identifica con su propia
+clave.
+
+- Quien administra o lleva recursos humanos emite un código de un solo uso,
+  que vale 15 minutos y fija la modalidad: `personal`, ligado a una persona, o
+  `terminal`, ligado a una sede. El servidor guarda la huella del código, no
+  el código.
+- El dispositivo genera una clave P-256, la registra al activar y demuestra
+  que la posee firmando el código. La clave privada nunca viaja. El teléfono
+  nuevo de una persona cierra el anterior en la misma operación.
+- Cada petición del dispositivo lleva una aserción ES256 que él mismo firma,
+  dirigida a `zenit-capture` y con vida de hasta dos minutos. No hay token de
+  dispositivo emitido por el servidor. La credencial de una persona no sirve
+  en las rutas de dispositivo, ni al revés.
+- Cada marcaje viaja como un sobre firmado. El servidor lo guarda tal como
+  llegó, con su huella. Marcajes, coordenadas, incidencias y rechazos sólo se
+  agregan: el rol de la base que atiende no puede corregirlos ni borrarlos.
+- La misma clave de idempotencia devuelve el mismo recibo. Lo que no cuadra
+  con la tarjeta, la firma o la sesión se rechaza con recibo y no se
+  reintenta; lo que es dudoso se acepta y abre una incidencia.
+- La coordenada se queda en la base. El portal recibe el veredicto de
+  ubicación y la precisión.
+- El esquema real de la tarjeta todavía no se verifica. La tarjeta simulada,
+  `uid_sha256`, no está autenticada y nace apagada: para probar la app en
+  local, con datos ficticios, se pone `CAPTURE_SIMULATED_CARDS=true` en
+  `.env`. Ahí la prueba de la tarjeta es la huella con la que se registró.
+- Las reglas viven en `CaptureRules.kt` y sus valores en `CaptureProperties`.
+  La cuota de intentos se lleva en memoria: vale para una sola instancia.
 
 ## Seguridad del entorno local
 

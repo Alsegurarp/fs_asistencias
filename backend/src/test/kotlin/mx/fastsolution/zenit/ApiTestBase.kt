@@ -12,12 +12,14 @@ import com.sun.net.httpserver.HttpServer
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.TestInstance
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.core.env.Environment
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.TestPropertySource
 import java.io.ByteArrayOutputStream
 import java.net.InetSocketAddress
-import java.net.ServerSocket
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -41,7 +43,9 @@ import kotlin.test.assertTrue
  * Se corre con `docker compose --profile test run --rm backend-it`.
  */
 @Tag("integration")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+// Las pruebas usan la tarjeta simulada; CaptureOffIT comprueba que nace apagada.
+@TestPropertySource(properties = ["zenit.capture.simulated-cards=true"])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class ApiTestBase {
     companion object {
@@ -49,7 +53,6 @@ abstract class ApiTestBase {
         const val ISSUER = "http://identidad.invalid/realms/zenit"
         const val OPERATOR = "operadora@zenit.invalid"
         val keys: KeyPair by lazy { rsa() }
-        val port: Int by lazy { ServerSocket(0).use { it.localPort } }
         val databaseUrl: String by lazy { System.getenv("IT_DB_URL") ?: error("Falta IT_DB_URL") }
 
         /** Publica la clave de prueba como lo hace el proveedor de identidad. */
@@ -78,7 +81,6 @@ abstract class ApiTestBase {
                 .locations("classpath:db/migration")
                 .load()
                 .migrate()
-            registry.add("server.port") { port }
             registry.add("spring.datasource.url") { databaseUrl }
             registry.add("zenit.identity.issuer") { ISSUER }
             registry.add("zenit.identity.jwks-uri") { "http://127.0.0.1:${jwks.address.port}/certs" }
@@ -88,6 +90,12 @@ abstract class ApiTestBase {
 
     protected val http = HttpClient.newHttpClient()
 
+    @Autowired
+    private lateinit var environment: Environment
+
+    /** Puerto del backend bajo prueba: cada configuración levanta su contexto en un puerto propio. */
+    protected val serverPort: Int get() = environment.getProperty("local.server.port")!!.toInt()
+
     protected class Reply(val status: Int, val body: String, val contentType: String) {
         fun <T> at(path: String): T = JsonPath.read(body, "\$.$path")
 
@@ -96,10 +104,17 @@ abstract class ApiTestBase {
         override fun toString() = "$status $body"
     }
 
-    protected fun call(method: String, path: String, token: String? = null, body: String? = null): Reply {
-        val request = HttpRequest.newBuilder(URI("http://127.0.0.1:$port$path"))
+    protected fun call(
+        method: String,
+        path: String,
+        token: String? = null,
+        body: String? = null,
+        headers: Map<String, String> = emptyMap(),
+    ): Reply {
+        val request = HttpRequest.newBuilder(URI("http://127.0.0.1:$serverPort$path"))
         if (token != null) request.header("Authorization", "Bearer $token")
         if (body != null) request.header("Content-Type", "application/json")
+        headers.forEach { (name, value) -> request.header(name, value) }
         request.method(method, body?.let { HttpRequest.BodyPublishers.ofString(it) } ?: HttpRequest.BodyPublishers.noBody())
         val response = http.send(request.build(), HttpResponse.BodyHandlers.ofString())
         return Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""))
@@ -123,7 +138,7 @@ abstract class ApiTestBase {
         if (csv != null) part("file", "; filename=\"padron.csv\"\r\nContent-Type: text/csv", csv)
         if (dryRun != null) part("dryRun", "", dryRun.toByteArray())
         body.write("--$boundary--\r\n".toByteArray())
-        val request = HttpRequest.newBuilder(URI("http://127.0.0.1:$port$path"))
+        val request = HttpRequest.newBuilder(URI("http://127.0.0.1:$serverPort$path"))
             .header("Content-Type", "multipart/form-data; boundary=$boundary")
         if (token != null) request.header("Authorization", "Bearer $token")
         if (key != null) request.header("Idempotency-Key", key)

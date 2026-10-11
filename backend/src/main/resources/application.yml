@@ -41,6 +41,10 @@ zenit:
     # secreto. Sin archivo o vacío, nadie opera: no se puede dar de alta una
     # empresa.
     emails: ${operator_emails:}
+  capture:
+    # Tarjeta simulada del prototipo: no está autenticada. Nace apagada y sólo
+    # se enciende a propósito, con datos ficticios.
+    simulated-cards: ${CAPTURE_SIMULATED_CARDS:false}
 
 management:
   endpoints:

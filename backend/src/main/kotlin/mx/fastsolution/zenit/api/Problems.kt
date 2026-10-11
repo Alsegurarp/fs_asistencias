@@ -39,6 +39,10 @@ object Problems {
     fun conflict(code: String, detail: String) =
         ApiException(HttpStatus.CONFLICT, "conflict", code, "Conflicto con el estado actual", detail)
 
+    fun gone(code: String, detail: String) = ApiException(HttpStatus.GONE, "gone", code, "Ya no está disponible", detail)
+
+    fun rateLimited() = ApiException(HttpStatus.TOO_MANY_REQUESTS, "rate-limited", "rate_limited", "Demasiadas peticiones")
+
     fun validation(errors: List<FieldError>) =
         ApiException(UNPROCESSABLE, "validation", "validation", "Datos no válidos", errors = errors)
 

@@ -1,5 +1,8 @@
 package mx.fastsolution.zenit.security
 
+import jakarta.servlet.http.HttpServletRequest
+import mx.fastsolution.zenit.device.DeviceAuthentication
+import mx.fastsolution.zenit.device.DeviceAuthenticator
 import mx.fastsolution.zenit.identity.PersonAuthenticationConverter
 import mx.fastsolution.zenit.identity.Role
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
@@ -7,6 +10,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
+import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.AuthenticationManagerResolver
+import org.springframework.security.authentication.ProviderManager
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -18,6 +24,7 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider
 import org.springframework.security.web.SecurityFilterChain
 
 /**
@@ -35,12 +42,23 @@ class SecurityConfig {
         http: HttpSecurity,
         problems: SecurityProblemWriter,
         people: PersonAuthenticationConverter,
+        decoder: JwtDecoder,
+        deviceAuthenticator: DeviceAuthenticator,
     ): SecurityFilterChain {
         val operator = Role.OPERADOR_SAAS.wire
         val admin = Role.ADMIN_EMPRESA.wire
         val rh = Role.RH.wire
         val supervisor = Role.SUPERVISOR.wire
         val auditor = Role.AUDITOR.wire
+        val device = DeviceAuthentication.ROLE
+        // Dos credenciales: las personas traen un token del proveedor de identidad y
+        // los dispositivos una aserción firmada con su propia clave. La ruta decide
+        // con cuál se verifica; una credencial en la ruta equivocada no pasa.
+        val users = ProviderManager(JwtAuthenticationProvider(decoder).apply { setJwtAuthenticationConverter(people) })
+        val devices = AuthenticationManager { deviceAuthenticator.authenticate(it) }
+        val credentials = AuthenticationManagerResolver<HttpServletRequest> {
+            if (it.method == "POST" && it.requestURI in DEVICE_ROUTES) devices else users
+        }
         http
             // API sin cookies ni sesión: la credencial viaja en cada petición.
             .csrf { it.disable() }
@@ -78,11 +96,19 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.POST, "/api/v1/cards").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/cards/{cardId}/assignments", "/api/v1/cards/{cardId}/revocation")
                     .hasAnyRole(admin, rh)
+                // Dispositivos y captura.
+                it.requestMatchers(HttpMethod.POST, "/api/v1/device-enrollments").hasAnyRole(admin, rh)
+                // Sin credencial: la autoriza el código de un solo uso.
+                it.requestMatchers(HttpMethod.POST, "/api/v1/device-activations").permitAll()
+                it.requestMatchers(HttpMethod.GET, "/api/v1/devices").hasAnyRole(admin, rh, auditor)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/devices/{deviceId}/revocation").hasAnyRole(admin, rh)
+                it.requestMatchers(HttpMethod.POST, *DEVICE_ROUTES.toTypedArray()).hasRole(device)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/attendance-events").hasAnyRole(admin, rh, supervisor, auditor)
                 it.anyRequest().denyAll()
             }
             .oauth2ResourceServer {
                 // El token dice quién es; la empresa y los roles salen de la base.
-                it.jwt { jwt -> jwt.jwtAuthenticationConverter(people) }
+                it.authenticationManagerResolver(credentials)
                 it.authenticationEntryPoint(problems)
                 it.accessDeniedHandler(problems)
             }
@@ -120,3 +146,6 @@ private fun claimRule(name: String, rule: (Jwt) -> Boolean) = OAuth2TokenValidat
         OAuth2TokenValidatorResult.failure(OAuth2Error("invalid_token", "El token no cumple: $name", null))
     }
 }
+
+/** Rutas que sólo llama un dispositivo, con su propia credencial. */
+private val DEVICE_ROUTES = setOf("/api/v1/device-sessions", "/api/v1/attendance-events", "/api/v1/attendance-events/batch")

@@ -34,13 +34,25 @@ class AuditLog(private val dsl: DSLContext) {
         targetType: String,
         targetId: UUID?,
         metadata: Map<String, String> = emptyMap(),
+    ) = record(tenantId, "user", actor.actorId, action, targetType, targetId, metadata)
+
+    /** Para lo que no hace una persona: un dispositivo o el propio sistema. */
+    fun record(
+        tenantId: UUID?,
+        actorType: String,
+        actorId: String?,
+        action: String,
+        targetType: String,
+        targetId: UUID?,
+        metadata: Map<String, String> = emptyMap(),
     ) {
         dsl.execute(
             "insert into audit_log (id, tenant_id, actor_type, actor_id, action, target_type, target_id, correlation_id, metadata) " +
-                "values (?, cast(? as uuid), 'user', ?, ?, ?, cast(? as text), ?, cast(? as jsonb))",
+                "values (?, cast(? as uuid), ?, cast(? as text), ?, ?, cast(? as text), ?, cast(? as jsonb))",
             UUID.randomUUID(),
             tenantId,
-            actor.actorId,
+            actorType,
+            actorId,
             action,
             targetType,
             targetId?.toString(),

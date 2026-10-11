@@ -106,6 +106,10 @@ class CardRepository(private val dsl: DSLContext) {
 
     fun find(tenantId: UUID, id: UUID): CardRow? = dsl.fetchOne("$SELECT where c.tenant_id = ? and c.id = ?", tenantId, id)?.let(::row)
 
+    /** La captura identifica la tarjeta por su huella, dentro de la empresa del dispositivo. */
+    fun findByFingerprint(tenantId: UUID, fingerprint: String): CardRow? =
+        dsl.fetchOne("$SELECT where c.tenant_id = ? and c.fingerprint = ?", tenantId, fingerprint)?.let(::row)
+
     fun page(tenantId: UUID, status: String?, after: PageKey?, limit: Int): List<CardRow> {
         val sql = StringBuilder("$SELECT where c.tenant_id = ?")
         val binds = mutableListOf<Any>(tenantId)

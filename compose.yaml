@@ -139,6 +139,8 @@ services:
       # El emisor es la dirección pública; las claves se leen por la red interna.
       IDENTITY_ISSUER: ${IDENTITY_URL:-http://localhost:8082}/realms/zenit
       IDENTITY_JWKS_URI: http://keycloak:8082/realms/zenit/protocol/openid-connect/certs
+      # Apagada salvo que se pida: la tarjeta simulada no está autenticada.
+      CAPTURE_SIMULATED_CARDS: ${CAPTURE_SIMULATED_CARDS:-false}
     # Atiende con un rol que no es dueño de las tablas ni puede cambiarlas.
     secrets:
       - db_app_password

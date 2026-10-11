@@ -137,7 +137,7 @@ class DatabaseRolesIT {
             }
             assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE audit_log SET action = 'otra'") } })
             assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM audit_log") } })
-            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE attendance_event SET device_id = 'x'") } })
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE attendance_event SET event_type = 'clock_in'") } })
             assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM attendance_event") } })
         }
     }
@@ -195,6 +195,26 @@ class DatabaseRolesIT {
             assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE schedule SET name = 'otro'") } })
             assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE schedule_day SET break_minutes = 0") } })
             assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE employee_import SET status = 'applied'") } })
+        }
+    }
+
+    @Test
+    fun `capture evidence is only ever added`() {
+        asApp().use { db ->
+            val updates = mapOf(
+                "attendance_event" to "outcome = 'accepted'",
+                "location_evidence" to "accuracy_m = 1",
+                "incident" to "status = 'justified'",
+                "attendance_rejection" to "code = 'too_old'",
+            )
+            for ((table, change) in updates) {
+                assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE $table SET $change") } }, table)
+                assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM $table") } }, table)
+            }
+            // Un dispositivo se revoca y un código se gasta, pero ninguno se borra.
+            for (table in listOf("device", "device_enrollment", "device_session")) {
+                assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM $table") } }, table)
+            }
         }
     }
 
