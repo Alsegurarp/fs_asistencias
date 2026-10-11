@@ -110,8 +110,8 @@ class DirectoryIT : ApiTestBase() {
                 }
             }
         }
-        // Lo que este corte no abre sigue cerrado.
-        assertProblem(403, "forbidden", call("GET", "/api/v1/employees/${UUID.randomUUID()}/attendance", c.adminToken))
+        // Lo que el contrato no abre sigue cerrado.
+        assertProblem(403, "forbidden", call("DELETE", "/api/v1/employees/${UUID.randomUUID()}/attendance", c.adminToken))
         assertProblem(403, "forbidden", call("PATCH", "/api/v1/schedules/${UUID.randomUUID()}", c.adminToken, "{}"))
         assertProblem(403, "forbidden", call("DELETE", "/api/v1/employees/${UUID.randomUUID()}", c.adminToken))
     }

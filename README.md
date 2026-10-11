@@ -60,7 +60,10 @@ Cada conexión usa el rol con menos permisos que le sirve.
   su `GRANT`, y sólo con las operaciones que hacen falta: una tabla sin `GRANT`
   no se puede leer desde el backend.
 - La evidencia sólo se agrega. Sobre `attendance_event` y `audit_log` el
-  backend puede insertar y leer, no corregir ni borrar.
+  backend puede insertar y leer, no corregir ni borrar. Lo mismo vale para un
+  ajuste y para un acuse. De una incidencia y de un cierre sólo puede cambiar
+  su atención y su estado, columna por columna: nunca lo que dicen.
+- Las reglas laborales (`rule_set`) sólo se leen. Cambian con una migración.
 - Toda tabla de una empresa lleva `tenant_id`, y sus llaves foráneas lo
   incluyen: un registro no puede apuntar a datos de otra empresa.
 - Una migración aplicada no se edita. Un cambio va en un archivo nuevo en
@@ -80,12 +83,16 @@ El segundo comando retira la base de pruebas sin tocar el entorno levantado.
 Una prueba de integración lleva `@Tag("integration")` y comprueba también lo
 que debe fallar: el caso negativo es parte de la prueba.
 
-`ApiIT`, `DirectoryIT` y `CaptureIT` recorren el API por HTTP con dos empresas
-y tokens firmados por una clave de prueba, que el backend valida como los del
-proveedor de identidad. Comparten `ApiTestBase`. `CaptureTestBase` simula lo
-que hace la app: genera su clave, se activa, firma su aserción y firma cada
-marcaje. Una ruta nueva agrega su caso de aislamiento entre empresas y su fila
-en la matriz de roles.
+`ApiIT`, `DirectoryIT`, `CaptureIT` y `WorkdayIT` recorren el API por HTTP con
+dos empresas y tokens firmados por una clave de prueba, que el backend valida
+como los del proveedor de identidad. Comparten `ApiTestBase`. `CaptureTestBase`
+simula lo que hace la app: genera su clave, se activa, firma su aserción y
+firma cada marcaje. Una ruta nueva agrega su caso de aislamiento entre empresas
+y su fila en la matriz de roles.
+
+`WorkdayIT` necesita una semana terminada cuyos marcajes todavía se acepten.
+Por eso cada empresa de esa prueba empieza su semana el día en que corre, y
+ahí el umbral de la marca tardía se aleja para que no dependa de la hora.
 
 ## Identidad
 
@@ -181,7 +188,9 @@ clave.
 - Cada petición del dispositivo lleva una aserción ES256 que él mismo firma,
   dirigida a `zenit-capture` y con vida de hasta dos minutos. No hay token de
   dispositivo emitido por el servidor. La credencial de una persona no sirve
-  en las rutas de dispositivo, ni al revés.
+  en las rutas de dispositivo, ni al revés. Sólo las dos rutas del propio
+  trabajador, su semana y el acuse de su cierre, admiten cualquiera de las
+  dos: su cuenta o su teléfono personal.
 - Cada marcaje viaja como un sobre firmado. El servidor lo guarda tal como
   llegó, con su huella. Marcajes, coordenadas, incidencias y rechazos sólo se
   agregan: el rol de la base que atiende no puede corregirlos ni borrarlos.
@@ -196,6 +205,40 @@ clave.
   `.env`. Ahí la prueba de la tarjeta es la huella con la que se registró.
 - Las reglas viven en `CaptureRules.kt` y sus valores en `CaptureProperties`.
   La cuota de intentos se lleva en memoria: vale para una sola instancia.
+
+## Jornada, incidencias y cierre
+
+La semana de una persona se calcula de sus marcajes cada vez que se pide. No se
+guarda hasta que se cierra.
+
+- El cálculo está en `WeekCalculator.kt` y no toca la base: con los mismos
+  marcajes, ajustes y reglas da siempre el mismo resultado. Lee los marcajes
+  en el orden en que ocurrieron y vuelve a deducir su tipo, así que uno que
+  llegó tarde ya no deja incoherentes a los demás. El tipo guardado en el
+  marcaje no cambia.
+- Un turno pertenece al día y a la semana en que empieza. Un tramo sin el
+  marcaje que lo cierra queda abierto y no suma.
+- Los topes son filas de `rule_set`, con vigencia y fuente, no constantes del
+  código. Se aplican los vigentes en el último día de la semana. La tabla trae
+  el calendario de reducción de 2026 a 2030; su lectura está sujeta a revisión
+  jurídica y sus alertas informan, no bloquean ni sancionan.
+- Una incidencia la atiende una persona: la asigna y la resuelve justificando,
+  confirmando o ajustando, siempre con motivo. Un ajuste no edita el marcaje:
+  agrega una intención, con autor y motivo, que el cálculo aplica.
+- Cerrar congela el cálculo de cada persona con su huella. Quien tiene una
+  incidencia abierta o un tramo sin cerrar no se cierra; a un tramo sin cerrar
+  que no tiene incidencia, el cierre le abre una, para que haya con qué
+  corregirlo. Una semana cerrada se
+  entrega tal como se congeló y no admite ajustes: primero se reabre, con
+  motivo. Reabrir conserva la versión cerrada y volver a cerrar crea otra.
+- Un marcaje que llega de una semana ya cerrada se guarda y abre una
+  incidencia; el cierre no cambia solo.
+- El trabajador ve su semana y acusa su cierre, conforme u objetándolo, una vez
+  por cierre. Lo hace desde su teléfono personal o desde el portal, con su
+  cuenta ligada a su fila del padrón (`employeeId` de la persona). Una terminal
+  no puede, y el cierre de otra persona no existe para él.
+- Cambiar un tope es una migración nueva que agrega una versión de `rule_set`;
+  las semanas ya cerradas conservan la versión con la que se cerraron.
 
 ## Seguridad del entorno local
 

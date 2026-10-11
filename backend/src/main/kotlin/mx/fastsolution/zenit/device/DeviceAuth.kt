@@ -64,6 +64,21 @@ object DeviceKeys {
 
     fun parseStored(json: String): ECKey = ECKey.parse(json)
 
+    /**
+     * Dice, sin verificar nada, si una cabecera de autorización trae una aserción
+     * de dispositivo. Sólo sirve para elegir con qué se verifica.
+     */
+    fun isDeviceToken(authorization: String?): Boolean {
+        val token = authorization?.takeIf { it.startsWith("Bearer ", ignoreCase = true) }?.substring(BEARER.length)?.trim() ?: return false
+        return try {
+            JWSObject.parse(token).header.algorithm == JWSAlgorithm.ES256
+        } catch (e: ParseException) {
+            false
+        }
+    }
+
+    private const val BEARER = "Bearer "
+
     /** Verifica una firma ES256 hecha con esa clave. */
     fun verify(jws: JWSObject, key: ECKey): Boolean = try {
         jws.header.algorithm == JWSAlgorithm.ES256 && jws.verify(ECDSAVerifier(key))

@@ -25,6 +25,7 @@ data class UserView(
     val status: String,
     val createdAt: String,
     val linkedAt: String?,
+    val employeeId: String?,
 ) {
     companion object {
         fun of(row: UserRow) = UserView(
@@ -35,6 +36,7 @@ data class UserView(
             status = row.status,
             createdAt = row.createdAt.toInstant().toString(),
             linkedAt = row.linkedAt?.toInstant()?.toString(),
+            employeeId = row.employeeId?.toString(),
         )
     }
 }

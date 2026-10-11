@@ -14,6 +14,7 @@ import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.site.SiteRepository
 import mx.fastsolution.zenit.tenant.TenantRepository
+import mx.fastsolution.zenit.workday.WeekCalculator
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.http.HttpStatus
@@ -33,7 +34,9 @@ import org.springframework.web.bind.annotation.RestController
 import java.security.MessageDigest
 import java.text.ParseException
 import java.time.Duration
+import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
 import java.util.UUID
@@ -195,11 +198,18 @@ class CaptureRepository(private val dsl: DSLContext) {
         )
     }
 
+    /** Si la semana de esa persona ya tiene un cierre vigente. */
+    fun weekClosed(tenantId: UUID, employeeId: UUID, weekStart: LocalDate): Boolean =
+        dsl.fetchOne(
+            "select 1 as found from week_closure where tenant_id = ? and employee_id = ? and week_start = cast(? as date) and status = 'closed'",
+            tenantId, employeeId, weekStart.toString(),
+        ) != null
+
     fun insertIncident(tenantId: UUID, id: UUID, eventId: UUID, employeeId: UUID, siteId: UUID?, type: String) {
         dsl.execute(
-            "insert into incident (tenant_id, id, event_id, employee_id, site_id, type, status) " +
-                "values (?, ?, ?, ?, cast(? as uuid), ?, 'open')",
-            tenantId, id, eventId, employeeId, siteId, type,
+            "insert into incident (tenant_id, id, event_id, employee_id, site_id, type, severity, status) " +
+                "values (?, ?, ?, ?, cast(? as uuid), ?, ?, 'open')",
+            tenantId, id, eventId, employeeId, siteId, type, IncidentSeverity.of(type),
         )
     }
 
@@ -362,6 +372,9 @@ class CaptureProcessor(
         locationIncident?.let { incidents += it }
         if (device.mode == "terminal" && employee.siteId != null && employee.siteId != device.siteId) incidents += "foreign_site"
         if (Duration.between(payload.observedAt, receivedAt) > Duration.ofHours(capture.lateSyncHours)) incidents += "late_sync"
+        // Un marcaje de una semana ya cerrada se guarda, pero el cierre no cambia solo: alguien tiene que verlo.
+        val week = WeekCalculator.weekStart(payload.observedAt.atZoneSameInstant(ZoneId.of(tenant.timeZone)).toLocalDate(), tenant.weekStartsOn)
+        if (events.weekClosed(tenantId, employee.id, week)) incidents += "late_sync"
         if (clockAnomaly(tenantId, payload, receivedAt)) incidents += "clock_anomaly"
 
         val eventId = UUID.randomUUID()

@@ -58,7 +58,16 @@ class ProblemHandler {
     private val log = LoggerFactory.getLogger(ProblemHandler::class.java)
 
     @ExceptionHandler(ApiException::class)
-    fun known(e: ApiException, request: HttpServletRequest) = respond(e, request)
+    fun known(e: ApiException, request: HttpServletRequest): ResponseEntity<Map<String, Any?>> {
+        // Un permiso que niega la propia ruta deja el mismo rastro que uno que niega la cadena de seguridad.
+        if (e.status == HttpStatus.FORBIDDEN) {
+            log.warn(
+                "Acceso denegado: {} {} sujeto {} correlación {}",
+                request.method, request.requestURI, request.userPrincipal?.name, Correlation.of(request),
+            )
+        }
+        return respond(e, request)
+    }
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun unreadable(e: HttpMessageNotReadableException, request: HttpServletRequest) =

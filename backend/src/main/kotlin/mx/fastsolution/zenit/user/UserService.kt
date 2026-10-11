@@ -5,6 +5,7 @@ import mx.fastsolution.zenit.api.Conflicts
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
+import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.OperatorProperties
 import mx.fastsolution.zenit.identity.Role
@@ -17,12 +18,24 @@ class UserCreateRequest {
     var email: String? = null
     var displayName: String? = null
     var roles: List<String>? = null
+    var employeeId: String? = null
 }
 
 class UserUpdateRequest {
     var displayName: String? = null
     var roles: List<String>? = null
     var disabled: Boolean? = null
+
+    // Aquí importa la diferencia entre no mandar el campo y mandarlo nulo: nulo
+    // suelta a la persona de su fila del padrón.
+    private var employeeIdGiven = false
+    var employeeId: String? = null
+        set(value) {
+            field = value
+            employeeIdGiven = true
+        }
+
+    fun changesEmployee(): Boolean = employeeIdGiven
 }
 
 /**
@@ -35,6 +48,7 @@ class UserService(
     private val users: UserRepository,
     private val tenants: TenantRepository,
     private val operators: OperatorProperties,
+    private val employees: EmployeeRepository,
     private val audit: AuditLog,
 ) {
     @Transactional
@@ -44,6 +58,11 @@ class UserService(
         val email = checks.email("email", request.email)
         val displayName = checks.text("displayName", request.displayName, MAX_NAME, required = false) ?: ""
         val roles = parseRoles(checks, request.roles, required = true)
+        val employeeId = checks.uuid("employeeId", request.employeeId, required = false)
+        // Una fila del padrón de otra empresa no existe para quien pregunta.
+        if (employeeId != null && employees.find(tenantId, employeeId) == null) {
+            checks.fail("employeeId", "employee_not_found", "La persona del padrón no existe.")
+        }
         checks.done()
 
         if (operators.isOperator(email!!)) throw Conflicts.emailUnavailable()
@@ -51,9 +70,14 @@ class UserService(
         val id = UUID.randomUUID()
         try {
             users.insertInvited(tenantId, id, email, displayName)
+            if (employeeId != null) users.setEmployee(tenantId, id, employeeId)
             roles!!.forEach { users.grant(tenantId, id, it, admin.actorId) }
         } catch (e: RuntimeException) {
-            throw if (Conflicts.uniqueConstraint(e) == Conflicts.USER_EMAIL) Conflicts.emailUnavailable() else e
+            throw when (Conflicts.uniqueConstraint(e)) {
+                Conflicts.USER_EMAIL -> Conflicts.emailUnavailable()
+                Conflicts.USER_EMPLOYEE -> Conflicts.employeeLinked()
+                else -> e
+            }
         }
         audit.record(tenantId, admin, "user.invited", "user", id, mapOf("roles" to roles.sorted().joinToString(",")))
         return users.find(tenantId, id)!!
@@ -72,7 +96,11 @@ class UserService(
         val checks = Checks()
         val displayName = checks.text("displayName", request.displayName, MAX_NAME, required = false)
         val roles = parseRoles(checks, request.roles, required = false)
-        if (displayName == null && roles == null && request.disabled == null) {
+        val employeeId = checks.uuid("employeeId", request.employeeId, required = false)
+        if (employeeId != null && employees.find(tenantId, employeeId) == null) {
+            checks.fail("employeeId", "employee_not_found", "La persona del padrón no existe.")
+        }
+        if (displayName == null && roles == null && request.disabled == null && !request.changesEmployee()) {
             checks.fail("", "empty_update", "Hay que cambiar al menos un campo.")
         }
         checks.done()
@@ -107,6 +135,14 @@ class UserService(
                 tenantId, admin, "user.roles_changed", "user", id,
                 mapOf("added" to added.sorted().joinToString(","), "removed" to removed.sorted().joinToString(",")),
             )
+        }
+        if (request.changesEmployee() && employeeId != before.employeeId) {
+            try {
+                users.setEmployee(tenantId, id, employeeId)
+            } catch (e: RuntimeException) {
+                throw if (Conflicts.uniqueConstraint(e) == Conflicts.USER_EMPLOYEE) Conflicts.employeeLinked() else e
+            }
+            audit.record(tenantId, admin, "user.updated", "user", id, mapOf("fields" to "employeeId"))
         }
         if (nextStatus != before.status) {
             users.setStatus(tenantId, id, nextStatus)

@@ -3,6 +3,7 @@ package mx.fastsolution.zenit.security
 import jakarta.servlet.http.HttpServletRequest
 import mx.fastsolution.zenit.device.DeviceAuthentication
 import mx.fastsolution.zenit.device.DeviceAuthenticator
+import mx.fastsolution.zenit.device.DeviceKeys
 import mx.fastsolution.zenit.identity.PersonAuthenticationConverter
 import mx.fastsolution.zenit.identity.Role
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
@@ -50,6 +51,7 @@ class SecurityConfig {
         val rh = Role.RH.wire
         val supervisor = Role.SUPERVISOR.wire
         val auditor = Role.AUDITOR.wire
+        val worker = Role.TRABAJADOR.wire
         val device = DeviceAuthentication.ROLE
         // Dos credenciales: las personas traen un token del proveedor de identidad y
         // los dispositivos una aserción firmada con su propia clave. La ruta decide
@@ -57,7 +59,12 @@ class SecurityConfig {
         val users = ProviderManager(JwtAuthenticationProvider(decoder).apply { setJwtAuthenticationConverter(people) })
         val devices = AuthenticationManager { deviceAuthenticator.authenticate(it) }
         val credentials = AuthenticationManagerResolver<HttpServletRequest> {
-            if (it.method == "POST" && it.requestURI in DEVICE_ROUTES) devices else users
+            when {
+                it.method == "POST" && it.requestURI in DEVICE_ROUTES -> devices
+                // Lo que es del propio trabajador se puede pedir con su cuenta o con su teléfono.
+                isWorkerRoute(it) && DeviceKeys.isDeviceToken(it.getHeader("Authorization")) -> devices
+                else -> users
+            }
         }
         http
             // API sin cookies ni sesión: la credencial viaja en cada petición.
@@ -104,6 +111,18 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.POST, "/api/v1/devices/{deviceId}/revocation").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.POST, *DEVICE_ROUTES.toTypedArray()).hasRole(device)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/attendance-events").hasAnyRole(admin, rh, supervisor, auditor)
+                // Jornada, incidencias y cierre.
+                it.requestMatchers(HttpMethod.GET, "/api/v1/employees/{employeeId}/attendance").hasAnyRole(admin, rh, supervisor, auditor)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/me/attendance").hasAnyRole(worker, device)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/incidents", "/api/v1/incidents/{incidentId}")
+                    .hasAnyRole(admin, rh, supervisor, auditor)
+                it.requestMatchers(HttpMethod.PATCH, "/api/v1/incidents/{incidentId}").hasAnyRole(admin, rh, supervisor)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/week-closures").hasAnyRole(admin, rh, supervisor, auditor)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/week-closures").hasAnyRole(admin, rh)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/week-closures/{closureId}").hasAnyRole(admin, rh, supervisor, auditor, worker)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/week-closures/{closureId}/reopen").hasRole(admin)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/week-closures/{closureId}/acknowledgements").hasAnyRole(worker, device)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/rule-sets").hasAnyRole(admin, rh, supervisor, auditor)
                 it.anyRequest().denyAll()
             }
             .oauth2ResourceServer {
@@ -149,3 +168,10 @@ private fun claimRule(name: String, rule: (Jwt) -> Boolean) = OAuth2TokenValidat
 
 /** Rutas que sólo llama un dispositivo, con su propia credencial. */
 private val DEVICE_ROUTES = setOf("/api/v1/device-sessions", "/api/v1/attendance-events", "/api/v1/attendance-events/batch")
+
+private val ACKNOWLEDGEMENT = Regex("^/api/v1/week-closures/[^/]+/acknowledgements$")
+
+/** Rutas del propio trabajador, que admiten su cuenta o su teléfono personal. */
+private fun isWorkerRoute(request: HttpServletRequest): Boolean =
+    (request.method == "GET" && request.requestURI == "/api/v1/me/attendance") ||
+        (request.method == "POST" && ACKNOWLEDGEMENT.matches(request.requestURI))

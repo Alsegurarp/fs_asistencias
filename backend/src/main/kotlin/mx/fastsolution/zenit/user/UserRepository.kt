@@ -17,6 +17,8 @@ data class UserRow(
     val createdAt: OffsetDateTime,
     val linkedAt: OffsetDateTime?,
     val roles: Set<String>,
+    /** Su fila del padrón, cuando la persona también es trabajadora. */
+    val employeeId: UUID?,
 )
 
 /**
@@ -63,6 +65,11 @@ class UserRepository(private val dsl: DSLContext) {
             subject, displayName, email,
         ) == 1
 
+    /** Liga a la persona con su fila del padrón, o la suelta con nulo. */
+    fun setEmployee(tenantId: UUID, id: UUID, employeeId: UUID?) {
+        dsl.execute("update tenant_user set employee_id = cast(? as uuid) where tenant_id = ? and id = ?", employeeId, tenantId, id)
+    }
+
     fun setDisplayName(tenantId: UUID, id: UUID, displayName: String) {
         dsl.execute("update tenant_user set display_name = ? where tenant_id = ? and id = ?", displayName, tenantId, id)
     }
@@ -101,11 +108,12 @@ class UserRepository(private val dsl: DSLContext) {
         createdAt = r.get("created_at", OffsetDateTime::class.java),
         linkedAt = r.get("linked_at", OffsetDateTime::class.java),
         roles = r.get("roles", String::class.java).split(',').filter { it.isNotEmpty() }.toSet(),
+        employeeId = r.get("employee_id", UUID::class.java),
     )
 
     private companion object {
         const val SELECT =
-            "select u.tenant_id, u.id, u.email, u.subject, u.display_name, u.status, u.created_at, u.linked_at, " +
+            "select u.tenant_id, u.id, u.email, u.subject, u.display_name, u.status, u.created_at, u.linked_at, u.employee_id, " +
                 "coalesce((select string_agg(r.role, ',' order by r.role) from tenant_user_role r " +
                 "where r.tenant_id = u.tenant_id and r.user_id = u.id), '') as roles from tenant_user u"
     }

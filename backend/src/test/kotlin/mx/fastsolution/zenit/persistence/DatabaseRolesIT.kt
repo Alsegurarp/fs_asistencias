@@ -204,7 +204,8 @@ class DatabaseRolesIT {
             val updates = mapOf(
                 "attendance_event" to "outcome = 'accepted'",
                 "location_evidence" to "accuracy_m = 1",
-                "incident" to "status = 'justified'",
+                // De una incidencia cambia su atención, nunca lo que dice.
+                "incident" to "type = 'duplicate'",
                 "attendance_rejection" to "code = 'too_old'",
             )
             for ((table, change) in updates) {
@@ -213,6 +214,48 @@ class DatabaseRolesIT {
             }
             // Un dispositivo se revoca y un código se gasta, pero ninguno se borra.
             for (table in listOf("device", "device_enrollment", "device_session")) {
+                assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM $table") } }, table)
+            }
+        }
+    }
+
+    @Test
+    fun `rules are read only, closures and corrections are never rewritten`() {
+        asApp().use { db ->
+            db.createStatement().use { st ->
+                st.executeQuery("SELECT count(*) FROM rule_set").use {
+                    it.next()
+                    assertEquals(5, it.getInt(1))
+                }
+            }
+            // Las reglas laborales las cambia una migración, no el backend.
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE rule_set SET weekly_ordinary_max_minutes = 1") } })
+            assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM rule_set") } })
+            assertEquals(
+                "42501",
+                denied {
+                    db.createStatement().use {
+                        it.execute(
+                            "INSERT INTO rule_set (id, jurisdiction, version, valid_from, weekly_ordinary_max_minutes, parameters, sources) " +
+                                "VALUES (gen_random_uuid(), 'MX-LFT', 2, DATE '2026-01-01', 1, '{}', '[]')",
+                        )
+                    }
+                },
+            )
+            // Un ajuste y un acuse sólo se agregan.
+            val frozen = mapOf(
+                "adjustment" to "reason = 'otro'",
+                "closure_acknowledgement" to "type = 'agreed'",
+                // De un cierre cambia que se reabrió, nunca lo que congeló.
+                "week_closure" to "worked_minutes = 0",
+                "incident" to "severity = 'low'",
+            )
+            for ((table, change) in frozen) {
+                assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE $table SET $change") } }, table)
+            }
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE week_closure SET snapshot = '{}'") } })
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE week_closure SET hash = repeat('0', 64)") } })
+            for (table in listOf("adjustment", "closure_acknowledgement", "week_closure")) {
                 assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM $table") } }, table)
             }
         }

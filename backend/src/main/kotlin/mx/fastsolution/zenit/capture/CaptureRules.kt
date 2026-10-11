@@ -223,3 +223,12 @@ object Geo {
         else -> "outside" to "foreign_site"
     }
 }
+
+/** Gravedad con la que nace una incidencia, según lo que es. Quien la atiende decide lo demás. */
+object IncidentSeverity {
+    fun of(type: String): String = when (type) {
+        "clock_anomaly" -> "high"
+        "duplicate", "late_sync", "outside_window" -> "low"
+        else -> "medium"
+    }
+}

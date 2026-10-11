@@ -1,12 +1,11 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.7.0
+  version: 0.8.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo, aunque el
-    backend todavía no implementa jornada, incidencias, cierres, exportes ni
-    integraciones: de `jornada` sólo atiende la lista de marcajes.
+    backend todavía no implementa exportes ni integraciones.
 
     Convenciones:
 
@@ -32,6 +31,25 @@ info:
     invita por correo y se le dan roles; su cuenta, contraseña y segundo
     factor viven en el proveedor de identidad. La primera vez que entra con
     ese correo verificado queda ligada a su invitación.
+
+    Jornada: la semana de una persona se calcula de sus marcajes cada vez que
+    se pide; no se guarda hasta que se cierra.
+
+    - Los marcajes se leen en el orden en que ocurrieron y su tipo se vuelve a
+      deducir con la regla de captura, así que el tipo que muestra un tramo
+      puede diferir del que el marcaje recibió al llegar, si llegó en
+      desorden. El marcaje guardado no cambia.
+    - Un turno pertenece al día y a la semana en que empieza, aunque termine
+      después.
+    - Se aplican las reglas laborales vigentes en el último día de la semana.
+    - Un tramo sin el marcaje que lo cierra queda abierto y no suma.
+    - Un ajuste no edita un marcaje: agrega una intención, con autor y motivo,
+      que el cálculo aplica. Cada ajuste sube la `version` de los tramos.
+    - Cerrar congela el cálculo de cada persona. Una semana cerrada se entrega
+      tal como se congeló y no admite ajustes hasta que se reabre. Reabrir
+      conserva la versión cerrada; volver a cerrar crea otra.
+    - Los topes y sus alertas informan; no bloquean ni sancionan. La lectura
+      de la ley de la que salen está sujeta a revisión jurídica.
 
     Fuera de esta versión: alta de cuentas en el proveedor de identidad;
     entrega del material de clave de las tarjetas al dispositivo, que depende
@@ -275,6 +293,7 @@ paths:
                     status: active
                     createdAt: "2026-10-05T15:05:00Z"
                     linkedAt: "2026-10-05T16:20:00Z"
+                    employeeId: null
                 nextCursor: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -288,6 +307,11 @@ paths:
         La persona queda `invited` hasta que entra por primera vez con ese
         correo verificado. Responde 409 con `code` `email_unavailable` si el
         correo ya pertenece a alguien; la respuesta no dice a qué empresa.
+
+        `employeeId` liga la cuenta con una fila del padrón: es lo que deja a
+        un `trabajador` ver su semana y acusar su cierre desde el portal. Una
+        fila se liga a una sola cuenta: responde 409 con `code`
+        `employee_already_linked` si ya lo está.
       x-roles: [admin_empresa]
       requestBody:
         required: true
@@ -314,6 +338,7 @@ paths:
                 status: invited
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: null
+                employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -346,6 +371,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: "2026-10-05T16:20:00Z"
+                employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -361,6 +387,10 @@ paths:
         acceso sin borrar a la persona; en falso lo devuelve. Responde 409 con
         `code` `last_admin` si el cambio dejaría a la empresa sin nadie que la
         administre.
+
+        `employeeId` liga la cuenta con una fila del padrón y en nulo la
+        suelta; no mandarlo no cambia nada. Responde 409 con `code`
+        `employee_already_linked` si esa fila ya está ligada a otra cuenta.
       x-roles: [admin_empresa]
       requestBody:
         required: true
@@ -385,6 +415,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: "2026-10-05T16:20:00Z"
+                employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -867,6 +898,11 @@ paths:
       tags: [jornada]
       operationId: getEmployeeWeek
       summary: Devuelve la semana calculada de una persona
+      description: |
+        Abierta o reabierta, la semana se calcula al momento; cerrada, se
+        entrega tal como se congeló, y `closure` dice cuál cierre es. En los
+        dos casos `openIncidentIds` trae las incidencias abiertas de ahora:
+        un marcaje que llega después del cierre deja una.
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - $ref: "#/components/parameters/Week"
@@ -903,8 +939,12 @@ paths:
                 closure: null
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /imports/csv:
     post:
@@ -1549,7 +1589,9 @@ paths:
         ausente abre `location_inconclusive`. Quien marca en una terminal de
         otra sede abre `foreign_site`. Un marcaje que llega más de 24 horas
         después abre `late_sync`, y más de 72 horas después se rechaza con
-        `too_old`. `card_revoked` cubre también a la persona dada de baja.
+        `too_old`. También abre `late_sync` el que llega cuando la semana de
+        esa persona ya está cerrada: se guarda, pero el cierre no cambia solo.
+        `card_revoked` cubre también a la persona dada de baja.
       security:
         - deviceToken: []
       parameters:
@@ -1676,7 +1718,10 @@ paths:
       summary: Devuelve la semana de quien consulta
       description: |
         La usa el trabajador en el portal o desde un dispositivo `personal`.
-        Un dispositivo `terminal` no puede consultarla.
+        Un dispositivo `terminal` no puede consultarla. En el portal, la
+        cuenta tiene que estar ligada a su fila del padrón (`employeeId` de la
+        persona); sin esa liga responde 403. Devuelve lo mismo que
+        `getEmployeeWeek` para esa persona.
       x-roles: [trabajador]
       security:
         - userToken: []
@@ -1718,12 +1763,19 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /incidents:
     get:
       tags: [jornada]
       operationId: listIncidents
       summary: Lista las incidencias
+      description: |
+        De la más antigua a la más reciente. Una incidencia no sanciona a
+        nadie: es algo que una persona autorizada revisa. `severity` sale del
+        tipo: `high` para `clock_anomaly`; `low` para `duplicate`, `late_sync`
+        y `outside_window`; `medium` para las demás.
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: status
@@ -1809,6 +1861,18 @@ paths:
       description: |
         Resolver exige una decisión y un motivo. Un ajuste no edita el marcaje:
         agrega una intención y produce una versión nueva del cálculo.
+
+        `assigneeUserId` asigna la incidencia a una persona con acceso vigente
+        a la empresa, y en nulo quita la asignación. `adjustment` sólo va con
+        la decisión `adjusted`, y cada clase trae lo suyo y nada más:
+        `add_event` lleva `eventType` y `occurredAt`; `exclude_event` lleva
+        `eventId`; `retype_event` lleva `eventId` y `eventType`. El marcaje
+        tiene que ser de la misma persona de la incidencia.
+
+        Responde 409 con `code` `incident_already_resolved` si ya estaba
+        resuelta: lo resuelto no se reasigna ni se vuelve a decidir. Responde
+        409 con `code` `week_closed` si el ajuste cae en una semana cerrada de
+        esa persona: primero se reabre.
       x-roles: [admin_empresa, rh, supervisor]
       requestBody:
         required: true
@@ -1859,6 +1923,9 @@ paths:
       tags: [jornada]
       operationId: listWeekClosures
       summary: Lista los cierres semanales
+      description: |
+        Todas las versiones de esa semana, de la más antigua a la más
+        reciente: las reabiertas siguen en la lista con su estado.
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - $ref: "#/components/parameters/Week"
@@ -1906,7 +1973,23 @@ paths:
       summary: Cierra una semana
       description: |
         Congela el cálculo de cada persona con la versión de reglas vigente.
-        Quien tenga incidencias abiertas no se cierra y aparece en `blocked`.
+        Quien tenga incidencias abiertas o un tramo sin cerrar no se cierra y
+        aparece en `blocked`, con el motivo. A quien tiene un tramo sin cerrar
+        y ninguna incidencia abierta se le abre una `missing_pair` sobre el
+        marcaje que inició ese tramo, y `incidentIds` la trae: así hay algo
+        que resolver, agregando la salida que faltó o excluyendo la entrada.
+
+        `weekStart` admite cualquier fecha de la semana. Sin `siteId` ni
+        `employeeIds` entran las personas activas de la empresa y las que
+        marcaron esa semana; quien no marcó se cierra en ceros. Con más de 500
+        personas hay que cerrar por sede o por lista.
+
+        Es repetible: quien ya tiene un cierre vigente aparece en `closed` con
+        ese mismo cierre y no se crea otro. `hash` es el SHA-256 del cálculo
+        congelado, tal como quedó guardado.
+
+        Responde 422 con el error `week_not_finished` si la semana todavía no
+        termina en la zona horaria de la empresa.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -1958,6 +2041,9 @@ paths:
       tags: [jornada]
       operationId: getWeekClosure
       summary: Devuelve un cierre semanal
+      description: |
+        Quien sólo es `trabajador` ve su propio cierre; el de otra persona le
+        responde 404, igual que uno que no existe.
       x-roles: [admin_empresa, rh, supervisor, auditor, trabajador]
       responses:
         "200":
@@ -1996,7 +2082,10 @@ paths:
       tags: [jornada]
       operationId: reopenWeekClosure
       summary: Reabre un cierre con motivo
-      description: Conserva la versión cerrada. El siguiente cierre crea una versión nueva.
+      description: |
+        Conserva la versión cerrada. El siguiente cierre crea una versión
+        nueva. Responde 409 con `code` `closure_not_closed` si ese cierre ya
+        estaba reabierto.
       x-roles: [admin_empresa]
       requestBody:
         required: true
@@ -2039,6 +2128,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /week-closures/{closureId}/acknowledgements:
     parameters:
@@ -2047,6 +2138,15 @@ paths:
       tags: [jornada]
       operationId: acknowledgeWeekClosure
       summary: Registra la conformidad o la objeción del trabajador con su cierre
+      description: |
+        Lo hace el propio trabajador, con su cuenta ligada al padrón o desde
+        su dispositivo `personal`; una terminal no puede. Una vez por cierre:
+        responde 409 con `code` `already_acknowledged` si ya tiene acuse, y con
+        `closure_not_closed` si el cierre está reabierto. El cierre de otra
+        persona responde 404.
+
+        `evidenceHash` es el SHA-256 de la huella del cierre, el tipo, la
+        nota, la hora y quién lo registró: liga el acuse con lo que se cerró.
       x-roles: [trabajador]
       security:
         - userToken: []
@@ -2081,6 +2181,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /rule-sets:
     get:
@@ -2089,7 +2191,15 @@ paths:
       summary: Lista las versiones de reglas laborales con su vigencia
       description: |
         Los topes son filas con vigencia y fuente, no constantes. El ejemplo
-        sólo ilustra la forma: los valores vigentes salen de la tabla.
+        sólo ilustra la forma: los valores vigentes salen de la tabla. No son
+        de una empresa: valen para todas, y sólo se leen.
+
+        Sin `effectiveOn` devuelve todas, de la más antigua a la más reciente.
+        Con `effectiveOn` devuelve la vigente en esa fecha, o ninguna si no
+        hay reglas registradas para ella. La semana usa los parámetros
+        `weeklyOvertimeMaxMinutes` y `dailyCombinedMaxMinutes` para sus
+        alertas; los demás quedan registrados para cuando el cálculo distinga
+        el tipo de jornada.
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: effectiveOn
@@ -2108,16 +2218,22 @@ paths:
               example:
                 items:
                   - id: f9b1d3f5-7a9c-4e1b-8d3f-5a7c9e1b3d5f
-                    jurisdiction: MX
+                    jurisdiction: MX-LFT
                     version: 1
                     validFrom: "2026-01-01"
                     validTo: "2026-12-31"
                     weeklyOrdinaryMaxMinutes: 2880
-                    parameters: {}
+                    parameters:
+                      weeklyOvertimeMaxMinutes: "540"
+                      dailyCombinedMaxMinutes: "720"
                     sources:
                       - Ley Federal del Trabajo, texto vigente
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /exports:
     post:
@@ -2688,7 +2804,7 @@ components:
     User:
       type: object
       description: Persona con acceso al portal de la empresa.
-      required: [id, email, displayName, roles, status, createdAt, linkedAt]
+      required: [id, email, displayName, roles, status, createdAt, linkedAt, employeeId]
       properties:
         id:
           type: string
@@ -2715,6 +2831,10 @@ components:
           type: [string, "null"]
           format: date-time
           description: Primera entrada con su cuenta; nulo si todavía no entra.
+        employeeId:
+          type: [string, "null"]
+          format: uuid
+          description: Su fila del padrón, cuando la persona también es trabajadora.
     UserCreate:
       type: object
       additionalProperties: false
@@ -2734,6 +2854,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/TenantRole"
+        employeeId:
+          type: string
+          format: uuid
+          description: Fila del padrón con la que se liga la cuenta.
     UserUpdate:
       type: object
       additionalProperties: false
@@ -2751,6 +2875,10 @@ components:
             $ref: "#/components/schemas/TenantRole"
         disabled:
           type: boolean
+        employeeId:
+          type: [string, "null"]
+          format: uuid
+          description: Fila del padrón con la que se liga la cuenta; nulo la suelta.
     UserList:
       type: object
       required: [items, nextCursor]
@@ -3793,20 +3921,30 @@ components:
           description: Nulo mientras falte el marcaje que lo cierra.
         minutes:
           type: integer
+          description: Cero mientras el tramo esté abierto.
         startEventId:
           type: string
           format: uuid
+          description: >-
+            Marcaje que abre el tramo. Si lo agregó un ajuste, es el
+            identificador de ese ajuste y no existe en la lista de marcajes.
         endEventId:
           type: [string, "null"]
           format: uuid
+          description: Marcaje que lo cierra, con la misma salvedad.
         version:
           type: integer
+          description: Uno más el número de ajustes aplicados a la semana.
     AttendanceAlert:
       type: object
       required: [code, severity, message]
       properties:
         code:
           type: string
+          description: >-
+            `open_segment`, `daily_combined_limit_exceeded`, `weekly_overtime`
+            o `weekly_overtime_limit_exceeded`. Pueden agregarse más: un
+            cliente debe tolerar un código que no conoce.
         severity:
           type: string
           enum: [info, warning, critical]
@@ -4079,6 +4217,10 @@ components:
           enum: [open_incidents, open_segment]
         incidentIds:
           type: array
+          description: >-
+            Con `open_incidents`, las incidencias abiertas de esa semana. Con
+            `open_segment`, la que se acaba de abrir sobre el tramo sin
+            cerrar; vacía si el tramo lo inició un ajuste.
           items:
             type: string
             format: uuid

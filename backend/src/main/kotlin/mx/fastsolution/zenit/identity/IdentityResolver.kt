@@ -51,6 +51,7 @@ class IdentityResolver(
             displayName = user.displayName.ifEmpty { token.name },
             tenantId = user.tenantId,
             roles = user.roles.mapNotNull(Role::ofTenant).toSet(),
+            employeeId = user.employeeId,
         )
     }
 

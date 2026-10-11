@@ -18,6 +18,8 @@ data class CurrentPerson(
     val displayName: String,
     val tenantId: UUID?,
     val roles: Set<Role>,
+    /** Su fila del padrón, cuando la persona también es trabajadora. */
+    val employeeId: UUID? = null,
 ) : AuthenticatedPrincipal {
     override fun getName(): String = subject
 

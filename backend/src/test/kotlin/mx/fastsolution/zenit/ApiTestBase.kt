@@ -101,6 +101,9 @@ abstract class ApiTestBase {
 
         fun list(path: String): List<String> = at(path)
 
+        /** El cuerpo completo, como objeto. */
+        fun whole(): Map<String, Any?> = JsonPath.read(body, "\$")
+
         override fun toString() = "$status $body"
     }
 

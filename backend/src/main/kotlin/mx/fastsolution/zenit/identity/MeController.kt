@@ -38,8 +38,7 @@ class MeController(private val tenants: TenantRepository) {
             displayName = person.displayName,
             roles = person.roles.map { it.wire }.sorted(),
             tenant = tenant?.let { TenantSummary(it.id.toString(), it.name, it.timeZone, it.weekStartsOn, it.breakPolicy) },
-            // El padrón llega con el corte siguiente.
-            employeeId = null,
+            employeeId = person.employeeId?.toString(),
         )
     }
 }
