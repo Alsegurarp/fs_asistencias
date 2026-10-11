@@ -1,15 +1,63 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.1.0
-  description: Contrato ejecutable inicial del producto fastSolution.
+  version: 0.2.0
+  description: |
+    Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
+    el portal web y la app Android. Describe el recorrido completo, aunque el
+    backend todavía sólo implementa `/system/status`.
+
+    Convenciones:
+
+    - Identificadores UUID. Instantes en RFC 3339 y UTC; fechas locales como
+      `date`; duraciones en minutos.
+    - La empresa se deriva de la credencial, nunca del cuerpo ni de la ruta.
+      Un recurso de otra empresa responde 404.
+    - Errores en `application/problem+json` (RFC 9457) con `code` estable y
+      `correlationId`.
+    - Listas paginadas por cursor: `cursor` y `limit` en la consulta,
+      `nextCursor` en la respuesta.
+    - Los nombres de rol son los del producto: `operador-saas`,
+      `admin-empresa`, `rh`, `supervisor`, `trabajador`, `auditor` y
+      `conector`. Cada operación declara los suyos en `x-roles`.
+    - Todos los ejemplos son ficticios.
+
+    Fuera de esta versión: administración de usuarios y roles, que depende
+    del proveedor de identidad; entrega del material de clave de las tarjetas
+    al dispositivo, que depende de la prueba con tarjetas reales; y la
+    sincronización por conector.
 servers:
   - url: /api/v1
+tags:
+  - name: sistema
+    description: Estado del servicio.
+  - name: identidad
+    description: Quién llama y con qué permisos.
+  - name: empresa
+    description: Empresa, sedes con su geocerca y horarios.
+  - name: personas
+    description: Padrón de personas, asignación de horario e importación.
+  - name: credenciales
+    description: Tarjetas, enrolamiento y dispositivos.
+  - name: captura
+    description: Operaciones que usa la app para marcar.
+  - name: jornada
+    description: Marcajes, jornada calculada, incidencias, cierres y reglas.
+  - name: exportes
+    description: Exportación de cierres.
+  - name: auditoria
+    description: Bitácora de acciones administrativas.
+  - name: integraciones
+    description: Estado de las fuentes del padrón.
+security:
+  - userToken: []
 paths:
   /system/status:
     get:
+      tags: [sistema]
       operationId: getSystemStatus
       summary: Informa el estado básico de la API
+      security: []
       responses:
         "200":
           description: API disponible
@@ -17,7 +65,2147 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SystemStatus"
+              example:
+                service: zenit-backend
+                status: ok
+                version: 0.1.0
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /me:
+    get:
+      tags: [identidad]
+      operationId: getCurrentUser
+      summary: Devuelve la persona autenticada, su empresa y sus roles
+      x-roles: [operador-saas, admin-empresa, rh, supervisor, trabajador, auditor]
+      responses:
+        "200":
+          description: Sesión vigente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+              example:
+                userId: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                displayName: Persona de Recursos Humanos
+                roles: [rh]
+                tenant:
+                  id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                  name: Panificadora Ejemplo
+                  timeZone: America/Mexico_City
+                  weekStartsOn: monday
+                employeeId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /tenants:
+    get:
+      tags: [empresa]
+      operationId: listTenants
+      summary: Lista las empresas dadas de alta
+      x-roles: [operador-saas]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de empresas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantList"
+              example:
+                items:
+                  - id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                    name: Panificadora Ejemplo
+                    slug: panificadora-ejemplo
+                    timeZone: America/Mexico_City
+                    weekStartsOn: monday
+                    status: active
+                    createdAt: "2026-10-05T15:00:00Z"
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [empresa]
+      operationId: createTenant
+      summary: Da de alta una empresa
+      x-roles: [operador-saas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantCreate"
+            example:
+              name: Panificadora Ejemplo
+              slug: panificadora-ejemplo
+              timeZone: America/Mexico_City
+              weekStartsOn: monday
+      responses:
+        "201":
+          description: Empresa creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+              example:
+                id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                name: Panificadora Ejemplo
+                slug: panificadora-ejemplo
+                timeZone: America/Mexico_City
+                weekStartsOn: monday
+                status: active
+                createdAt: "2026-10-05T15:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /tenant:
+    get:
+      tags: [empresa]
+      operationId: getTenant
+      summary: Devuelve la empresa de quien llama
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      responses:
+        "200":
+          description: Empresa actual
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+              example:
+                id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                name: Panificadora Ejemplo
+                slug: panificadora-ejemplo
+                timeZone: America/Mexico_City
+                weekStartsOn: monday
+                status: active
+                createdAt: "2026-10-05T15:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    patch:
+      tags: [empresa]
+      operationId: updateTenant
+      summary: Cambia nombre, zona horaria o inicio de semana de la empresa
+      x-roles: [admin-empresa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantUpdate"
+            example:
+              weekStartsOn: sunday
+      responses:
+        "200":
+          description: Empresa actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+              example:
+                id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                name: Panificadora Ejemplo
+                slug: panificadora-ejemplo
+                timeZone: America/Mexico_City
+                weekStartsOn: sunday
+                status: active
+                createdAt: "2026-10-05T15:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /sites:
+    get:
+      tags: [empresa]
+      operationId: listSites
+      summary: Lista las sedes de la empresa
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de sedes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteList"
+              example:
+                items:
+                  - id: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                    name: Sucursal Centro
+                    timeZone: America/Mexico_City
+                    latitude: 19.432608
+                    longitude: -99.133209
+                    radiusMeters: 80
+                    status: active
+                    createdAt: "2026-10-05T15:10:00Z"
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [empresa]
+      operationId: createSite
+      summary: Crea una sede con su geocerca circular
+      x-roles: [admin-empresa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteCreate"
+            example:
+              name: Sucursal Centro
+              timeZone: America/Mexico_City
+              latitude: 19.432608
+              longitude: -99.133209
+              radiusMeters: 80
+      responses:
+        "201":
+          description: Sede creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Site"
+              example:
+                id: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                name: Sucursal Centro
+                timeZone: America/Mexico_City
+                latitude: 19.432608
+                longitude: -99.133209
+                radiusMeters: 80
+                status: active
+                createdAt: "2026-10-05T15:10:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /sites/{siteId}:
+    parameters:
+      - $ref: "#/components/parameters/SiteId"
+    get:
+      tags: [empresa]
+      operationId: getSite
+      summary: Devuelve una sede
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      responses:
+        "200":
+          description: Sede
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Site"
+              example:
+                id: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                name: Sucursal Centro
+                timeZone: America/Mexico_City
+                latitude: 19.432608
+                longitude: -99.133209
+                radiusMeters: 80
+                status: active
+                createdAt: "2026-10-05T15:10:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [empresa]
+      operationId: updateSite
+      summary: Cambia una sede o la desactiva
+      x-roles: [admin-empresa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteUpdate"
+            example:
+              radiusMeters: 120
+      responses:
+        "200":
+          description: Sede actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Site"
+              example:
+                id: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                name: Sucursal Centro
+                timeZone: America/Mexico_City
+                latitude: 19.432608
+                longitude: -99.133209
+                radiusMeters: 120
+                status: active
+                createdAt: "2026-10-05T15:10:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /schedules:
+    get:
+      tags: [empresa]
+      operationId: listSchedules
+      summary: Lista los horarios de la empresa
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de horarios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleList"
+              example:
+                items:
+                  - id: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                    name: Turno matutino
+                    timeZone: America/Mexico_City
+                    validFrom: "2026-10-05"
+                    validTo: null
+                    days:
+                      - dayOfWeek: monday
+                        startTime: "07:00"
+                        endTime: "15:00"
+                        breakMinutes: 30
+                    createdAt: "2026-10-05T15:20:00Z"
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [empresa]
+      operationId: createSchedule
+      summary: Crea un horario con vigencia
+      description: Un horario no se edita. Para cambiarlo se crea otro con una vigencia nueva.
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleCreate"
+            example:
+              name: Turno matutino
+              timeZone: America/Mexico_City
+              validFrom: "2026-10-05"
+              days:
+                - dayOfWeek: monday
+                  startTime: "07:00"
+                  endTime: "15:00"
+                  breakMinutes: 30
+      responses:
+        "201":
+          description: Horario creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+              example:
+                id: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                name: Turno matutino
+                timeZone: America/Mexico_City
+                validFrom: "2026-10-05"
+                validTo: null
+                days:
+                  - dayOfWeek: monday
+                    startTime: "07:00"
+                    endTime: "15:00"
+                    breakMinutes: 30
+                createdAt: "2026-10-05T15:20:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /schedules/{scheduleId}:
+    parameters:
+      - $ref: "#/components/parameters/ScheduleId"
+    get:
+      tags: [empresa]
+      operationId: getSchedule
+      summary: Devuelve un horario
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      responses:
+        "200":
+          description: Horario
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+              example:
+                id: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                name: Turno matutino
+                timeZone: America/Mexico_City
+                validFrom: "2026-10-05"
+                validTo: null
+                days:
+                  - dayOfWeek: monday
+                    startTime: "07:00"
+                    endTime: "15:00"
+                    breakMinutes: 30
+                createdAt: "2026-10-05T15:20:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /employees:
+    get:
+      tags: [personas]
+      operationId: listEmployees
+      summary: Lista el padrón de personas
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/EmployeeStatus"
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de personas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeList"
+              example:
+                items:
+                  - id: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    externalId: E-0001
+                    displayName: Persona de Ejemplo Uno
+                    status: active
+                    siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                    employmentStart: "2026-10-05"
+                    employmentEnd: null
+                    source: manual
+                    currentScheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                    activeCardId: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
+                    createdAt: "2026-10-05T15:30:00Z"
+                    updatedAt: "2026-10-05T15:30:00Z"
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [personas]
+      operationId: createEmployee
+      summary: Da de alta una persona
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeCreate"
+            example:
+              externalId: E-0001
+              displayName: Persona de Ejemplo Uno
+              siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+              employmentStart: "2026-10-05"
+      responses:
+        "201":
+          description: Persona creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+              example:
+                id: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                externalId: E-0001
+                displayName: Persona de Ejemplo Uno
+                status: active
+                siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                employmentStart: "2026-10-05"
+                employmentEnd: null
+                source: manual
+                currentScheduleId: null
+                activeCardId: null
+                createdAt: "2026-10-05T15:30:00Z"
+                updatedAt: "2026-10-05T15:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /employees/{employeeId}:
+    parameters:
+      - $ref: "#/components/parameters/EmployeeId"
+    get:
+      tags: [personas]
+      operationId: getEmployee
+      summary: Devuelve una persona
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      responses:
+        "200":
+          description: Persona
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+              example:
+                id: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                externalId: E-0001
+                displayName: Persona de Ejemplo Uno
+                status: active
+                siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                employmentStart: "2026-10-05"
+                employmentEnd: null
+                source: manual
+                currentScheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                activeCardId: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
+                createdAt: "2026-10-05T15:30:00Z"
+                updatedAt: "2026-10-05T15:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [personas]
+      operationId: updateEmployee
+      summary: Cambia datos de una persona o registra su baja
+      description: La baja es lógica. Nunca borra marcajes ni cierres.
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeUpdate"
+            example:
+              status: inactive
+              employmentEnd: "2026-12-31"
+      responses:
+        "200":
+          description: Persona actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+              example:
+                id: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                externalId: E-0001
+                displayName: Persona de Ejemplo Uno
+                status: inactive
+                siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                employmentStart: "2026-10-05"
+                employmentEnd: "2026-12-31"
+                source: manual
+                currentScheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                activeCardId: null
+                createdAt: "2026-10-05T15:30:00Z"
+                updatedAt: "2026-12-31T23:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /employees/{employeeId}/schedule-assignments:
+    parameters:
+      - $ref: "#/components/parameters/EmployeeId"
+    post:
+      tags: [personas]
+      operationId: assignSchedule
+      summary: Asigna un horario a una persona desde una fecha
+      description: Cierra la asignación anterior el día previo a `validFrom`.
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleAssignmentCreate"
+            example:
+              scheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+              validFrom: "2026-10-05"
+      responses:
+        "201":
+          description: Asignación creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleAssignment"
+              example:
+                id: 1f3b5d7f-9a1c-4e3b-8d5f-7a9c1e3b5d7f
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                scheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                validFrom: "2026-10-05"
+                validTo: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /employees/{employeeId}/attendance:
+    parameters:
+      - $ref: "#/components/parameters/EmployeeId"
+    get:
+      tags: [jornada]
+      operationId: getEmployeeWeek
+      summary: Devuelve la semana calculada de una persona
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      parameters:
+        - $ref: "#/components/parameters/Week"
+      responses:
+        "200":
+          description: Semana calculada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekAttendance"
+              example:
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                weekStart: "2026-10-05"
+                timeZone: America/Mexico_City
+                ruleSet:
+                  id: f9b1d3f5-7a9c-4e1b-8d3f-5a7c9e1b3d5f
+                  version: 1
+                segments:
+                  - id: 2a4c6e8a-0c2e-4a6c-8e0a-2c4e6a8c0e2a
+                    kind: work
+                    startAt: "2026-10-05T13:00:00Z"
+                    endAt: "2026-10-05T21:00:00Z"
+                    minutes: 480
+                    startEventId: 8b0d2f4a-6c8e-4a0c-9e2b-4d6f8a0c2e4b
+                    endEventId: 3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c
+                    version: 1
+                totals:
+                  workedMinutes: 480
+                  breakMinutes: 0
+                  ordinaryMinutes: 480
+                  overtimeMinutes: 0
+                alerts: []
+                openIncidentIds: []
+                closure: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /imports/csv:
+    post:
+      tags: [personas]
+      operationId: importEmployeesCsv
+      summary: Valida o aplica un archivo CSV del padrón
+      description: |
+        Con `dryRun` en verdadero sólo valida y devuelve qué filas entrarían.
+        La importación es idempotente por origen e identificador externo.
+      x-roles: [admin-empresa, rh]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV en UTF-8 con los encabezados de la plantilla vigente.
+                dryRun:
+                  type: boolean
+                  default: true
+      responses:
+        "202":
+          description: Importación aceptada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Import"
+              example:
+                id: b7d9f1a3-5c7e-4a9b-8d1f-3a5c7e9b1d3f
+                status: validating
+                dryRun: true
+                templateVersion: 1
+                counts:
+                  total: 0
+                  accepted: 0
+                  rejected: 0
+                errors: []
+                manifestHash: null
+                createdAt: "2026-10-05T15:40:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /imports/{importId}:
+    parameters:
+      - $ref: "#/components/parameters/ImportId"
+    get:
+      tags: [personas]
+      operationId: getImport
+      summary: Devuelve el resultado de una importación
+      x-roles: [admin-empresa, rh]
+      responses:
+        "200":
+          description: Importación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Import"
+              example:
+                id: b7d9f1a3-5c7e-4a9b-8d1f-3a5c7e9b1d3f
+                status: ready
+                dryRun: true
+                templateVersion: 1
+                counts:
+                  total: 3
+                  accepted: 2
+                  rejected: 1
+                errors:
+                  - row: 4
+                    externalId: E-0003
+                    code: site-unknown
+                    message: La sede indicada no existe.
+                manifestHash: null
+                createdAt: "2026-10-05T15:40:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /cards:
+    get:
+      tags: [credenciales]
+      operationId: listCards
+      summary: Lista las tarjetas de la empresa
+      x-roles: [admin-empresa, rh, auditor]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/CardStatus"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de tarjetas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardList"
+              example:
+                items:
+                  - id: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
+                    label: ZN-000123
+                    status: active
+                    keyVersion: 1
+                    assignment:
+                      employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                      since: "2026-10-05T15:50:00Z"
+                    createdAt: "2026-10-05T15:45:00Z"
+                    updatedAt: "2026-10-05T15:50:00Z"
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [credenciales]
+      operationId: registerCard
+      summary: Registra una tarjeta en el inventario
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardCreate"
+            example:
+              label: ZN-000123
+              fingerprint: c2hhMjU2LWRlLWVqZW1wbG8tZmljdGljaW8
+      responses:
+        "201":
+          description: Tarjeta registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+              example:
+                id: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
+                label: ZN-000123
+                status: inventory
+                keyVersion: 1
+                assignment: null
+                createdAt: "2026-10-05T15:45:00Z"
+                updatedAt: "2026-10-05T15:45:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /cards/{cardId}/assignments:
+    parameters:
+      - $ref: "#/components/parameters/CardId"
+    post:
+      tags: [credenciales]
+      operationId: assignCard
+      summary: Asigna una tarjeta a una persona
+      description: |
+        Si la persona ya tiene una tarjeta, la operación cierra esa asignación,
+        marca la tarjeta anterior como reemplazada y activa la nueva en la
+        misma transacción. Una tarjeta revocada no vuelve a asignarse.
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardAssignmentCreate"
+            example:
+              employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+      responses:
+        "201":
+          description: Tarjeta asignada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardAssignment"
+              example:
+                id: 7b9d1f3b-5d7f-4b9d-8f1b-3d5f7b9d1f3b
+                cardId: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                since: "2026-10-05T15:50:00Z"
+                until: null
+                replacedCardId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /cards/{cardId}/revocation:
+    parameters:
+      - $ref: "#/components/parameters/CardId"
+    post:
+      tags: [credenciales]
+      operationId: revokeCard
+      summary: Revoca una tarjeta o la reporta perdida o dañada
+      description: Desde ese momento la tarjeta no marca. El intento queda en auditoría.
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardRevocation"
+            example:
+              reason: lost
+              note: La persona reportó el extravío.
+      responses:
+        "200":
+          description: Tarjeta revocada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+              example:
+                id: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
+                label: ZN-000123
+                status: lost
+                keyVersion: 1
+                assignment: null
+                createdAt: "2026-10-05T15:45:00Z"
+                updatedAt: "2026-10-12T16:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /device-enrollments:
+    post:
+      tags: [credenciales]
+      operationId: createDeviceEnrollment
+      summary: Emite un código de un solo uso para enrolar un dispositivo
+      description: |
+        La modalidad se fija aquí. `personal` liga el dispositivo a una persona
+        y exige `employeeId`; `terminal` lo liga a una sede y exige `siteId`.
+        El código sólo aparece en esta respuesta.
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceEnrollmentCreate"
+            example:
+              mode: personal
+              employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+      responses:
+        "201":
+          description: Código emitido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceEnrollment"
+              example:
+                id: d5f7a9c1-3e5b-4d7f-8a9c-1e3b5d7f9a1c
+                mode: personal
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                siteId: null
+                label: null
+                code: K7M2-9QXD
+                status: pending
+                expiresAt: "2026-10-05T16:30:00Z"
+                createdAt: "2026-10-05T16:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /device-activations:
+    post:
+      tags: [captura]
+      operationId: activateDevice
+      summary: Canjea el código y registra la clave pública del dispositivo
+      description: |
+        No lleva credencial: la autoriza el código de un solo uso. `proof`
+        demuestra que el dispositivo posee la clave privada. En `personal`,
+        activar un dispositivo cierra el anterior de la misma persona.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceActivationRequest"
+            example:
+              enrollmentCode: K7M2-9QXD
+              publicKey:
+                kty: EC
+                crv: P-256
+                x: f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU
+                y: x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0
+              proof: eyJhbGciOiJFUzI1NiJ9.eyJlbnJvbGxtZW50Q29kZSI6Iks3TTItOVFYRCJ9.ZmlybWEtZGUtZWplbXBsby1uby12YWxpZGE
+              device:
+                manufacturer: Ejemplo
+                model: Modelo X
+                androidSdk: 36
+                appVersion: 0.1.0
+              screenLock: true
+      responses:
+        "201":
+          description: Dispositivo activado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceActivation"
+              example:
+                deviceId: 1c3e5a7b-9d0f-4a2c-8e4b-6d8f0a2c4e6b
+                mode: personal
+                tenant:
+                  name: Panificadora Ejemplo
+                  timeZone: America/Mexico_City
+                employee:
+                  id: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                  displayName: Persona de Ejemplo Uno
+                site: null
+                audience: zenit-api
+                session:
+                  sessionId: 4f6a8c0e-2b4d-4f6a-9c8e-0b2d4f6a8c0e
+                  startedAt: "2026-10-05T16:05:00Z"
+                  serverTime: "2026-10-05T16:05:00Z"
+                  tokenMaxAgeSeconds: 300
+                  locationReuseSeconds: 0
+                  offlinePolicy:
+                    maxAgeHours: 72
+                    maxEvents: 1000
+        "410":
+          description: El código ya se usó o expiró
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/enrollment-code-unusable
+                title: Código no utilizable
+                status: 410
+                code: enrollment-code-unusable
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /devices:
+    get:
+      tags: [credenciales]
+      operationId: listDevices
+      summary: Lista los dispositivos enrolados
+      x-roles: [admin-empresa, rh, auditor]
+      parameters:
+        - name: mode
+          in: query
+          schema:
+            $ref: "#/components/schemas/DeviceMode"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/DeviceStatus"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de dispositivos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceList"
+              example:
+                items:
+                  - id: 1c3e5a7b-9d0f-4a2c-8e4b-6d8f0a2c4e6b
+                    mode: personal
+                    status: active
+                    employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    siteId: null
+                    label: null
+                    model: Ejemplo Modelo X
+                    appVersion: 0.1.0
+                    enrolledAt: "2026-10-05T16:05:00Z"
+                    lastSeenAt: "2026-10-05T21:00:02Z"
+                    revokedAt: null
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /devices/{deviceId}/revocation:
+    parameters:
+      - $ref: "#/components/parameters/DeviceId"
+    post:
+      tags: [credenciales]
+      operationId: revokeDevice
+      summary: Revoca un dispositivo
+      description: Invalida su clave. Sus marcajes anteriores se conservan.
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceRevocation"
+            example:
+              reason: El teléfono se extravió.
+      responses:
+        "200":
+          description: Dispositivo revocado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+              example:
+                id: 1c3e5a7b-9d0f-4a2c-8e4b-6d8f0a2c4e6b
+                mode: personal
+                status: revoked
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                siteId: null
+                label: null
+                model: Ejemplo Modelo X
+                appVersion: 0.1.0
+                enrolledAt: "2026-10-05T16:05:00Z"
+                lastSeenAt: "2026-10-05T21:00:02Z"
+                revokedAt: "2026-10-12T16:10:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /device-sessions:
+    post:
+      tags: [captura]
+      operationId: openDeviceSession
+      summary: Abre una sesión de captura y cierra la anterior
+      description: |
+        La secuencia de los marcajes se numera dentro de la sesión. La sesión
+        sigue valiendo sin conexión hasta los límites de `offlinePolicy`.
+      security:
+        - deviceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceSessionCreate"
+            example:
+              appVersion: 0.1.0
+      responses:
+        "201":
+          description: Sesión abierta
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceSession"
+              example:
+                sessionId: 4f6a8c0e-2b4d-4f6a-9c8e-0b2d4f6a8c0e
+                startedAt: "2026-10-06T12:55:00Z"
+                serverTime: "2026-10-06T12:55:00Z"
+                tokenMaxAgeSeconds: 300
+                locationReuseSeconds: 0
+                offlinePolicy:
+                  maxAgeHours: 72
+                  maxEvents: 1000
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /attendance-events:
+    get:
+      tags: [jornada]
+      operationId: listAttendanceEvents
+      summary: Lista los marcajes con su evidencia minimizada
+      description: Devuelve el veredicto de ubicación, no la coordenada.
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      parameters:
+        - name: employeeId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de marcajes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceEventList"
+              example:
+                items:
+                  - id: 8b0d2f4a-6c8e-4a0c-9e2b-4d6f8a0c2e4b
+                    employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                    deviceId: 1c3e5a7b-9d0f-4a2c-8e4b-6d8f0a2c4e6b
+                    deviceMode: personal
+                    type: clock-in
+                    outcome: accepted
+                    observedAt: "2026-10-05T13:00:00Z"
+                    receivedAt: "2026-10-05T13:00:01Z"
+                    delaySeconds: 1
+                    locationVerdict: inside
+                    accuracyMeters: 12
+                    incidentIds: []
+                    payloadHash: 6f2c1d0e9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    post:
+      tags: [captura]
+      operationId: submitAttendanceEvent
+      summary: Registra un marcaje
+      description: |
+        El cuerpo lleva el sobre firmado por el dispositivo. La empresa, el
+        dispositivo y la modalidad salen de la credencial, no del sobre.
+
+        Responde 201 cuando el marcaje queda guardado y 200 cuando se repite
+        una clave de idempotencia ya procesada o cuando la credencial se
+        rechaza. Un rechazo viene con recibo y no se reintenta: no es un fallo
+        de transporte.
+      security:
+        - deviceToken: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendanceEventSubmission"
+            example:
+              envelope: eyJhbGciOiJFUzI1NiIsImtpZCI6IjFjM2U1YTdiIn0.eyJpZGVtcG90ZW5jeUtleSI6ImVqZW1wbG8ifQ.ZmlybWEtZGUtZWplbXBsby1uby12YWxpZGE
+      responses:
+        "200":
+          description: Marcaje repetido o rechazado, con su recibo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceReceipt"
+              example:
+                eventId: null
+                idempotencyKey: 2d4f6a8c-0e2b-4d6f-8a0c-2e4b6d8f0a2c
+                outcome: rejected
+                type: null
+                observedAt: "2026-10-05T13:00:00Z"
+                receivedAt: "2026-10-05T13:00:01Z"
+                employee: null
+                site: null
+                locationVerdict: not-evaluated
+                incident: null
+                rejection:
+                  code: card-not-owner
+                  message: La tarjeta no pertenece a quien tiene este dispositivo.
+        "201":
+          description: Marcaje guardado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceReceipt"
+              example:
+                eventId: 8b0d2f4a-6c8e-4a0c-9e2b-4d6f8a0c2e4b
+                idempotencyKey: 2d4f6a8c-0e2b-4d6f-8a0c-2e4b6d8f0a2c
+                outcome: accepted
+                type: clock-in
+                observedAt: "2026-10-05T13:00:00Z"
+                receivedAt: "2026-10-05T13:00:01Z"
+                employee:
+                  displayName: Persona de Ejemplo Uno
+                site:
+                  id: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                  name: Sucursal Centro
+                locationVerdict: inside
+                incident: null
+                rejection: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /attendance-events/batch:
+    post:
+      tags: [captura]
+      operationId: submitAttendanceBatch
+      summary: Envía los marcajes guardados sin conexión
+      description: |
+        Cada sobre se procesa por separado y devuelve su propio recibo, en el
+        mismo orden. El servidor conserva la hora observada y agrega la de
+        recepción; nunca mueve un marcaje en silencio.
+      security:
+        - deviceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendanceBatchSubmission"
+            example:
+              envelopes:
+                - eyJhbGciOiJFUzI1NiIsImtpZCI6IjFjM2U1YTdiIn0.eyJpZGVtcG90ZW5jeUtleSI6ImVqZW1wbG8ifQ.ZmlybWEtZGUtZWplbXBsby1uby12YWxpZGE
+      responses:
+        "200":
+          description: Un recibo por sobre
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceBatchResult"
+              example:
+                receipts:
+                  - eventId: 3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c
+                    idempotencyKey: 9a1c3e5a-7c9e-4a1c-8e3a-5c7e9a1c3e5a
+                    outcome: accepted-with-incident
+                    type: clock-out
+                    observedAt: "2026-10-05T21:00:00Z"
+                    receivedAt: "2026-10-06T12:55:03Z"
+                    employee:
+                      displayName: Persona de Ejemplo Uno
+                    site:
+                      id: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                      name: Sucursal Centro
+                    locationVerdict: inconclusive
+                    incident:
+                      id: 6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e
+                      type: late-sync
+                    rejection: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /me/attendance:
+    get:
+      tags: [jornada]
+      operationId: getMyWeek
+      summary: Devuelve la semana de quien consulta
+      description: |
+        La usa el trabajador en el portal o desde un dispositivo `personal`.
+        Un dispositivo `terminal` no puede consultarla.
+      x-roles: [trabajador]
+      security:
+        - userToken: []
+        - deviceToken: []
+      parameters:
+        - $ref: "#/components/parameters/Week"
+      responses:
+        "200":
+          description: Semana calculada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekAttendance"
+              example:
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                weekStart: "2026-10-05"
+                timeZone: America/Mexico_City
+                ruleSet:
+                  id: f9b1d3f5-7a9c-4e1b-8d3f-5a7c9e1b3d5f
+                  version: 1
+                segments:
+                  - id: 2a4c6e8a-0c2e-4a6c-8e0a-2c4e6a8c0e2a
+                    kind: work
+                    startAt: "2026-10-05T13:00:00Z"
+                    endAt: "2026-10-05T21:00:00Z"
+                    minutes: 480
+                    startEventId: 8b0d2f4a-6c8e-4a0c-9e2b-4d6f8a0c2e4b
+                    endEventId: 3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c
+                    version: 1
+                totals:
+                  workedMinutes: 480
+                  breakMinutes: 0
+                  ordinaryMinutes: 480
+                  overtimeMinutes: 0
+                alerts: []
+                openIncidentIds: [6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e]
+                closure: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /incidents:
+    get:
+      tags: [jornada]
+      operationId: listIncidents
+      summary: Lista las incidencias
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/IncidentStatus"
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/IncidentType"
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: week
+          in: query
+          description: Cualquier fecha de la semana.
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de incidencias
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentList"
+              example:
+                items:
+                  - id: 6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e
+                    type: late-sync
+                    severity: low
+                    status: open
+                    employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                    eventIds: [3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c]
+                    openedAt: "2026-10-06T12:55:03Z"
+                    assigneeUserId: null
+                    resolution: null
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /incidents/{incidentId}:
+    parameters:
+      - $ref: "#/components/parameters/IncidentId"
+    get:
+      tags: [jornada]
+      operationId: getIncident
+      summary: Devuelve una incidencia
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      responses:
+        "200":
+          description: Incidencia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+              example:
+                id: 6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e
+                type: late-sync
+                severity: low
+                status: open
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                eventIds: [3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c]
+                openedAt: "2026-10-06T12:55:03Z"
+                assigneeUserId: null
+                resolution: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [jornada]
+      operationId: updateIncident
+      summary: Asigna o resuelve una incidencia
+      description: |
+        Resolver exige una decisión y un motivo. Un ajuste no edita el marcaje:
+        agrega una intención y produce una versión nueva del cálculo.
+      x-roles: [admin-empresa, rh, supervisor]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentUpdate"
+            example:
+              resolution:
+                decision: justified
+                reason: El teléfono estuvo sin señal durante el turno.
+      responses:
+        "200":
+          description: Incidencia actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+              example:
+                id: 6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e
+                type: late-sync
+                severity: low
+                status: resolved
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                eventIds: [3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c]
+                openedAt: "2026-10-06T12:55:03Z"
+                assigneeUserId: null
+                resolution:
+                  decision: justified
+                  reason: El teléfono estuvo sin señal durante el turno.
+                  adjustment: null
+                  resolvedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                  resolvedAt: "2026-10-06T17:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /week-closures:
+    get:
+      tags: [jornada]
+      operationId: listWeekClosures
+      summary: Lista los cierres semanales
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      parameters:
+        - $ref: "#/components/parameters/Week"
+        - name: employeeId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de cierres
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekClosureList"
+              example:
+                items:
+                  - id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
+                    employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    weekStart: "2026-10-05"
+                    version: 1
+                    status: closed
+                    ruleSet:
+                      id: f9b1d3f5-7a9c-4e1b-8d3f-5a7c9e1b3d5f
+                      version: 1
+                    totals:
+                      workedMinutes: 2400
+                      breakMinutes: 150
+                      ordinaryMinutes: 2400
+                      overtimeMinutes: 0
+                    hash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+                    closedAt: "2026-10-12T16:00:00Z"
+                    closedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    acknowledgement: null
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [jornada]
+      operationId: closeWeek
+      summary: Cierra una semana
+      description: |
+        Congela el cálculo de cada persona con la versión de reglas vigente.
+        Quien tenga incidencias abiertas no se cierra y aparece en `blocked`.
+      x-roles: [admin-empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeekClosureCreate"
+            example:
+              weekStart: "2026-10-05"
+      responses:
+        "201":
+          description: Resultado del cierre
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekClosureResult"
+              example:
+                weekStart: "2026-10-05"
+                closed:
+                  - id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
+                    employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    weekStart: "2026-10-05"
+                    version: 1
+                    status: closed
+                    ruleSet:
+                      id: f9b1d3f5-7a9c-4e1b-8d3f-5a7c9e1b3d5f
+                      version: 1
+                    totals:
+                      workedMinutes: 2400
+                      breakMinutes: 150
+                      ordinaryMinutes: 2400
+                      overtimeMinutes: 0
+                    hash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+                    closedAt: "2026-10-12T16:00:00Z"
+                    closedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    acknowledgement: null
+                blocked: []
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /week-closures/{closureId}:
+    parameters:
+      - $ref: "#/components/parameters/ClosureId"
+    get:
+      tags: [jornada]
+      operationId: getWeekClosure
+      summary: Devuelve un cierre semanal
+      x-roles: [admin-empresa, rh, supervisor, auditor, trabajador]
+      responses:
+        "200":
+          description: Cierre
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekClosure"
+              example:
+                id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                weekStart: "2026-10-05"
+                version: 1
+                status: closed
+                ruleSet:
+                  id: f9b1d3f5-7a9c-4e1b-8d3f-5a7c9e1b3d5f
+                  version: 1
+                totals:
+                  workedMinutes: 2400
+                  breakMinutes: 150
+                  ordinaryMinutes: 2400
+                  overtimeMinutes: 0
+                hash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+                closedAt: "2026-10-12T16:00:00Z"
+                closedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                acknowledgement: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /week-closures/{closureId}/reopen:
+    parameters:
+      - $ref: "#/components/parameters/ClosureId"
+    post:
+      tags: [jornada]
+      operationId: reopenWeekClosure
+      summary: Reabre un cierre con motivo
+      description: Conserva la versión cerrada. El siguiente cierre crea una versión nueva.
+      x-roles: [admin-empresa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeekClosureReopen"
+            example:
+              reason: Se resolvió una incidencia después del cierre.
+      responses:
+        "200":
+          description: Cierre reabierto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekClosure"
+              example:
+                id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
+                employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                weekStart: "2026-10-05"
+                version: 1
+                status: reopened
+                ruleSet:
+                  id: f9b1d3f5-7a9c-4e1b-8d3f-5a7c9e1b3d5f
+                  version: 1
+                totals:
+                  workedMinutes: 2400
+                  breakMinutes: 150
+                  ordinaryMinutes: 2400
+                  overtimeMinutes: 0
+                hash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+                closedAt: "2026-10-12T16:00:00Z"
+                closedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                acknowledgement: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /week-closures/{closureId}/acknowledgements:
+    parameters:
+      - $ref: "#/components/parameters/ClosureId"
+    post:
+      tags: [jornada]
+      operationId: acknowledgeWeekClosure
+      summary: Registra la conformidad o la objeción del trabajador con su cierre
+      x-roles: [trabajador]
+      security:
+        - userToken: []
+        - deviceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcknowledgementCreate"
+            example:
+              type: agreed
+      responses:
+        "201":
+          description: Acuse registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Acknowledgement"
+              example:
+                id: 4e6a8c0a-2c4e-4a6c-8e0a-2c4e6a8c0a2c
+                closureId: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
+                type: agreed
+                note: null
+                at: "2026-10-12T18:00:00Z"
+                evidenceHash: 9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /rule-sets:
+    get:
+      tags: [jornada]
+      operationId: listRuleSets
+      summary: Lista las versiones de reglas laborales con su vigencia
+      description: |
+        Los topes son filas con vigencia y fuente, no constantes. El ejemplo
+        sólo ilustra la forma: los valores vigentes salen de la tabla.
+      x-roles: [admin-empresa, rh, supervisor, auditor]
+      parameters:
+        - name: effectiveOn
+          in: query
+          description: Devuelve sólo la versión vigente en esa fecha.
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Versiones de reglas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleSetList"
+              example:
+                items:
+                  - id: f9b1d3f5-7a9c-4e1b-8d3f-5a7c9e1b3d5f
+                    jurisdiction: MX
+                    version: 1
+                    validFrom: "2026-01-01"
+                    validTo: "2026-12-31"
+                    weeklyOrdinaryMaxMinutes: 2880
+                    parameters: {}
+                    sources:
+                      - Ley Federal del Trabajo, texto vigente
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /exports:
+    post:
+      tags: [exportes]
+      operationId: createExport
+      summary: Solicita el exporte de una semana cerrada
+      description: Sólo exporta cierres. El archivo declara empresa, periodo, zona horaria, versión de reglas y hash.
+      x-roles: [admin-empresa, rh, auditor]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportCreate"
+            example:
+              weekStart: "2026-10-05"
+              format: csv
+      responses:
+        "202":
+          description: Exporte en preparación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+              example:
+                id: e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+                status: queued
+                weekStart: "2026-10-05"
+                siteId: null
+                format: csv
+                timeZone: America/Mexico_City
+                ruleSetVersion: 1
+                manifestHash: null
+                downloadUrl: null
+                expiresAt: null
+                createdAt: "2026-10-12T16:05:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /exports/{exportId}:
+    parameters:
+      - $ref: "#/components/parameters/ExportId"
+    get:
+      tags: [exportes]
+      operationId: getExport
+      summary: Devuelve el estado de un exporte y su enlace de descarga
+      description: El enlace es de un solo uso y expira.
+      x-roles: [admin-empresa, rh, auditor]
+      responses:
+        "200":
+          description: Exporte
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+              example:
+                id: e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+                status: ready
+                weekStart: "2026-10-05"
+                siteId: null
+                format: csv
+                timeZone: America/Mexico_City
+                ruleSetVersion: 1
+                manifestHash: 5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c
+                downloadUrl: https://zenit.invalid/descargas/ejemplo
+                expiresAt: "2026-10-12T16:20:00Z"
+                createdAt: "2026-10-12T16:05:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /audit-log:
+    get:
+      tags: [auditoria]
+      operationId: listAuditEntries
+      summary: Lista las acciones registradas en la bitácora
+      x-roles: [admin-empresa, auditor]
+      parameters:
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de la bitácora
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEntryList"
+              example:
+                items:
+                  - id: 2e4a6c8e-0a2c-4e6a-8c0e-2a4c6e8a0c2e
+                    at: "2026-10-12T16:00:00Z"
+                    actor:
+                      type: user
+                      id: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    action: week-closure.created
+                    target:
+                      type: week-closure
+                      id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
+                    correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+                    metadata: {}
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /integrations/checkpoints:
+    get:
+      tags: [integraciones]
+      operationId: listIntegrationCheckpoints
+      summary: Lista las fuentes del padrón y su último punto de sincronización
+      x-roles: [admin-empresa, rh]
+      responses:
+        "200":
+          description: Fuentes del padrón
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationCheckpointList"
+              example:
+                items:
+                  - sourceId: 8c0e2a4c-6e8a-4c0e-8a2c-4e6a8c0e2a4c
+                    type: csv
+                    status: active
+                    cursor: null
+                    sourceVersion: null
+                    updatedAt: "2026-10-05T15:41:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 components:
+  securitySchemes:
+    userToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token de acceso de una persona, emitido por el proveedor de identidad.
+        La API deriva de él la empresa y los roles.
+    deviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Aserción firmada por el propio dispositivo con su clave privada, ES256.
+        `iss` y `sub` llevan el identificador del dispositivo, `aud` el valor
+        de `audience` recibido al activar, y vive como máximo
+        `tokenMaxAgeSeconds`. El servidor la verifica con la clave pública
+        registrada al activar y deriva de ella empresa, dispositivo y
+        modalidad.
+
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      description: Valor de `nextCursor` de la página anterior.
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    Week:
+      name: week
+      in: query
+      required: true
+      description: Cualquier fecha de la semana. El servidor la ajusta al inicio de semana de la empresa.
+      schema:
+        type: string
+        format: date
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: La misma clave nunca crea dos resultados.
+      schema:
+        type: string
+        format: uuid
+    SiteId:
+      name: siteId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ScheduleId:
+      name: scheduleId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    EmployeeId:
+      name: employeeId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ImportId:
+      name: importId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CardId:
+      name: cardId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DeviceId:
+      name: deviceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IncidentId:
+      name: incidentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ClosureId:
+      name: closureId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ExportId:
+      name: exportId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Falta la credencial o no es válida
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://zenit.invalid/problems/unauthorized
+            title: Credencial no válida
+            status: 401
+            code: unauthorized
+            correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+            serverTime: "2026-10-05T13:00:01Z"
+    Forbidden:
+      description: La credencial es válida, pero el rol no alcanza
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://zenit.invalid/problems/forbidden
+            title: Permiso insuficiente
+            status: 403
+            code: forbidden
+            correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+    NotFound:
+      description: El recurso no existe en la empresa de quien llama
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://zenit.invalid/problems/not-found
+            title: No encontrado
+            status: 404
+            code: not-found
+            correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+    Conflict:
+      description: El estado actual no permite la operación
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://zenit.invalid/problems/conflict
+            title: Conflicto con el estado actual
+            status: 409
+            code: conflict
+            detail: La clave de idempotencia ya se usó con otro contenido.
+            correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+    Unprocessable:
+      description: La petición no cumple las reglas de validación
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://zenit.invalid/problems/validation
+            title: Datos no válidos
+            status: 422
+            code: validation
+            correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+            errors:
+              - field: radiusMeters
+                code: out-of-range
+                message: Debe estar entre 20 y 2000.
+    TooManyRequests:
+      description: Se excedió la cuota de peticiones
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://zenit.invalid/problems/rate-limited
+            title: Demasiadas peticiones
+            status: 429
+            code: rate-limited
+            correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+
   schemas:
     SystemStatus:
       type: object
@@ -31,3 +2219,1695 @@ components:
           const: ok
         version:
           type: string
+
+    Problem:
+      type: object
+      description: Detalle de un error según RFC 9457, con miembros propios.
+      required: [type, title, status, code, correlationId]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          description: Código estable para que el cliente decida qué hacer.
+        correlationId:
+          type: string
+          format: uuid
+        serverTime:
+          type: string
+          format: date-time
+          description: Presente en 401, para que un dispositivo con el reloj movido pueda corregirse.
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldError"
+    FieldError:
+      type: object
+      required: [field, code, message]
+      properties:
+        field:
+          type: string
+        code:
+          type: string
+        message:
+          type: string
+
+    NextCursor:
+      type: [string, "null"]
+      description: Cursor de la página siguiente, o nulo si no hay más.
+
+    Role:
+      type: string
+      enum: [operador-saas, admin-empresa, rh, supervisor, trabajador, auditor, conector]
+    DayOfWeek:
+      type: string
+      enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    LocalTime:
+      type: string
+      pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+      description: Hora local de la sede, de 00:00 a 23:59.
+    Sha256Hex:
+      type: string
+      pattern: "^[0-9a-f]{64}$"
+    CompactJws:
+      type: string
+      pattern: "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$"
+      description: JWS en serialización compacta (RFC 7515).
+
+    CurrentUser:
+      type: object
+      required: [userId, displayName, roles, tenant, employeeId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+        tenant:
+          oneOf:
+            - $ref: "#/components/schemas/TenantSummary"
+            - type: "null"
+          description: Nulo para quien opera el servicio sin pertenecer a una empresa.
+        employeeId:
+          type: [string, "null"]
+          format: uuid
+          description: Presente cuando la persona también está en el padrón.
+    TenantSummary:
+      type: object
+      required: [id, name, timeZone, weekStartsOn]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timeZone:
+          type: string
+        weekStartsOn:
+          $ref: "#/components/schemas/DayOfWeek"
+
+    Tenant:
+      type: object
+      required: [id, name, slug, timeZone, weekStartsOn, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        timeZone:
+          type: string
+          description: Zona IANA, por ejemplo America/Mexico_City.
+        weekStartsOn:
+          $ref: "#/components/schemas/DayOfWeek"
+        status:
+          type: string
+          enum: [active, suspended]
+        createdAt:
+          type: string
+          format: date-time
+    TenantCreate:
+      type: object
+      additionalProperties: false
+      required: [name, slug, timeZone, weekStartsOn]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
+          maxLength: 60
+        timeZone:
+          type: string
+        weekStartsOn:
+          $ref: "#/components/schemas/DayOfWeek"
+    TenantUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        timeZone:
+          type: string
+        weekStartsOn:
+          $ref: "#/components/schemas/DayOfWeek"
+    TenantList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tenant"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+
+    Site:
+      type: object
+      required: [id, name, timeZone, latitude, longitude, radiusMeters, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timeZone:
+          type: string
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        radiusMeters:
+          type: integer
+          minimum: 20
+          maximum: 2000
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+    SiteCreate:
+      type: object
+      additionalProperties: false
+      required: [name, timeZone, latitude, longitude, radiusMeters]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        timeZone:
+          type: string
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        radiusMeters:
+          type: integer
+          minimum: 20
+          maximum: 2000
+    SiteUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        timeZone:
+          type: string
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        radiusMeters:
+          type: integer
+          minimum: 20
+          maximum: 2000
+        status:
+          type: string
+          enum: [active, inactive]
+    SiteList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Site"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+
+    ScheduleDay:
+      type: object
+      additionalProperties: false
+      required: [dayOfWeek, startTime, endTime, breakMinutes]
+      properties:
+        dayOfWeek:
+          $ref: "#/components/schemas/DayOfWeek"
+        startTime:
+          $ref: "#/components/schemas/LocalTime"
+        endTime:
+          $ref: "#/components/schemas/LocalTime"
+          description: Si es menor que `startTime`, el turno termina al día siguiente.
+        breakMinutes:
+          type: integer
+          minimum: 0
+          maximum: 480
+    Schedule:
+      type: object
+      required: [id, name, timeZone, validFrom, validTo, days, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timeZone:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: [string, "null"]
+          format: date
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScheduleDay"
+        createdAt:
+          type: string
+          format: date-time
+    ScheduleCreate:
+      type: object
+      additionalProperties: false
+      required: [name, timeZone, validFrom, days]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        timeZone:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: [string, "null"]
+          format: date
+        days:
+          type: array
+          minItems: 1
+          maxItems: 7
+          items:
+            $ref: "#/components/schemas/ScheduleDay"
+    ScheduleList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Schedule"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+    ScheduleAssignment:
+      type: object
+      required: [id, employeeId, scheduleId, validFrom, validTo]
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        scheduleId:
+          type: string
+          format: uuid
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: [string, "null"]
+          format: date
+    ScheduleAssignmentCreate:
+      type: object
+      additionalProperties: false
+      required: [scheduleId, validFrom]
+      properties:
+        scheduleId:
+          type: string
+          format: uuid
+        validFrom:
+          type: string
+          format: date
+
+    EmployeeStatus:
+      type: string
+      enum: [active, inactive]
+    Employee:
+      type: object
+      required:
+        - id
+        - externalId
+        - displayName
+        - status
+        - siteId
+        - employmentStart
+        - employmentEnd
+        - source
+        - currentScheduleId
+        - activeCardId
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalId:
+          type: string
+          description: Identificador de la persona en el origen. Único por empresa.
+        displayName:
+          type: string
+        status:
+          $ref: "#/components/schemas/EmployeeStatus"
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        employmentStart:
+          type: string
+          format: date
+        employmentEnd:
+          type: [string, "null"]
+          format: date
+        source:
+          type: string
+          enum: [manual, csv, api, connector]
+        currentScheduleId:
+          type: [string, "null"]
+          format: uuid
+        activeCardId:
+          type: [string, "null"]
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    EmployeeCreate:
+      type: object
+      additionalProperties: false
+      required: [externalId, displayName, employmentStart]
+      properties:
+        externalId:
+          type: string
+          minLength: 1
+          maxLength: 64
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        employmentStart:
+          type: string
+          format: date
+    EmployeeUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        status:
+          $ref: "#/components/schemas/EmployeeStatus"
+        employmentEnd:
+          type: [string, "null"]
+          format: date
+    EmployeeList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Employee"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+
+    Import:
+      type: object
+      required: [id, status, dryRun, templateVersion, counts, errors, manifestHash, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [validating, ready, applied, failed]
+        dryRun:
+          type: boolean
+        templateVersion:
+          type: integer
+        counts:
+          type: object
+          required: [total, accepted, rejected]
+          properties:
+            total:
+              type: integer
+            accepted:
+              type: integer
+            rejected:
+              type: integer
+        errors:
+          type: array
+          description: Filas rechazadas, con su causa.
+          items:
+            $ref: "#/components/schemas/ImportRowError"
+        manifestHash:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256Hex"
+            - type: "null"
+        createdAt:
+          type: string
+          format: date-time
+    ImportRowError:
+      type: object
+      required: [row, externalId, code, message]
+      properties:
+        row:
+          type: integer
+          minimum: 1
+        externalId:
+          type: [string, "null"]
+        code:
+          type: string
+        message:
+          type: string
+
+    CardStatus:
+      type: string
+      enum: [inventory, assigned, active, revoked, lost, damaged, replaced]
+    Card:
+      type: object
+      required: [id, label, status, keyVersion, assignment, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+          description: Número impreso en la tarjeta.
+        status:
+          $ref: "#/components/schemas/CardStatus"
+        keyVersion:
+          type: [integer, "null"]
+        assignment:
+          oneOf:
+            - type: object
+              required: [employeeId, since]
+              properties:
+                employeeId:
+                  type: string
+                  format: uuid
+                since:
+                  type: string
+                  format: date-time
+            - type: "null"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CardCreate:
+      type: object
+      additionalProperties: false
+      required: [label, fingerprint]
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 40
+        fingerprint:
+          type: string
+          minLength: 16
+          maxLength: 128
+          description: Huella criptográfica de la tarjeta. El UID público no basta como identidad.
+    CardList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Card"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+    CardAssignment:
+      type: object
+      required: [id, cardId, employeeId, since, until, replacedCardId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        cardId:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        since:
+          type: string
+          format: date-time
+        until:
+          type: [string, "null"]
+          format: date-time
+        replacedCardId:
+          type: [string, "null"]
+          format: uuid
+    CardAssignmentCreate:
+      type: object
+      additionalProperties: false
+      required: [employeeId]
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+    CardRevocation:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          enum: [revoked, lost, damaged]
+        note:
+          type: string
+          maxLength: 280
+
+    DeviceMode:
+      type: string
+      enum: [personal, terminal]
+      description: |
+        `personal` es el teléfono de un trabajador y sólo acepta su tarjeta.
+        `terminal` es un equipo compartido de una sede y acepta cualquier
+        tarjeta activa de la empresa.
+    DeviceStatus:
+      type: string
+      enum: [active, revoked, replaced]
+    DeviceEnrollment:
+      type: object
+      required: [id, mode, employeeId, siteId, label, code, status, expiresAt, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        mode:
+          $ref: "#/components/schemas/DeviceMode"
+        employeeId:
+          type: [string, "null"]
+          format: uuid
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        label:
+          type: [string, "null"]
+        code:
+          type: string
+          description: Código de un solo uso. Se muestra una vez.
+        status:
+          type: string
+          enum: [pending, used, expired]
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    DeviceEnrollmentCreate:
+      type: object
+      additionalProperties: false
+      required: [mode]
+      properties:
+        mode:
+          $ref: "#/components/schemas/DeviceMode"
+        employeeId:
+          type: string
+          format: uuid
+          description: Obligatorio en `personal`.
+        siteId:
+          type: string
+          format: uuid
+          description: Obligatorio en `terminal`.
+        label:
+          type: string
+          maxLength: 60
+          description: Nombre para reconocer una terminal, por ejemplo «Recepción».
+    PublicJwk:
+      type: object
+      additionalProperties: false
+      required: [kty, crv, x, y]
+      description: Clave pública del dispositivo en formato JWK, curva P-256.
+      properties:
+        kty:
+          type: string
+          const: EC
+        crv:
+          type: string
+          const: P-256
+        x:
+          type: string
+        y:
+          type: string
+    DeviceActivationRequest:
+      type: object
+      additionalProperties: false
+      required: [enrollmentCode, publicKey, proof, device, screenLock]
+      properties:
+        enrollmentCode:
+          type: string
+          minLength: 6
+          maxLength: 32
+        publicKey:
+          $ref: "#/components/schemas/PublicJwk"
+        proof:
+          $ref: "#/components/schemas/CompactJws"
+          description: Firmado con la clave que se registra; su carga lleva `enrollmentCode`.
+        device:
+          type: object
+          additionalProperties: false
+          required: [manufacturer, model, androidSdk, appVersion]
+          properties:
+            manufacturer:
+              type: string
+              maxLength: 60
+            model:
+              type: string
+              maxLength: 60
+            androidSdk:
+              type: integer
+              minimum: 28
+            appVersion:
+              type: string
+              maxLength: 20
+        screenLock:
+          type: boolean
+          description: Si el dispositivo tiene bloqueo de pantalla. Es condición para enrolar.
+        integrityToken:
+          type: string
+          description: Señal de integridad de la plataforma, cuando exista.
+    DeviceActivation:
+      type: object
+      required: [deviceId, mode, tenant, employee, site, audience, session]
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        mode:
+          $ref: "#/components/schemas/DeviceMode"
+        tenant:
+          type: object
+          required: [name, timeZone]
+          properties:
+            name:
+              type: string
+            timeZone:
+              type: string
+        employee:
+          oneOf:
+            - type: object
+              required: [id, displayName]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                displayName:
+                  type: string
+            - type: "null"
+          description: Presente en `personal`.
+        site:
+          oneOf:
+            - $ref: "#/components/schemas/SiteSummary"
+            - type: "null"
+          description: Presente en `terminal`.
+        audience:
+          type: string
+          description: Valor que el dispositivo pone en `aud` de sus aserciones.
+        session:
+          $ref: "#/components/schemas/DeviceSession"
+    SiteSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    DeviceSessionCreate:
+      type: object
+      additionalProperties: false
+      required: [appVersion]
+      properties:
+        appVersion:
+          type: string
+          maxLength: 20
+    DeviceSession:
+      type: object
+      required: [sessionId, startedAt, serverTime, tokenMaxAgeSeconds, locationReuseSeconds, offlinePolicy]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        startedAt:
+          type: string
+          format: date-time
+        serverTime:
+          type: string
+          format: date-time
+        tokenMaxAgeSeconds:
+          type: integer
+          description: Vida máxima de una aserción del dispositivo.
+        locationReuseSeconds:
+          type: integer
+          description: |
+            Tiempo durante el que una terminal puede reutilizar una muestra de
+            ubicación para lecturas seguidas. En `personal` vale 0.
+        offlinePolicy:
+          type: object
+          required: [maxAgeHours, maxEvents]
+          properties:
+            maxAgeHours:
+              type: integer
+            maxEvents:
+              type: integer
+    Device:
+      type: object
+      required:
+        - id
+        - mode
+        - status
+        - employeeId
+        - siteId
+        - label
+        - model
+        - appVersion
+        - enrolledAt
+        - lastSeenAt
+        - revokedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        mode:
+          $ref: "#/components/schemas/DeviceMode"
+        status:
+          $ref: "#/components/schemas/DeviceStatus"
+        employeeId:
+          type: [string, "null"]
+          format: uuid
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        label:
+          type: [string, "null"]
+        model:
+          type: string
+        appVersion:
+          type: string
+        enrolledAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: [string, "null"]
+          format: date-time
+        revokedAt:
+          type: [string, "null"]
+          format: date-time
+    DeviceList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Device"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+    DeviceRevocation:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 280
+
+    EventType:
+      type: string
+      enum: [clock-in, clock-out, break-start, break-end]
+    LocationVerdict:
+      type: string
+      enum: [inside, outside, inconclusive, not-evaluated]
+      description: |
+        `inconclusive` cuando la precisión declarada es mayor que el radio de
+        la sede. No se interpreta como fuera: abre una incidencia.
+    AttendanceEventSubmission:
+      type: object
+      additionalProperties: false
+      required: [envelope]
+      properties:
+        envelope:
+          $ref: "#/components/schemas/CompactJws"
+          description: |
+            Sobre firmado por el dispositivo con ES256. Su encabezado lleva en
+            `kid` el identificador del dispositivo y su carga es un
+            `AttendanceEventPayload`.
+          contentMediaType: application/jose
+          contentSchema:
+            $ref: "#/components/schemas/AttendanceEventPayload"
+    AttendanceBatchSubmission:
+      type: object
+      additionalProperties: false
+      required: [envelopes]
+      properties:
+        envelopes:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/CompactJws"
+    AttendanceEventPayload:
+      type: object
+      description: |
+        Carga del sobre firmado. No viaja como JSON suelto: va dentro del JWS,
+        de modo que el servidor conserva la evidencia tal como la firmó el
+        dispositivo y puede volver a verificarla.
+      additionalProperties: false
+      required: [envelopeVersion, idempotencyKey, sessionId, sequence, observedAt, timeZone, card, location, app]
+      properties:
+        envelopeVersion:
+          type: integer
+          const: 1
+        idempotencyKey:
+          type: string
+          format: uuid
+          description: Igual al encabezado `Idempotency-Key` cuando se envía un solo marcaje.
+        sessionId:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+          description: Consecutivo dentro de la sesión.
+        observedAt:
+          type: string
+          format: date-time
+          description: Hora del dispositivo al leer la tarjeta.
+        timeZone:
+          type: string
+          description: Zona IANA del dispositivo.
+        elapsedRealtimeMs:
+          type: integer
+          description: Reloj monotónico del dispositivo, para detectar cambios de hora.
+        declaredType:
+          $ref: "#/components/schemas/EventType"
+          description: Lo que la persona dijo estar marcando, si la app lo pregunta. El servidor decide el tipo final.
+        card:
+          type: object
+          additionalProperties: false
+          required: [scheme, proof]
+          properties:
+            scheme:
+              type: string
+              enum: [desfire-ev3-aes, uid-sha256]
+              description: |
+                `uid-sha256` es la señal no autenticada del prototipo y nunca
+                basta para aceptar un marcaje con datos reales.
+            proof:
+              type: string
+              description: Resultado de la autenticación de la tarjeta, en base64url.
+            keyVersion:
+              type: integer
+        location:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [latitude, longitude, accuracyMeters, capturedAt]
+              properties:
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+                accuracyMeters:
+                  type: number
+                capturedAt:
+                  type: string
+                  format: date-time
+                provider:
+                  type: string
+                mock:
+                  type: [boolean, "null"]
+            - type: "null"
+          description: Muestra tomada al marcar. Nula si no se pudo obtener.
+        locationUnavailableReason:
+          type: string
+          enum: [permission-denied, disabled, timeout]
+        integrityToken:
+          type: string
+        app:
+          type: object
+          additionalProperties: false
+          required: [version]
+          properties:
+            version:
+              type: string
+    AttendanceReceipt:
+      type: object
+      required:
+        - eventId
+        - idempotencyKey
+        - outcome
+        - type
+        - observedAt
+        - receivedAt
+        - employee
+        - site
+        - locationVerdict
+        - incident
+        - rejection
+      properties:
+        eventId:
+          type: [string, "null"]
+          format: uuid
+          description: Nulo cuando el marcaje se rechaza y no se crea.
+        idempotencyKey:
+          type: string
+          format: uuid
+        outcome:
+          type: string
+          enum: [accepted, accepted-with-incident, rejected]
+        type:
+          oneOf:
+            - $ref: "#/components/schemas/EventType"
+            - type: "null"
+        observedAt:
+          type: string
+          format: date-time
+        receivedAt:
+          type: string
+          format: date-time
+        employee:
+          oneOf:
+            - type: object
+              required: [displayName]
+              properties:
+                displayName:
+                  type: string
+            - type: "null"
+          description: Para que una terminal muestre a quién registró.
+        site:
+          oneOf:
+            - $ref: "#/components/schemas/SiteSummary"
+            - type: "null"
+        locationVerdict:
+          $ref: "#/components/schemas/LocationVerdict"
+        incident:
+          oneOf:
+            - type: object
+              required: [id, type]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                type:
+                  $ref: "#/components/schemas/IncidentType"
+            - type: "null"
+        rejection:
+          oneOf:
+            - type: object
+              required: [code, message]
+              properties:
+                code:
+                  type: string
+                  enum:
+                    - card-unknown
+                    - card-revoked
+                    - card-not-owner
+                    - signature-invalid
+                    - session-invalid
+                    - payload-invalid
+                    - too-old
+                message:
+                  type: string
+            - type: "null"
+    AttendanceBatchResult:
+      type: object
+      required: [receipts]
+      properties:
+        receipts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceReceipt"
+    AttendanceEvent:
+      type: object
+      required:
+        - id
+        - employeeId
+        - siteId
+        - deviceId
+        - deviceMode
+        - type
+        - outcome
+        - observedAt
+        - receivedAt
+        - delaySeconds
+        - locationVerdict
+        - accuracyMeters
+        - incidentIds
+        - payloadHash
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        deviceMode:
+          $ref: "#/components/schemas/DeviceMode"
+        type:
+          $ref: "#/components/schemas/EventType"
+        outcome:
+          type: string
+          enum: [accepted, accepted-with-incident]
+        observedAt:
+          type: string
+          format: date-time
+        receivedAt:
+          type: string
+          format: date-time
+        delaySeconds:
+          type: integer
+          description: Diferencia entre la hora observada y la de recepción.
+        locationVerdict:
+          $ref: "#/components/schemas/LocationVerdict"
+        accuracyMeters:
+          type: [number, "null"]
+        incidentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        payloadHash:
+          $ref: "#/components/schemas/Sha256Hex"
+    AttendanceEventList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceEvent"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+
+    RuleSetRef:
+      type: object
+      required: [id, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+    WeekTotals:
+      type: object
+      required: [workedMinutes, breakMinutes, ordinaryMinutes, overtimeMinutes]
+      properties:
+        workedMinutes:
+          type: integer
+        breakMinutes:
+          type: integer
+        ordinaryMinutes:
+          type: integer
+        overtimeMinutes:
+          type: integer
+    WorkSegment:
+      type: object
+      required: [id, kind, startAt, endAt, minutes, startEventId, endEventId, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [work, break]
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: [string, "null"]
+          format: date-time
+          description: Nulo mientras falte el marcaje que lo cierra.
+        minutes:
+          type: integer
+        startEventId:
+          type: string
+          format: uuid
+        endEventId:
+          type: [string, "null"]
+          format: uuid
+        version:
+          type: integer
+    AttendanceAlert:
+      type: object
+      required: [code, severity, message]
+      properties:
+        code:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, critical]
+        message:
+          type: string
+    WeekAttendance:
+      type: object
+      required: [employeeId, weekStart, timeZone, ruleSet, segments, totals, alerts, openIncidentIds, closure]
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        weekStart:
+          type: string
+          format: date
+        timeZone:
+          type: string
+        ruleSet:
+          $ref: "#/components/schemas/RuleSetRef"
+        segments:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkSegment"
+        totals:
+          $ref: "#/components/schemas/WeekTotals"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceAlert"
+        openIncidentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        closure:
+          oneOf:
+            - type: object
+              required: [id, version, status]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                version:
+                  type: integer
+                status:
+                  $ref: "#/components/schemas/WeekClosureStatus"
+            - type: "null"
+
+    IncidentType:
+      type: string
+      enum:
+        - duplicate
+        - missing-pair
+        - outside-window
+        - location-inconclusive
+        - clock-anomaly
+        - foreign-site
+        - late-sync
+    IncidentStatus:
+      type: string
+      enum: [open, resolved]
+    Adjustment:
+      type: object
+      additionalProperties: false
+      required: [kind]
+      description: Intención de corrección. No reemplaza el marcaje original.
+      properties:
+        kind:
+          type: string
+          enum: [add-event, exclude-event, retype-event]
+        eventId:
+          type: string
+          format: uuid
+          description: Marcaje afectado, en `exclude-event` y `retype-event`.
+        eventType:
+          $ref: "#/components/schemas/EventType"
+        occurredAt:
+          type: string
+          format: date-time
+          description: Hora del marcaje que se agrega, en `add-event`.
+    IncidentResolutionInput:
+      type: object
+      additionalProperties: false
+      required: [decision, reason]
+      properties:
+        decision:
+          type: string
+          enum: [justified, confirmed, adjusted]
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+        adjustment:
+          $ref: "#/components/schemas/Adjustment"
+    IncidentResolution:
+      type: object
+      required: [decision, reason, adjustment, resolvedBy, resolvedAt]
+      properties:
+        decision:
+          type: string
+          enum: [justified, confirmed, adjusted]
+        reason:
+          type: string
+        adjustment:
+          oneOf:
+            - $ref: "#/components/schemas/Adjustment"
+            - type: "null"
+        resolvedBy:
+          type: string
+          format: uuid
+        resolvedAt:
+          type: string
+          format: date-time
+    IncidentUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        assigneeUserId:
+          type: [string, "null"]
+          format: uuid
+        resolution:
+          $ref: "#/components/schemas/IncidentResolutionInput"
+    Incident:
+      type: object
+      required:
+        - id
+        - type
+        - severity
+        - status
+        - employeeId
+        - siteId
+        - eventIds
+        - openedAt
+        - assigneeUserId
+        - resolution
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/IncidentType"
+        severity:
+          type: string
+          enum: [low, medium, high]
+        status:
+          $ref: "#/components/schemas/IncidentStatus"
+        employeeId:
+          type: [string, "null"]
+          format: uuid
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        eventIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        openedAt:
+          type: string
+          format: date-time
+        assigneeUserId:
+          type: [string, "null"]
+          format: uuid
+        resolution:
+          oneOf:
+            - $ref: "#/components/schemas/IncidentResolution"
+            - type: "null"
+    IncidentList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Incident"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+
+    WeekClosureStatus:
+      type: string
+      enum: [closed, reopened]
+    WeekClosure:
+      type: object
+      required:
+        - id
+        - employeeId
+        - weekStart
+        - version
+        - status
+        - ruleSet
+        - totals
+        - hash
+        - closedAt
+        - closedBy
+        - acknowledgement
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        weekStart:
+          type: string
+          format: date
+        version:
+          type: integer
+        status:
+          $ref: "#/components/schemas/WeekClosureStatus"
+        ruleSet:
+          $ref: "#/components/schemas/RuleSetRef"
+        totals:
+          $ref: "#/components/schemas/WeekTotals"
+        hash:
+          $ref: "#/components/schemas/Sha256Hex"
+        closedAt:
+          type: string
+          format: date-time
+        closedBy:
+          type: string
+          format: uuid
+        acknowledgement:
+          oneOf:
+            - $ref: "#/components/schemas/Acknowledgement"
+            - type: "null"
+    WeekClosureCreate:
+      type: object
+      additionalProperties: false
+      required: [weekStart]
+      properties:
+        weekStart:
+          type: string
+          format: date
+        siteId:
+          type: string
+          format: uuid
+          description: Limita el cierre a una sede.
+        employeeIds:
+          type: array
+          maxItems: 500
+          items:
+            type: string
+            format: uuid
+    WeekClosureResult:
+      type: object
+      required: [weekStart, closed, blocked]
+      properties:
+        weekStart:
+          type: string
+          format: date
+        closed:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeekClosure"
+        blocked:
+          type: array
+          items:
+            type: object
+            required: [employeeId, reason, incidentIds]
+            properties:
+              employeeId:
+                type: string
+                format: uuid
+              reason:
+                type: string
+                enum: [open-incidents, open-segment]
+              incidentIds:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+    WeekClosureList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeekClosure"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+    WeekClosureReopen:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+    AcknowledgementCreate:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [agreed, objected]
+        note:
+          type: string
+          maxLength: 500
+    Acknowledgement:
+      type: object
+      required: [id, closureId, type, note, at, evidenceHash]
+      properties:
+        id:
+          type: string
+          format: uuid
+        closureId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [agreed, objected]
+        note:
+          type: [string, "null"]
+        at:
+          type: string
+          format: date-time
+        evidenceHash:
+          $ref: "#/components/schemas/Sha256Hex"
+
+    RuleSet:
+      type: object
+      required: [id, jurisdiction, version, validFrom, validTo, weeklyOrdinaryMaxMinutes, parameters, sources]
+      properties:
+        id:
+          type: string
+          format: uuid
+        jurisdiction:
+          type: string
+        version:
+          type: integer
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: [string, "null"]
+          format: date
+        weeklyOrdinaryMaxMinutes:
+          type: integer
+        parameters:
+          type: object
+          description: Resto de los topes y bandas de esa vigencia, por nombre.
+          additionalProperties: true
+        sources:
+          type: array
+          items:
+            type: string
+    RuleSetList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleSet"
+
+    ExportCreate:
+      type: object
+      additionalProperties: false
+      required: [weekStart, format]
+      properties:
+        weekStart:
+          type: string
+          format: date
+        siteId:
+          type: string
+          format: uuid
+        format:
+          type: string
+          enum: [csv]
+    Export:
+      type: object
+      required:
+        - id
+        - status
+        - weekStart
+        - siteId
+        - format
+        - timeZone
+        - ruleSetVersion
+        - manifestHash
+        - downloadUrl
+        - expiresAt
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, ready, failed, expired]
+        weekStart:
+          type: string
+          format: date
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        format:
+          type: string
+          enum: [csv]
+        timeZone:
+          type: string
+        ruleSetVersion:
+          type: integer
+        manifestHash:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256Hex"
+            - type: "null"
+        downloadUrl:
+          type: [string, "null"]
+          format: uri
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    AuditEntry:
+      type: object
+      required: [id, at, actor, action, target, correlationId, metadata]
+      properties:
+        id:
+          type: string
+          format: uuid
+        at:
+          type: string
+          format: date-time
+        actor:
+          type: object
+          required: [type, id]
+          properties:
+            type:
+              type: string
+              enum: [user, device, system]
+            id:
+              type: [string, "null"]
+              format: uuid
+        action:
+          type: string
+        target:
+          type: object
+          required: [type, id]
+          properties:
+            type:
+              type: string
+            id:
+              type: [string, "null"]
+              format: uuid
+        correlationId:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          description: Datos de contexto sin secretos ni cargas completas.
+          additionalProperties: true
+    AuditEntryList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEntry"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+
+    IntegrationCheckpoint:
+      type: object
+      required: [sourceId, type, status, cursor, sourceVersion, updatedAt]
+      properties:
+        sourceId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [csv, api, connector]
+        status:
+          type: string
+          enum: [active, paused, error]
+        cursor:
+          type: [string, "null"]
+        sourceVersion:
+          type: [string, "null"]
+        updatedAt:
+          type: string
+          format: date-time
+    IntegrationCheckpointList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IntegrationCheckpoint"

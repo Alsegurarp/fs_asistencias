@@ -1,0 +1,11 @@
+# Reglas de lint del contrato. Se ejecuta con:
+#   docker compose --profile tools run --rm contract-lint
+extends:
+  - recommended
+rules:
+  # El repositorio todavía no declara licencia.
+  info-license: off
+  # Cada cuerpo lleva un ejemplo y el ejemplo debe cumplir su esquema.
+  no-invalid-media-type-examples: error
+  no-unused-components: error
+  operation-4xx-response: error
