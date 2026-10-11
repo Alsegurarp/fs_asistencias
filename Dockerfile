@@ -1,4 +1,4 @@
-FROM gradle:9.2.1-jdk25-alpine AS build
+FROM gradle:9.8.1-jdk25-alpine@sha256:88b059d39a3971709550fc721c029b0c54ab785dfe4fa4169ae04017cf2c22a4 AS build
 WORKDIR /workspace
 
 COPY settings.gradle.kts build.gradle.kts gradle.properties ./
@@ -8,7 +8,7 @@ RUN gradle :backend:dependencies --no-daemon
 COPY backend backend
 RUN gradle :backend:test :backend:bootJar --no-daemon
 
-FROM eclipse-temurin:25.0.1_8-jre-alpine
+FROM eclipse-temurin:25.0.4.1_1-jre-alpine-3.24@sha256:3c0a9084927a221ccd1d007fcaf614465672c0af37aaa834c5184483afe56d61
 RUN addgroup -S app && adduser -S -G app app
 WORKDIR /app
 COPY --from=build --chown=app:app /workspace/backend/build/libs/backend.jar /app/app.jar

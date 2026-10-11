@@ -1,10 +1,14 @@
 spring:
   application:
     name: zenit-backend
+  config:
+    # Lee los secretos montados como archivo; el nombre del archivo es la propiedad.
+    import: optional:configtree:/run/secrets/
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:zenit}
     username: ${DB_USER:zenit_app}
-    password: ${DB_PASSWORD:solo-desarrollo-local}
+    # Sin valor por defecto: sin secreto la aplicación no arranca.
+    password: ${DB_PASSWORD:${db_password}}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 1
@@ -18,11 +22,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health
   endpoint:
     health:
+      show-details: never
       probes:
         enabled: true
 
 server:
   shutdown: graceful
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
