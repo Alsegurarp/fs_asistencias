@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo, aunque el
@@ -17,9 +17,11 @@ info:
       `correlationId`.
     - Listas paginadas por cursor: `cursor` y `limit` en la consulta,
       `nextCursor` en la respuesta.
-    - Los nombres de rol son los del producto: `operador-saas`,
-      `admin-empresa`, `rh`, `supervisor`, `trabajador`, `auditor` y
+    - Los nombres de rol son los del producto: `operador_saas`,
+      `admin_empresa`, `rh`, `supervisor`, `trabajador`, `auditor` y
       `conector`. Cada operación declara los suyos en `x-roles`.
+    - Los valores enumerados y los códigos van en minúsculas con guion bajo,
+      para que los clientes generados obtengan nombres limpios.
     - Todos los ejemplos son ficticios.
 
     Fuera de esta versión: administración de usuarios y roles, que depende
@@ -77,7 +79,7 @@ paths:
       tags: [identidad]
       operationId: getCurrentUser
       summary: Devuelve la persona autenticada, su empresa y sus roles
-      x-roles: [operador-saas, admin-empresa, rh, supervisor, trabajador, auditor]
+      x-roles: [operador_saas, admin_empresa, rh, supervisor, trabajador, auditor]
       responses:
         "200":
           description: Sesión vigente
@@ -103,7 +105,7 @@ paths:
       tags: [empresa]
       operationId: listTenants
       summary: Lista las empresas dadas de alta
-      x-roles: [operador-saas]
+      x-roles: [operador_saas]
       parameters:
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
@@ -132,7 +134,7 @@ paths:
       tags: [empresa]
       operationId: createTenant
       summary: Da de alta una empresa
-      x-roles: [operador-saas]
+      x-roles: [operador_saas]
       requestBody:
         required: true
         content:
@@ -173,7 +175,7 @@ paths:
       tags: [empresa]
       operationId: getTenant
       summary: Devuelve la empresa de quien llama
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       responses:
         "200":
           description: Empresa actual
@@ -197,7 +199,7 @@ paths:
       tags: [empresa]
       operationId: updateTenant
       summary: Cambia nombre, zona horaria o inicio de semana de la empresa
-      x-roles: [admin-empresa]
+      x-roles: [admin_empresa]
       requestBody:
         required: true
         content:
@@ -233,7 +235,7 @@ paths:
       tags: [empresa]
       operationId: listSites
       summary: Lista las sedes de la empresa
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
@@ -263,7 +265,7 @@ paths:
       tags: [empresa]
       operationId: createSite
       summary: Crea una sede con su geocerca circular
-      x-roles: [admin-empresa]
+      x-roles: [admin_empresa]
       requestBody:
         required: true
         content:
@@ -306,7 +308,7 @@ paths:
       tags: [empresa]
       operationId: getSite
       summary: Devuelve una sede
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       responses:
         "200":
           description: Sede
@@ -331,7 +333,7 @@ paths:
       tags: [empresa]
       operationId: updateSite
       summary: Cambia una sede o la desactiva
-      x-roles: [admin-empresa]
+      x-roles: [admin_empresa]
       requestBody:
         required: true
         content:
@@ -370,7 +372,7 @@ paths:
       tags: [empresa]
       operationId: listSchedules
       summary: Lista los horarios de la empresa
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
@@ -404,7 +406,7 @@ paths:
       operationId: createSchedule
       summary: Crea un horario con vigencia
       description: Un horario no se edita. Para cambiarlo se crea otro con una vigencia nueva.
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -453,7 +455,7 @@ paths:
       tags: [empresa]
       operationId: getSchedule
       summary: Devuelve un horario
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       responses:
         "200":
           description: Horario
@@ -483,7 +485,7 @@ paths:
       tags: [personas]
       operationId: listEmployees
       summary: Lista el padrón de personas
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: status
           in: query
@@ -526,7 +528,7 @@ paths:
       tags: [personas]
       operationId: createEmployee
       summary: Da de alta una persona
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -574,7 +576,7 @@ paths:
       tags: [personas]
       operationId: getEmployee
       summary: Devuelve una persona
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       responses:
         "200":
           description: Persona
@@ -604,7 +606,7 @@ paths:
       operationId: updateEmployee
       summary: Cambia datos de una persona o registra su baja
       description: La baja es lógica. Nunca borra marcajes ni cierres.
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -651,7 +653,7 @@ paths:
       operationId: assignSchedule
       summary: Asigna un horario a una persona desde una fecha
       description: Cierra la asignación anterior el día previo a `validFrom`.
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -690,7 +692,7 @@ paths:
       tags: [jornada]
       operationId: getEmployeeWeek
       summary: Devuelve la semana calculada de una persona
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - $ref: "#/components/parameters/Week"
       responses:
@@ -737,7 +739,7 @@ paths:
       description: |
         Con `dryRun` en verdadero sólo valida y devuelve qué filas entrarían.
         La importación es idempotente por origen e identificador externo.
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -789,7 +791,7 @@ paths:
       tags: [personas]
       operationId: getImport
       summary: Devuelve el resultado de una importación
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       responses:
         "200":
           description: Importación
@@ -809,7 +811,7 @@ paths:
                 errors:
                   - row: 4
                     externalId: E-0003
-                    code: site-unknown
+                    code: site_unknown
                     message: La sede indicada no existe.
                 manifestHash: null
                 createdAt: "2026-10-05T15:40:00Z"
@@ -823,7 +825,7 @@ paths:
       tags: [credenciales]
       operationId: listCards
       summary: Lista las tarjetas de la empresa
-      x-roles: [admin-empresa, rh, auditor]
+      x-roles: [admin_empresa, rh, auditor]
       parameters:
         - name: status
           in: query
@@ -858,7 +860,7 @@ paths:
       tags: [credenciales]
       operationId: registerCard
       summary: Registra una tarjeta en el inventario
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -903,7 +905,7 @@ paths:
         Si la persona ya tiene una tarjeta, la operación cierra esa asignación,
         marca la tarjeta anterior como reemplazada y activa la nueva en la
         misma transacción. Una tarjeta revocada no vuelve a asignarse.
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -943,7 +945,7 @@ paths:
       operationId: revokeCard
       summary: Revoca una tarjeta o la reporta perdida o dañada
       description: Desde ese momento la tarjeta no marca. El intento queda en auditoría.
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -984,7 +986,7 @@ paths:
         La modalidad se fija aquí. `personal` liga el dispositivo a una persona
         y exige `employeeId`; `terminal` lo liga a una sede y exige `siteId`.
         El código sólo aparece en esta respuesta.
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -1087,7 +1089,7 @@ paths:
                 type: https://zenit.invalid/problems/enrollment-code-unusable
                 title: Código no utilizable
                 status: 410
-                code: enrollment-code-unusable
+                code: enrollment_code_unusable
                 correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
         "422":
           $ref: "#/components/responses/Unprocessable"
@@ -1099,7 +1101,7 @@ paths:
       tags: [credenciales]
       operationId: listDevices
       summary: Lista los dispositivos enrolados
-      x-roles: [admin-empresa, rh, auditor]
+      x-roles: [admin_empresa, rh, auditor]
       parameters:
         - name: mode
           in: query
@@ -1145,7 +1147,7 @@ paths:
       operationId: revokeDevice
       summary: Revoca un dispositivo
       description: Invalida su clave. Sus marcajes anteriores se conservan.
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -1225,7 +1227,7 @@ paths:
       operationId: listAttendanceEvents
       summary: Lista los marcajes con su evidencia minimizada
       description: Devuelve el veredicto de ubicación, no la coordenada.
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: employeeId
           in: query
@@ -1265,7 +1267,7 @@ paths:
                     siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
                     deviceId: 1c3e5a7b-9d0f-4a2c-8e4b-6d8f0a2c4e6b
                     deviceMode: personal
-                    type: clock-in
+                    type: clock_in
                     outcome: accepted
                     observedAt: "2026-10-05T13:00:00Z"
                     receivedAt: "2026-10-05T13:00:01Z"
@@ -1321,10 +1323,10 @@ paths:
                 receivedAt: "2026-10-05T13:00:01Z"
                 employee: null
                 site: null
-                locationVerdict: not-evaluated
+                locationVerdict: not_evaluated
                 incident: null
                 rejection:
-                  code: card-not-owner
+                  code: card_not_owner
                   message: La tarjeta no pertenece a quien tiene este dispositivo.
         "201":
           description: Marcaje guardado
@@ -1336,7 +1338,7 @@ paths:
                 eventId: 8b0d2f4a-6c8e-4a0c-9e2b-4d6f8a0c2e4b
                 idempotencyKey: 2d4f6a8c-0e2b-4d6f-8a0c-2e4b6d8f0a2c
                 outcome: accepted
-                type: clock-in
+                type: clock_in
                 observedAt: "2026-10-05T13:00:00Z"
                 receivedAt: "2026-10-05T13:00:01Z"
                 employee:
@@ -1387,8 +1389,8 @@ paths:
                 receipts:
                   - eventId: 3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c
                     idempotencyKey: 9a1c3e5a-7c9e-4a1c-8e3a-5c7e9a1c3e5a
-                    outcome: accepted-with-incident
-                    type: clock-out
+                    outcome: accepted_with_incident
+                    type: clock_out
                     observedAt: "2026-10-05T21:00:00Z"
                     receivedAt: "2026-10-06T12:55:03Z"
                     employee:
@@ -1399,7 +1401,7 @@ paths:
                     locationVerdict: inconclusive
                     incident:
                       id: 6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e
-                      type: late-sync
+                      type: late_sync
                     rejection: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1463,7 +1465,7 @@ paths:
       tags: [jornada]
       operationId: listIncidents
       summary: Lista las incidencias
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: status
           in: query
@@ -1496,7 +1498,7 @@ paths:
               example:
                 items:
                   - id: 6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e
-                    type: late-sync
+                    type: late_sync
                     severity: low
                     status: open
                     employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
@@ -1518,7 +1520,7 @@ paths:
       tags: [jornada]
       operationId: getIncident
       summary: Devuelve una incidencia
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       responses:
         "200":
           description: Incidencia
@@ -1528,7 +1530,7 @@ paths:
                 $ref: "#/components/schemas/Incident"
               example:
                 id: 6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e
-                type: late-sync
+                type: late_sync
                 severity: low
                 status: open
                 employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
@@ -1548,7 +1550,7 @@ paths:
       description: |
         Resolver exige una decisión y un motivo. Un ajuste no edita el marcaje:
         agrega una intención y produce una versión nueva del cálculo.
-      x-roles: [admin-empresa, rh, supervisor]
+      x-roles: [admin_empresa, rh, supervisor]
       requestBody:
         required: true
         content:
@@ -1568,7 +1570,7 @@ paths:
                 $ref: "#/components/schemas/Incident"
               example:
                 id: 6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e
-                type: late-sync
+                type: late_sync
                 severity: low
                 status: resolved
                 employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
@@ -1598,7 +1600,7 @@ paths:
       tags: [jornada]
       operationId: listWeekClosures
       summary: Lista los cierres semanales
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - $ref: "#/components/parameters/Week"
         - name: employeeId
@@ -1646,7 +1648,7 @@ paths:
       description: |
         Congela el cálculo de cada persona con la versión de reglas vigente.
         Quien tenga incidencias abiertas no se cierra y aparece en `blocked`.
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       requestBody:
         required: true
         content:
@@ -1697,7 +1699,7 @@ paths:
       tags: [jornada]
       operationId: getWeekClosure
       summary: Devuelve un cierre semanal
-      x-roles: [admin-empresa, rh, supervisor, auditor, trabajador]
+      x-roles: [admin_empresa, rh, supervisor, auditor, trabajador]
       responses:
         "200":
           description: Cierre
@@ -1736,7 +1738,7 @@ paths:
       operationId: reopenWeekClosure
       summary: Reabre un cierre con motivo
       description: Conserva la versión cerrada. El siguiente cierre crea una versión nueva.
-      x-roles: [admin-empresa]
+      x-roles: [admin_empresa]
       requestBody:
         required: true
         content:
@@ -1829,7 +1831,7 @@ paths:
       description: |
         Los topes son filas con vigencia y fuente, no constantes. El ejemplo
         sólo ilustra la forma: los valores vigentes salen de la tabla.
-      x-roles: [admin-empresa, rh, supervisor, auditor]
+      x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: effectiveOn
           in: query
@@ -1864,7 +1866,7 @@ paths:
       operationId: createExport
       summary: Solicita el exporte de una semana cerrada
       description: Sólo exporta cierres. El archivo declara empresa, periodo, zona horaria, versión de reglas y hash.
-      x-roles: [admin-empresa, rh, auditor]
+      x-roles: [admin_empresa, rh, auditor]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -1910,7 +1912,7 @@ paths:
       operationId: getExport
       summary: Devuelve el estado de un exporte y su enlace de descarga
       description: El enlace es de un solo uso y expira.
-      x-roles: [admin-empresa, rh, auditor]
+      x-roles: [admin_empresa, rh, auditor]
       responses:
         "200":
           description: Exporte
@@ -1940,7 +1942,7 @@ paths:
       tags: [auditoria]
       operationId: listAuditEntries
       summary: Lista las acciones registradas en la bitácora
-      x-roles: [admin-empresa, auditor]
+      x-roles: [admin_empresa, auditor]
       parameters:
         - name: action
           in: query
@@ -1972,9 +1974,9 @@ paths:
                     actor:
                       type: user
                       id: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
-                    action: week-closure.created
+                    action: week_closure.created
                     target:
-                      type: week-closure
+                      type: week_closure
                       id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
                     correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
                     metadata: {}
@@ -1989,7 +1991,7 @@ paths:
       tags: [integraciones]
       operationId: listIntegrationCheckpoints
       summary: Lista las fuentes del padrón y su último punto de sincronización
-      x-roles: [admin-empresa, rh]
+      x-roles: [admin_empresa, rh]
       responses:
         "200":
           description: Fuentes del padrón
@@ -2162,7 +2164,7 @@ components:
             type: https://zenit.invalid/problems/not-found
             title: No encontrado
             status: 404
-            code: not-found
+            code: not_found
             correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
     Conflict:
       description: El estado actual no permite la operación
@@ -2191,7 +2193,7 @@ components:
             correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
             errors:
               - field: radiusMeters
-                code: out-of-range
+                code: out_of_range
                 message: Debe estar entre 20 y 2000.
     TooManyRequests:
       description: Se excedió la cuota de peticiones
@@ -2203,7 +2205,7 @@ components:
             type: https://zenit.invalid/problems/rate-limited
             title: Demasiadas peticiones
             status: 429
-            code: rate-limited
+            code: rate_limited
             correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
 
   schemas:
@@ -2267,7 +2269,7 @@ components:
 
     Role:
       type: string
-      enum: [operador-saas, admin-empresa, rh, supervisor, trabajador, auditor, conector]
+      enum: [operador_saas, admin_empresa, rh, supervisor, trabajador, auditor, conector]
     DayOfWeek:
       type: string
       enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
@@ -3087,10 +3089,10 @@ components:
 
     EventType:
       type: string
-      enum: [clock-in, clock-out, break-start, break-end]
+      enum: [clock_in, clock_out, break_start, break_end]
     LocationVerdict:
       type: string
-      enum: [inside, outside, inconclusive, not-evaluated]
+      enum: [inside, outside, inconclusive, not_evaluated]
       description: |
         `inconclusive` cuando la precisión declarada es mayor que el radio de
         la sede. No se interpreta como fuera: abre una incidencia.
@@ -3162,9 +3164,9 @@ components:
           properties:
             scheme:
               type: string
-              enum: [desfire-ev3-aes, uid-sha256]
+              enum: [desfire_ev3_aes, uid_sha256]
               description: |
-                `uid-sha256` es la señal no autenticada del prototipo y nunca
+                `uid_sha256` es la señal no autenticada del prototipo y nunca
                 basta para aceptar un marcaje con datos reales.
             proof:
               type: string
@@ -3194,7 +3196,7 @@ components:
           description: Muestra tomada al marcar. Nula si no se pudo obtener.
         locationUnavailableReason:
           type: string
-          enum: [permission-denied, disabled, timeout]
+          enum: [permission_denied, disabled, timeout]
         integrityToken:
           type: string
         app:
@@ -3228,7 +3230,7 @@ components:
           format: uuid
         outcome:
           type: string
-          enum: [accepted, accepted-with-incident, rejected]
+          enum: [accepted, accepted_with_incident, rejected]
         type:
           oneOf:
             - $ref: "#/components/schemas/EventType"
@@ -3273,13 +3275,13 @@ components:
                 code:
                   type: string
                   enum:
-                    - card-unknown
-                    - card-revoked
-                    - card-not-owner
-                    - signature-invalid
-                    - session-invalid
-                    - payload-invalid
-                    - too-old
+                    - card_unknown
+                    - card_revoked
+                    - card_not_owner
+                    - signature_invalid
+                    - session_invalid
+                    - payload_invalid
+                    - too_old
                 message:
                   type: string
             - type: "null"
@@ -3327,7 +3329,7 @@ components:
           $ref: "#/components/schemas/EventType"
         outcome:
           type: string
-          enum: [accepted, accepted-with-incident]
+          enum: [accepted, accepted_with_incident]
         observedAt:
           type: string
           format: date-time
@@ -3465,12 +3467,12 @@ components:
       type: string
       enum:
         - duplicate
-        - missing-pair
-        - outside-window
-        - location-inconclusive
-        - clock-anomaly
-        - foreign-site
-        - late-sync
+        - missing_pair
+        - outside_window
+        - location_inconclusive
+        - clock_anomaly
+        - foreign_site
+        - late_sync
     IncidentStatus:
       type: string
       enum: [open, resolved]
@@ -3482,17 +3484,17 @@ components:
       properties:
         kind:
           type: string
-          enum: [add-event, exclude-event, retype-event]
+          enum: [add_event, exclude_event, retype_event]
         eventId:
           type: string
           format: uuid
-          description: Marcaje afectado, en `exclude-event` y `retype-event`.
+          description: Marcaje afectado, en `exclude_event` y `retype_event`.
         eventType:
           $ref: "#/components/schemas/EventType"
         occurredAt:
           type: string
           format: date-time
-          description: Hora del marcaje que se agrega, en `add-event`.
+          description: Hora del marcaje que se agrega, en `add_event`.
     IncidentResolutionInput:
       type: object
       additionalProperties: false
@@ -3671,20 +3673,23 @@ components:
         blocked:
           type: array
           items:
-            type: object
-            required: [employeeId, reason, incidentIds]
-            properties:
-              employeeId:
-                type: string
-                format: uuid
-              reason:
-                type: string
-                enum: [open-incidents, open-segment]
-              incidentIds:
-                type: array
-                items:
-                  type: string
-                  format: uuid
+            $ref: "#/components/schemas/BlockedClosure"
+    BlockedClosure:
+      type: object
+      description: Persona que no se pudo cerrar y por qué.
+      required: [employeeId, reason, incidentIds]
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          enum: [open_incidents, open_segment]
+        incidentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
     WeekClosureList:
       type: object
       required: [items, nextCursor]
@@ -3757,8 +3762,11 @@ components:
           type: integer
         parameters:
           type: object
-          description: Resto de los topes y bandas de esa vigencia, por nombre.
-          additionalProperties: true
+          description: |
+            Resto de los topes y bandas de esa vigencia, por nombre. Cada valor
+            va como texto; el nombre dice su unidad.
+          additionalProperties:
+            type: string
         sources:
           type: array
           items:
@@ -3870,8 +3878,9 @@ components:
           format: uuid
         metadata:
           type: object
-          description: Datos de contexto sin secretos ni cargas completas.
-          additionalProperties: true
+          description: Datos de contexto como texto, sin secretos ni cargas completas.
+          additionalProperties:
+            type: string
     AuditEntryList:
       type: object
       required: [items, nextCursor]

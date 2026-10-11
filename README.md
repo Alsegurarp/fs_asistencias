@@ -67,6 +67,13 @@ El primero valida el contrato y sus ejemplos. El segundo busca secretos en todo
 el historial de Git; conviene correrlo antes de cada push, porque el
 repositorio es público.
 
+El contrato se probó generando un cliente Kotlin con OpenAPI Generator 7.26.0
+(Retrofit y kotlinx.serialization) y los tipos de TypeScript con
+openapi-typescript 7.13.0; ambos compilan. En Kotlin hay que excluir
+`infrastructure/ApiClient.kt` con `.openapi-generator-ignore`: el contrato
+declara dos credenciales de tipo bearer y el generador duplica su ayudante. No
+hace falta, porque la app firma su propia aserción con un interceptor.
+
 ## Desarrollo exclusivamente con Docker
 
 - El host se utiliza únicamente para Docker, Docker Compose, Git y el editor.
