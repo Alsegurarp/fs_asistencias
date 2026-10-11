@@ -123,6 +123,11 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.POST, "/api/v1/week-closures/{closureId}/reopen").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/week-closures/{closureId}/acknowledgements").hasAnyRole(worker, device)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/rule-sets").hasAnyRole(admin, rh, supervisor, auditor)
+                // Exportes y fuentes del padrón.
+                it.requestMatchers(HttpMethod.POST, "/api/v1/exports").hasAnyRole(admin, rh, auditor)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/exports/{exportId}", "/api/v1/exports/{exportId}/download")
+                    .hasAnyRole(admin, rh, auditor)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/integrations/checkpoints").hasAnyRole(admin, rh)
                 it.anyRequest().denyAll()
             }
             .oauth2ResourceServer {

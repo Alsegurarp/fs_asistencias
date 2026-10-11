@@ -262,6 +262,37 @@ class DatabaseRolesIT {
     }
 
     @Test
+    fun `jobs, exports and sources are never deleted, and what was asked for is never rewritten`() {
+        asApp().use { db ->
+            for (table in listOf("job", "export", "integration_source", "integration_checkpoint")) {
+                assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM $table") } }, table)
+            }
+            // De un trabajo cambia su avance, nunca qué es ni a qué apunta.
+            val frozen = mapOf(
+                "job" to listOf("type = 'otro'", "reference_id = gen_random_uuid()", "max_attempts = 99", "tenant_id = null"),
+                // De un exporte cambia su resultado, nunca lo que se pidió ni quién lo pidió.
+                "export" to listOf(
+                    "week_start = DATE '2026-01-05'", "site_id = null", "idempotency_key = gen_random_uuid()", "requested_by = gen_random_uuid()",
+                    "request_sha256 = repeat('0', 64)", "rule_set_version = 9", "time_zone = 'UTC'", "created_at = now()",
+                ),
+                "integration_source" to listOf("type = 'api'"),
+                "integration_checkpoint" to listOf("source_id = gen_random_uuid()"),
+            )
+            for ((table, changes) in frozen) {
+                for (change in changes) {
+                    assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE $table SET $change") } }, "$table: $change")
+                }
+            }
+            // Lo que sí puede cambiar: sin filas, la orden pasa sin error de permiso.
+            db.createStatement().use {
+                it.execute("UPDATE job SET status = 'done' WHERE false")
+                it.execute("UPDATE export SET status = 'expired', content = null WHERE false")
+                it.execute("UPDATE integration_checkpoint SET sync_cursor = 'x' WHERE false")
+            }
+        }
+    }
+
+    @Test
     fun `a directory record cannot point at another company's data`() {
         asApp().use { db ->
             val one = db.newTenant()

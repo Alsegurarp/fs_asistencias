@@ -62,7 +62,8 @@ Cada conexión usa el rol con menos permisos que le sirve.
 - La evidencia sólo se agrega. Sobre `attendance_event` y `audit_log` el
   backend puede insertar y leer, no corregir ni borrar. Lo mismo vale para un
   ajuste y para un acuse. De una incidencia y de un cierre sólo puede cambiar
-  su atención y su estado, columna por columna: nunca lo que dicen.
+  su atención y su estado, columna por columna: nunca lo que dicen. De un
+  trabajo cambia su avance y de un exporte su resultado, nunca lo que se pidió.
 - Las reglas laborales (`rule_set`) sólo se leen. Cambian con una migración.
 - Toda tabla de una empresa lleva `tenant_id`, y sus llaves foráneas lo
   incluyen: un registro no puede apuntar a datos de otra empresa.
@@ -83,16 +84,22 @@ El segundo comando retira la base de pruebas sin tocar el entorno levantado.
 Una prueba de integración lleva `@Tag("integration")` y comprueba también lo
 que debe fallar: el caso negativo es parte de la prueba.
 
-`ApiIT`, `DirectoryIT`, `CaptureIT` y `WorkdayIT` recorren el API por HTTP con
-dos empresas y tokens firmados por una clave de prueba, que el backend valida
-como los del proveedor de identidad. Comparten `ApiTestBase`. `CaptureTestBase`
-simula lo que hace la app: genera su clave, se activa, firma su aserción y
-firma cada marcaje. Una ruta nueva agrega su caso de aislamiento entre empresas
-y su fila en la matriz de roles.
+`ApiIT`, `DirectoryIT`, `CaptureIT`, `WorkdayIT` y `ExportsIT` recorren el API
+por HTTP con dos empresas y tokens firmados por una clave de prueba, que el
+backend valida como los del proveedor de identidad. Comparten `ApiTestBase`.
+`CaptureTestBase` simula lo que hace la app: genera su clave, se activa, firma
+su aserción y firma cada marcaje. Una ruta nueva agrega su caso de aislamiento
+entre empresas y su fila en la matriz de roles.
 
-`WorkdayIT` necesita una semana terminada cuyos marcajes todavía se acepten.
-Por eso cada empresa de esa prueba empieza su semana el día en que corre, y
-ahí el umbral de la marca tardía se aleja para que no dependa de la hora.
+`WorkdayIT` y `ExportsIT` necesitan una semana terminada cuyos marcajes todavía
+se acepten. Por eso cada empresa de esas pruebas empieza su semana el día en
+que corren, y ahí el umbral de la marca tardía se aleja para que no dependa de
+la hora. Lo comparten en `WorkdayTestBase`.
+
+En las pruebas los trabajos no corren solos: `zenit.jobs.enabled` va apagado y
+cada prueba llama a `jobWorker` cuando le toca, sin esperas. `JobsIT` prueba el
+trabajador con un trabajo que falla a propósito, y simula el paso del tiempo
+moviendo la fecha del trabajo en la base.
 
 ## Identidad
 
@@ -239,6 +246,35 @@ guarda hasta que se cierra.
   no puede, y el cierre de otra persona no existe para él.
 - Cambiar un tope es una migración nueva que agrega una versión de `rule_set`;
   las semanas ya cerradas conservan la versión con la que se cerraron.
+
+## Exportes, trabajos y fuentes del padrón
+
+Un exporte saca los cierres vigentes de una semana a un archivo. Pedirlo sólo
+lo encola; lo prepara un trabajo.
+
+- Los trabajos viven en la tabla `job`. Un proceso toma uno por un tiempo; si
+  falla, lo reintenta esperando cada vez el doble, y tras cinco intentos lo
+  abandona y deja constancia en lo que lo esperaba. Si el proceso muere, otro
+  lo toma cuando vence su plazo. Dos procesos nunca toman el mismo trabajo.
+  Del error sólo se guarda su clase, nunca su mensaje.
+- Un tipo de trabajo nuevo implementa `JobHandler` y se encola con
+  `JobRepository.enqueue`. El trabajo no lleva datos: apunta a un registro.
+- El archivo se guarda en la base mientras se puede descargar, quince minutos
+  por defecto (`EXPORTS_TTL_MINUTES`). Se descarga una sola vez, con la misma
+  credencial y los mismos roles que el exporte; después se descarta. Quedan
+  su manifiesto y sus huellas, y en la bitácora quién lo descargó.
+- El manifiesto declara empresa, semana, la huella del archivo y la de cada
+  cierre que entró: liga lo exportado con lo cerrado. Su propia huella se
+  vuelve a calcular desde la base.
+- Plantilla 1 del archivo: CSV en UTF-8 con marca de orden de bytes y fin de
+  línea CRLF, una fila por cierre. A la celda que una hoja de cálculo tomaría
+  por fórmula se le antepone un apóstrofo. Cambiar las columnas sube
+  `TEMPLATE_VERSION` en `ExportCsv` y se documenta en el contrato.
+- Las fuentes del padrón dicen de dónde viene y hasta dónde se sincronizó.
+  Hoy sólo existe la carga por archivo: aparece al aplicar la primera y cada
+  carga aplicada mueve su punto. El conector todavía no existe.
+- `JOBS_ENABLED=false` apaga el proceso que da las vueltas; sirve para un
+  paso que no debe atender trabajos.
 
 ## Seguridad del entorno local
 

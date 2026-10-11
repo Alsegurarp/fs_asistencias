@@ -1,11 +1,13 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.8.0
+  version: 0.9.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
-    el portal web y la app Android. Describe el recorrido completo, aunque el
-    backend todavía no implementa exportes ni integraciones.
+    el portal web y la app Android. Describe el recorrido completo y el backend
+    atiende todas sus operaciones. Dos cosas no existen todavía detrás de
+    ellas: la verificación de la tarjeta real, y otra fuente del padrón que no
+    sea la carga por archivo.
 
     Convenciones:
 
@@ -2240,7 +2242,31 @@ paths:
       tags: [exportes]
       operationId: createExport
       summary: Solicita el exporte de una semana cerrada
-      description: Sólo exporta cierres. El archivo declara empresa, periodo, zona horaria, versión de reglas y hash.
+      description: |
+        Sólo exporta cierres vigentes: quien no está cerrado esa semana no
+        entra al archivo. Pedirlo lo deja en `queued`; lo prepara un trabajo y
+        hay que consultar `getExport` hasta verlo en `ready` o en `failed`.
+
+        `weekStart` admite cualquier fecha de la semana. `siteId` lo limita a
+        las personas de una sede. Responde 422 con el error `no_closed_weeks`
+        si esa semana, o esa sede, no tiene ningún cierre vigente.
+
+        La misma `Idempotency-Key` devuelve el mismo exporte; con otro
+        contenido responde 409 con `code` `idempotency_conflict`.
+
+        Plantilla 1 del archivo: CSV en UTF-8 con marca de orden de bytes,
+        para que una hoja de cálculo lea bien los acentos, y fin de línea
+        CRLF. Una fila por cierre, ordenadas por identificador externo, con
+        estas columnas: `tenant_slug`, `week_start`, `time_zone`,
+        `rule_set_jurisdiction`, `rule_set_version`, `external_id`,
+        `display_name`, `site_name`, `closure_version`, `worked_minutes`,
+        `break_minutes`, `ordinary_minutes`, `overtime_minutes`,
+        `acknowledgement`, `closed_at` y `closure_hash`. Cada fila declara así
+        empresa, periodo, zona horaria, versión de reglas y la huella del
+        cierre del que salió. El texto va entre comillas; a la celda que
+        empieza con `=`, `+`, `-`, `@`, tabulador o salto de línea se le
+        antepone un apóstrofo, para que una hoja de cálculo no la ejecute
+        como fórmula.
       x-roles: [admin_empresa, rh, auditor]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -2268,7 +2294,9 @@ paths:
                 format: csv
                 timeZone: America/Mexico_City
                 ruleSetVersion: 1
+                rowCount: null
                 manifestHash: null
+                fileHash: null
                 downloadUrl: null
                 expiresAt: null
                 createdAt: "2026-10-12T16:05:00Z"
@@ -2276,6 +2304,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -2286,7 +2316,19 @@ paths:
       tags: [exportes]
       operationId: getExport
       summary: Devuelve el estado de un exporte y su enlace de descarga
-      description: El enlace es de un solo uso y expira.
+      description: |
+        `downloadUrl` y `expiresAt` sólo vienen mientras hay algo que
+        descargar. El enlace es de un solo uso y expira: descargado o
+        vencido, el exporte pasa a `expired` y el archivo deja de
+        conservarse; quedan `fileHash`, `manifestHash` y `rowCount`.
+
+        `fileHash` es el SHA-256 del archivo, byte por byte. `manifestHash`
+        es el SHA-256 del manifiesto que el servidor guarda: declara
+        empresa, semana, zona horaria, la huella del archivo y la huella de
+        cada cierre que entró, y así liga el archivo con lo que se cerró.
+
+        `failed` quiere decir que no se pudo preparar, por ejemplo porque los
+        cierres se reabrieron antes de prepararlo: hay que pedirlo otra vez.
       x-roles: [admin_empresa, rh, auditor]
       responses:
         "200":
@@ -2303,14 +2345,74 @@ paths:
                 format: csv
                 timeZone: America/Mexico_City
                 ruleSetVersion: 1
+                rowCount: 42
                 manifestHash: 5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c
-                downloadUrl: https://zenit.invalid/descargas/ejemplo
+                fileHash: 7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b
+                downloadUrl: /api/v1/exports/e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a/download
                 expiresAt: "2026-10-12T16:20:00Z"
                 createdAt: "2026-10-12T16:05:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /exports/{exportId}/download:
+    parameters:
+      - $ref: "#/components/parameters/ExportId"
+    get:
+      tags: [exportes]
+      operationId: downloadExport
+      summary: Descarga el archivo de un exporte, una sola vez
+      description: |
+        Pide la misma credencial y los mismos roles que el exporte: el enlace
+        por sí solo no da acceso a nada. Entrega el archivo una vez; después
+        el exporte queda `expired` y el archivo deja de conservarse. Queda en
+        la bitácora quién lo descargó.
+
+        Responde 409 con `code` `export_not_ready` mientras se prepara, y 410
+        con `export_expired` si ya se descargó o venció, o con
+        `export_failed` si no se pudo preparar. En los dos casos de 410 hay
+        que pedir el exporte otra vez.
+      x-roles: [admin_empresa, rh, auditor]
+      responses:
+        "200":
+          description: Archivo del exporte
+          headers:
+            Content-Disposition:
+              description: Nombre sugerido, con la empresa y la semana.
+              schema:
+                type: string
+              example: attachment; filename="zenit-panificadora-2026-10-05.csv"
+          content:
+            text/csv:
+              schema:
+                type: string
+              example: |
+                tenant_slug,week_start,time_zone,rule_set_jurisdiction,rule_set_version,external_id,display_name,site_name,closure_version,worked_minutes,break_minutes,ordinary_minutes,overtime_minutes,acknowledgement,closed_at,closure_hash
+                "panificadora",2026-10-05,"America/Mexico_City","MX-LFT",1,"E-001","Persona Uno","Sucursal Centro",1,2400,150,2400,0,agreed,2026-10-12T16:00:00Z,1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "410":
+          description: El archivo ya se descargó, venció o no se pudo preparar
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/gone
+                title: Ya no está disponible
+                status: 410
+                code: export_expired
+                detail: El enlace ya se usó o venció; hay que pedir el exporte otra vez.
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
 
   /audit-log:
     get:
@@ -2366,6 +2468,14 @@ paths:
       tags: [integraciones]
       operationId: listIntegrationCheckpoints
       summary: Lista las fuentes del padrón y su último punto de sincronización
+      description: |
+        De dónde viene el padrón de la empresa. Hoy la única fuente que existe
+        es la carga por archivo: aparece cuando se aplica la primera, con
+        `cursor` igual al identificador de la última carga aplicada y
+        `sourceVersion` igual a la plantilla del archivo. Validar un archivo
+        sin aplicarlo no la mueve. Una empresa que captura su padrón a mano
+        no tiene fuentes. Los tipos `api` y `connector` quedan reservados
+        para cuando exista la sincronización.
       x-roles: [admin_empresa, rh]
       responses:
         "200":
@@ -2379,8 +2489,8 @@ paths:
                   - sourceId: 8c0e2a4c-6e8a-4c0e-8a2c-4e6a8c0e2a4c
                     type: csv
                     status: active
-                    cursor: null
-                    sourceVersion: null
+                    cursor: 3f5a7c9e-1b3d-4f5a-8c7e-9b1d3f5a7c9e
+                    sourceVersion: "1"
                     updatedAt: "2026-10-05T15:41:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -4338,7 +4448,9 @@ components:
         - format
         - timeZone
         - ruleSetVersion
+        - rowCount
         - manifestHash
+        - fileHash
         - downloadUrl
         - expiresAt
         - createdAt
@@ -4349,6 +4461,10 @@ components:
         status:
           type: string
           enum: [queued, ready, failed, expired]
+          description: >-
+            `queued` mientras se prepara, `ready` cuando se puede descargar,
+            `expired` cuando ya se descargó o venció, y `failed` cuando no se
+            pudo preparar.
         weekStart:
           type: string
           format: date
@@ -4362,16 +4478,28 @@ components:
           type: string
         ruleSetVersion:
           type: integer
+          description: Versión de reglas vigente en esa semana; cada fila del archivo trae la de su cierre.
+        rowCount:
+          type: [integer, "null"]
+          description: Cierres que entraron al archivo; nulo mientras no está preparado.
         manifestHash:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256Hex"
+            - type: "null"
+        fileHash:
           oneOf:
             - $ref: "#/components/schemas/Sha256Hex"
             - type: "null"
         downloadUrl:
           type: [string, "null"]
-          format: uri
+          format: uri-reference
+          description: >-
+            Ruta de `downloadExport`, relativa al servidor del API. Nula si no
+            hay nada que descargar.
         expiresAt:
           type: [string, "null"]
           format: date-time
+          description: Hasta cuándo se puede descargar; nulo si no hay nada que descargar.
         createdAt:
           type: string
           format: date-time

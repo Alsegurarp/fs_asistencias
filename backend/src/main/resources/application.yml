@@ -45,6 +45,13 @@ zenit:
     # Tarjeta simulada del prototipo: no está autenticada. Nace apagada y sólo
     # se enciende a propósito, con datos ficticios.
     simulated-cards: ${CAPTURE_SIMULATED_CARDS:false}
+  jobs:
+    # Trabajos que se atienden fuera de la petición, como preparar un exporte.
+    enabled: ${JOBS_ENABLED:true}
+    poll-interval-ms: ${JOBS_POLL_INTERVAL_MS:2000}
+  exports:
+    # Minutos durante los que un exporte listo se puede descargar.
+    ttl-minutes: ${EXPORTS_TTL_MINUTES:15}
 
 management:
   endpoints:

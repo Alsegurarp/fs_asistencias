@@ -141,6 +141,10 @@ services:
       IDENTITY_JWKS_URI: http://keycloak:8082/realms/zenit/protocol/openid-connect/certs
       # Apagada salvo que se pida: la tarjeta simulada no está autenticada.
       CAPTURE_SIMULATED_CARDS: ${CAPTURE_SIMULATED_CARDS:-false}
+      # Minutos durante los que un exporte listo se puede descargar.
+      EXPORTS_TTL_MINUTES: ${EXPORTS_TTL_MINUTES:-15}
+      # Apagado, este proceso no atiende trabajos encolados.
+      JOBS_ENABLED: ${JOBS_ENABLED:-true}
     # Atiende con un rol que no es dueño de las tablas ni puede cambiarlas.
     secrets:
       - db_app_password

@@ -5,6 +5,7 @@ import mx.fastsolution.zenit.api.Conflicts
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.integration.SourceRepository
 import mx.fastsolution.zenit.site.SiteRepository
 import org.jooq.DSLContext
 import org.jooq.Record
@@ -124,6 +125,7 @@ class ImportService(
     private val imports: ImportRepository,
     private val employees: EmployeeRepository,
     private val sites: SiteRepository,
+    private val sources: SourceRepository,
     private val audit: AuditLog,
 ) {
     @Transactional
@@ -159,7 +161,11 @@ class ImportService(
             // Otra petición con la misma clave ganó; el cliente reintenta y recibe su resultado.
             throw if (Conflicts.uniqueConstraint(e) == Conflicts.IMPORT_IDEMPOTENCY) idempotencyConflict() else e
         }
-        if (row.status == "applied") apply(tenantId, parsed.accepted)
+        if (row.status == "applied") {
+            apply(tenantId, parsed.accepted)
+            // La carga aplicada es el nuevo punto de sincronización de la fuente CSV.
+            sources.recordCsv(tenantId, row.id, TEMPLATE_VERSION)
+        }
         audit.record(
             tenantId, person, "import.${row.status}", "import", row.id,
             mapOf("total" to row.total.toString(), "accepted" to row.accepted.toString(), "rejected" to row.rejected.toString()),

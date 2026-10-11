@@ -9,6 +9,7 @@ import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
 import com.sun.net.httpserver.HttpServer
+import mx.fastsolution.zenit.jobs.JobWorker
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.TestInstance
@@ -45,7 +46,8 @@ import kotlin.test.assertTrue
 @Tag("integration")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 // Las pruebas usan la tarjeta simulada; CaptureOffIT comprueba que nace apagada.
-@TestPropertySource(properties = ["zenit.capture.simulated-cards=true"])
+// Los trabajos no corren solos en las pruebas: cada prueba llama al trabajador cuando le toca.
+@TestPropertySource(properties = ["zenit.capture.simulated-cards=true", "zenit.jobs.enabled=false"])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class ApiTestBase {
     companion object {
@@ -93,10 +95,16 @@ abstract class ApiTestBase {
     @Autowired
     private lateinit var environment: Environment
 
+    /** Quien atiende los trabajos encolados; las pruebas lo llaman a mano. */
+    @Autowired
+    protected lateinit var jobWorker: JobWorker
+
     /** Puerto del backend bajo prueba: cada configuración levanta su contexto en un puerto propio. */
     protected val serverPort: Int get() = environment.getProperty("local.server.port")!!.toInt()
 
-    protected class Reply(val status: Int, val body: String, val contentType: String) {
+    protected class Reply(val status: Int, val body: String, val contentType: String, private val headers: Map<String, List<String>> = emptyMap()) {
+        fun header(name: String): String? = headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value?.firstOrNull()
+
         fun <T> at(path: String): T = JsonPath.read(body, "\$.$path")
 
         fun list(path: String): List<String> = at(path)
@@ -120,7 +128,7 @@ abstract class ApiTestBase {
         headers.forEach { (name, value) -> request.header(name, value) }
         request.method(method, body?.let { HttpRequest.BodyPublishers.ofString(it) } ?: HttpRequest.BodyPublishers.noBody())
         val response = http.send(request.build(), HttpResponse.BodyHandlers.ofString())
-        return Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""))
+        return Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""), response.headers().map())
     }
 
     /** Sube un archivo como `multipart/form-data`. Con `csv` nulo no manda ningún archivo. */
@@ -147,7 +155,7 @@ abstract class ApiTestBase {
         if (key != null) request.header("Idempotency-Key", key)
         request.POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
         val response = http.send(request.build(), HttpResponse.BodyHandlers.ofString())
-        return Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""))
+        return Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""), response.headers().map())
     }
 
     protected fun token(

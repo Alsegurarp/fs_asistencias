@@ -183,7 +183,7 @@ class ApiIT : ApiTestBase() {
         expect("POST", "/api/v1/tenants", tenantBody("no-debe-existir", email("x")))
         // Lo que no está abierto sigue cerrado, también para quien administra.
         expect("DELETE", "/api/v1/users/${c.adminId}", null)
-        expect("GET", "/api/v1/exports/${c.adminId}", null)
+        expect("GET", "/api/v1/jobs", null)
 
         // Una persona puede tener varios roles a la vez.
         val both = member(c, "rh", "auditor")
