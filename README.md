@@ -4,16 +4,16 @@ Plataforma de control de jornada desarrollada por Fast Solutions.
 
 ## Estado técnico
 
-Monorepo inicial del producto. El primer corte contiene el esqueleto ejecutable
-del backend y del portal web, contratos y migraciones. Los directorios `android/`
-y `connector/` reservan la integración del avance móvil existente y no deben
-recibir una implementación paralela antes de inventariarlo.
+Monorepo inicial del producto. El primer corte contiene esqueletos ejecutables
+del backend, el portal web y la aplicación Android, además de contratos y
+migraciones. Cada aplicación mantiene toolchain, dependencias y build propios.
 
 ## Módulos
 
 - `backend/`: API Kotlin/JVM con Spring Boot.
 - `web/`: portal React y TypeScript.
-- `android/`: punto de integración de la aplicación Kotlin existente.
+- `android/`: aplicación Kotlin/Compose para captura NFC, ubicación puntual y
+  cola local.
 - `connector/`: futuro agente saliente para redes de clientes.
 - `contracts/`: contrato OpenAPI ejecutable.
 - `infra/`: configuración técnica que no pertenece a una aplicación.
@@ -33,10 +33,14 @@ docker compose up --build
 - El host se utiliza únicamente para Docker, Docker Compose, Git y el editor.
 - No se instalan runtimes, SDK, gestores de paquetes, dependencias, bases de datos ni herramientas del proyecto en el host.
 - Compilación, desarrollo, migraciones, lint, pruebas y artefactos se ejecutan dentro de contenedores.
-- El flujo inicial está definido en `Dockerfile`, `web/Dockerfile` y
-  `compose.yaml`.
-- Android se compilará en contenedor después de integrar y fijar el toolchain
-  existente.
+- El flujo inicial está definido en `Dockerfile`, `web/Dockerfile`,
+  `android/Dockerfile` y `compose.yaml`.
+- Android es un proyecto Gradle independiente; su imagen ejecuta pruebas, lint y
+  ensambla el APK de depuración sin instalar el SDK en el host.
+
+```powershell
+docker build --file android/Dockerfile android
+```
 
 ## Commits
 
