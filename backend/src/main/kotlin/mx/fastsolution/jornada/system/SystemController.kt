@@ -1,4 +1,4 @@
-package mx.fastsolutions.jornada.system
+package mx.fastsolution.jornada.system
 
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping

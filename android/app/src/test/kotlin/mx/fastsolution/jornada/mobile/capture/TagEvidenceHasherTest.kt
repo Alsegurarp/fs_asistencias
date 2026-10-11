@@ -1,4 +1,4 @@
-package mx.fastsolutions.jornada.mobile.capture
+package mx.fastsolution.jornada.mobile.capture
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals

@@ -1,4 +1,4 @@
-package mx.fastsolutions.jornada.mobile.location
+package mx.fastsolution.jornada.mobile.location
 
 data class CapturedLocation(
     val latitude: Double,

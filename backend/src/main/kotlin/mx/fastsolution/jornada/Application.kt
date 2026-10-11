@@ -1,4 +1,4 @@
-package mx.fastsolutions.jornada
+package mx.fastsolution.jornada
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

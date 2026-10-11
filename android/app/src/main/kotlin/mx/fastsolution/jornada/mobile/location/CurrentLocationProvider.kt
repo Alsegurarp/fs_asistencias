@@ -1,4 +1,4 @@
-package mx.fastsolutions.jornada.mobile.location
+package mx.fastsolution.jornada.mobile.location
 
 import android.Manifest
 import android.content.Context

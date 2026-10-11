@@ -1,6 +1,6 @@
 # Control Jornada 40 Horas
 
-Plataforma de control de jornada desarrollada por Fast Solutions.
+Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 

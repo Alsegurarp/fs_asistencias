@@ -1,4 +1,4 @@
-name: fastsolutions-control-jornada
+name: fastsolution-control-jornada
 
 services:
   db:

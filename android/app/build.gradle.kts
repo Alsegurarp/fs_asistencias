@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "mx.fastsolutions.jornada.mobile"
+    namespace = "mx.fastsolution.jornada.mobile"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "mx.fastsolutions.jornada"
+        applicationId = "mx.fastsolution.jornada"
         minSdk = 28
         targetSdk = 36
         versionCode = 1

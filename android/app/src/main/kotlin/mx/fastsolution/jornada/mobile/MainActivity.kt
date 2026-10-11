@@ -1,4 +1,4 @@
-package mx.fastsolutions.jornada.mobile
+package mx.fastsolution.jornada.mobile
 
 import android.Manifest
 import android.content.pm.PackageManager

@@ -1,4 +1,4 @@
-package mx.fastsolutions.jornada.system
+package mx.fastsolution.jornada.system
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -20,7 +20,7 @@ export function App() {
     <Container maxWidth="md">
       <Box component="main" sx={{ py: 10 }}>
         <Stack spacing={3}>
-          <Chip label="Fast Solutions · scaffold 0.1.0" color="secondary" sx={{ alignSelf: 'flex-start' }} />
+          <Chip label="fastSolution · scaffold 0.1.0" color="secondary" sx={{ alignSelf: 'flex-start' }} />
           <Typography variant="h2" sx={{ fontWeight: 800 }}>
             Control de jornada laboral
           </Typography>
