@@ -1,4 +1,4 @@
-package mx.fastsolution.jornada.mobile
+package mx.fastsolution.zenit.mobile
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -11,12 +11,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import mx.fastsolution.jornada.mobile.capture.TagEvidenceHasher
-import mx.fastsolution.jornada.mobile.data.AttendanceDatabase
-import mx.fastsolution.jornada.mobile.data.AttendanceRepository
-import mx.fastsolution.jornada.mobile.data.PendingAttendanceEvent
-import mx.fastsolution.jornada.mobile.location.CurrentLocationProvider
-import mx.fastsolution.jornada.mobile.security.OfflineEventCipher
+import mx.fastsolution.zenit.mobile.capture.TagEvidenceHasher
+import mx.fastsolution.zenit.mobile.data.AttendanceDatabase
+import mx.fastsolution.zenit.mobile.data.AttendanceRepository
+import mx.fastsolution.zenit.mobile.data.PendingAttendanceEvent
+import mx.fastsolution.zenit.mobile.location.CurrentLocationProvider
+import mx.fastsolution.zenit.mobile.security.OfflineEventCipher
 
 data class CaptureUiState(
     val pendingCount: Int = 0,

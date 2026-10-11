@@ -12,5 +12,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "control-jornada-40-horas"
+rootProject.name = "zenit"
 include("backend")

@@ -18,7 +18,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ControlJornada">
+        android:theme="@style/Theme.Zenit">
         <activity
             android:name=".MainActivity"
             android:exported="true">

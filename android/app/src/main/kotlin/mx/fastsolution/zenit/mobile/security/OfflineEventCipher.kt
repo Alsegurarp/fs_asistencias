@@ -1,4 +1,4 @@
-package mx.fastsolution.jornada.mobile.security
+package mx.fastsolution.zenit.mobile.security
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties

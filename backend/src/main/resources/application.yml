@@ -1,9 +1,9 @@
 spring:
   application:
-    name: control-jornada-backend
+    name: zenit-backend
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:jornada}
-    username: ${DB_USER:jornada_app}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:zenit}
+    username: ${DB_USER:zenit_app}
     password: ${DB_PASSWORD:solo-desarrollo-local}
     hikari:
       maximum-pool-size: 10

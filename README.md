@@ -1,4 +1,4 @@
-# Control Jornada 40 Horas
+# Zenit
 
 Plataforma de control de jornada desarrollada por fastSolution.
 

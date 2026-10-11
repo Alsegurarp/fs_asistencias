@@ -1,4 +1,4 @@
-package mx.fastsolution.jornada.mobile.data
+package mx.fastsolution.zenit.mobile.data
 
 import kotlinx.coroutines.flow.Flow
 

@@ -1,4 +1,4 @@
-package mx.fastsolution.jornada
+package mx.fastsolution.zenit
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

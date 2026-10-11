@@ -1,4 +1,4 @@
-package mx.fastsolution.jornada.mobile
+package mx.fastsolution.zenit.mobile
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
         locationGranted = hasLocationPermission()
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
-            ControlJornadaApp(
+            ZenitApp(
                 state = state,
                 nfcAvailable = nfcReady,
                 locationGranted = locationGranted,
@@ -102,7 +102,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 }
 
 @Composable
-private fun ControlJornadaApp(
+private fun ZenitApp(
     state: CaptureUiState,
     nfcAvailable: Boolean,
     locationGranted: Boolean,
@@ -118,7 +118,7 @@ private fun ControlJornadaApp(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = "Control de jornada",
+                    text = "Zenit",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold,
                 )

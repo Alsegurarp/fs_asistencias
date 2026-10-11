@@ -1,4 +1,4 @@
-package mx.fastsolution.jornada.system
+package mx.fastsolution.zenit.system
 
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -15,7 +15,7 @@ data class SystemStatus(
 class SystemController {
     @GetMapping("/status")
     fun status() = SystemStatus(
-        service = "control-jornada-backend",
+        service = "zenit-backend",
         status = "ok",
         version = "0.1.0",
     )

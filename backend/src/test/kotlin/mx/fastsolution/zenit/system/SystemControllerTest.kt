@@ -1,4 +1,4 @@
-package mx.fastsolution.jornada.system
+package mx.fastsolution.zenit.system
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,7 +8,7 @@ class SystemControllerTest {
     fun `reports scaffold status`() {
         val status = SystemController().status()
 
-        assertEquals("control-jornada-backend", status.service)
+        assertEquals("zenit-backend", status.service)
         assertEquals("ok", status.status)
     }
 }

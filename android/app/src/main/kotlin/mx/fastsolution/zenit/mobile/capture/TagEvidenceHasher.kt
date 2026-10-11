@@ -1,4 +1,4 @@
-package mx.fastsolution.jornada.mobile.capture
+package mx.fastsolution.zenit.mobile.capture
 
 import java.security.MessageDigest
 
