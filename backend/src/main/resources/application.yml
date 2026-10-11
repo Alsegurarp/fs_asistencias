@@ -20,6 +20,10 @@ spring:
     locations: classpath:db/migration
   jooq:
     sql-dialect: postgres
+  jackson:
+    deserialization:
+      # El contrato no admite campos de más en un cuerpo.
+      fail-on-unknown-properties: true
 
 zenit:
   identity:
@@ -27,6 +31,11 @@ zenit:
     issuer: ${IDENTITY_ISSUER}
     jwks-uri: ${IDENTITY_JWKS_URI}
     audience: ${IDENTITY_AUDIENCE:zenit-api}
+  operators:
+    # Correos de quienes operan el servicio, uno por línea, montados como
+    # secreto. Sin archivo o vacío, nadie opera: no se puede dar de alta una
+    # empresa.
+    emails: ${operator_emails:}
 
 management:
   endpoints:

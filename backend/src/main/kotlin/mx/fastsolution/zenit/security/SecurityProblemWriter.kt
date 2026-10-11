@@ -2,6 +2,8 @@ package mx.fastsolution.zenit.security
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import mx.fastsolution.zenit.api.Correlation
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.AccessDeniedException
@@ -12,7 +14,6 @@ import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.UUID
 
 /**
  * Responde los rechazos de seguridad con el formato de error del contrato.
@@ -22,13 +23,15 @@ import java.util.UUID
 class SecurityProblemWriter(private val clock: Clock = Clock.systemUTC()) :
     AuthenticationEntryPoint,
     AccessDeniedHandler {
+    private val log = LoggerFactory.getLogger(SecurityProblemWriter::class.java)
+
     override fun commence(
         request: HttpServletRequest,
         response: HttpServletResponse,
         authException: AuthenticationException,
     ) {
         response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
-        write(response, HttpStatus.UNAUTHORIZED, "unauthorized", "Credencial no válida", serverTime = true)
+        write(request, response, HttpStatus.UNAUTHORIZED, "unauthorized", "Credencial no válida", serverTime = true)
     }
 
     override fun handle(
@@ -36,10 +39,16 @@ class SecurityProblemWriter(private val clock: Clock = Clock.systemUTC()) :
         response: HttpServletResponse,
         accessDeniedException: AccessDeniedException,
     ) {
-        write(response, HttpStatus.FORBIDDEN, "forbidden", "Permiso insuficiente", serverTime = false)
+        // Deja rastro de quién intentó qué; el token nunca se registra.
+        log.warn(
+            "Acceso denegado: {} {} sujeto {} correlación {}",
+            request.method, request.requestURI, request.userPrincipal?.name, Correlation.of(request),
+        )
+        write(request, response, HttpStatus.FORBIDDEN, "forbidden", "Permiso insuficiente", serverTime = false)
     }
 
     private fun write(
+        request: HttpServletRequest,
         response: HttpServletResponse,
         status: HttpStatus,
         code: String,
@@ -52,7 +61,7 @@ class SecurityProblemWriter(private val clock: Clock = Clock.systemUTC()) :
             add("\"title\":\"$title\"")
             add("\"status\":${status.value()}")
             add("\"code\":\"$code\"")
-            add("\"correlationId\":\"${UUID.randomUUID()}\"")
+            add("\"correlationId\":\"${Correlation.of(request)}\"")
             if (serverTime) add("\"serverTime\":\"${Instant.now(clock).truncatedTo(ChronoUnit.SECONDS)}\"")
         }
         response.status = status.value()

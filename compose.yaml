@@ -142,6 +142,8 @@ services:
     # Atiende con un rol que no es dueño de las tablas ni puede cambiarlas.
     secrets:
       - db_app_password
+      # Correos de quienes operan el servicio. Vacío, nadie da de alta empresas.
+      - operator_emails
     depends_on:
       db:
         condition: service_healthy
@@ -220,6 +222,18 @@ services:
           "$$(cat /out/keycloak_db_password)" "$$(cat /out/keycloak_admin_password)" \
           > /out/keycloak.conf
         chmod 444 /out/keycloak.conf
+        # Lista de quienes operan el servicio: nace vacía y se llena a mano,
+        # un correo por línea. No se sobrescribe.
+        if [ -d /out/operator_emails ]; then
+          rmdir /out/operator_emails
+        fi
+        if [ ! -f /out/operator_emails ]; then
+          : > /out/operator_emails
+          chmod 644 /out/operator_emails
+          echo "operator_emails: creado vacío; nadie opera hasta que se escriban correos."
+        else
+          echo "operator_emails: ya existe; no se cambia."
+        fi
         chmod 700 /out
     volumes:
       - ./secrets:/out
@@ -318,7 +332,9 @@ services:
       - /tmp
     volumes:
       - ./.git:/repo/.git:ro
-    command: ["git", "/repo", "--redact", "--no-banner"]
+      # Exceptúa sólo los ejemplos ficticios del contrato.
+      - ./.gitleaks.toml:/repo/.gitleaks.toml:ro
+    command: ["git", "/repo", "--redact", "--no-banner", "--config", "/repo/.gitleaks.toml"]
 
 networks:
   datos:
@@ -338,6 +354,8 @@ secrets:
     file: ./secrets/keycloak_db_password
   keycloak_conf:
     file: ./secrets/keycloak.conf
+  operator_emails:
+    file: ./secrets/operator_emails
 
 volumes:
   zenit-db:

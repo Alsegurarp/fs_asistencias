@@ -1,11 +1,12 @@
 package mx.fastsolution.zenit.security
 
+import mx.fastsolution.zenit.identity.PersonAuthenticationConverter
+import mx.fastsolution.zenit.identity.Role
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
-import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -30,19 +31,38 @@ import org.springframework.security.web.SecurityFilterChain
 @EnableConfigurationProperties(IdentityProperties::class)
 class SecurityConfig {
     @Bean
-    fun securityFilterChain(http: HttpSecurity, problems: SecurityProblemWriter): SecurityFilterChain {
+    fun securityFilterChain(
+        http: HttpSecurity,
+        problems: SecurityProblemWriter,
+        people: PersonAuthenticationConverter,
+    ): SecurityFilterChain {
+        val operator = Role.OPERADOR_SAAS.wire
+        val admin = Role.ADMIN_EMPRESA.wire
+        val rh = Role.RH.wire
+        val supervisor = Role.SUPERVISOR.wire
+        val auditor = Role.AUDITOR.wire
         http
             // API sin cookies ni sesión: la credencial viaja en cada petición.
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            // Cada línea repite los roles que el contrato declara en `x-roles`.
             .authorizeHttpRequests {
                 it.requestMatchers(HttpMethod.GET, "/api/v1/system/status").permitAll()
                 it.requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                 it.requestMatchers(HttpMethod.GET, "/api/v1/me").authenticated()
+                it.requestMatchers(HttpMethod.GET, "/api/v1/tenants").hasRole(operator)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/tenants").hasRole(operator)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/tenant").hasAnyRole(admin, rh, supervisor, auditor)
+                it.requestMatchers(HttpMethod.PATCH, "/api/v1/tenant").hasRole(admin)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/users", "/api/v1/users/{userId}").hasRole(admin)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole(admin)
+                it.requestMatchers(HttpMethod.PATCH, "/api/v1/users/{userId}").hasRole(admin)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/audit-log").hasAnyRole(admin, auditor)
                 it.anyRequest().denyAll()
             }
             .oauth2ResourceServer {
-                it.jwt(Customizer.withDefaults())
+                // El token dice quién es; la empresa y los roles salen de la base.
+                it.jwt { jwt -> jwt.jwtAuthenticationConverter(people) }
                 it.authenticationEntryPoint(problems)
                 it.accessDeniedHandler(problems)
             }

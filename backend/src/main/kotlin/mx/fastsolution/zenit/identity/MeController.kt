@@ -1,7 +1,7 @@
 package mx.fastsolution.zenit.identity
 
+import mx.fastsolution.zenit.tenant.TenantRepository
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -24,19 +24,22 @@ data class CurrentUser(
 
 @RestController
 @RequestMapping("/api/v1")
-class MeController {
+class MeController(private val tenants: TenantRepository) {
     /**
-     * Quién llama, según su token. Todavía no hay tablas de empresa ni de rol:
-     * una persona autenticada aparece sin empresa y sin roles, que es lo que
-     * tiene hasta que se le asignen.
+     * Quién llama, con su empresa y sus roles. Una identidad válida a la que
+     * nadie ha invitado, o cuyo acceso se deshabilitó, aparece sin empresa y
+     * sin roles: así el portal puede decírselo en lugar de fallar.
      */
     @GetMapping("/me")
-    fun me(@AuthenticationPrincipal jwt: Jwt): CurrentUser = CurrentUser(
-        // El validador de tokens ya rechazó los que vienen sin sujeto.
-        userId = requireNotNull(jwt.subject),
-        displayName = jwt.getClaimAsString("name") ?: jwt.getClaimAsString("preferred_username") ?: "",
-        roles = emptyList(),
-        tenant = null,
-        employeeId = null,
-    )
+    fun me(@AuthenticationPrincipal person: CurrentPerson): CurrentUser {
+        val tenant = person.tenantId?.let(tenants::find)
+        return CurrentUser(
+            userId = person.actorId,
+            displayName = person.displayName,
+            roles = person.roles.map { it.wire }.sorted(),
+            tenant = tenant?.let { TenantSummary(it.id.toString(), it.name, it.timeZone, it.weekStartsOn, it.breakPolicy) },
+            // El padrón llega con el corte siguiente.
+            employeeId = null,
+        )
+    }
 }

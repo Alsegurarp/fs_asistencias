@@ -1,11 +1,12 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.4.0
+  version: 0.5.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo, aunque el
-    backend todavía sólo implementa `/system/status`.
+    backend todavía sólo implementa las rutas de sistema, identidad, empresa
+    (`/tenants` y `/tenant`) y auditoría.
 
     Convenciones:
 
@@ -24,17 +25,21 @@ info:
       para que los clientes generados obtengan nombres limpios.
     - Todos los ejemplos son ficticios.
 
-    Fuera de esta versión: administración de usuarios y roles, que depende
-    del proveedor de identidad; entrega del material de clave de las tarjetas
-    al dispositivo, que depende de la prueba con tarjetas reales; y la
-    sincronización por conector.
+    Personas y cuentas: una persona pertenece a una sola empresa. Aquí se le
+    invita por correo y se le dan roles; su cuenta, contraseña y segundo
+    factor viven en el proveedor de identidad. La primera vez que entra con
+    ese correo verificado queda ligada a su invitación.
+
+    Fuera de esta versión: alta de cuentas en el proveedor de identidad;
+    entrega del material de clave de las tarjetas al dispositivo, que depende
+    de la prueba con tarjetas reales; y la sincronización por conector.
 servers:
   - url: /api/v1
 tags:
   - name: sistema
     description: Estado del servicio.
   - name: identidad
-    description: Quién llama y con qué permisos.
+    description: Quién llama, con qué permisos, y quién tiene acceso a la empresa.
   - name: empresa
     description: Empresa, sedes con su geocerca y horarios.
   - name: personas
@@ -135,7 +140,11 @@ paths:
     post:
       tags: [empresa]
       operationId: createTenant
-      summary: Da de alta una empresa
+      summary: Da de alta una empresa y deja invitada a quien la administrará
+      description: |
+        Responde 409 con `code` `slug_taken` si el identificador ya existe, o
+        `email_unavailable` si el correo ya pertenece a alguien. En ese caso
+        no se crea nada.
       x-roles: [operador_saas]
       requestBody:
         required: true
@@ -149,6 +158,7 @@ paths:
               timeZone: America/Mexico_City
               weekStartsOn: monday
               breakPolicy: not_considered
+              firstAdminEmail: administracion@panificadora.example
       responses:
         "201":
           description: Empresa creada
@@ -234,6 +244,152 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /users:
+    get:
+      tags: [identidad]
+      operationId: listUsers
+      summary: Lista las personas con acceso a la empresa
+      x-roles: [admin_empresa]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de personas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+              example:
+                items:
+                  - id: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    email: rh@panificadora.example
+                    displayName: Persona de Recursos Humanos
+                    roles: [rh]
+                    status: active
+                    createdAt: "2026-10-05T15:05:00Z"
+                    linkedAt: "2026-10-05T16:20:00Z"
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [identidad]
+      operationId: inviteUser
+      summary: Invita a una persona por correo y le da roles
+      description: |
+        La persona queda `invited` hasta que entra por primera vez con ese
+        correo verificado. Responde 409 con `code` `email_unavailable` si el
+        correo ya pertenece a alguien; la respuesta no dice a qué empresa.
+      x-roles: [admin_empresa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+            example:
+              email: rh@panificadora.example
+              displayName: Persona de Recursos Humanos
+              roles: [rh]
+      responses:
+        "201":
+          description: Persona invitada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                email: rh@panificadora.example
+                displayName: Persona de Recursos Humanos
+                roles: [rh]
+                status: invited
+                createdAt: "2026-10-05T15:05:00Z"
+                linkedAt: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /users/{userId}:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+    get:
+      tags: [identidad]
+      operationId: getUser
+      summary: Devuelve una persona de la empresa
+      x-roles: [admin_empresa]
+      responses:
+        "200":
+          description: Persona
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                email: rh@panificadora.example
+                displayName: Persona de Recursos Humanos
+                roles: [rh]
+                status: active
+                createdAt: "2026-10-05T15:05:00Z"
+                linkedAt: "2026-10-05T16:20:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [identidad]
+      operationId: updateUser
+      summary: Cambia el nombre, los roles o el acceso de una persona
+      description: |
+        `roles` sustituye la lista completa. `disabled` en verdadero quita el
+        acceso sin borrar a la persona; en falso lo devuelve. Responde 409 con
+        `code` `last_admin` si el cambio dejaría a la empresa sin nadie que la
+        administre.
+      x-roles: [admin_empresa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+            example:
+              roles: [rh, supervisor]
+      responses:
+        "200":
+          description: Persona actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                email: rh@panificadora.example
+                displayName: Persona de Recursos Humanos
+                roles: [rh, supervisor]
+                status: active
+                createdAt: "2026-10-05T15:05:00Z"
+                linkedAt: "2026-10-05T16:20:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -2073,6 +2229,13 @@ components:
       schema:
         type: string
         format: uuid
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     SiteId:
       name: siteId
       in: path
@@ -2301,10 +2464,16 @@ components:
         userId:
           type: string
           format: uuid
+          description: >-
+            Identificador de la persona en su empresa, el mismo de `/users`.
+            Para quien no pertenece a ninguna, el de su cuenta.
         displayName:
           type: string
         roles:
           type: array
+          description: >-
+            Vacío para una cuenta válida a la que nadie ha invitado o cuyo
+            acceso se deshabilitó; en ese caso `tenant` es nulo.
           items:
             $ref: "#/components/schemas/Role"
         tenant:
@@ -2367,7 +2536,7 @@ components:
     TenantCreate:
       type: object
       additionalProperties: false
-      required: [name, slug, timeZone, weekStartsOn, breakPolicy]
+      required: [name, slug, timeZone, weekStartsOn, breakPolicy, firstAdminEmail]
       properties:
         name:
           type: string
@@ -2384,6 +2553,13 @@ components:
         breakPolicy:
           $ref: "#/components/schemas/BreakPolicy"
           description: Se elige al dar de alta la empresa; no tiene valor por defecto.
+        firstAdminEmail:
+          type: string
+          format: email
+          maxLength: 254
+          description: >-
+            Correo de quien administrará la empresa. Queda invitada con el rol
+            `admin_empresa`; desde ahí invita al resto.
     TenantUpdate:
       type: object
       additionalProperties: false
@@ -2408,6 +2584,87 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Tenant"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+
+    TenantRole:
+      type: string
+      description: Roles que una empresa da a su gente.
+      enum: [admin_empresa, rh, supervisor, trabajador, auditor]
+    User:
+      type: object
+      description: Persona con acceso al portal de la empresa.
+      required: [id, email, displayName, roles, status, createdAt, linkedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/TenantRole"
+        status:
+          type: string
+          enum: [invited, active, disabled]
+          description: >-
+            `invited` mientras no entra por primera vez, `active` cuando ya
+            está ligada a su cuenta y `disabled` cuando se le quitó el acceso.
+        createdAt:
+          type: string
+          format: date-time
+        linkedAt:
+          type: [string, "null"]
+          format: date-time
+          description: Primera entrada con su cuenta; nulo si todavía no entra.
+    UserCreate:
+      type: object
+      additionalProperties: false
+      required: [email, roles]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        roles:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/TenantRole"
+    UserUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        roles:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/TenantRole"
+        disabled:
+          type: boolean
+    UserList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
         nextCursor:
           $ref: "#/components/schemas/NextCursor"
 

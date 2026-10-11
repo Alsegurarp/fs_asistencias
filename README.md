@@ -26,9 +26,11 @@ docker compose up --build
 ```
 
 El primer comando genera una sola vez los secretos locales en `secrets/`, que
-Git ignora; se puede repetir y sólo crea los que falten. Copiar `.env.example`
-a `.env` es opcional: sólo hace falta para cambiar puertos, nombres o
-direcciones.
+Git ignora; se puede repetir y sólo crea los que falten. Entre ellos deja
+vacío `secrets/operator_emails`: para dar de alta una empresa hay que escribir
+ahí el correo de quien opera y volver a levantar el backend. Copiar
+`.env.example` a `.env` es opcional: sólo hace falta para cambiar puertos,
+nombres o direcciones.
 
 - Portal: `http://localhost:8081`
 - Estado de API: `http://localhost:8080/actuator/health`
@@ -78,6 +80,11 @@ El segundo comando retira la base de pruebas sin tocar el entorno levantado.
 Una prueba de integración lleva `@Tag("integration")` y comprueba también lo
 que debe fallar: el caso negativo es parte de la prueba.
 
+`ApiIT` recorre el API por HTTP con dos empresas y tokens firmados por una
+clave de prueba, que el backend valida como los del proveedor de identidad.
+Una ruta nueva agrega ahí su caso de aislamiento entre empresas y su fila en
+la matriz de roles.
+
 ## Identidad
 
 El inicio de sesión de las personas lo hace Keycloak, no el backend. Los
@@ -104,6 +111,34 @@ dispositivos no lo usan: se identifican con su propia clave.
 - El archivo del realm sólo se lee cuando el realm no existe. Un cambio se
   hace en la consola de una instalación limpia, se exporta con `kc.sh export`
   y se le quitan las claves antes de versionarlo.
+- El correo de una cuenta sólo lo cambia la administración del realm, no la
+  propia persona: el backend liga a cada quien por su correo verificado.
+
+## Empresas, personas y roles
+
+El token dice quién es la persona; su empresa y sus roles salen de la base.
+
+- Una persona pertenece a una sola empresa: su correo y su cuenta no se
+  repiten entre empresas.
+- Quien opera el servicio da de alta cada empresa con `POST /api/v1/tenants`
+  y en la misma petición nombra, por correo, a quien la administrará. Los
+  operadores son la lista de correos de `secrets/operator_emails`, uno por
+  línea. Ese archivo nace vacío: mientras lo esté, nadie puede dar de alta
+  una empresa. Un operador no entra a los datos de ninguna empresa.
+- Quien administra una empresa invita al resto con `POST /api/v1/users` y les
+  da roles. La cuenta de cada persona se crea aparte, en la consola de
+  identidad, con ese mismo correo marcado como verificado.
+- La primera vez que alguien entra con un correo invitado y verificado queda
+  ligado a su invitación. Un correo sin verificar no liga a nadie, y una
+  invitación ya ligada no la toma otra cuenta.
+- Toda consulta lleva la empresa de quien llama. Lo de otra empresa responde
+  404, y una empresa no puede quedarse sin nadie que la administre.
+- Altas, invitaciones, cambios de rol y de acceso quedan en la bitácora, que
+  se lee en `GET /api/v1/audit-log`. Los rechazos por permiso quedan en los
+  registros del backend, con el identificador de correlación de la respuesta.
+- Una ruta nueva se abre en `SecurityConfig` con los mismos roles que el
+  contrato declara en `x-roles`, y lee la empresa de `CurrentPerson`, nunca
+  del cuerpo ni de la ruta.
 
 ## Seguridad del entorno local
 
@@ -140,7 +175,10 @@ docker compose --profile tools run --rm secret-scan
 
 El primero valida el contrato y sus ejemplos. El segundo busca secretos en todo
 el historial de Git; conviene correrlo antes de cada push, porque el
-repositorio es público.
+repositorio es público. Sus reglas están en `.gitleaks.toml`, que sólo
+exceptúa dos valores ficticios de los ejemplos del contrato: la firma de
+muestra y una clave de idempotencia. Un ejemplo nuevo con forma de token
+reutiliza esa firma; no se exceptúan archivos completos.
 
 El contrato se probó generando un cliente Kotlin con OpenAPI Generator 7.26.0
 (Retrofit y kotlinx.serialization) y los tipos de TypeScript con
