@@ -13,6 +13,8 @@ import org.springframework.web.ErrorResponse
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.multipart.MaxUploadSizeExceededException
+import org.springframework.web.multipart.MultipartException
 
 data class FieldError(val field: String, val code: String, val message: String)
 
@@ -61,6 +63,14 @@ class ProblemHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
     fun badIdentifier(e: MethodArgumentTypeMismatchException, request: HttpServletRequest) =
         respond(Problems.notFound(), request)
+
+    @ExceptionHandler(MaxUploadSizeExceededException::class)
+    fun tooLarge(e: MaxUploadSizeExceededException, request: HttpServletRequest) =
+        respond(Problems.validation("file", "file_too_large", "El archivo excede el tamaño admitido."), request)
+
+    @ExceptionHandler(MultipartException::class)
+    fun notMultipart(e: MultipartException, request: HttpServletRequest) =
+        respond(Problems.validation("file", "invalid_upload", "La petición debe ser multipart/form-data con un archivo."), request)
 
     @ExceptionHandler(Exception::class)
     fun unexpected(e: Exception, request: HttpServletRequest): ResponseEntity<Map<String, Any?>> {

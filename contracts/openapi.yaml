@@ -1,12 +1,12 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.5.0
+  version: 0.6.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo, aunque el
-    backend todavía sólo implementa las rutas de sistema, identidad, empresa
-    (`/tenants` y `/tenant`) y auditoría.
+    backend todavía sólo implementa las rutas de sistema, identidad, empresa,
+    personas, credenciales (sólo tarjetas) y auditoría.
 
     Convenciones:
 
@@ -17,7 +17,10 @@ info:
     - Errores en `application/problem+json` (RFC 9457) con `code` estable y
       `correlationId`.
     - Listas paginadas por cursor: `cursor` y `limit` en la consulta,
-      `nextCursor` en la respuesta.
+      `nextCursor` en la respuesta. Un cursor, un límite o un filtro
+      inválidos responden 422, aunque la operación no lo liste.
+    - Toda operación con `x-roles` responde 403 a quien no tiene uno de esos
+      roles, aunque la operación no lo liste.
     - Los nombres de rol son los del producto: `operador_saas`,
       `admin_empresa`, `rh`, `supervisor`, `trabajador`, `auditor` y
       `conector`. Cada operación declara los suyos en `x-roles`.
@@ -691,6 +694,7 @@ paths:
       tags: [personas]
       operationId: createEmployee
       summary: Da de alta una persona
+      description: Responde 409 con `code` `external_id_taken` si el identificador externo ya existe en la empresa.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -768,7 +772,11 @@ paths:
       tags: [personas]
       operationId: updateEmployee
       summary: Cambia datos de una persona o registra su baja
-      description: La baja es lógica. Nunca borra marcajes ni cierres.
+      description: |
+        La baja es lógica. Nunca borra marcajes ni cierres. `siteId` en nulo
+        quita la sede y `employmentEnd` en nulo borra la fecha de baja; un
+        campo que no se manda queda como estaba. La baja no toca la tarjeta
+        de la persona: revocarla es una operación aparte.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -815,7 +823,11 @@ paths:
       tags: [personas]
       operationId: assignSchedule
       summary: Asigna un horario a una persona desde una fecha
-      description: Cierra la asignación anterior el día previo a `validFrom`.
+      description: |
+        Cierra la asignación anterior el día previo a `validFrom`. La fecha
+        debe caer dentro de la vigencia del horario y ser posterior al inicio
+        de la asignación anterior. La asignación termina cuando termina la
+        vigencia del horario.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -901,7 +913,27 @@ paths:
       summary: Valida o aplica un archivo CSV del padrón
       description: |
         Con `dryRun` en verdadero sólo valida y devuelve qué filas entrarían.
-        La importación es idempotente por origen e identificador externo.
+        La importación es idempotente por origen e identificador externo:
+        repetir el archivo no duplica a nadie y actualiza lo que cambió.
+
+        Plantilla 1, con estos encabezados y en este orden:
+        `external_id,display_name,employment_start,site_name`. La fecha va
+        como AAAA-MM-DD. `site_name` puede ir vacío; si trae un nombre, debe
+        ser el de una sola sede activa, sin distinguir mayúsculas.
+
+        El archivo se procesa en la misma petición, hasta 1 MB y 5000 filas.
+        La respuesta ya trae el resultado: `ready` si sólo se validó,
+        `applied` si se aplicó, o `failed` si el archivo no es la plantilla o
+        no está en UTF-8; en ese caso no entra ninguna fila. Las filas
+        aceptadas se aplican aunque otras se rechacen. `row` es el número de
+        línea del archivo, con los encabezados en la línea 1. `manifestHash`
+        resume las filas aceptadas: coincide entre validar y aplicar el mismo
+        archivo.
+
+        La misma `Idempotency-Key` con el mismo archivo y el mismo `dryRun`
+        devuelve el resultado anterior sin volver a aplicar. Con otro
+        contenido responde 409 con `code` `idempotency_conflict`: aplicar
+        después de validar lleva una clave nueva.
       x-roles: [admin_empresa, rh]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -944,6 +976,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -1023,6 +1057,10 @@ paths:
       tags: [credenciales]
       operationId: registerCard
       summary: Registra una tarjeta en el inventario
+      description: |
+        La huella sólo entra aquí: ninguna respuesta la devuelve. Responde 409
+        con `code` `card_taken` si el número o la huella ya existen en la
+        empresa.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -1068,6 +1106,12 @@ paths:
         Si la persona ya tiene una tarjeta, la operación cierra esa asignación,
         marca la tarjeta anterior como reemplazada y activa la nueva en la
         misma transacción. Una tarjeta revocada no vuelve a asignarse.
+
+        Sólo se asigna una tarjeta en `inventory`: una que ya tuvo titular no
+        pasa a otra persona. La tarjeta queda `active`; el estado `assigned`
+        no se usa todavía. Responde 409 con `code` `card_not_assignable` si la
+        tarjeta no está en inventario, o `employee_inactive` si la persona
+        está dada de baja.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -1099,6 +1143,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /cards/{cardId}/revocation:
     parameters:
@@ -1107,7 +1153,11 @@ paths:
       tags: [credenciales]
       operationId: revokeCard
       summary: Revoca una tarjeta o la reporta perdida o dañada
-      description: Desde ese momento la tarjeta no marca. El intento queda en auditoría.
+      description: |
+        Desde ese momento la tarjeta no marca. El intento queda en auditoría.
+        Deja de tener titular y no vuelve a asignarse. Responde 409 con `code`
+        `card_not_revocable` si ya estaba revocada, perdida, dañada o
+        reemplazada.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -1139,6 +1189,10 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /device-enrollments:
     post:

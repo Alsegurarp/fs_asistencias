@@ -80,10 +80,10 @@ El segundo comando retira la base de pruebas sin tocar el entorno levantado.
 Una prueba de integración lleva `@Tag("integration")` y comprueba también lo
 que debe fallar: el caso negativo es parte de la prueba.
 
-`ApiIT` recorre el API por HTTP con dos empresas y tokens firmados por una
-clave de prueba, que el backend valida como los del proveedor de identidad.
-Una ruta nueva agrega ahí su caso de aislamiento entre empresas y su fila en
-la matriz de roles.
+`ApiIT` y `DirectoryIT` recorren el API por HTTP con dos empresas y tokens
+firmados por una clave de prueba, que el backend valida como los del proveedor
+de identidad. Comparten `ApiTestBase`. Una ruta nueva agrega su caso de
+aislamiento entre empresas y su fila en la matriz de roles.
 
 ## Identidad
 
@@ -139,6 +139,30 @@ El token dice quién es la persona; su empresa y sus roles salen de la base.
 - Una ruta nueva se abre en `SecurityConfig` con los mismos roles que el
   contrato declara en `x-roles`, y lee la empresa de `CurrentPerson`, nunca
   del cuerpo ni de la ruta.
+
+## Padrón, sedes, horarios y tarjetas
+
+Todo es de una empresa y se consulta con la empresa de quien llama.
+
+- Nada se borra. Una sede se desactiva, una persona se da de baja y una
+  tarjeta se revoca; el rol de la base con el que atiende el backend no tiene
+  permiso de borrar en estas tablas.
+- Un horario no se edita: para cambiarlo se crea otro con una vigencia nueva y
+  se asigna desde una fecha. Asignarlo cierra el anterior el día previo.
+- Una persona es única por su identificador externo dentro de la empresa. Al
+  cambiarla, un campo que no se manda queda igual; `siteId` o `employmentEnd`
+  en nulo lo borran.
+- Importación CSV, plantilla 1: `external_id,display_name,employment_start,site_name`,
+  en UTF-8, hasta 1 MB y 5000 filas. Sin indicar `dryRun=false` sólo valida.
+  Repetir un archivo no duplica a nadie, y la misma `Idempotency-Key` devuelve
+  el mismo resultado sin volver a aplicar. El archivo no se guarda: quedan su
+  huella, los conteos y las filas rechazadas.
+- Una tarjeta entra al inventario con su número impreso y su huella. La huella
+  no sale en ninguna respuesta ni en la bitácora. Sólo se asigna una tarjeta
+  del inventario: la que ya tuvo titular no pasa a otra persona. Asignar una
+  segunda tarjeta a alguien reemplaza la anterior en la misma operación.
+- Cambiar los encabezados del CSV sube `TEMPLATE_VERSION` en `ImportService`
+  y se documenta en el contrato.
 
 ## Seguridad del entorno local
 

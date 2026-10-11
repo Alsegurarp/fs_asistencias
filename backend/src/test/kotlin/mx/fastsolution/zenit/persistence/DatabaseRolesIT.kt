@@ -186,6 +186,81 @@ class DatabaseRolesIT {
         }
     }
 
+    @Test
+    fun `the directory is never deleted, schedules and import results are never rewritten`() {
+        asApp().use { db ->
+            for (table in listOf("site", "schedule", "schedule_day", "employee", "schedule_assignment", "card", "card_assignment", "employee_import")) {
+                assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM $table") } }, table)
+            }
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE schedule SET name = 'otro'") } })
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE schedule_day SET break_minutes = 0") } })
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE employee_import SET status = 'applied'") } })
+        }
+    }
+
+    @Test
+    fun `a directory record cannot point at another company's data`() {
+        asApp().use { db ->
+            val one = db.newTenant()
+            val other = db.newTenant()
+            val siteOfOne = UUID.randomUUID()
+            db.prepareStatement(
+                "INSERT INTO site (tenant_id, id, name, time_zone, latitude, longitude, radius_m, status) " +
+                    "VALUES (?, ?, 'Sede', 'America/Mexico_City', 19.4, -99.1, 80, 'active')",
+            ).use {
+                it.setObject(1, one)
+                it.setObject(2, siteOfOne)
+                it.executeUpdate()
+            }
+            fun employee(tenant: UUID, site: UUID?): UUID {
+                val id = UUID.randomUUID()
+                db.prepareStatement(
+                    "INSERT INTO employee (tenant_id, id, external_id, display_name, status, site_id, employment_start, source) " +
+                        "VALUES (?, ?, ?, 'Persona', 'active', ?, DATE '2026-01-05', 'manual')",
+                ).use {
+                    it.setObject(1, tenant)
+                    it.setObject(2, id)
+                    it.setString(3, "E-$id")
+                    it.setObject(4, site)
+                    it.executeUpdate()
+                }
+                return id
+            }
+            fun card(tenant: UUID): UUID {
+                val id = UUID.randomUUID()
+                db.prepareStatement("INSERT INTO card (tenant_id, id, label, fingerprint, status) VALUES (?, ?, ?, ?, 'inventory')").use {
+                    it.setObject(1, tenant)
+                    it.setObject(2, id)
+                    it.setString(3, "ZN-$id")
+                    it.setString(4, "huella-$id")
+                    it.executeUpdate()
+                }
+                return id
+            }
+            fun assign(tenant: UUID, card: UUID, employee: UUID) {
+                db.prepareStatement("INSERT INTO card_assignment (tenant_id, id, card_id, employee_id) VALUES (?, ?, ?, ?)").use {
+                    it.setObject(1, tenant)
+                    it.setObject(2, UUID.randomUUID())
+                    it.setObject(3, card)
+                    it.setObject(4, employee)
+                    it.executeUpdate()
+                }
+            }
+
+            val personOfOne = employee(one, siteOfOne)
+            assertEquals("23503", denied { employee(other, siteOfOne) })
+            val cardOfOne = card(one)
+            val cardOfOther = card(other)
+            assertEquals("23503", denied { assign(one, cardOfOther, personOfOne) })
+            assertEquals("23503", denied { assign(other, cardOfOther, personOfOne) })
+
+            // Una asignación abierta por tarjeta y una por persona.
+            assign(one, cardOfOne, personOfOne)
+            assertEquals("23505", denied { assign(one, card(one), personOfOne) })
+            assertEquals("23505", denied { assign(one, cardOfOne, employee(one, null)) })
+        }
+    }
+
     // Las contraseñas son correctas: el rechazo es por permiso (42501), no por
     // credencial (28P01).
     @Test

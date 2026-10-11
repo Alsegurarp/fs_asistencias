@@ -95,7 +95,8 @@ class AuditLog(private val dsl: DSLContext) {
         fun json(values: Map<String, String>): String =
             values.entries.joinToString(",", "{", "}") { "${quote(it.key)}:${quote(it.value)}" }
 
-        private fun quote(text: String): String = buildString {
+        /** Texto como cadena JSON, con sus escapes. */
+        fun quote(text: String): String = buildString {
             append('"')
             for (c in text) {
                 when {

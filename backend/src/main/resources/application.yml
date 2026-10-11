@@ -24,6 +24,11 @@ spring:
     deserialization:
       # El contrato no admite campos de más en un cuerpo.
       fail-on-unknown-properties: true
+  servlet:
+    multipart:
+      # El padrón de una empresa cabe de sobra; un archivo mayor se rechaza.
+      max-file-size: 1MB
+      max-request-size: 2MB
 
 zenit:
   identity:

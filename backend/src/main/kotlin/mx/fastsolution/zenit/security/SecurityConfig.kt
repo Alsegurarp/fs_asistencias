@@ -58,6 +58,26 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole(admin)
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/users/{userId}").hasRole(admin)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/audit-log").hasAnyRole(admin, auditor)
+                // Sedes y horarios.
+                it.requestMatchers(HttpMethod.GET, "/api/v1/sites", "/api/v1/sites/{siteId}").hasAnyRole(admin, rh, supervisor, auditor)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/sites").hasRole(admin)
+                it.requestMatchers(HttpMethod.PATCH, "/api/v1/sites/{siteId}").hasRole(admin)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/schedules", "/api/v1/schedules/{scheduleId}")
+                    .hasAnyRole(admin, rh, supervisor, auditor)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/schedules").hasAnyRole(admin, rh)
+                // Padrón e importación.
+                it.requestMatchers(HttpMethod.GET, "/api/v1/employees", "/api/v1/employees/{employeeId}")
+                    .hasAnyRole(admin, rh, supervisor, auditor)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/employees").hasAnyRole(admin, rh)
+                it.requestMatchers(HttpMethod.PATCH, "/api/v1/employees/{employeeId}").hasAnyRole(admin, rh)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/employees/{employeeId}/schedule-assignments").hasAnyRole(admin, rh)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/imports/csv").hasAnyRole(admin, rh)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/imports/{importId}").hasAnyRole(admin, rh)
+                // Tarjetas.
+                it.requestMatchers(HttpMethod.GET, "/api/v1/cards").hasAnyRole(admin, rh, auditor)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/cards").hasAnyRole(admin, rh)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/cards/{cardId}/assignments", "/api/v1/cards/{cardId}/revocation")
+                    .hasAnyRole(admin, rh)
                 it.anyRequest().denyAll()
             }
             .oauth2ResourceServer {
