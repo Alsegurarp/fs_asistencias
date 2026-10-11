@@ -25,14 +25,37 @@ docker compose --profile setup run --rm secrets-init
 docker compose up --build
 ```
 
-El primer comando genera una sola vez la contraseña local de la base en
-`secrets/db_password`, que Git ignora. Copiar `.env.example` a `.env` es
-opcional: sólo hace falta para cambiar puertos o nombres.
+El primer comando genera una sola vez los secretos locales en `secrets/`, que
+Git ignora. Copiar `.env.example` a `.env` es opcional: sólo hace falta para
+cambiar puertos, nombres o direcciones.
 
 - Portal: `http://localhost:8081`
 - Estado de API: `http://localhost:8080/actuator/health`
+- Identidad: `http://localhost:8082/realms/zenit`
 
-Para empezar de cero: `docker compose down -v` y borrar `secrets/db_password`.
+Para empezar de cero: `docker compose down -v` y borrar el contenido de
+`secrets/`. Quien ya tenía el entorno debe hacerlo una vez, porque la base de
+identidad se crea al inicializar el volumen.
+
+## Identidad
+
+El inicio de sesión de las personas lo hace Keycloak, no el backend. Los
+dispositivos no lo usan: se identifican con su propia clave.
+
+- El realm `zenit` se importa de `infra/keycloak/realm/zenit-realm.json` la
+  primera vez. Ese archivo no lleva claves, secretos ni usuarios: las claves
+  de firma se generan en cada instalación.
+- Toda cuenta nueva debe configurar un segundo factor en su primera entrada.
+  El registro abierto y la concesión directa por contraseña están apagados, y
+  cinco intentos fallidos bloquean la cuenta por un tiempo.
+- El portal se identifica como `zenit-portal`, con PKCE. Sus tokens duran
+  cinco minutos y llevan la audiencia `zenit-api`.
+- La consola de administración está en `http://localhost:8082/admin`. La
+  cuenta `arranque` es temporal y su contraseña está en
+  `secrets/keycloak_admin_password`; se sustituye por cuentas personales.
+- El archivo del realm sólo se lee cuando el realm no existe. Un cambio se
+  hace en la consola de una instalación limpia, se exporta con `kc.sh export`
+  y se le quitan las claves antes de versionarlo.
 
 ## Seguridad del entorno local
 
@@ -43,7 +66,8 @@ El entorno local sigue las mismas reglas que tendrá un ambiente publicado.
 - Los puertos se publican sólo en `127.0.0.1`. Para probar desde un teléfono
   conectado por USB se usa `adb reverse`; `BIND_ADDRESS` permite cambiarlo.
 - La base no publica puerto y vive en una red sin salida que sólo comparte con
-  el backend. El portal no la alcanza.
+  el backend y con el proveedor de identidad. El portal no la alcanza. La
+  identidad usa su propia base y su propio rol, que no entra a la del producto.
 - Los contenedores corren sin usuario root, sin capacidades de Linux, sin
   privilegios nuevos, con el sistema de archivos en sólo lectura y con límites
   de memoria y de procesos.

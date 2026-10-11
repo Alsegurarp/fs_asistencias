@@ -29,6 +29,7 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     secrets:
       - db_password
+      - keycloak_db_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -36,11 +37,61 @@ services:
       retries: 12
     volumes:
       - zenit-db:/var/lib/postgresql
-    # Sin puerto publicado y en una red sin salida: sólo la alcanza el backend.
+      # Crea la base del proveedor de identidad al inicializar el volumen.
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    # Sin puerto publicado y en una red sin salida: sólo la alcanzan el backend
+    # y el proveedor de identidad.
     networks:
       - datos
     pids_limit: 256
     mem_limit: 512m
+
+  # Proveedor de identidad: inicio de sesión y segundo factor de las personas.
+  # Los dispositivos no lo usan.
+  keycloak:
+    build:
+      context: infra/keycloak
+      dockerfile: Dockerfile
+    <<: *hardening
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /opt/keycloak/data/tmp
+      - /opt/keycloak/data/transaction-logs
+    # Las contraseñas llegan en un archivo de configuración montado como
+    # secreto; lo demás, por variables.
+    command: ["--config-file=/run/secrets/keycloak.conf", "start", "--optimized", "--import-realm"]
+    environment:
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: keycloak_app
+      KC_HOSTNAME: ${IDENTITY_URL:-http://localhost:8082}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_PORT: "8082"
+      # Cuenta temporal de arranque; se sustituye por cuentas personales.
+      KC_BOOTSTRAP_ADMIN_USERNAME: arranque
+      # Dirección del portal, que el realm usa en sus redirecciones permitidas.
+      ZENIT_PORTAL_URL: ${PORTAL_URL:-http://localhost:8081}
+    secrets:
+      # Keycloak exige que el archivo termine en .conf.
+      - source: keycloak_conf
+        target: keycloak.conf
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\": \"UP\"' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${KEYCLOAK_PORT:-8082}:8082"
+    networks:
+      - datos
+      - borde
+    pids_limit: 512
+    mem_limit: 1400m
 
   backend:
     build:
@@ -85,7 +136,7 @@ services:
     pids_limit: 64
     mem_limit: 128m
 
-  # Genera la contraseña local de la base, una sola vez:
+  # Genera los secretos locales, una sola vez:
   #   docker compose --profile setup run --rm secrets-init
   secrets-init:
     image: postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c
@@ -101,19 +152,33 @@ services:
     command:
       - |
         set -eu
-        # Si se levantó el entorno sin secreto, Docker dejó un directorio vacío.
-        if [ -d /out/db_password ]; then
-          rmdir /out/db_password
-        fi
-        if [ -f /out/db_password ] && [ -s /out/db_password ]; then
-          echo "El secreto ya existe; no se cambia."
-          exit 0
-        fi
         umask 077
-        head -c 48 /dev/urandom | base64 | tr -d '=+/\n' > /out/db_password
-        chmod 444 /out/db_password
+        generar() {
+          # Si se levantó el entorno sin secreto, Docker dejó un directorio vacío.
+          if [ -d "/out/$$1" ]; then
+            rmdir "/out/$$1"
+          fi
+          if [ -f "/out/$$1" ] && [ -s "/out/$$1" ]; then
+            echo "$$1: ya existe; no se cambia."
+            return 0
+          fi
+          head -c 48 /dev/urandom | base64 | tr -d '=+/\n' > "/out/$$1"
+          chmod 444 "/out/$$1"
+          echo "$$1: generado."
+        }
+        generar db_password
+        generar keycloak_db_password
+        generar keycloak_admin_password
+        # El proveedor de identidad lee sus contraseñas de un archivo de
+        # configuración; se arma a partir de las dos anteriores.
+        if [ -d /out/keycloak.conf ]; then
+          rmdir /out/keycloak.conf
+        fi
+        printf 'db-password=%s\nbootstrap-admin-password=%s\n' \
+          "$$(cat /out/keycloak_db_password)" "$$(cat /out/keycloak_admin_password)" \
+          > /out/keycloak.conf
+        chmod 444 /out/keycloak.conf
         chmod 700 /out
-        echo "Secreto generado en secrets/db_password."
     volumes:
       - ./secrets:/out
 
@@ -158,6 +223,10 @@ networks:
 secrets:
   db_password:
     file: ./secrets/db_password
+  keycloak_db_password:
+    file: ./secrets/keycloak_db_password
+  keycloak_conf:
+    file: ./secrets/keycloak.conf
 
 volumes:
   zenit-db:
