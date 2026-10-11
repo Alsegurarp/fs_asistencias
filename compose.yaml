@@ -106,6 +106,9 @@ services:
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-zenit}
       DB_USER: ${POSTGRES_USER:-zenit_app}
+      # El emisor es la dirección pública; las claves se leen por la red interna.
+      IDENTITY_ISSUER: ${IDENTITY_URL:-http://localhost:8082}/realms/zenit
+      IDENTITY_JWKS_URI: http://keycloak:8082/realms/zenit/protocol/openid-connect/certs
     secrets:
       - db_password
     depends_on:

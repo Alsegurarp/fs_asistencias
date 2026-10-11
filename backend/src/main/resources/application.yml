@@ -18,6 +18,13 @@ spring:
   jooq:
     sql-dialect: postgres
 
+zenit:
+  identity:
+    # Sin valor por defecto: sin proveedor de identidad la aplicación no arranca.
+    issuer: ${IDENTITY_ISSUER}
+    jwks-uri: ${IDENTITY_JWKS_URI}
+    audience: ${IDENTITY_AUDIENCE:zenit-api}
+
 management:
   endpoints:
     web:

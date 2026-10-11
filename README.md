@@ -50,6 +50,13 @@ dispositivos no lo usan: se identifican con su propia clave.
   cinco intentos fallidos bloquean la cuenta por un tiempo.
 - El portal se identifica como `zenit-portal`, con PKCE. Sus tokens duran
   cinco minutos y llevan la audiencia `zenit-api`.
+- El backend niega todo por defecto. Sin credencial sólo responden el estado
+  del sistema y la salud; `/api/v1/me` pide un token válido. Una ruta nueva se
+  abre de forma explícita en `SecurityConfig`: mientras no esté ahí responde
+  401 sin token y 403 con él.
+- Un token se acepta si su firma, su vigencia, su emisor y su audiencia son
+  correctos. Los rechazos responden con el formato de error del contrato y sin
+  decir el motivo.
 - La consola de administración está en `http://localhost:8082/admin`. La
   cuenta `arranque` es temporal y su contraseña está en
   `secrets/keycloak_admin_password`; se sustituye por cuentas personales.
