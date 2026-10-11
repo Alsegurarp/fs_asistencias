@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.3.0
+  version: 0.4.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo, aunque el
@@ -96,6 +96,7 @@ paths:
                   name: Panificadora Ejemplo
                   timeZone: America/Mexico_City
                   weekStartsOn: monday
+                  breakPolicy: not_considered
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -123,6 +124,7 @@ paths:
                     slug: panificadora-ejemplo
                     timeZone: America/Mexico_City
                     weekStartsOn: monday
+                    breakPolicy: not_considered
                     status: active
                     createdAt: "2026-10-05T15:00:00Z"
                 nextCursor: null
@@ -146,6 +148,7 @@ paths:
               slug: panificadora-ejemplo
               timeZone: America/Mexico_City
               weekStartsOn: monday
+              breakPolicy: not_considered
       responses:
         "201":
           description: Empresa creada
@@ -159,6 +162,7 @@ paths:
                 slug: panificadora-ejemplo
                 timeZone: America/Mexico_City
                 weekStartsOn: monday
+                breakPolicy: not_considered
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
         "401":
@@ -189,6 +193,7 @@ paths:
                 slug: panificadora-ejemplo
                 timeZone: America/Mexico_City
                 weekStartsOn: monday
+                breakPolicy: not_considered
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
         "401":
@@ -208,6 +213,7 @@ paths:
               $ref: "#/components/schemas/TenantUpdate"
             example:
               weekStartsOn: sunday
+              breakPolicy: not_considered
       responses:
         "200":
           description: Empresa actualizada
@@ -221,6 +227,7 @@ paths:
                 slug: panificadora-ejemplo
                 timeZone: America/Mexico_City
                 weekStartsOn: sunday
+                breakPolicy: not_considered
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
         "401":
@@ -1076,6 +1083,7 @@ paths:
                   serverTime: "2026-10-05T16:05:00Z"
                   tokenMaxAgeSeconds: 300
                   locationReuseSeconds: 0
+                  breakPolicy: not_considered
                   offlinePolicy:
                     maxAgeHours: 72
                     maxEvents: 1000
@@ -1213,6 +1221,7 @@ paths:
                 serverTime: "2026-10-06T12:55:00Z"
                 tokenMaxAgeSeconds: 300
                 locationReuseSeconds: 0
+                breakPolicy: not_considered
                 offlinePolicy:
                   maxAgeHours: 72
                   maxEvents: 1000
@@ -2307,9 +2316,17 @@ components:
           type: [string, "null"]
           format: uuid
           description: Presente cuando la persona también está en el padrón.
+    BreakPolicy:
+      type: string
+      enum: [not_considered, marked]
+      description: |
+        Qué hace la empresa con el descanso o la comida. Con `not_considered`
+        no se marca y la jornada es salida menos entrada: sólo hay marcajes de
+        entrada y de salida. Con `marked` la persona marca el inicio y el fin
+        del descanso y ese tiempo se mide aparte.
     TenantSummary:
       type: object
-      required: [id, name, timeZone, weekStartsOn]
+      required: [id, name, timeZone, weekStartsOn, breakPolicy]
       properties:
         id:
           type: string
@@ -2320,10 +2337,12 @@ components:
           type: string
         weekStartsOn:
           $ref: "#/components/schemas/DayOfWeek"
+        breakPolicy:
+          $ref: "#/components/schemas/BreakPolicy"
 
     Tenant:
       type: object
-      required: [id, name, slug, timeZone, weekStartsOn, status, createdAt]
+      required: [id, name, slug, timeZone, weekStartsOn, breakPolicy, status, createdAt]
       properties:
         id:
           type: string
@@ -2337,6 +2356,8 @@ components:
           description: Zona IANA, por ejemplo America/Mexico_City.
         weekStartsOn:
           $ref: "#/components/schemas/DayOfWeek"
+        breakPolicy:
+          $ref: "#/components/schemas/BreakPolicy"
         status:
           type: string
           enum: [active, suspended]
@@ -2346,7 +2367,7 @@ components:
     TenantCreate:
       type: object
       additionalProperties: false
-      required: [name, slug, timeZone, weekStartsOn]
+      required: [name, slug, timeZone, weekStartsOn, breakPolicy]
       properties:
         name:
           type: string
@@ -2360,6 +2381,9 @@ components:
           type: string
         weekStartsOn:
           $ref: "#/components/schemas/DayOfWeek"
+        breakPolicy:
+          $ref: "#/components/schemas/BreakPolicy"
+          description: Se elige al dar de alta la empresa; no tiene valor por defecto.
     TenantUpdate:
       type: object
       additionalProperties: false
@@ -2373,6 +2397,9 @@ components:
           type: string
         weekStartsOn:
           $ref: "#/components/schemas/DayOfWeek"
+        breakPolicy:
+          $ref: "#/components/schemas/BreakPolicy"
+          description: El cambio no reescribe semanas ya cerradas.
     TenantList:
       type: object
       required: [items, nextCursor]
@@ -2489,6 +2516,10 @@ components:
           type: integer
           minimum: 0
           maximum: 480
+          description: |
+            Descanso previsto en ese día. Si la empresa marca el descanso, sirve
+            para avisar cuando el medido lo excede; si no lo considera, es sólo
+            informativo y no se descuenta.
     Schedule:
       type: object
       required: [id, name, timeZone, validFrom, validTo, days, createdAt]
@@ -2997,7 +3028,7 @@ components:
           maxLength: 20
     DeviceSession:
       type: object
-      required: [sessionId, startedAt, serverTime, tokenMaxAgeSeconds, locationReuseSeconds, offlinePolicy]
+      required: [sessionId, startedAt, serverTime, tokenMaxAgeSeconds, locationReuseSeconds, breakPolicy, offlinePolicy]
       properties:
         sessionId:
           type: string
@@ -3008,6 +3039,9 @@ components:
         serverTime:
           type: string
           format: date-time
+        breakPolicy:
+          $ref: "#/components/schemas/BreakPolicy"
+          description: Le dice a la app si debe ofrecer el marcaje de descanso.
         tokenMaxAgeSeconds:
           type: integer
           description: Vida máxima de una aserción del dispositivo.
@@ -3090,6 +3124,9 @@ components:
     EventType:
       type: string
       enum: [clock_in, clock_out, break_start, break_end]
+      description: |
+        `break_start` y `break_end` sólo existen en empresas que marcan el
+        descanso. En las demás el servidor fija siempre entrada o salida.
     LocationVerdict:
       type: string
       enum: [inside, outside, inconclusive, not_evaluated]
