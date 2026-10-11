@@ -1,0 +1,43 @@
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+*.local
+secrets/
+*.key
+*.pem
+
+# Editores y sistema operativo
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Dependencias y artefactos comunes
+node_modules/
+.pnpm-store/
+.gradle/
+.m2/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+build/
+dist/
+out/
+target/
+coverage/
+.cache/
+
+# Android
+.kotlin/
+local.properties
+captures/
+
+# Vite
+web/.vite/
+
+# Logs
+*.log
+logs/
