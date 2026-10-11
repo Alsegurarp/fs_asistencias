@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: Control Jornada API
+  version: 0.1.0
+  description: Contrato ejecutable inicial del producto Fast Solutions.
+servers:
+  - url: /api/v1
+paths:
+  /system/status:
+    get:
+      operationId: getSystemStatus
+      summary: Informa el estado básico de la API
+      responses:
+        "200":
+          description: API disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemStatus"
+components:
+  schemas:
+    SystemStatus:
+      type: object
+      additionalProperties: false
+      required: [service, status, version]
+      properties:
+        service:
+          type: string
+        status:
+          type: string
+          const: ok
+        version:
+          type: string
