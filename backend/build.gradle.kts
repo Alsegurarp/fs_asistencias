@@ -33,8 +33,27 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
-tasks.withType<Test> {
-    useJUnitPlatform()
+// Las pruebas unitarias corren en cada build. Las de integración necesitan una
+// base PostgreSQL real y se corren aparte, con docker compose.
+tasks.test {
+    useJUnitPlatform {
+        excludeTags("integration")
+    }
+}
+
+tasks.register<Test>("integrationTest") {
+    description = "Pruebas contra una base PostgreSQL real."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform {
+        includeTags("integration")
+    }
+    // Deja a la vista qué se probó: dependen de una base externa.
+    testLogging {
+        events("passed", "failed", "skipped")
+    }
+    shouldRunAfter(tasks.test)
 }
 
 tasks.bootJar {

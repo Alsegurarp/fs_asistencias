@@ -26,16 +26,57 @@ docker compose up --build
 ```
 
 El primer comando genera una sola vez los secretos locales en `secrets/`, que
-Git ignora. Copiar `.env.example` a `.env` es opcional: sólo hace falta para
-cambiar puertos, nombres o direcciones.
+Git ignora; se puede repetir y sólo crea los que falten. Copiar `.env.example`
+a `.env` es opcional: sólo hace falta para cambiar puertos, nombres o
+direcciones.
 
 - Portal: `http://localhost:8081`
 - Estado de API: `http://localhost:8080/actuator/health`
 - Identidad: `http://localhost:8082/realms/zenit`
 
+Al levantar, el servicio `migrate` aplica las migraciones y termina; el backend
+espera a que acabe bien. Es normal verlo como `Exited (0)`.
+
 Para empezar de cero: `docker compose down -v` y borrar el contenido de
-`secrets/`. Quien ya tenía el entorno debe hacerlo una vez, porque la base de
-identidad se crea al inicializar el volumen.
+`secrets/`. Quien ya tenía el entorno debe hacerlo una vez, porque los roles de
+la base y la base de identidad se crean al inicializar el volumen.
+
+## Base de datos
+
+Cada conexión usa el rol con menos permisos que le sirve.
+
+| Rol | Quién lo usa | Qué puede |
+| --- | --- | --- |
+| `zenit_admin` | Nadie: sólo inicializa el volumen | Administra la instancia |
+| `zenit_migrator` | El servicio `migrate` | Es dueño del esquema y lo cambia |
+| `zenit_app` | El backend al atender | Lee y escribe sólo lo que una migración le abrió |
+| `keycloak_app` | El proveedor de identidad | Su propia base; no entra a la del producto |
+
+- El backend no cambia el esquema. Al arrancar comprueba que esté al día y, si
+  falta una migración o no puede conectarse, no arranca.
+- `zenit_app` no hereda permisos. Cada migración que crea una tabla termina con
+  su `GRANT`, y sólo con las operaciones que hacen falta: una tabla sin `GRANT`
+  no se puede leer desde el backend.
+- La evidencia sólo se agrega. Sobre `attendance_event` y `audit_log` el
+  backend puede insertar y leer, no corregir ni borrar.
+- Toda tabla de una empresa lleva `tenant_id`, y sus llaves foráneas lo
+  incluyen: un registro no puede apuntar a datos de otra empresa.
+- Una migración aplicada no se edita. Un cambio va en un archivo nuevo en
+  `backend/src/main/resources/db/migration/`.
+
+## Pruebas
+
+Las pruebas unitarias corren al construir la imagen del backend. Las de
+integración usan una base PostgreSQL desechable, inicializada igual que la real:
+
+```powershell
+docker compose --profile test run --rm --build backend-it
+docker compose --profile test down db-it backend-it
+```
+
+El segundo comando retira la base de pruebas sin tocar el entorno levantado.
+Una prueba de integración lleva `@Tag("integration")` y comprueba también lo
+que debe fallar: el caso negativo es parte de la prueba.
 
 ## Identidad
 
@@ -70,11 +111,14 @@ El entorno local sigue las mismas reglas que tendrá un ambiente publicado.
 
 - Ninguna contraseña tiene valor por defecto ni viaja como variable de entorno:
   se monta como archivo. Sin ese archivo, la base y el backend no arrancan.
+- Cada servicio recibe sólo la contraseña de su rol: el backend no tiene la del
+  dueño del esquema ni la del administrador de la instancia.
 - Los puertos se publican sólo en `127.0.0.1`. Para probar desde un teléfono
   conectado por USB se usa `adb reverse`; `BIND_ADDRESS` permite cambiarlo.
 - La base no publica puerto y vive en una red sin salida que sólo comparte con
-  el backend y con el proveedor de identidad. El portal no la alcanza. La
-  identidad usa su propia base y su propio rol, que no entra a la del producto.
+  el backend, el paso de migraciones y el proveedor de identidad. El portal no
+  la alcanza. La identidad usa su propia base y su propio rol, que no entra a
+  la del producto.
 - Los contenedores corren sin usuario root, sin capacidades de Linux, sin
   privilegios nuevos, con el sistema de archivos en sólo lectura y con límites
   de memoria y de procesos.

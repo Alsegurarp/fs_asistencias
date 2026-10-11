@@ -1,5 +1,6 @@
 package mx.fastsolution.zenit.security
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -23,6 +24,8 @@ import org.springframework.security.web.SecurityFilterChain
  * una ruta que no esté en la lista responde 401 sin credencial y 403 con ella.
  */
 @Configuration(proxyBeanMethods = false)
+// El paso de migraciones no abre puertos y no necesita nada de esto.
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @EnableWebSecurity
 @EnableConfigurationProperties(IdentityProperties::class)
 class SecurityConfig {

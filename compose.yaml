@@ -25,10 +25,14 @@ services:
       - /var/run/postgresql
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-zenit}
-      POSTGRES_USER: ${POSTGRES_USER:-zenit_app}
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      # Administrador de la instancia. Sólo inicializa el volumen: ningún
+      # servicio se conecta con él ni recibe su contraseña.
+      POSTGRES_USER: ${POSTGRES_ADMIN_USER:-zenit_admin}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
     secrets:
-      - db_password
+      - db_admin_password
+      - db_migrator_password
+      - db_app_password
       - keycloak_db_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -37,10 +41,37 @@ services:
       retries: 12
     volumes:
       - zenit-db:/var/lib/postgresql
-      # Crea la base del proveedor de identidad al inicializar el volumen.
+      # Crea los roles del producto y la base del proveedor de identidad al
+      # inicializar el volumen.
       - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
-    # Sin puerto publicado y en una red sin salida: sólo la alcanzan el backend
-    # y el proveedor de identidad.
+    # Sin puerto publicado y en una red sin salida: sólo la alcanzan el backend,
+    # el paso de migraciones y el proveedor de identidad.
+    networks:
+      - datos
+    pids_limit: 256
+    mem_limit: 512m
+
+  # Aplica las migraciones con el rol dueño del esquema y termina. Es el único
+  # servicio que recibe esa contraseña; el backend espera a que acabe bien.
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    <<: *hardening
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      SPRING_PROFILES_ACTIVE: migrate
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-zenit}
+    secrets:
+      - db_migrator_password
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
     networks:
       - datos
     pids_limit: 256
@@ -105,15 +136,17 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-zenit}
-      DB_USER: ${POSTGRES_USER:-zenit_app}
       # El emisor es la dirección pública; las claves se leen por la red interna.
       IDENTITY_ISSUER: ${IDENTITY_URL:-http://localhost:8082}/realms/zenit
       IDENTITY_JWKS_URI: http://keycloak:8082/realms/zenit/protocol/openid-connect/certs
+    # Atiende con un rol que no es dueño de las tablas ni puede cambiarlas.
     secrets:
-      - db_password
+      - db_app_password
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${BACKEND_PORT:-8080}:8080"
     networks:
@@ -169,13 +202,19 @@ services:
           chmod 444 "/out/$$1"
           echo "$$1: generado."
         }
-        generar db_password
+        generar db_admin_password
+        generar db_migrator_password
+        generar db_app_password
         generar keycloak_db_password
         generar keycloak_admin_password
         # El proveedor de identidad lee sus contraseñas de un archivo de
         # configuración; se arma a partir de las dos anteriores.
         if [ -d /out/keycloak.conf ]; then
           rmdir /out/keycloak.conf
+        fi
+        # Queda en sólo lectura; se abre para poder volver a escribirlo.
+        if [ -f /out/keycloak.conf ]; then
+          chmod 600 /out/keycloak.conf
         fi
         printf 'db-password=%s\nbootstrap-admin-password=%s\n' \
           "$$(cat /out/keycloak_db_password)" "$$(cat /out/keycloak_admin_password)" \
@@ -184,6 +223,69 @@ services:
         chmod 700 /out
     volumes:
       - ./secrets:/out
+
+  # Base desechable para las pruebas de integración: se inicializa igual que la
+  # real, vive en memoria y en una red propia, sin salida.
+  db-it:
+    image: postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c
+    profiles: ["test"]
+    <<: *hardening
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+      - /var/lib/postgresql
+    environment:
+      POSTGRES_DB: zenit
+      POSTGRES_USER: zenit_admin
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+    secrets:
+      - db_admin_password
+      - db_migrator_password
+      - db_app_password
+      - keycloak_db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - pruebas
+    pids_limit: 256
+    mem_limit: 512m
+
+  # Pruebas del backend contra PostgreSQL real:
+  #   docker compose --profile test run --rm --build backend-it
+  #   docker compose --profile test down db-it backend-it
+  backend-it:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: it
+    profiles: ["test"]
+    <<: *hardening
+    environment:
+      IT_DB_URL: jdbc:postgresql://db-it:5432/zenit
+      IT_IDENTITY_DB_URL: jdbc:postgresql://db-it:5432/keycloak
+    secrets:
+      - db_migrator_password
+      - db_app_password
+      - keycloak_db_password
+    depends_on:
+      db-it:
+        condition: service_healthy
+    networks:
+      - pruebas
+    pids_limit: 1024
+    mem_limit: 2g
 
   # Valida el contrato y sus ejemplos:
   #   docker compose --profile tools run --rm contract-lint
@@ -222,10 +324,16 @@ networks:
   datos:
     internal: true
   borde:
+  pruebas:
+    internal: true
 
 secrets:
-  db_password:
-    file: ./secrets/db_password
+  db_admin_password:
+    file: ./secrets/db_admin_password
+  db_migrator_password:
+    file: ./secrets/db_migrator_password
+  db_app_password:
+    file: ./secrets/db_app_password
   keycloak_db_password:
     file: ./secrets/keycloak_db_password
   keycloak_conf:
