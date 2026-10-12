@@ -7,7 +7,7 @@ import { Directory } from './Directory'
 function render(kind: 'sites' | 'employees' | 'cards', roles: string[], items: unknown[] = []) {
   const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   cache.setQueryData([kind], { pages: [{ items, nextCursor: null }], pageParams: [''] })
-  const html = renderToStaticMarkup(<QueryClientProvider client={cache}><Directory kind={kind} me={{ displayName: 'Prueba', roles, tenant: { name: 'Empresa', timeZone: 'America/Mexico_City' } }} /></QueryClientProvider>)
+  const html = renderToStaticMarkup(<QueryClientProvider client={cache}><Directory kind={kind} me={{ userId: 'self', displayName: 'Prueba', roles, tenant: { name: 'Empresa', timeZone: 'America/Mexico_City' } }} /></QueryClientProvider>)
   cache.clear()
   return html
 }

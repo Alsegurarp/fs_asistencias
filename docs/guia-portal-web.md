@@ -12,6 +12,23 @@ con cursor. Incluye estados de carga, errores de campos y referencia de
 correlación. La compilación y las pruebas del cliente pasan; todavía falta
 probar el recorrido completo contra Keycloak y el backend real.
 
+La navegación de Incidencias, Cierres y Exportes respeta los roles de `/me`.
+Incidencias ya tiene listado, filtros, detalle, semana del empleado,
+asignación y resolución con los tres tipos de ajuste. Cierres y Exportes
+todavía muestran que están en preparación. El supervisor ve Incidencias y Cierres;
+el auditor también ve Exportes. El administrador y RH ven las tres secciones.
+Los permisos de resolver, cerrar y reabrir se distinguen en `permissions()`;
+el servidor sigue siendo quien autoriza cada operación.
+
+El cliente compartido de `web/src/api.ts` admite una clave de idempotencia
+como cuarto argumento: `api('/exports', 'POST', pedido, clave)`. Quien crea
+la solicitud genera la clave una vez y conserva ese valor al reintentar.
+`apiDownload('/exports/<id>/download')` devuelve el `blob` y el nombre del
+archivo indicado por el servidor, sin interpretar el CSV como JSON. Ambos
+caminos renuevan la credencial y conservan los errores de campos y la
+referencia de correlación; las descargas no se reintentan automáticamente.
+Las peticiones autenticadas no admiten redirecciones ni caché HTTP.
+
 Para desarrollar el portal fuera de Docker: `cd web`, `pnpm install` y
 `pnpm dev`. Usa `http://localhost:8081`, la misma dirección de retorno que el
 realm local permite, y envía `/api` a `http://localhost:8080`. El proveedor
@@ -181,6 +198,37 @@ Mostrar siempre un aviso de que el cálculo es una referencia: sus topes no
 tienen revisión jurídica.
 
 ## Incidencias
+
+Implementado en `web/src/Incidents.tsx`. Las listas usan cursor y los filtros
+por estado, tipo, sede y fecha de la semana reinician la paginación. Se
+consultan los nombres de empleado y sede; las fechas se muestran en la zona
+de la empresa, sin recalcular los totales de jornada del backend.
+
+El detalle permite elegir la semana: la fecha de apertura de una incidencia
+no necesariamente es la del marcaje, especialmente en sincronización tardía.
+La semana consultada muestra los tramos, alertas, totales e incidencias
+pendientes. Los marcajes se cargan por páginas; si el relacionado no aparece,
+se indica que hay que cargar más o elegir otra semana. Los ajustes de excluir
+y cambiar tipo sólo seleccionan marcajes reales cargados de ese empleado,
+sin utilizar identificadores sintéticos de ajustes anteriores.
+
+Administrador, RH y supervisor pueden autoasignarse y quitar la asignación;
+el administrador puede elegir otra persona con acceso vigente. RH, supervisor
+y auditor no consultan `/users`, porque esa ruta sólo admite administradores.
+Un responsable ajeno se muestra como «Otra persona de la empresa» cuando no
+se tiene permiso de consultar su nombre.
+
+Al agregar un marcaje se introduce la hora en la zona de la empresa y se envía
+el instante UTC. Una hora inexistente por cambio horario no se admite; si
+se repite, hay que elegir la primera o segunda ocurrencia. La resolución
+conserva el motivo ante errores y muestra la referencia de correlación. Si
+otra persona ya resolvió, se recarga el detalle y se retiran los controles;
+si la semana está cerrada, se pide que el administrador la reabra. Resolver
+actualiza la lista y vuelve a consultar la semana del empleado.
+
+Verificado con pruebas de formularios y eventos React en jsdom, además de
+pruebas de payloads y zonas horarias. El PMO verifica el recorrido contra el
+backend real; estas pruebas usan respuestas simuladas.
 
 1. Lista con filtros: estado, tipo, sede y semana.
 2. Detalle: tipo, gravedad, persona, sede, marcaje y, si ya se atendió, quién y
