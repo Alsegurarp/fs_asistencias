@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "control-jornada-android"
+rootProject.name = "zenit-android"
 include(":app")
 

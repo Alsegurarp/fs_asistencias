@@ -1,44 +1,493 @@
-name: fastsolution-control-jornada
+name: fastsolution-zenit
+
+# Endurecimiento común: sin privilegios nuevos y sin capacidades de Linux.
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+# La base y las herramientas que usan su imagen salen de infra/postgres: la
+# imagen oficial sobre Alpine, sin la herramienta de arranque que no hace falta
+# y corriendo desde el principio como el usuario de la base.
+x-postgres: &postgres
+  build:
+    context: infra/postgres
+    dockerfile: Dockerfile
+
+# La ordenación y las mayúsculas las resuelve el propio motor, por código de
+# carácter: no dependen del sistema operativo de la imagen.
+x-postgres-initdb: &postgres-initdb "--locale-provider=builtin --builtin-locale=C.UTF-8"
 
 services:
   db:
-    image: postgres:18.6-bookworm
+    <<: [*hardening, *postgres]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-jornada}
-      POSTGRES_USER: ${POSTGRES_USER:-jornada_app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-solo-desarrollo-local}
+      POSTGRES_DB: ${POSTGRES_DB:-zenit}
+      # Administrador de la instancia. Sólo inicializa el volumen: ningún
+      # servicio se conecta con él ni recibe su contraseña.
+      POSTGRES_USER: ${POSTGRES_ADMIN_USER:-zenit_admin}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+      POSTGRES_INITDB_ARGS: *postgres-initdb
+    secrets:
+      - db_admin_password
+      - db_migrator_password
+      - db_app_password
+      - keycloak_db_password
+      - db_backup_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 12
     volumes:
-      - jornada-db:/var/lib/postgresql
+      - zenit-db:/var/lib/postgresql
+      # Crea los roles del producto y la base del proveedor de identidad al
+      # inicializar el volumen.
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    # Sin puerto publicado y en una red sin salida: sólo la alcanzan el backend,
+    # el paso de migraciones y el proveedor de identidad.
+    networks:
+      - datos
+    pids_limit: 256
+    mem_limit: 512m
+
+  # Aplica las migraciones con el rol dueño del esquema y termina. Es el único
+  # servicio que recibe esa contraseña; el backend espera a que acabe bien.
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    <<: *hardening
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      SPRING_PROFILES_ACTIVE: migrate
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-zenit}
+    secrets:
+      - db_migrator_password
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - datos
+    pids_limit: 256
+    mem_limit: 512m
+
+  # Proveedor de identidad: inicio de sesión y segundo factor de las personas.
+  # Los dispositivos no lo usan.
+  keycloak:
+    build:
+      context: infra/keycloak
+      dockerfile: Dockerfile
+    <<: *hardening
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /opt/keycloak/data/tmp
+      - /opt/keycloak/data/transaction-logs
+    # Las contraseñas llegan en un archivo de configuración montado como
+    # secreto; lo demás, por variables.
+    command: ["--config-file=/run/secrets/keycloak.conf", "start", "--optimized", "--import-realm"]
+    environment:
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: keycloak_app
+      KC_HOSTNAME: ${IDENTITY_URL:-http://localhost:8082}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_PORT: "8082"
+      # Cuenta temporal de arranque; se sustituye por cuentas personales.
+      KC_BOOTSTRAP_ADMIN_USERNAME: arranque
+      # Dirección del portal, que el realm usa en sus redirecciones permitidas.
+      ZENIT_PORTAL_URL: ${PORTAL_URL:-http://localhost:8081}
+    secrets:
+      # Keycloak exige que el archivo termine en .conf.
+      - source: keycloak_conf
+        target: keycloak.conf
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\": \"UP\"' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${KEYCLOAK_PORT:-8082}:8082"
+    networks:
+      - datos
+      - borde
+    pids_limit: 512
+    mem_limit: 1400m
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+    <<: *hardening
+    read_only: true
+    tmpfs:
+      - /tmp
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB:-jornada}
-      DB_USER: ${POSTGRES_USER:-jornada_app}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-solo-desarrollo-local}
+      DB_NAME: ${POSTGRES_DB:-zenit}
+      # El emisor es la dirección pública; las claves se leen por la red interna.
+      IDENTITY_ISSUER: ${IDENTITY_URL:-http://localhost:8082}/realms/zenit
+      IDENTITY_JWKS_URI: http://keycloak:8082/realms/zenit/protocol/openid-connect/certs
+      # Apagada salvo que se pida: la tarjeta simulada no está autenticada.
+      CAPTURE_SIMULATED_CARDS: ${CAPTURE_SIMULATED_CARDS:-false}
+      # Minutos durante los que un exporte listo se puede descargar.
+      EXPORTS_TTL_MINUTES: ${EXPORTS_TTL_MINUTES:-15}
+      # Apagado, este proceso no atiende trabajos encolados.
+      JOBS_ENABLED: ${JOBS_ENABLED:-true}
+      # Peticiones por minuto que se le aceptan a una persona.
+      API_PERSON_REQUESTS_PER_MINUTE: ${API_PERSON_REQUESTS_PER_MINUTE:-600}
+      # Segundos entre revisiones del cierre programado.
+      CLOSURES_SCHEDULE_CHECK_SECONDS: ${CLOSURES_SCHEDULE_CHECK_SECONDS:-60}
+    # Atiende con un rol que no es dueño de las tablas ni puede cambiarlas.
+    secrets:
+      - db_app_password
+      # Correos de quienes operan el servicio. Vacío, nadie da de alta empresas.
+      - operator_emails
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - "${BIND_ADDRESS:-127.0.0.1}:${BACKEND_PORT:-8080}:8080"
+    networks:
+      - datos
+      - borde
+    pids_limit: 256
+    mem_limit: 768m
 
   web:
     build:
       context: web
       dockerfile: Dockerfile
+    <<: *hardening
+    read_only: true
+    tmpfs:
+      - /tmp
     depends_on:
       - backend
     ports:
-      - "${WEB_PORT:-8081}:8080"
+      - "${BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8081}:8080"
+    networks:
+      - borde
+    pids_limit: 64
+    mem_limit: 128m
+
+  # Genera los secretos locales, una sola vez:
+  #   docker compose --profile setup run --rm secrets-init
+  secrets-init:
+    profiles: ["setup"]
+    <<: [*hardening, *postgres]
+    cap_add:
+      - DAC_OVERRIDE
+      - FOWNER
+    network_mode: none
+    read_only: true
+    user: root
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -eu
+        umask 077
+        generar() {
+          # Si se levantó el entorno sin secreto, Docker dejó un directorio vacío.
+          if [ -d "/out/$$1" ]; then
+            rmdir "/out/$$1"
+          fi
+          if [ -f "/out/$$1" ] && [ -s "/out/$$1" ]; then
+            echo "$$1: ya existe; no se cambia."
+            return 0
+          fi
+          head -c 48 /dev/urandom | base64 | tr -d '=+/\n' > "/out/$$1"
+          chmod 444 "/out/$$1"
+          echo "$$1: generado."
+        }
+        generar db_admin_password
+        generar db_migrator_password
+        generar db_app_password
+        generar keycloak_db_password
+        generar db_backup_password
+        generar keycloak_admin_password
+        # El proveedor de identidad lee sus contraseñas de un archivo de
+        # configuración; se arma a partir de las dos anteriores.
+        if [ -d /out/keycloak.conf ]; then
+          rmdir /out/keycloak.conf
+        fi
+        # Queda en sólo lectura; se abre para poder volver a escribirlo.
+        if [ -f /out/keycloak.conf ]; then
+          chmod 600 /out/keycloak.conf
+        fi
+        printf 'db-password=%s\nbootstrap-admin-password=%s\n' \
+          "$$(cat /out/keycloak_db_password)" "$$(cat /out/keycloak_admin_password)" \
+          > /out/keycloak.conf
+        chmod 444 /out/keycloak.conf
+        # Lista de quienes operan el servicio: nace vacía y se llena a mano,
+        # un correo por línea. No se sobrescribe.
+        if [ -d /out/operator_emails ]; then
+          rmdir /out/operator_emails
+        fi
+        if [ ! -f /out/operator_emails ]; then
+          : > /out/operator_emails
+          chmod 644 /out/operator_emails
+          echo "operator_emails: creado vacío; nadie opera hasta que se escriban correos."
+        else
+          echo "operator_emails: ya existe; no se cambia."
+        fi
+        chmod 700 /out
+    volumes:
+      - ./secrets:/out
+
+  # Base desechable para las pruebas de integración: se inicializa igual que la
+  # real, vive en memoria y en una red propia, sin salida.
+  db-it:
+    profiles: ["test"]
+    <<: [*hardening, *postgres]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+      - /var/lib/postgresql
+    environment:
+      POSTGRES_DB: zenit
+      POSTGRES_USER: zenit_admin
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+      POSTGRES_INITDB_ARGS: *postgres-initdb
+    secrets:
+      - db_admin_password
+      - db_migrator_password
+      - db_app_password
+      - keycloak_db_password
+      - db_backup_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - pruebas
+    pids_limit: 256
+    mem_limit: 512m
+
+  # Pruebas del backend contra PostgreSQL real:
+  #   docker compose --profile test run --rm --build backend-it
+  #   docker compose --profile test down db-it backend-it
+  backend-it:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: it
+    profiles: ["test"]
+    <<: *hardening
+    environment:
+      IT_DB_URL: jdbc:postgresql://db-it:5432/zenit
+      IT_IDENTITY_DB_URL: jdbc:postgresql://db-it:5432/keycloak
+    secrets:
+      - db_migrator_password
+      - db_app_password
+      - keycloak_db_password
+      - db_backup_password
+    depends_on:
+      db-it:
+        condition: service_healthy
+    networks:
+      - pruebas
+    pids_limit: 1024
+    mem_limit: 2g
+
+  # Simulador de dispositivo: llena el entorno local con personas, tarjetas,
+  # dispositivos y marcajes firmados, todo ficticio. Pide un token de quien
+  # administra la empresa y que el backend acepte la tarjeta simulada:
+  #   SIM_TOKEN=<token> docker compose --profile tools run --rm device-sim
+  device-sim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: it
+    profiles: ["tools"]
+    <<: *hardening
+    environment:
+      SIM_API: http://backend:8080
+      # Token de acceso de una persona con el rol admin_empresa. Dura cinco minutos.
+      SIM_TOKEN: ${SIM_TOKEN:-}
+      SIM_PEOPLE: ${SIM_PEOPLE:-8}
+      # Mueve el inicio de semana de la empresa a hoy, para que lo marcado se pueda cerrar.
+      SIM_FINISHED_WEEK: ${SIM_FINISHED_WEEK:-true}
+    command: ["gradle", ":backend:simulate", "--no-daemon", "--offline", "--quiet", "--console=plain"]
+    networks:
+      - borde
+    pids_limit: 1024
+    mem_limit: 2g
+
+  # Ensayo de respaldo y restauración. Respalda las dos bases con un rol que
+  # sólo lee, las restaura en una instancia desechable dentro del propio
+  # contenedor y compara el conteo de cada tabla. No conserva nada:
+  #   docker compose --profile ops run --rm backup-rehearsal
+  backup-rehearsal:
+    profiles: ["ops"]
+    <<: [*hardening, *postgres]
+    # Sin privilegios: la imagen ya corre como el usuario de la base.
+    read_only: true
+    tmpfs:
+      - /tmp
+      # Todo el ensayo vive en memoria y desaparece con el contenedor.
+      - /work:uid=70,gid=70,mode=0700
+    environment:
+      PGHOST: db
+      # La instancia desechable se crea igual que la real.
+      RESTORE_INITDB_ARGS: *postgres-initdb
+      BACKUP_DATABASES: ${POSTGRES_DB:-zenit} keycloak
+      # En verdadero, estropea la restauración a propósito: el ensayo debe fallar.
+      BACKUP_TAMPER: ${BACKUP_TAMPER:-false}
+    secrets:
+      - db_backup_password
+    entrypoint: ["bash", "/opt/zenit/rehearse.sh"]
+    volumes:
+      - ./infra/postgres/backup/rehearse.sh:/opt/zenit/rehearse.sh:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - datos
+    pids_limit: 256
+    mem_limit: 1g
+
+  # Valida el contrato y sus ejemplos:
+  #   docker compose --profile tools run --rm contract-lint
+  contract-lint:
+    image: redocly/cli:2.62.1@sha256:261f36d945b600fef03341316de1fde6921c3fefaf13b114a1fb4705428acd74
+    profiles: ["tools"]
+    <<: *hardening
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      HOME: /tmp
+      REDOCLY_TELEMETRY: "off"
+    working_dir: /spec
+    volumes:
+      - ./contracts:/spec/contracts:ro
+      - ./redocly.yaml:/spec/redocly.yaml:ro
+    command: ["lint", "contracts/openapi.yaml"]
+
+  # Inventario de lo que lleva una imagen (SBOM, en formato CycloneDX). La
+  # imagen se exporta antes a un archivo, para no darle a la herramienta el
+  # control de Docker; no usa la red:
+  #   docker save fastsolution-zenit-backend -o build/security/backend.tar
+  #   docker compose --profile tools run --rm sbom
+  # Para otra imagen, SCAN_TARGET lleva el nombre del archivo, sin extensión.
+  sbom:
+    image: anchore/syft:v1.54.1@sha256:3eb5379ba7b409c3f4069b686110527af0c47df993fa5c10d13e7cf34f49b1aa
+    profiles: ["tools"]
+    <<: *hardening
+    # Para escribir en la carpeta de trabajo, que es de quien clonó el repositorio.
+    cap_add:
+      - DAC_OVERRIDE
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      SYFT_CHECK_FOR_APP_UPDATE: "false"
+    volumes:
+      - ./build/security:/work
+    command:
+      - scan
+      - docker-archive:/work/${SCAN_TARGET:-backend}.tar
+      - --output
+      - cyclonedx-json=/work/${SCAN_TARGET:-backend}.cdx.json
+      - --quiet
+
+  # Vulnerabilidades conocidas de lo que dice ese inventario. Sale a Internet
+  # sólo para bajar la base de vulnerabilidades; no manda nada del proyecto.
+  # Termina con error si encuentra alguna alta o crítica sin aceptar:
+  #   docker compose --profile tools run --rm vuln-scan
+  vuln-scan:
+    image: anchore/grype:v0.120.1@sha256:e4a44ef45d285b829ce6efe2642980329661bd2d18eab5fc539138d4adaebbbe
+    profiles: ["tools"]
+    <<: *hardening
+    cap_add:
+      - DAC_OVERRIDE
+    # La red por defecto de Docker: no crea una red del proyecto ni ve sus servicios.
+    network_mode: bridge
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      GRYPE_CHECK_FOR_APP_UPDATE: "false"
+      GRYPE_DB_CACHE_DIR: /work/db
+    volumes:
+      - ./build/security:/work
+      # Hallazgos aceptados, cada uno con su motivo. Aceptar es decisión de una persona.
+      - ./.grype.yaml:/config/grype.yaml:ro
+    command:
+      - sbom:/work/${SCAN_TARGET:-backend}.cdx.json
+      - --config
+      - /config/grype.yaml
+      - --fail-on
+      - high
+      - --output
+      - table
+      - --output
+      - json=/work/${SCAN_TARGET:-backend}.vulns.json
+      - --quiet
+
+  # Busca secretos en todo el historial de Git:
+  #   docker compose --profile tools run --rm secret-scan
+  secret-scan:
+    image: zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+    profiles: ["tools"]
+    <<: *hardening
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./.git:/repo/.git:ro
+      # Exceptúa sólo los ejemplos ficticios del contrato.
+      - ./.gitleaks.toml:/repo/.gitleaks.toml:ro
+    command: ["git", "/repo", "--redact", "--no-banner", "--config", "/repo/.gitleaks.toml"]
+
+networks:
+  datos:
+    internal: true
+  borde:
+  pruebas:
+    internal: true
+
+secrets:
+  db_admin_password:
+    file: ./secrets/db_admin_password
+  db_migrator_password:
+    file: ./secrets/db_migrator_password
+  db_app_password:
+    file: ./secrets/db_app_password
+  db_backup_password:
+    file: ./secrets/db_backup_password
+  keycloak_db_password:
+    file: ./secrets/keycloak_db_password
+  keycloak_conf:
+    file: ./secrets/keycloak.conf
+  operator_emails:
+    file: ./secrets/operator_emails
 
 volumes:
-  jornada-db:
+  zenit-db:

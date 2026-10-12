@@ -1,0 +1,13 @@
+# Reglas del buscador de secretos. Parte de las reglas por defecto y exceptúa
+# sólo dos valores ficticios de los ejemplos del contrato: la firma de muestra,
+# que dice en claro que no es válida, y una clave de idempotencia de muestra.
+# No exceptúa archivos: otro secreto en el contrato se sigue detectando.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Valores ficticios de los ejemplos del contrato"
+regexes = [
+  '''\.ZmlybWEtZGUtZWplbXBsby1uby12YWxpZGE''',
+  '''2d4f6a8c-0e2b-4d6f-8a0c-2e4b6d8f0a2c''',
+]

@@ -22,10 +22,10 @@ export function App() {
         <Stack spacing={3}>
           <Chip label="fastSolution · scaffold 0.1.0" color="secondary" sx={{ alignSelf: 'flex-start' }} />
           <Typography variant="h2" sx={{ fontWeight: 800 }}>
-            Control de jornada laboral
+            Zenit
           </Typography>
           <Typography variant="h5" color="text.secondary">
-            Base técnica del MVP para PyMES mexicanas.
+            Control de jornada laboral. Base técnica del MVP para PyMES mexicanas.
           </Typography>
           {status.isPending && <Alert severity="info">Comprobando la API…</Alert>}
           {status.isError && <Alert severity="warning">La API todavía no está disponible.</Alert>}

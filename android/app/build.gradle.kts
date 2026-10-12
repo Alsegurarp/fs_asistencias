@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "mx.fastsolution.jornada.mobile"
+    namespace = "mx.fastsolution.zenit.mobile"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "mx.fastsolution.jornada"
+        applicationId = "mx.fastsolution.zenit"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
