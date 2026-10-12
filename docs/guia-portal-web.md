@@ -15,7 +15,8 @@ probar el recorrido completo contra Keycloak y el backend real.
 La navegación de Incidencias, Cierres y Exportes respeta los roles de `/me`.
 Incidencias ya tiene listado, filtros, detalle, semana del empleado,
 asignación y resolución con los tres tipos de ajuste. Cierres ya permite
-consultar, cerrar, reabrir y seguir corridas; Exportes sigue en preparación.
+consultar, cerrar, reabrir y seguir corridas; Exportes permite solicitar CSV,
+consultar su preparación y descargar archivo y manifiesto.
 El supervisor ve Incidencias y Cierres;
 el auditor también ve Exportes. El administrador y RH ven las tres secciones.
 Los permisos de resolver, cerrar y reabrir se distinguen en `permissions()`;
@@ -328,6 +329,25 @@ tope y no hace esperar a la pantalla:
   programado» donde iría el nombre de quien cerró.
 
 ## Exportes
+
+La pantalla implementada permite elegir una fecha de la semana y una sede
+opcional, y solicitar un CSV. Conserva la clave de idempotencia al reintentar
+un fallo; cambia la clave al modificar el pedido o tras una solicitud exitosa.
+Consulta el estado cada cinco segundos mientras está en cola. Si la consulta
+falla, pausa y ofrece **Actualizar estado**. Sólo habilita **Descargar CSV**
+cuando está listo y descarga por el cliente autenticado, sin abrir una URL
+con credenciales. Se puede solicitar otro archivo con **Solicitar CSV**.
+
+Después de descargar, el backend informa `expired`, que se presenta como
+«No disponible (usado o vencido)». El manifiesto sigue disponible y se guarda
+como JSON. La pantalla muestra el SHA-256 informado por el servidor, pero
+no comprueba automáticamente la huella del archivo ni del manifiesto.
+No hay historial: el API no lista exportes y al abandonar la pestaña se
+pierde la referencia del pedido en pantalla. No se persisten tokens ni archivos.
+
+Verificación: 93 pruebas del portal y compilación correctas; pendiente el
+recorrido manual de descarga con la sesión real. Para la demo, elegir
+`2026-10-05`, dejar todas las sedes y comprobar cuatro filas en el CSV.
 
 Pedir, esperar y descargar:
 
