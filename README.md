@@ -4,9 +4,31 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
-Monorepo inicial del producto. El primer corte contiene esqueletos ejecutables
-del backend, el portal web y la aplicación Android, además de contratos y
-migraciones. Cada aplicación mantiene toolchain, dependencias y build propios.
+Monorepo del producto. El backend atiende las 52 operaciones del contrato, con
+pruebas contra PostgreSQL real. El portal web y la aplicación Android son
+esqueletos que compilan y todavía no llaman al API. Cada aplicación mantiene
+toolchain, dependencias y build propios.
+
+## Documentación
+
+La carpeta [`docs/`](docs/README.md) explica qué hace el sistema, cómo se usa
+y cómo se continúa:
+
+| Para | Documento |
+| --- | --- |
+| Levantar el sistema y obtener un token | [Entorno local](docs/entorno-local.md) |
+| Conocer el API de punta a punta | [Recorrido completo](docs/recorrido-completo.md) |
+| Saber quién hace qué | [Casos de uso](docs/casos-de-uso.md) |
+| Entender las reglas | [Lógica de negocio](docs/logica-de-negocio.md) |
+| Llamar al API | [Consumir el API](docs/consumir-el-api.md) |
+| Construir la app | [Guía de la app Android](docs/guia-app-android.md) |
+| Construir el portal | [Guía del portal web](docs/guia-portal-web.md) |
+| Buscar un término, un código o una tabla | [Diccionario](docs/diccionario.md) |
+| Agregar algo al backend | [Continuar el backend](docs/continuar-el-backend.md) |
+| Saber qué falta | [Estado y pendientes](docs/estado-y-pendientes.md) |
+
+Este README resume las reglas de cada parte; el detalle está en esa carpeta, y
+la referencia exacta de cada ruta en `contracts/openapi.yaml`.
 
 ## Módulos
 
