@@ -41,7 +41,7 @@ contradice al contrato, manda el contrato.
 
 | Pieza | Carpeta | Estado |
 | --- | --- | --- |
-| Backend | `backend/` | Atiende las 59 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo |
+| Backend | `backend/` | Atiende las 60 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
 | Portal web | `web/` | Esqueleto que compila; todavía no inicia sesión ni llama al API |
 | App Android | `android/` | Esqueleto que lee NFC, toma ubicación y guarda en una cola local cifrada; todavía no se enrola ni sincroniza |

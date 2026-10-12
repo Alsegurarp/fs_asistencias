@@ -40,7 +40,7 @@ de la base y termina. El backend espera a que acabe bien.
 
 | Servicio | Qué es | Puerto |
 | --- | --- | --- |
-| `db` | PostgreSQL, con la base del producto y la del proveedor de identidad | No publica ninguno |
+| `db` | PostgreSQL, con la base del producto y la del proveedor de identidad. Su imagen se construye de `infra/postgres` | No publica ninguno |
 | `migrate` | Aplica las migraciones con el rol dueño del esquema y termina | Ninguno |
 | `keycloak` | Proveedor de identidad | 8082 |
 | `backend` | El API | 8080 |
@@ -103,20 +103,22 @@ omisión.
 
 ### Si el entorno ya existía
 
-Un entorno creado antes de que existiera `db_backup_password` necesita tres
-pasos, una sola vez. No se pierde nada:
+La base cambió de imagen y de forma de ordenar los textos, y eso sólo se
+aplica al crear su volumen. Un entorno anterior se empieza de cero, una vez:
 
 ```powershell
+docker compose down --volumes
 docker compose --profile setup run --rm secrets-init
 docker compose up --build --detach
-docker compose exec db sh /docker-entrypoint-initdb.d/30-backup-role.sh
 ```
 
-El primero genera el secreto que falta, el segundo recrea la base con ese
-secreto montado y aplica las migraciones nuevas, y el tercero crea el rol de
-respaldo, que en un entorno nuevo se crea solo. Si se levanta sin el primero,
-Docker deja una carpeta vacía donde debía estar el secreto; `secrets-init` la
-retira y genera el archivo.
+Se pierden los datos locales y las cuentas del proveedor de identidad, que
+son de prueba. Los secretos que ya existían se conservan; el segundo comando
+sólo genera el que falte. Después hay que volver a crear las cuentas y, si
+hace falta, correr el simulador.
+
+Un volumen creado con la imagen anterior no sirve con la nueva: la base no
+arranca y su registro dice `Permission denied`.
 
 ## Crear las primeras cuentas
 
@@ -364,9 +366,11 @@ Límites de este ensayo:
 Una base sin tablas también hace fallar el ensayo: no habría nada que
 comprobar.
 
-Se corrió 16 veces contra el entorno local, 12 de ellas mientras el backend
-escribía: 130 tablas iguales en todas, con el total de filas creciendo de una
-corrida a la siguiente. El modo de control falló como debe.
+Se corrió 16 veces con la imagen anterior de la base, 12 de ellas mientras el
+backend escribía: 130 tablas iguales en todas, con el total de filas
+creciendo de una corrida a la siguiente. Con la imagen actual se repitió 4
+veces, sin escrituras a la vez. En las dos, el modo de control falló como
+debe.
 
 ## Revisar vulnerabilidades
 
@@ -403,8 +407,8 @@ SCAN_TARGET=web docker compose --profile tools run --rm vuln-scan
 ```
 
 Las cuatro imágenes del entorno son `fastsolution-zenit-backend`,
-`fastsolution-zenit-web`, `fastsolution-zenit-keycloak` y la de PostgreSQL
-que nombra `compose.yaml`.
+`fastsolution-zenit-web`, `fastsolution-zenit-keycloak` y
+`fastsolution-zenit-db`.
 
 Cuando aparece un hallazgo alto o crítico:
 
@@ -414,7 +418,8 @@ Cuando aparece un hallazgo alto o crítico:
    `Dockerfile` de esa imagen, o actualizar la imagen base.
 3. Si no tiene corrección, o no aplica, una persona decide aceptarlo y lo
    anota en `.grype.yaml` con el motivo y la fecha de revisión. Aceptar no es
-   corregir.
+   corregir. Hoy hay seis aceptados, todos de la imagen del proveedor de
+   identidad: el archivo dice por qué y cuándo se revisan.
 
 Conviene correrlo antes de publicar una versión y cada cierto tiempo aunque
 nada cambie: la lista de vulnerabilidades conocidas crece sola.
@@ -463,5 +468,7 @@ base, las cuentas y las claves del proveedor de identidad.
 | `429` con `rate_limited` | La persona pasó su cuota de peticiones por minuto | Esperar un minuto; en local se puede subir en `.env` |
 | El simulador dice que el backend no reconoce la tarjeta simulada | La tarjeta simulada está apagada | Encenderla en `.env` |
 | El simulador responde `401` al empezar | El token venció: dura 5 minutos | Obtener otro y correrlo enseguida |
-| El ensayo de respaldo dice que el rol `zenit_backup` no puede entrar | El entorno se creó antes de que existiera ese rol | Los tres pasos de «Si el entorno ya existía» |
+| El ensayo de respaldo dice que el rol `zenit_backup` no puede entrar | El entorno se creó antes de que existiera ese rol | Los pasos de «Si el entorno ya existía» |
 | `vuln-scan` termina con error | Encontró una vulnerabilidad alta o crítica | Los pasos de «Revisar vulnerabilidades» |
+| La base no arranca y su registro dice `Permission denied` | El volumen se creó con la imagen anterior de la base | Los pasos de «Si el entorno ya existía» |
+| El registro de la base dice `no usable system locales were found` | Es normal: la imagen no trae idiomas del sistema y la base no los usa | Nada |

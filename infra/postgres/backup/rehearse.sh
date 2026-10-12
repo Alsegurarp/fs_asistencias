@@ -77,7 +77,12 @@ done
 
 # 2. Instancia desechable. Sólo escucha en un socket dentro de este contenedor.
 mkdir -p "$WORK/run"
-initdb -D "$WORK/pgdata" -U "$RESTORE_USER" --auth=trust --encoding=UTF8 --no-sync > /dev/null
+# Con la misma ordenación que la base real, para que los índices se reconstruyan igual.
+# shellcheck disable=SC2086
+if ! initdb -D "$WORK/pgdata" -U "$RESTORE_USER" --auth=trust --encoding=UTF8 --no-sync ${RESTORE_INITDB_ARGS:-} > "$WORK/initdb.log" 2>&1; then
+  cat "$WORK/initdb.log" >&2
+  fail "no se pudo crear la instancia desechable."
+fi
 pg_ctl -D "$WORK/pgdata" -o "-c listen_addresses='' -c unix_socket_directories=$WORK/run -c fsync=off" -l "$WORK/restore.log" -w start > /dev/null
 
 # El respaldo nombra a los dueños y a quienes tienen permisos: esos roles deben
@@ -102,8 +107,8 @@ for db in $DATABASES; do
     echo "Control: se borró una fila de $victim en la base restaurada."
   fi
   restored_psql -d "$db" -At -F '|' -c "$COUNTS" > "$WORK/$db.restored"
-  if ! diff "$WORK/$db.source" "$WORK/$db.restored" > "$WORK/$db.diff"; then
-    echo "Diferencias en $db (origen < y restaurada >):" >&2
+  if ! diff -U0 "$WORK/$db.source" "$WORK/$db.restored" > "$WORK/$db.diff"; then
+    echo "Diferencias en $db (- origen, + restaurada):" >&2
     cat "$WORK/$db.diff" >&2
     fail "los conteos de $db no coinciden."
   fi

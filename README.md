@@ -4,7 +4,7 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
-Monorepo del producto. El backend atiende las 59 operaciones del contrato, con
+Monorepo del producto. El backend atiende las 60 operaciones del contrato, con
 pruebas contra PostgreSQL real. El portal web y la aplicación Android son
 esqueletos que compilan y todavía no llaman al API. Cada aplicación mantiene
 toolchain, dependencias y build propios.
@@ -65,9 +65,10 @@ espera a que acabe bien. Es normal verlo como `Exited (0)`.
 Para empezar de cero: `docker compose down -v` y borrar el contenido de
 `secrets/`.
 
-Quien ya tenía el entorno no necesita empezar de cero, pero sí tres pasos, una
-vez: generar el secreto nuevo, volver a levantar y crear el rol de respaldo.
-Están en [Entorno local](docs/entorno-local.md#si-el-entorno-ya-existía).
+Quien ya tenía el entorno debe recrear una vez su volumen local: la imagen de
+PostgreSQL y la ordenación de textos cambiaron. El procedimiento y su efecto
+sobre los datos ficticios están en
+[Entorno local](docs/entorno-local.md#si-el-entorno-ya-existía).
 
 ## Base de datos
 
@@ -95,6 +96,10 @@ Cada conexión usa el rol con menos permisos que le sirve.
 - Las reglas laborales (`rule_set`) sólo se leen. Cambian con una migración.
 - Toda tabla de una empresa lleva `tenant_id`, y sus llaves foráneas lo
   incluyen: un registro no puede apuntar a datos de otra empresa.
+- La imagen de PostgreSQL parte de la variante oficial sobre Alpine, pero
+  arranca directamente sin root y sin capacidades. Las bases nuevas ordenan
+  texto por código de carácter con `C.UTF-8`; una consulta que necesite orden
+  alfabético en español pide `COLLATE "es-x-icu"` de forma explícita.
 - Una migración aplicada no se edita. Un cambio va en un archivo nuevo en
   `backend/src/main/resources/db/migration/`.
 
@@ -205,14 +210,19 @@ El token dice quién es la persona; su empresa y sus roles salen de la base.
   administra suelta su liga (`POST /api/v1/users/{userId}/unlink`) y la
   persona se liga otra vez al entrar. Soltar la liga no quita el acceso: para
   eso está `disabled`.
+- Si quien perdió su cuenta es la única persona que administra, quien opera
+  el servicio suelta la liga por correo y con un motivo mediante
+  `POST /api/v1/tenants/{tenantId}/administrators/unlink`; no recibe datos de
+  la persona y la acción queda en la bitácora de la empresa.
 - Cada persona tiene una cuota de peticiones por minuto, 600 por defecto
   (`API_PERSON_REQUESTS_PER_MINUTE`). Se cuenta dentro de la cadena de
   seguridad, cuando ya se sabe quién llama, y responde 429 antes de llegar a
   la ruta. Vive en memoria: vale para una sola instancia.
 - Una ruta nueva se abre en `SecurityConfig` con los mismos roles que el
   contrato declara en `x-roles`, y lee la empresa de `CurrentPerson`, nunca
-  del cuerpo ni de la ruta. La única excepción son las dos rutas con las que
-  quien opera el servicio suspende y reactiva una empresa.
+  del cuerpo ni de la ruta. Las únicas excepciones son las tres rutas de
+  operación del servicio: suspender, reactivar y soltar la liga de quien
+  administra una empresa.
 
 ## Padrón, sedes, horarios y tarjetas
 
@@ -423,8 +433,9 @@ exportada a un archivo. Está en [Entorno local](docs/entorno-local.md).
 - El ensayo de respaldo no conserva nada: prueba que el respaldo se puede
   restaurar. Dónde se guarda un respaldo de verdad se decide con el primer
   ambiente publicado.
-- `vuln-scan` termina con error si hay una vulnerabilidad alta o crítica. Lo
-  que una persona decide aceptar se anota en `.grype.yaml`, con su motivo.
+- `vuln-scan` termina con error si hay una vulnerabilidad alta o crítica sin
+  atender. Lo que una persona decide aceptar se anota en `.grype.yaml`, con
+  su motivo, alcance y fecha de revisión.
 
 ## Desarrollo exclusivamente con Docker
 

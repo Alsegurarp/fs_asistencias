@@ -75,6 +75,16 @@ class TenantController(private val service: TenantService) {
         @RequestBody request: TenantStatusRequest,
     ): TenantView = TenantView.of(service.reactivate(operator, tenantId, request))
 
+    @PostMapping("/tenants/{tenantId}/administrators/unlink")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun unlinkAdministrator(
+        @AuthenticationPrincipal operator: CurrentPerson,
+        @PathVariable tenantId: UUID,
+        @RequestBody request: AdministratorUnlinkRequest,
+    ) {
+        service.unlinkAdministrator(operator, tenantId, request)
+    }
+
     @GetMapping("/tenant")
     fun current(@AuthenticationPrincipal person: CurrentPerson): TenantView = TenantView.of(service.current(person))
 

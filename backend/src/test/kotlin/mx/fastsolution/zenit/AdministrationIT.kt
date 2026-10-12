@@ -152,4 +152,71 @@ class AdministrationIT : WorkdayTestBase() {
         assertEquals(setOf(id, c.adminId), audit.at<List<String>>("items[?(@.action=='user.unlinked')].target.id").toSet())
         assertFalse("user.unlinked" in call("GET", "/api/v1/audit-log?limit=200", other.adminToken).body)
     }
+
+    @Test
+    fun `the operator unlinks an administrator who lost their account, only an administrator, with a reason and a trace`() {
+        val c = company()
+        val other = company()
+        val rh = member(c, "rh")
+        val tenant = UUID.fromString(c.id)
+        fun unlink(tenantId: String, email: String, token: String? = operator, reason: String? = "Perdió su cuenta y es la única que administra.") =
+            call("POST", "/api/v1/tenants/$tenantId/administrators/unlink", token, json(mapOf("email" to email, "reason" to reason)))
+        fun roles(token: String) = call("GET", "/api/v1/me", token).list("roles")
+        fun linked() = count("select count(*) from tenant_user where tenant_id = ? and subject is not null", tenant)
+
+        // La única administradora perdió su cuenta y volvió con otra del mismo correo: la nueva no entra.
+        val newAccount = token(subject(), c.adminEmail)
+        assertEquals(emptyList(), roles(newAccount))
+
+        // Sólo quien opera el servicio. Ni quien administra la empresa puede usar esta ruta.
+        assertProblem(401, "unauthorized", unlink(c.id, c.adminEmail, token = null))
+        assertProblem(403, "forbidden", unlink(c.id, c.adminEmail, token = c.adminToken))
+        assertProblem(403, "forbidden", unlink(c.id, c.adminEmail, token = rh.token))
+        // Con correo y motivo válidos, y sin campos de más.
+        val path = "/api/v1/tenants/${c.id}/administrators/unlink"
+        for (bad in listOf(
+            "{}", """{"email":"${c.adminEmail}"}""", """{"reason":"Un motivo suficiente."}""",
+            """{"email":"${c.adminEmail}","reason":"corto"}""", """{"email":"sin-arroba","reason":"Un motivo suficiente."}""",
+            """{"email":"${c.adminEmail}","reason":"Un motivo suficiente.","userId":"${c.adminId}"}""",
+        )) {
+            assertProblem(422, "validation", call("POST", path, operator, bad))
+        }
+        // Sólo sobre quien administra esa empresa: lo demás no existe para esta operación, y la respuesta no dice por qué.
+        assertProblem(404, "not_found", unlink(UUID.randomUUID().toString(), c.adminEmail))
+        assertProblem(404, "not_found", unlink("no-es-un-identificador", c.adminEmail))
+        assertProblem(404, "not_found", unlink(c.id, rh.email))
+        assertProblem(404, "not_found", unlink(c.id, other.adminEmail))
+        assertProblem(404, "not_found", unlink(other.id, c.adminEmail))
+        assertProblem(404, "not_found", unlink(c.id, email("nadie")))
+        // Nada de lo anterior soltó una liga.
+        assertEquals(2, linked())
+        assertEquals(200, call("GET", "/api/v1/tenant", c.adminToken).status)
+
+        val done = unlink(c.id, c.adminEmail.uppercase())
+        assertEquals(204, done.status, done.toString())
+        // No devuelve nada de la persona.
+        assertEquals("", done.body)
+        assertEquals(1, linked())
+        assertProblem(409, "user_not_linked", unlink(c.id, c.adminEmail))
+        // La cuenta nueva entra con los mismos roles; la anterior ya no es la de esa persona.
+        assertEquals(listOf("admin_empresa"), roles(newAccount))
+        assertEquals(200, call("GET", "/api/v1/users", newAccount).status)
+        assertEquals(emptyList(), roles(c.adminToken))
+        // A quien administra la otra empresa no le pasó nada.
+        assertEquals(listOf("admin_empresa"), roles(other.adminToken))
+
+        // Queda en la bitácora de la empresa: quién, por qué, y que fue desde la operación del servicio.
+        val audit = call("GET", "/api/v1/audit-log?limit=200", newAccount)
+        val entries = audit.at<List<Map<String, Any?>>>("items[?(@.action=='user.unlinked')]")
+        assertEquals(1, entries.size)
+        assertEquals(mapOf("by" to "operator", "reason" to "Perdió su cuenta y es la única que administra."), entries.single()["metadata"])
+        assertEquals(c.adminId, (entries.single()["target"] as Map<*, *>)["id"])
+        assertFalse("user.unlinked" in call("GET", "/api/v1/audit-log?limit=200", other.adminToken).body)
+
+        // Una empresa suspendida también puede necesitarlo: no depende de su estado.
+        assertEquals(200, suspend(other.id).status)
+        assertEquals(204, unlink(other.id, other.adminEmail).status)
+        assertEquals(200, reactivate(other.id).status)
+        assertEquals(listOf("admin_empresa"), roles(other.adminToken))
+    }
 }

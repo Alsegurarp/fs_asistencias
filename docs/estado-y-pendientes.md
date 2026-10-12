@@ -7,14 +7,14 @@ cambia alguna de las tres cosas.
 
 | Pieza | Estado |
 | --- | --- |
-| Contrato | Versión 0.10, con 59 operaciones. Completo para el recorrido del producto; todavía sin congelar |
-| Backend | Atiende las 59 operaciones. 47 pruebas unitarias y 71 de integración contra PostgreSQL real |
-| Base | 28 tablas en 7 migraciones, con roles separados para migrar, para atender y para respaldar |
+| Contrato | Versión 0.11, con 60 operaciones. Completo para el recorrido del producto; todavía sin congelar |
+| Backend | Atiende las 60 operaciones. 47 pruebas unitarias y 73 de integración contra PostgreSQL real |
+| Base | 28 tablas en 7 migraciones, con roles separados para migrar, para atender y para respaldar. Imagen propia sobre Alpine, sin root ni privilegios, que ordena los textos por código de carácter |
 | Identidad | Proveedor de identidad en el entorno local, con segundo factor obligatorio |
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | Ensayo que respalda, restaura en una instancia desechable y compara conteos. No guarda el respaldo |
-| Vulnerabilidades | Inventario y análisis de las cuatro imágenes. Las del backend y del portal, sin altas ni críticas |
+| Vulnerabilidades | Inventario y análisis de las cuatro imágenes. Ninguna tiene una alta o crítica sin atender: tres no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
 | Portal | Esqueleto que compila; no inicia sesión ni tiene pantallas |
 | App Android | Esqueleto que lee NFC, toma ubicación y guarda en una cola cifrada; no se enrola ni sincroniza |
 | Conector | No existe |
@@ -22,7 +22,8 @@ cambia alguna de las tres cosas.
 Lo que el backend ya hace, de punta a punta:
 
 1. Alta de empresas, invitación de personas, roles y bitácora; suspender y
-   reactivar una empresa, y soltar la liga de una cuenta perdida.
+   reactivar una empresa, y soltar la liga de una cuenta perdida, también
+   la de quien administra cuando nadie más de su empresa puede.
 2. Sedes con geocerca, horarios, padrón, importación por archivo y tarjetas.
 3. Enrolamiento de dispositivos y captura de marcajes, con tarjeta simulada.
 4. Jornada semanal calculada, incidencias con ajustes, cierre y acuse; cierre
@@ -50,17 +51,14 @@ ni está publicado.
 
 | Pendiente | Qué es |
 | --- | --- |
-| Clases de jOOQ generadas | Hoy las consultas son SQL en texto. Cambia cada consulta y no cambia ningún comportamiento: conviene hacerlo solo, sin mezclarlo con otra cosa |
-| Operador sin administrador | Si la única persona que administra una empresa pierde su cuenta, nadie de la empresa puede soltar su liga. Falta una forma de hacerlo para quien opera el servicio |
+| Clases de jOOQ generadas | Hoy las consultas son SQL en texto. Cambia cada consulta y no cambia ningún comportamiento. Se decidió dejarlo para después y hacerlo solo, sin mezclarlo con otra cosa |
 | Detalle de quién quedó sin cerrar | Una corrida de cierre dice cuántas personas no cerró y por qué, no cuáles; se buscan por sus incidencias abiertas |
 
 ### Esperan una decisión
 
 | Pendiente | Qué hay que decidir |
 | --- | --- |
-| Vulnerabilidades de las imágenes que no son nuestras | Aceptar, por escrito, las de la imagen del proveedor de identidad y la de la base, o cambiar de imagen. Ver «Vulnerabilidades conocidas» |
-| Variante de la imagen de la base | La variante sobre Alpine trae la quinta parte de hallazgos. Cambia la ordenación de textos y obliga a recrear el volumen: es barato ahora y caro con datos |
-| Cierre programado | Si pasa una vez por semana y cierra sólo a quien no tiene pendientes, como hoy; si insiste, o si avisa |
+| Suspensión de una empresa | Hoy también corta la captura de marcajes. Antes del primer cliente hay que decidir si una empresa suspendida conserva la captura, porque el registro de asistencia es obligación suya |
 | Verificación automática en cada cambio | Dónde corre. Hoy pruebas, contrato, búsqueda de secretos y vulnerabilidades se corren a mano |
 | Alcance del supervisor | Cómo se le asignan sus sedes. Hoy ve y atiende lo de toda su empresa |
 | Baja de una persona | Si además revoca su tarjeta y cierra su horario |
@@ -90,12 +88,14 @@ ni está publicado.
 día. Cómo se repite está en
 [Entorno local](entorno-local.md#revisar-vulnerabilidades).
 
-| Imagen | Antes | Ahora | Altas y críticas que quedan |
+| Imagen | Al empezar | Ahora | Altas y críticas que quedan |
 | --- | --- | --- | --- |
 | Backend | 66, con 3 críticas y 18 altas | 15, todas medias | Ninguna |
 | Portal | 7, con 2 altas | 5, todas medias | Ninguna |
-| Proveedor de identidad | 64, con 6 altas | Igual | 6 altas, de un paquete del sistema de la imagen que publica el proyecto del proveedor; sin corrección publicada |
-| Base | 466, con 11 críticas y 118 altas | Igual | Las 129. De ellas, 95 son de paquetes del sistema de la imagen oficial: 45 marcadas por su distribución como «no se corregirá» y 50 todavía sin corrección. Las otras 34 son de la herramienta con la que la imagen baja de privilegios al arrancar |
+| Base | 466, con 11 críticas y 118 altas | 4, todas medias | Ninguna |
+| Proveedor de identidad | 64, con 6 altas | Igual | 6 altas, aceptadas por escrito |
+
+El análisis de las cuatro termina sin error.
 
 Qué se corrigió:
 
@@ -105,25 +105,29 @@ Qué se corrigió:
 - **Backend y portal, paquetes del sistema.** Se subieron los que ya tenían
   corrección en el repositorio de la distribución y la imagen base todavía no
   traía.
+- **Base.** Pasó de la imagen oficial sobre Debian a una propia, hecha de la
+  oficial sobre Alpine (`infra/postgres`). Trae muchos menos paquetes; se
+  subieron los dos que tenían corrección; y se retiró la herramienta con la
+  que la imagen oficial baja de privilegios al arrancar, que concentraba 34
+  de las graves y ya no hace falta, porque el contenedor arranca sin
+  privilegios.
 
-Qué queda y por qué:
+Qué se aceptó, y por qué:
 
-- **Proveedor de identidad y base.** Son imágenes de terceros, fijadas por
-  versión y digest. Sus hallazgos no se arreglan desde este repositorio: se
-  aceptan por escrito, uno por uno o por paquete, o se cambia de imagen.
-  Mientras nadie decida, el análisis de esas dos imágenes termina con error, a
-  propósito.
-- **La base sobre Alpine**, analizada sólo para comparar, trae 91 hallazgos en
-  lugar de 466: 3 críticas y 40 altas. Las 3 críticas y 31 de las altas son
-  de la misma herramienta de arranque, que viene igual en las dos variantes.
-  Las otras 9 altas son de dos paquetes del sistema que en el backend se
-  corrigieron subiéndolos.
-- **Las medias** no detienen el análisis. Se revisan al actualizar cada
-  imagen base.
+- **Proveedor de identidad, 6 altas.** Son tres defectos de la biblioteca de
+  expresiones regulares del sistema base de esa imagen, que publica el
+  proyecto del proveedor. No tienen corrección publicada y no hay una versión
+  más nueva del proveedor que la traiga. Se aceptaron por escrito el 11 de
+  octubre de 2026, en `.grype.yaml`, y se revisan al cambiar de versión del
+  proveedor o, a más tardar, el 11 de enero de 2027.
 
-Un hallazgo dice que una versión tiene un defecto conocido, no que ese
-defecto se pueda aprovechar aquí. Ninguno de los que quedan se ha estudiado
-caso por caso.
+Las variantes oficiales de la base, analizadas para comparar: sobre Debian 12,
+466 hallazgos; sobre Debian 13, 368, con 6 críticas y 119 altas; sobre
+Alpine sin tocar, 91, con 3 críticas y 40 altas.
+
+Las medias no detienen el análisis. Se revisan al actualizar cada imagen
+base. Un hallazgo dice que una versión tiene un defecto conocido, no que ese
+defecto se pueda aprovechar aquí.
 
 ## Limitaciones conocidas
 
@@ -140,6 +144,11 @@ caso por caso.
   cuenta que entre con ese correo verificado queda ligada, sea la nueva o la
   anterior. La cuenta anterior hay que darla de baja en el proveedor de
   identidad.
+- **La base ordena los textos por código de carácter.** Las mayúsculas van
+  antes que las minúsculas, y las letras con acento y la eñe, al final. Hoy
+  sólo se nota en el orden de las filas de un exporte, que va por
+  identificador externo. Una lista que deba ir en orden alfabético del
+  español tiene que pedirlo en su consulta, con `COLLATE "es-x-icu"`.
 - **Invitar revela si un correo existe.** Un correo que ya pertenece a
   alguien responde un conflicto, sin decir en qué empresa.
 - **Las cuotas viven en memoria.** Valen para una sola instancia del backend,
@@ -177,9 +186,11 @@ caso por caso.
   sobre Windows.
 - El ensayo de respaldo con una base que no quepa en memoria, y una
   restauración sobre un entorno nuevo de verdad, con sus secretos.
-- Pasar un entorno que ya existía a esta versión siguiendo los tres pasos
-  completos: se probó crear el rol de respaldo en una base que no lo tenía,
-  no el camino entero desde la versión anterior.
+- Empezar de cero un entorno que ya existía, en la máquina de otra persona:
+  se comprobó que un volumen de la imagen anterior no arranca con la nueva y
+  que un entorno nuevo sí, no el cambio en un entorno con uso.
+- El ensayo de respaldo mientras el backend escribe, sobre la imagen actual
+  de la base: se probó así con la anterior.
 - El simulador con la política de descanso marcado, y con más de 8 personas.
 - El formato de correo y las cabeceras, contra el contrato.
 
@@ -189,7 +200,7 @@ caso por caso.
 | --- | --- |
 | App | Generar la clave, activar con un código y abrir sesión contra el entorno local; después, firmar y mandar un marcaje con la tarjeta simulada |
 | Portal | Inicio de sesión y `GET /me`; después, sedes, padrón y tarjetas. Para jornada, incidencias y cierre, correr antes el simulador |
-| Backend | Decidir qué se hace con las vulnerabilidades de las imágenes de terceros; después, las clases de jOOQ generadas |
+| Backend | Lo que queda sin esperar a nadie es una mejora interna, las clases de jOOQ generadas, que se dejó para después. Lo demás espera una decisión o a un tercero |
 
 El portal ya no depende de la app para tener datos: el simulador deja
 jornadas, incidencias de cuatro tipos y semanas que se pueden cerrar.

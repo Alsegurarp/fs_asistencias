@@ -37,6 +37,10 @@ class UserRepository(private val dsl: DSLContext) {
     fun find(tenantId: UUID, id: UUID): UserRow? =
         dsl.fetchOne("$SELECT where u.tenant_id = ? and u.id = ?", tenantId, id)?.let(::row)
 
+    /** Por correo, dentro de una empresa: una persona de otra empresa no existe para quien pregunta. */
+    fun findByEmail(tenantId: UUID, email: String): UserRow? =
+        dsl.fetchOne("$SELECT where u.tenant_id = ? and u.email = ?", tenantId, email)?.let(::row)
+
     /** La única búsqueda sin empresa: de ella sale la empresa de quien llama. */
     fun findBySubject(subject: String): UserRow? = dsl.fetchOne("$SELECT where u.subject = ?", subject)?.let(::row)
 

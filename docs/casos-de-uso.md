@@ -23,6 +23,7 @@ y los roles salen de la base, nunca del token ni de la petición.
 | Qué | Operador | Administrador | RH | Supervisor | Auditor | Trabajador | Dispositivo |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Dar de alta, listar, suspender y reactivar empresas | Sí | | | | | | |
+| Soltar la liga de quien administra una empresa | Sí | | | | | | |
 | Ver la empresa | | Sí | Sí | Sí | Sí | | |
 | Cambiar la empresa y su cierre programado | | Sí | | | | | |
 | Invitar personas, darles roles y soltar su liga | | Sí | | | | | |
@@ -260,6 +261,20 @@ ese correo, vuelve a ligarse al entrar. Para quitar el acceso está
 Puede salir mal: la persona no está ligada a ninguna cuenta (409
 `user_not_linked`).
 
+### Si quien perdió su cuenta es la única administradora
+
+Nadie de su empresa puede soltar su liga. Lo hace quien opera el servicio:
+
+1. `POST /tenants/{tenantId}/administrators/unlink` con el correo de esa
+   persona y un motivo de al menos diez caracteres.
+2. Responde 204, sin ningún dato de la persona. Queda en la bitácora de la
+   empresa quién lo hizo, que fue desde la operación del servicio, y por qué.
+3. La persona entra con su cuenta nueva y queda ligada, con sus mismos roles.
+
+Sólo vale para quien tiene el rol de administrar esa empresa. Con el correo
+de cualquier otra persona, de otra empresa o que no existe, responde 404 sin
+decir cuál de los tres.
+
 ## 14. Suspender una empresa
 
 Actor: operador.
@@ -272,7 +287,8 @@ Actor: operador.
 3. `POST /tenants/{tenantId}/reactivation`, también con motivo, devuelve todo
    como estaba.
 
-Las dos acciones quedan en la bitácora de la empresa, con su motivo. Son las
+Las dos acciones quedan en la bitácora de la empresa, con su motivo. Junto
+con soltar la liga de quien administra, son las
 únicas rutas que llevan la empresa en la dirección, porque quien opera el
 servicio no pertenece a ninguna.
 

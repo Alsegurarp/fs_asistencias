@@ -414,6 +414,40 @@ class DatabaseRolesIT {
         }
     }
 
+    @Test
+    fun `text is ordered and cased by the engine itself, not by the operating system of the image`() {
+        val settings = "SELECT datlocprovider, datlocale, pg_encoding_to_char(encoding) FROM pg_database WHERE datname = current_database()"
+        asApp().use { db ->
+            db.createStatement().use { st ->
+                st.executeQuery(settings).use {
+                    it.next()
+                    assertEquals(listOf("b", "C.UTF-8", "UTF8"), listOf(it.getString(1), it.getString(2), it.getString(3)))
+                }
+                // Por código de carácter: mayúsculas antes que minúsculas, y la eñe después de la zeta.
+                st.executeQuery(
+                    "SELECT string_agg(x, ',' ORDER BY x) FROM (VALUES ('ñandú'), ('nube'), ('Zeta'), ('alfa'), ('zeta'), ('A-10'), ('A-2')) v(x)",
+                ).use {
+                    it.next()
+                    assertEquals("A-10,A-2,Zeta,alfa,nube,zeta,ñandú", it.getString(1))
+                }
+                // Mayúsculas y minúsculas sí conocen los acentos: de eso dependen el correo y el nombre de una sede.
+                st.executeQuery("SELECT lower('ÁRBOL Ñandú'), upper('árbol ñandú')").use {
+                    it.next()
+                    assertEquals(listOf("árbol ñandú", "ÁRBOL ÑANDÚ"), listOf(it.getString(1), it.getString(2)))
+                }
+            }
+        }
+        // La base del proveedor de identidad nace con la misma regla.
+        DriverManager.getConnection(identityUrl, "zenit_backup", secret("db_backup_password")).use { db ->
+            db.createStatement().use { st ->
+                st.executeQuery(settings).use {
+                    it.next()
+                    assertEquals(listOf("b", "C.UTF-8", "UTF8"), listOf(it.getString(1), it.getString(2), it.getString(3)))
+                }
+            }
+        }
+    }
+
     // Las contraseñas son correctas: el rechazo es por permiso (42501), no por
     // credencial (28P01).
     @Test

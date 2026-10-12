@@ -2,16 +2,52 @@
 #
 # Aquí se anotan los hallazgos que una persona decidió aceptar. Aceptar no es
 # corregir: es dejar constancia de que se revisó, por qué no aplica o por qué no
-# tiene arreglo todavía, y cuándo se vuelve a revisar. Cada entrada lleva ese
+# tiene arreglo todavía, y cuándo se vuelve a revisar. Cada grupo lleva ese
 # motivo y esa fecha en un comentario, y se retira en cuanto exista la
-# corrección. Sin entradas, el análisis falla con cualquier hallazgo alto o
-# crítico.
+# corrección. Lo que no está aquí y es alto o crítico hace fallar el análisis.
 #
-# Ejemplo:
-#   ignore:
-#     # 2026-10-11. La imagen base aún no publica el paquete corregido y el
-#     # backend no usa esa función. Revisar al actualizar la imagen base.
-#     - vulnerability: CVE-0000-00000
-#       package:
-#         name: nombre-del-paquete
-ignore: []
+# Cada regla nombra la vulnerabilidad, el paquete y su versión: si el paquete
+# cambia de versión, la regla deja de aplicar y el hallazgo vuelve a salir.
+ignore:
+  # Imagen del proveedor de identidad. Aceptadas el 2026-10-11 por quien
+  # responde del producto. Se revisan al cambiar de versión del proveedor de
+  # identidad y, a más tardar, el 2027-01-11.
+  #
+  # Son tres defectos de la biblioteca de expresiones regulares del sistema
+  # base de esa imagen, que publica el proyecto del proveedor. El fabricante
+  # del sistema base no ha publicado corrección, y no hay una versión más
+  # nueva del proveedor que la traiga. Los tres piden que un programa procese
+  # con esa biblioteca una expresión regular escrita por quien ataca. El
+  # proveedor de identidad corre sobre Java y no la usa; en el contenedor la
+  # usan utilidades del sistema, como la de la sonda de salud, con patrones
+  # fijos que no vienen de fuera. No se estudió más a fondo.
+  - vulnerability: CVE-2026-86145
+    package:
+      name: pcre2
+      version: 10.40-6.el9
+      type: rpm
+  - vulnerability: CVE-2026-86145
+    package:
+      name: pcre2-syntax
+      version: 10.40-6.el9
+      type: rpm
+  - vulnerability: CVE-2026-103111
+    package:
+      name: pcre2
+      version: 10.40-6.el9
+      type: rpm
+  - vulnerability: CVE-2026-103111
+    package:
+      name: pcre2-syntax
+      version: 10.40-6.el9
+      type: rpm
+  - vulnerability: CVE-2026-89161
+    package:
+      name: pcre2
+      version: 10.40-6.el9
+      type: rpm
+  - vulnerability: CVE-2026-89161
+    package:
+      name: pcre2-syntax
+      version: 10.40-6.el9
+      type: rpm

@@ -44,6 +44,11 @@ class TenantStatusRequest {
     var reason: String? = null
 }
 
+class AdministratorUnlinkRequest {
+    var email: String? = null
+    var reason: String? = null
+}
+
 @Service
 class TenantService(
     private val tenants: TenantRepository,
@@ -138,6 +143,29 @@ class TenantService(
         changeStatus(operator, id, request, "suspended", "active", "tenant.reactivated") {
             Problems.conflict("tenant_not_suspended", "Esa empresa no está suspendida.")
         }
+
+    /**
+     * Suelta la liga de quien administra una empresa, para cuando esa persona
+     * perdió su cuenta y nadie más de la empresa puede hacerlo. Es lo único que
+     * quien opera el servicio hace sobre una persona de una empresa: sólo sobre
+     * quien la administra, con un motivo, y queda en la bitácora de la empresa.
+     * No devuelve nada de la persona.
+     */
+    @Transactional
+    fun unlinkAdministrator(operator: CurrentPerson, id: UUID, request: AdministratorUnlinkRequest) {
+        val checks = Checks()
+        val email = checks.email("email", request.email)
+        val reason = checks.text("reason", request.reason, MAX_REASON, required = true)
+        if (reason != null && reason.length in 1 until MIN_REASON) checks.fail("reason", "too_short", "Lleva al menos $MIN_REASON caracteres.")
+        checks.done()
+
+        if (tenants.find(id) == null) throw Problems.notFound()
+        tenants.lock(id)
+        // Quien no administra esa empresa, o es de otra, no existe para esta operación: la respuesta no dice cuál.
+        val user = users.findByEmail(id, email!!)?.takeIf { Role.ADMIN_EMPRESA.wire in it.roles } ?: throw Problems.notFound()
+        if (!users.unlink(id, user.id)) throw Problems.conflict("user_not_linked", "Esa persona no está ligada a ninguna cuenta.")
+        audit.record(id, operator, "user.unlinked", "user", user.id, mapOf("by" to "operator", "reason" to reason!!))
+    }
 
     private fun changeStatus(
         operator: CurrentPerson,

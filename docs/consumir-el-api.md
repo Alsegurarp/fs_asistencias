@@ -14,9 +14,10 @@ páginas, idempotencia y recomendaciones. La referencia de cada ruta es
   minutos.
 - Los valores enumerados y los códigos van en minúsculas con guion bajo.
 - Un cuerpo con un campo que el contrato no describe se rechaza con 422.
-- La empresa nunca se manda: sale de la credencial. La única excepción son
-  las rutas de quien opera el servicio para suspender y reactivar una empresa,
-  porque esa persona no pertenece a ninguna.
+- La empresa nunca se manda: sale de la credencial. Las únicas excepciones son
+  las rutas de quien opera el servicio para suspender, reactivar o soltar la
+  liga de quien administra una empresa, porque esa persona no pertenece a
+  ninguna.
 
 ## Dos credenciales
 
@@ -237,7 +238,7 @@ las rutas en PowerShell no se probó.
 
 ## Qué cambia sin aviso y qué no
 
-El contrato va en la versión 0.10: está completo para el recorrido del
+El contrato va en la versión 0.11: está completo para el recorrido del
 producto, pero todavía no está congelado.
 
 - No se quita ni se renombra un campo, un valor o una ruta sin subir la
