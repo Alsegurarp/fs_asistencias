@@ -6,6 +6,7 @@ import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 
 data class EncryptedOfflineEvent(
     val ciphertext: ByteArray,
@@ -13,6 +14,11 @@ data class EncryptedOfflineEvent(
 )
 
 class OfflineEventCipher {
+    fun decrypt(ciphertext: ByteArray, initializationVector: ByteArray): ByteArray =
+        Cipher.getInstance(TRANSFORMATION).apply {
+            init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(128, initializationVector))
+        }.doFinal(ciphertext)
+
     fun encrypt(plaintext: ByteArray): EncryptedOfflineEvent {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())

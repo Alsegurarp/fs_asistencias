@@ -4,85 +4,109 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import java.time.Instant
-import java.util.UUID
-import org.json.JSONObject
+import android.os.SystemClock
+import java.io.IOException
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import mx.fastsolution.zenit.mobile.capture.TagEvidenceHasher
-import mx.fastsolution.zenit.mobile.data.AttendanceDatabase
+import kotlinx.coroutines.withContext
 import mx.fastsolution.zenit.mobile.data.AttendanceRepository
-import mx.fastsolution.zenit.mobile.data.PendingAttendanceEvent
-import mx.fastsolution.zenit.mobile.location.CurrentLocationProvider
-import mx.fastsolution.zenit.mobile.security.OfflineEventCipher
+import mx.fastsolution.zenit.mobile.data.AttendanceSyncWorker
+import mx.fastsolution.zenit.mobile.data.CaptureApiException
 
 data class CaptureUiState(
     val pendingCount: Int = 0,
     val message: String = "Acerca una tarjeta NFC",
     val isCapturing: Boolean = false,
+    val registered: Boolean = false,
+    val deviceLabel: String = "",
+    val serverUrl: String = if (BuildConfig.DEBUG) "http://localhost:8080" else "",
+    val breakPolicy: String = "not_considered",
+    val sessionUsable: Boolean = false,
+    val legacyCount: Int = 0,
+    val receipts: List<String> = emptyList(),
 )
 
 class AttendanceViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = AttendanceRepository(
-        AttendanceDatabase.get(application).pendingAttendanceDao(),
-    )
-    private val locationProvider = CurrentLocationProvider(application)
-    private val offlineEventCipher = OfflineEventCipher()
-    private val captureState = MutableStateFlow(CaptureUiState())
+    private val repository = AttendanceRepository(application)
+    private val captureState = MutableStateFlow(CaptureUiState(message = ""))
+    private var declaredType: String? = null
+    private val registration = repository.store.changes.map { repository.store.registration() }.flowOn(Dispatchers.IO)
 
-    val state = combine(captureState, repository.pendingCount) { current, pendingCount ->
-        current.copy(pendingCount = pendingCount)
+    val state = combine(captureState, repository.pendingCount, repository.legacyCount, registration, repository.receipts) { current, pendingCount, legacyCount, device, receipts ->
+        current.copy(
+            pendingCount = pendingCount,
+            legacyCount = legacyCount,
+            registered = device != null,
+            serverUrl = device?.getString("baseUrl") ?: current.serverUrl,
+            deviceLabel = device?.let {
+                val label = it.optJSONObject("employee")?.optString("displayName") ?: it.optJSONObject("site")?.optString("name").orEmpty()
+                "${it.getJSONObject("tenant").getString("name")} · $label"
+            }.orEmpty(),
+            breakPolicy = device?.getJSONObject("session")?.getString("breakPolicy") ?: "not_considered",
+            sessionUsable = device?.let { AttendanceRepository.sessionUsable(it) } ?: false,
+            message = current.message.ifBlank { repository.store.notice() },
+            receipts = receipts.filter { repository.belongsToDevice(it, device?.getString("deviceId")) }.map(repository::readReceipt),
+        )
+    }.flowOn(Dispatchers.IO).catch {
+        emit(CaptureUiState(message = "No se pudo leer la cola o las claves locales. Los datos se conservan; solicita revisión a RH."))
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = CaptureUiState(),
     )
 
+    init { AttendanceSyncWorker.schedule(application) }
+
+    fun activate(baseUrl: String, code: String, preservePreviousPending: Boolean) = perform {
+        repository.activate(baseUrl, code, preservePreviousPending)
+        AttendanceSyncWorker.schedule(getApplication())
+    }
+
+    fun renewSession() = perform { repository.renewSession() }
+
+    fun selectType(type: String?) { declaredType = type }
+
+    fun synchronize() = perform {
+        withContext(Dispatchers.IO) { repository.store.saveNotice("Sincronización solicitada. Los marcajes permanecen guardados hasta recibir confirmación.") }
+        AttendanceSyncWorker.schedule(getApplication())
+    }
+
     fun captureTag(tagId: ByteArray) {
-        if (captureState.value.isCapturing) return
+        val observedAt = Instant.now()
+        val elapsed = SystemClock.elapsedRealtime()
+        val selected = declaredType
+        perform {
+            repository.capture(tagId, selected, observedAt, elapsed)
+            AttendanceSyncWorker.schedule(getApplication())
+        }
+    }
 
-        viewModelScope.launch {
-            captureState.value = captureState.value.copy(
-                message = "Capturando ubicacion puntual...",
-                isCapturing = true,
-            )
-
-            runCatching {
-                val location = locationProvider.capture()
-                val capturedAt = Instant.now().toEpochMilli()
-                val payload = JSONObject()
-                    .put("tagEvidence", TagEvidenceHasher.sha256(tagId))
-                    .put("capturedAtEpochMillis", capturedAt)
-                    .put("latitude", location?.latitude ?: JSONObject.NULL)
-                    .put("longitude", location?.longitude ?: JSONObject.NULL)
-                    .put("accuracyMeters", location?.accuracyMeters ?: JSONObject.NULL)
-                    .toString()
-                    .encodeToByteArray()
-                val encrypted = offlineEventCipher.encrypt(payload)
-                repository.enqueue(
-                    PendingAttendanceEvent(
-                        id = UUID.randomUUID().toString(),
-                        encryptedPayload = encrypted.ciphertext,
-                        initializationVector = encrypted.initializationVector,
-                        capturedAtEpochMillis = capturedAt,
-                    ),
-                )
-                location
-            }.onSuccess { location ->
-                captureState.value = CaptureUiState(
-                    message = if (location == null) {
-                        "Marcaje guardado sin ubicacion; requiere revision"
-                    } else {
-                        "Marcaje guardado para sincronizacion"
-                    },
-                )
-            }.onFailure {
-                captureState.value = CaptureUiState(
-                    message = "No se pudo guardar el marcaje",
-                )
+    private fun perform(action: suspend () -> Unit) = viewModelScope.launch {
+        if (captureState.value.isCapturing) return@launch
+        captureState.value = captureState.value.copy(message = "Procesando…", isCapturing = true)
+        try {
+            action()
+            captureState.value = captureState.value.copy(message = "")
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            val message = when (error) {
+                is CaptureApiException -> error.message
+                is IOException -> "No se pudo conectar con el servidor. Los datos locales se conservan."
+                is IllegalArgumentException, is IllegalStateException -> error.message
+                else -> "No se pudo completar la operación. Los datos locales se conservan."
             }
+            captureState.value = captureState.value.copy(message = message ?: "No se pudo completar la operación.")
+        } finally {
+            captureState.value = captureState.value.copy(isCapturing = false)
         }
     }
 }
