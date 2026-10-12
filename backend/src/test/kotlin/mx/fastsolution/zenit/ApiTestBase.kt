@@ -128,7 +128,10 @@ abstract class ApiTestBase {
         headers.forEach { (name, value) -> request.header(name, value) }
         request.method(method, body?.let { HttpRequest.BodyPublishers.ofString(it) } ?: HttpRequest.BodyPublishers.noBody())
         val response = http.send(request.build(), HttpResponse.BodyHandlers.ofString())
-        return Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""), response.headers().map())
+        val reply = Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""), response.headers().map())
+        // Toda respuesta se compara con lo que el contrato publica para esa operación.
+        ContractCheck.verify(request.build().method(), request.build().uri().rawPath, reply.status, reply.contentType, reply.body)
+        return reply
     }
 
     /** Sube un archivo como `multipart/form-data`. Con `csv` nulo no manda ningún archivo. */
@@ -155,7 +158,10 @@ abstract class ApiTestBase {
         if (key != null) request.header("Idempotency-Key", key)
         request.POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
         val response = http.send(request.build(), HttpResponse.BodyHandlers.ofString())
-        return Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""), response.headers().map())
+        val reply = Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""), response.headers().map())
+        // Toda respuesta se compara con lo que el contrato publica para esa operación.
+        ContractCheck.verify(request.build().method(), request.build().uri().rawPath, reply.status, reply.contentType, reply.body)
+        return reply
     }
 
     protected fun token(

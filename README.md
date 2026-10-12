@@ -101,6 +101,17 @@ cada prueba llama a `jobWorker` cuando le toca, sin esperas. `JobsIT` prueba el
 trabajador con un trabajo que falla a propósito, y simula el paso del tiempo
 moviendo la fecha del trabajo en la base.
 
+Cada respuesta que reciben las pruebas de integración se compara con el
+contrato (`ContractCheck`): su estado tiene que estar descrito para esa
+operación y su cuerpo tiene que cumplir el esquema, con sus formatos.
+`ContractCoverageIT` corre al final y exige dos cosas más: que las rutas del
+backend sean exactamente las operaciones del contrato, y que cada operación
+haya respondido bien al menos una vez. Una ruta nueva sin contrato, o una
+respuesta que cambia sin cambiar el contrato, rompe las pruebas: los dos se
+cambian en el mismo commit. No se comprueba el formato de correo, porque los
+datos ficticios usan el dominio reservado `.invalid`, ni el cuerpo de las
+peticiones.
+
 ## Identidad
 
 El inicio de sesión de las personas lo hace Keycloak, no el backend. Los

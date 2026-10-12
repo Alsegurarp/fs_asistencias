@@ -31,6 +31,8 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(kotlin("test"))
+    // Comprueba en las pruebas que cada respuesta cumple el esquema del contrato.
+    testImplementation("com.networknt:json-schema-validator:3.0.8")
 }
 
 // Las pruebas unitarias corren en cada build. Las de integración necesitan una
@@ -52,7 +54,16 @@ tasks.register<Test>("integrationTest") {
     // Deja a la vista qué se probó: dependen de una base externa.
     testLogging {
         events("passed", "failed", "skipped")
+        // Con el motivo de cada falla, sin la traza: dice qué respuesta no cumplió y por qué.
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = false
     }
+    // El contrato es parte de lo que se prueba: cada respuesta se valida contra su esquema,
+    // y la prueba que revisa que no quedó operación sin ejercitar corre al final.
+    systemProperty("junit.jupiter.testclass.order.default", "org.junit.jupiter.api.ClassOrderer\$OrderAnnotation")
+    val contract = rootProject.layout.projectDirectory.file("contracts/openapi.yaml")
+    inputs.file(contract)
+    systemProperty("zenit.contract", contract.asFile.absolutePath)
     shouldRunAfter(tasks.test)
 }
 

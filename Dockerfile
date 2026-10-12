@@ -8,6 +8,8 @@ COPY settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY backend/build.gradle.kts backend/build.gradle.kts
 RUN gradle :backend:dependencies --no-daemon
 
+# El contrato entra a la etapa de pruebas: las de integración validan contra él.
+COPY contracts contracts
 COPY backend backend
 RUN gradle :backend:test :backend:bootJar --no-daemon
 
