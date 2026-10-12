@@ -4,10 +4,26 @@ Qué tiene que hacer la app para enrolarse, identificarse, marcar, trabajar sin
 conexión y mostrar la semana. Antes conviene leer
 [Consumir el API](consumir-el-api.md).
 
-Estado: el módulo `android/` lee la tarjeta por NFC, toma una ubicación y
-guarda el marcaje en una cola local cifrada. Todavía no se enrola, no firma ni
-sincroniza. Nada de esta guía se ha probado en un teléfono: se probó con un
-dispositivo simulado que hace exactamente estas llamadas.
+Estado: el módulo `android/` implementa enrolamiento con bloqueo de pantalla,
+clave P-256 en Android Keystore, aserciones y sobres ES256, captura NFC con
+ubicación puntual, cola cifrada y sincronización por lotes con WorkManager.
+Guarda los recibos cifrados y muestra el tipo decidido por el servidor; un
+rechazo con recibo sale de pendientes y queda disponible para revisión.
+Puede renovar la sesión y volver a enrolarse. Semana y acuse todavía no están
+implementados.
+
+Debug y release compilan; pasan 6 pruebas unitarias. El autoensayo pasó en un
+Samsung SM-S928B con Android API 36: verifica firmas reales de Keystore,
+migración sin pérdida, activación, persistencia, reintentos sin cambiar el
+sobre, rechazo de recibos ajenos, recibos aceptados y rechazados, captura
+durante una respuesta lenta y reenrolamiento que conserva los pendientes.
+Ese ensayo usa un servidor HTTP de prueba y almacenamiento separado de la app;
+no sustituye las pruebas contra el backend, una lectura NFC física ni una
+muestra real de ubicación. La pantalla inicial también se abrió y revisó en
+el teléfono.
+
+La captura `uid_sha256` se habilita sólo en debug. Release exige HTTPS y no
+permite marcar mientras la verificación de la tarjeta real siga pendiente.
 
 Ese dispositivo simulado se puede leer y correr: está en
 `backend/src/simulator/` y hace, contra el entorno local, la activación, la
@@ -372,6 +388,38 @@ Una vez por versión de cierre: repetirlo responde 409
 3. Crear en el portal, o con peticiones directas, una persona, una tarjeta
    asignada y un código de enrolamiento:
    [Recorrido completo](recorrido-completo.md).
+4. En la app debug, indicar `http://localhost:8080` y el código emitido por RH.
+   Activar, conceder ubicación y acercar la tarjeta; la confirmación definitiva
+   aparece en «Últimos recibos», no al guardarla en la cola.
+
+La base local pasa de versión 1 a 2 sin borrar filas. Los registros anteriores
+sin firma se conservan fuera de sincronización. Para volver a enrolarse con
+pendientes hay que sincronizarlos primero o confirmar en la app que se
+conserven sin enviarlos: los sobres de un dispositivo anterior no se firman
+de nuevo con otra clave. Los recibos mostrados pertenecen al dispositivo
+activo y sus fechas usan la zona de la empresa.
+
+No se purgan los sobres ni los recibos locales; la política de retención queda
+pendiente antes de usar terminales de forma continua. Abrir otra sesión se hace
+con «Renovar sesión», sin pendientes ni una sincronización en curso. Mientras
+la sesión siga vigente se conserva al abrir la app, también sin conexión.
+
+### Repetir las comprobaciones
+
+Desde `android/`:
+
+```powershell
+.\gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:assembleRelease --console=plain
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+$smokeResult = adb shell am instrument -w mx.fastsolution.zenit.test/mx.fastsolution.zenit.mobile.testing.SmokeInstrumentation
+$smokeResult
+if ($smokeResult -notmatch '^OK:') { throw 'Falló el autoensayo en el teléfono' }
+```
+
+El teléfono debe estar autorizado por ADB y tener bloqueo de pantalla. Si hay
+más de un dispositivo conectado, agregar `-s <serial>` a cada orden de ADB.
+El autoensayo reinicia sólo su almacén de pruebas, separado del de la app.
 
 ## Lista de comprobación
 

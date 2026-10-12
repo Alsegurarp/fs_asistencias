@@ -16,19 +16,30 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -51,6 +62,10 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
                 state = state,
                 nfcAvailable = nfcReady,
                 locationGranted = locationGranted,
+                onActivate = viewModel::activate,
+                onSynchronize = viewModel::synchronize,
+                onRenewSession = viewModel::renewSession,
+                onSelectType = viewModel::selectType,
                 onRequestLocation = {
                     // Android 12+ ignora la solicitud si FINE se pide sin COARSE.
                     requestLocationPermission.launch(
@@ -107,14 +122,29 @@ private fun ZenitApp(
     nfcAvailable: Boolean,
     locationGranted: Boolean,
     onRequestLocation: () -> Unit,
+    onActivate: (String, String, Boolean) -> Unit,
+    onSynchronize: () -> Unit,
+    onRenewSession: () -> Unit,
+    onSelectType: (String?) -> Unit,
 ) {
+    var baseUrl by remember(state.serverUrl) { mutableStateOf(state.serverUrl) }
+    var code by remember { mutableStateOf("") }
+    var reenrolling by remember { mutableStateOf(false) }
+    var preservePending by remember { mutableStateOf(false) }
+    var selectedType by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(state.breakPolicy) {
+        if (state.breakPolicy != "marked" && selectedType in setOf("break_start", "break_end")) selectedType = null
+        onSelectType(selectedType)
+    }
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .safeDrawingPadding()
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp),
-                verticalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -122,7 +152,20 @@ private fun ZenitApp(
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                if (BuildConfig.DEBUG) Text("Modo de pruebas: tarjetas simuladas. Sólo datos ficticios.", color = MaterialTheme.colorScheme.error)
+                if (state.registered) Text(state.deviceLabel, style = MaterialTheme.typography.titleMedium)
+                if (!state.registered || reenrolling) {
+                    OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text("Servidor") }, singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("Código de RH") }, placeholder = { Text("XXXX-XXXX") }, singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
+                    if (state.pendingCount > 0) {
+                        Text("Cambiar de dispositivo impide enviar sus pendientes con la nueva clave. Puedes sincronizarlos primero o conservarlos para revisión.")
+                        Checkbox(checked = preservePending, onCheckedChange = { preservePending = it }, enabled = !state.isCapturing,
+                            modifier = Modifier.semantics { contentDescription = "Conservar los pendientes anteriores sin enviarlos" })
+                        Text("Conservar los pendientes anteriores sin enviarlos")
+                    }
+                    Button(enabled = !state.isCapturing && code.isNotBlank() && (state.pendingCount == 0 || preservePending), onClick = { onActivate(baseUrl, code, preservePending); reenrolling = false; preservePending = false }) { Text("Activar dispositivo") }
+                    if (state.registered) Button(onClick = { reenrolling = false; preservePending = false }) { Text("Cancelar") }
+                }
                 StatusCard(
                     title = "Lector NFC",
                     value = if (nfcAvailable) "Listo" else "No disponible",
@@ -148,6 +191,23 @@ private fun ZenitApp(
                     text = "Pendientes de sincronizar: ${state.pendingCount}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                if (state.legacyCount > 0) Text("Registros conservados fuera de sincronización: ${state.legacyCount}. Son registros anteriores sin firma o de un dispositivo previo; requieren revisión.", color = MaterialTheme.colorScheme.error)
+                if (state.registered) {
+                    if (!state.sessionUsable) Text("La sesión requiere renovación antes de seguir marcando.", color = MaterialTheme.colorScheme.error)
+                    Text("Tipo de marcaje", style = MaterialTheme.typography.titleSmall)
+                    val types = linkedMapOf<String?, String>(null to "Automático", "clock_in" to "Entrada", "clock_out" to "Salida")
+                    if (state.breakPolicy == "marked") { types["break_start"] = "Inicio de descanso"; types["break_end"] = "Fin de descanso" }
+                    types.forEach { (value, label) ->
+                        FilterChip(selected = selectedType == value, enabled = !state.isCapturing, onClick = { selectedType = value; onSelectType(value) }, label = { Text(label) })
+                    }
+                    Button(enabled = !state.isCapturing, onClick = onSynchronize) { Text("Sincronizar ahora") }
+                    Button(enabled = !state.isCapturing && state.pendingCount == 0, onClick = onRenewSession) { Text("Renovar sesión") }
+                    Button(enabled = !state.isCapturing, onClick = { code = ""; preservePending = false; reenrolling = true }) { Text("Usar otro código de RH") }
+                }
+                if (state.receipts.isNotEmpty()) {
+                    Text("Últimos recibos", style = MaterialTheme.typography.titleMedium)
+                    state.receipts.forEach { receipt -> StatusCard("Resultado del servidor", receipt) }
+                }
             }
         }
     }

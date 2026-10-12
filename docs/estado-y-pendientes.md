@@ -15,8 +15,8 @@ cambia alguna de las tres cosas.
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | Ensayo que respalda, restaura en una instancia desechable y compara conteos. No guarda el respaldo |
 | Vulnerabilidades | Inventario y análisis de las cuatro imágenes. Ninguna tiene una alta o crítica sin atender: tres no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | Esqueleto que compila; no inicia sesión ni tiene pantallas |
-| App Android | Esqueleto que lee NFC, toma ubicación y guarda en una cola cifrada; no se enrola ni sincroniza |
+| Portal | Inicio de sesión PKCE, `/me` y gestión de sedes, empleados y tarjetas según roles. Compilación y pruebas del cliente verificadas; recorrido contra Keycloak y backend pendiente |
+| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización por lotes, recibos y renovación. 6 pruebas unitarias y autoensayo en teléfono con servidor HTTP de prueba; debug y release compilan |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -39,8 +39,8 @@ ni está publicado.
 
 | Qué | Por qué importa |
 | --- | --- |
-| El portal | Sin él, RH no puede configurar, atender incidencias ni cerrar. El API ya existe, y el simulador da datos con qué construirlo |
-| La app con enrolamiento y sincronización | Sin ella no hay marcajes reales |
+| Completar el portal | Ya tiene acceso y padrón básico. Faltan horarios, importación, usuarios, dispositivos, incidencias, cierres, exportes y pantallas de operador y trabajador |
+| Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Los topes de jornada y el valor del acuse salen de una lectura de la ley sin revisar |
 | Un ambiente publicado | No hay staging ni dirección pública |
@@ -173,8 +173,11 @@ defecto se pueda aprovechar aquí.
 
 - La lectura jurídica de los topes y de a qué semana pertenece un turno.
 - El formato que pide un sistema de nómina real.
-- Cualquier cliente contra el servidor: ni el portal ni la app llaman al API
-  todavía. Los clientes generados del contrato sólo se compilaron.
+- El recorrido del portal contra Keycloak y el backend real: ya implementa
+  las llamadas, pero sólo se verificaron la compilación y pruebas del cliente.
+  La app también implementa las llamadas de dispositivo y se verificó contra un
+  servidor de prueba en un Samsung SM-S928B (Android API 36), no contra el
+  backend real. Los clientes generados del contrato sólo se compilaron.
 - La app en un teléfono, con una tarjeta real.
 - Carga: una corrida de cierre se probó con 511 personas y un exporte con
   unas decenas de filas, no con más.
@@ -198,8 +201,8 @@ defecto se pueda aprovechar aquí.
 
 | Quién | Primer paso sugerido |
 | --- | --- |
-| App | Generar la clave, activar con un código y abrir sesión contra el entorno local; después, firmar y mandar un marcaje con la tarjeta simulada |
-| Portal | Inicio de sesión y `GET /me`; después, sedes, padrón y tarjetas. Para jornada, incidencias y cierre, correr antes el simulador |
+| App | Verificar enrolamiento y marcajes con tarjeta simulada contra el backend local. Después, semana y acuse; la tarjeta real requiere su prueba externa |
+| Portal | Verificar inicio de sesión, sedes, padrón y tarjetas contra el entorno local. Después, ampliar las pantallas operativas; correr antes el simulador |
 | Backend | Lo que queda sin esperar a nadie es una mejora interna, las clases de jOOQ generadas, que se dejó para después. Lo demás espera una decisión o a un tercero |
 
 El portal ya no depende de la app para tener datos: el simulador deja

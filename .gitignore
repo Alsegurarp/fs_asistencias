@@ -37,6 +37,7 @@ captures/
 
 # Vite
 web/.vite/
+*.tsbuildinfo
 
 # Logs
 *.log

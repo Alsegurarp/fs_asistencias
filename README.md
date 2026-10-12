@@ -5,8 +5,11 @@ Plataforma de control de jornada desarrollada por fastSolution.
 ## Estado técnico
 
 Monorepo del producto. El backend atiende las 60 operaciones del contrato, con
-pruebas contra PostgreSQL real. El portal web y la aplicación Android son
-esqueletos que compilan y todavía no llaman al API. Cada aplicación mantiene
+pruebas contra PostgreSQL real. El portal implementa inicio de sesión y gestión
+de sedes, empleados y tarjetas; su conexión completa con el entorno local está
+pendiente de verificar. Android implementa enrolamiento, sobres firmados y
+sincronización con cola cifrada; se verificó en un teléfono con un servidor de
+prueba, todavía sin tarjetas ni backend reales. Cada aplicación mantiene
 toolchain, dependencias y build propios.
 
 ## Documentación

@@ -43,8 +43,8 @@ contradice al contrato, manda el contrato.
 | --- | --- | --- |
 | Backend | `backend/` | Atiende las 60 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
-| Portal web | `web/` | Esqueleto que compila; todavía no inicia sesión ni llama al API |
-| App Android | `android/` | Esqueleto que lee NFC, toma ubicación y guarda en una cola local cifrada; todavía no se enrola ni sincroniza |
+| Portal web | `web/` | Inicio de sesión PKCE y gestión de sedes, empleados y tarjetas; falta probar el recorrido contra el entorno local |
+| App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Verificada en un teléfono con servidor de prueba; falta el recorrido contra el backend y las tarjetas reales |
 | Conector | `connector/` | Vacío; es el futuro agente que sincronice el padrón desde la red de un cliente |
 | Infraestructura | `infra/` | Imagen y realm del proveedor de identidad, guiones de la base y ensayo de respaldo |
 

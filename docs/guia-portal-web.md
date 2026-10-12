@@ -4,9 +4,27 @@ Qué tiene que hacer el portal: iniciar sesión, saber qué mostrar a cada rol y
 contra qué ruta va cada pantalla. Antes conviene leer
 [Consumir el API](consumir-el-api.md) y [Casos de uso](casos-de-uso.md).
 
-Estado: el módulo `web/` es un esqueleto con React, TypeScript, Vite y MUI que
-compila y consulta el estado del API. Todavía no inicia sesión ni tiene
-pantallas. Nada de esta guía se ha probado desde el portal.
+Estado: el módulo `web/` implementa inicio de sesión con el adaptador oficial
+`keycloak-js`, PKCE S256, tokens en memoria, renovación y cierre de sesión.
+Consulta `/me` y ofrece sedes (alta y edición), empleados (alta y edición) y
+tarjetas (registro, asignación y revocación), con permisos por rol y listas
+con cursor. Incluye estados de carga, errores de campos y referencia de
+correlación. La compilación y las pruebas del cliente pasan; todavía falta
+probar el recorrido completo contra Keycloak y el backend real.
+
+Para desarrollar el portal fuera de Docker: `cd web`, `pnpm install` y
+`pnpm dev`. Usa `http://localhost:8081`, la misma dirección de retorno que el
+realm local permite, y envía `/api` a `http://localhost:8080`. El proveedor
+de identidad sigue en `http://localhost:8082`. Al recargar la página se vuelve
+a pulsar «Iniciar sesión»: los tokens no se guardan; Keycloak conserva su
+sesión y decide si hace falta pedir credenciales otra vez.
+
+`VITE_IDENTITY_URL` permite cambiar la dirección de identidad en desarrollo.
+Para otro ambiente, también debe ajustarse el origen permitido en `connect-src`
+de `web/nginx.conf`, el realm y las direcciones del backend; la configuración
+de Docker actual está preparada para el entorno local.
+
+Comprobaciones del portal: `pnpm build` y `pnpm test` desde `web/`.
 
 ## Inicio de sesión
 

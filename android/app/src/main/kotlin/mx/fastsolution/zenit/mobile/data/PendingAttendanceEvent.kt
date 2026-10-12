@@ -14,8 +14,10 @@ data class PendingAttendanceEvent(
     val initializationVector: ByteArray,
     val capturedAtEpochMillis: Long,
     val status: String = STATUS_PENDING,
+    val encryptedReceipt: ByteArray? = null,
+    val receiptInitializationVector: ByteArray? = null,
 ) {
     companion object {
-        const val STATUS_PENDING = "pending"
+        const val STATUS_PENDING = "pending_signed"
     }
 }
