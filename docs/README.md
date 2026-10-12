@@ -36,6 +36,7 @@ contradice al contrato, manda el contrato.
 | [Recorrido completo](recorrido-completo.md) | De una empresa nueva a un exporte, petición por petición |
 | [Continuar el backend](continuar-el-backend.md) | Cómo está hecho el código y cómo se agrega una ruta, una tabla o un trabajo |
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |
+| [Validación de cierres](validacion-cierres.md) | Pruebas ejecutadas y guion de aceptación de cierres semanales |
 
 ## Las piezas
 

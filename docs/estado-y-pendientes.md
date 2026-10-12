@@ -15,7 +15,7 @@ cambia alguna de las tres cosas.
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | Ensayo que respalda, restaura en una instancia desechable y compara conteos. No guarda el respaldo |
 | Vulnerabilidades | Inventario y análisis de las cuatro imágenes. Ninguna tiene una alta o crítica sin atender: tres no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | Inicio de sesión PKCE, `/me`, sedes, empleados, tarjetas e incidencias (filtros, semana, asignación y resolución con ajustes). Cierres y exportes tienen navegación y permisos, con pantallas operativas pendientes. Cliente con idempotencia y descarga autenticada. Compilación y pruebas verificadas; recorrido contra Keycloak y backend pendiente para el PMO |
+| Portal | Inicio de sesión PKCE, `/me`, sedes, empleados, tarjetas, incidencias y cierres (selección, bloqueos, reapertura y corridas). Exportes tiene navegación y cliente de descarga, con pantalla pendiente. 87 pruebas del portal y compilación verificadas; recorrido completo de navegador con sesión Keycloak pendiente |
 | App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización por lotes, recibos y renovación. 6 pruebas unitarias y autoensayo en teléfono con servidor HTTP de prueba; debug y release compilan |
 | Conector | No existe |
 
@@ -39,7 +39,7 @@ ni está publicado.
 
 | Qué | Por qué importa |
 | --- | --- |
-| Completar el portal | Ya tiene acceso, padrón básico e incidencias. Faltan horarios, importación, usuarios, dispositivos, cierres, exportes y pantallas de operador y trabajador |
+| Completar el portal | Ya tiene acceso, padrón básico, incidencias y cierres. Faltan horarios, importación, usuarios, dispositivos, exportes y pantallas de operador y trabajador |
 | Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Los topes de jornada y el valor del acuse salen de una lectura de la ley sin revisar |

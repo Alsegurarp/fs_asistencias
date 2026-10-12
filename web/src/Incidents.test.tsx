@@ -8,6 +8,7 @@ vi.mock('./api', async importOriginal => ({ ...await importOriginal<typeof impor
 import { api, ApiError, type Me } from './api'
 import { Incidents } from './Incidents'
 import { type Incident, type Week } from './incidentModel'
+import { button, choose, click, setInput, waitFor } from './testUi'
 
 const id = '11111111-1111-4111-8111-111111111111'
 const employeeId = '22222222-2222-4222-8222-222222222222'
@@ -68,35 +69,6 @@ afterEach(async () => {
   vi.unstubAllGlobals()
 })
 
-async function waitFor(predicate: () => boolean) {
-  for (let i = 0; i < 100; i++) {
-    if (predicate()) return
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)) })
-  }
-  throw new Error(`No se cumplió la condición. Pantalla: ${document.body.textContent}`)
-}
-function button(text: string) { return [...document.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent?.trim() === text) }
-async function click(text: string) {
-  await waitFor(() => !!button(text))
-  await act(async () => button(text)!.click())
-}
-async function setInput(name: string, value: string) {
-  const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${name}"]`)!
-  const prototype = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
-  await act(async () => {
-    Object.getOwnPropertyDescriptor(prototype, 'value')!.set!.call(input, value)
-    input.dispatchEvent(new Event('input', { bubbles: true }))
-    input.dispatchEvent(new Event('change', { bubbles: true }))
-  })
-}
-async function choose(name: string, label: string) {
-  const input = document.querySelector<HTMLInputElement>(`input[name="${name}"]`)!
-  const combo = input.parentElement!.querySelector('[role="combobox"]')!
-  await act(async () => combo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 })))
-  await waitFor(() => [...document.querySelectorAll('[role="option"]')].some(option => option.textContent?.includes(label)))
-  const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].findLast(item => item.textContent?.includes(label))!
-  await act(async () => option.click())
-}
 async function mount(role = 'rh') {
   const me: Me = { userId, displayName: 'Mi nombre', roles: [role], tenant: { name: 'Empresa', timeZone: 'America/Mexico_City' } }
   await act(async () => root.render(<QueryClientProvider client={cache}><Incidents me={me} /></QueryClientProvider>))
@@ -128,7 +100,28 @@ it('el auditor consulta la semana y el marcaje sin controles de modificación', 
   expect(document.body.textContent).toContain('Empleado de prueba')
   expect(button('Asignarme')).toBeUndefined()
   expect(button('Guardar resolución')).toBeUndefined()
+  expect(button('Agregar salida faltante')).toBeUndefined()
   expect(mockedApi.mock.calls.some(([path]) => path.startsWith('/users'))).toBe(false)
+})
+
+it('ofrece agregar la salida del tramo abierto sin esconder el ajuste detrás de la decisión', async () => {
+  await open('admin_empresa')
+  await click('Agregar salida faltante')
+  expect(document.querySelector('[name="eventType"]')?.getAttribute('value')).toBe('clock_out')
+  expect(document.activeElement).toBe(document.querySelector('[name="localTime"]'))
+  expect(button('Guardar resolución')?.disabled).toBe(true)
+  await setInput('reason', 'Salida verificada para completar la jornada.')
+  await setInput('localTime', '2026-10-12T16:00')
+  await click('Guardar resolución')
+  await waitFor(() => patches().length === 1)
+  expect(patches()[0][2]).toEqual({ resolution: { decision: 'adjusted', reason: 'Salida verificada para completar la jornada.', adjustment: { kind: 'add_event', eventType: 'clock_out', occurredAt: '2026-10-12T22:00:00.000Z' } } })
+  expect(button('Agregar salida faltante')).toBeUndefined()
+})
+
+it('no ofrece agregar una salida para una incidencia de otro tipo', async () => {
+  serverIncident.type = 'foreign_site'
+  await open()
+  expect(button('Agregar salida faltante')).toBeUndefined()
 })
 
 it('el supervisor se asigna y quita la asignación sin consultar usuarios', async () => {

@@ -10,7 +10,7 @@ const status = { open: 'Abierta', resolved: 'Resuelta' }
 const adjustmentLabels = { add_event: 'Agregar marcaje', exclude_event: 'Excluir marcaje', retype_event: 'Cambiar tipo de marcaje' }
 const locationLabels: Record<string, string> = { inside: 'Dentro de sede', outside: 'Fuera de sede', inconclusive: 'Inconclusa', not_evaluated: 'Sin evaluar' }
 
-function RecordName({ kind, id, me }: { kind: 'employee' | 'site' | 'user'; id: string | null; me: Me }) {
+export function RecordName({ kind, id, me }: { kind: 'employee' | 'site' | 'user'; id: string | null; me: Me }) {
   const cache = useQueryClient()
   const self = kind === 'user' && id === me.userId
   const canRead = kind !== 'user' || me.roles.includes('admin_empresa')
@@ -37,10 +37,12 @@ function WeekSummary({ week }: { week: Week }) {
   </Stack>
 }
 
-export function Incidents({ me }: { me: Me }) {
+export type IncidentTarget = { week: string; siteId?: string; incidentId?: string }
+
+export function Incidents({ me, initial }: { me: Me; initial?: IncidentTarget }) {
   const cache = useQueryClient()
-  const [filters, setFilters] = useState({ status: 'open', type: '', siteId: '', week: '' })
-  const [selected, setSelected] = useState<string | null>(null)
+  const [filters, setFilters] = useState({ status: 'open', type: '', siteId: initial?.siteId || '', week: initial?.week || '' })
+  const [selected, setSelected] = useState<string | null>(initial?.incidentId || null)
   const list = useInfiniteQuery({
     queryKey: ['incidents', filters], initialPageParam: '',
     queryFn: ({ pageParam }) => {
@@ -88,6 +90,7 @@ function IncidentDetail({ id, me, initialWeek, onClose }: { id: string; me: Me; 
   const [weekDate, setWeekDate] = useState(initialWeek || dateInZone(new Date().toISOString(), zone))
   const [decision, setDecision] = useState('justified')
   const [kind, setKind] = useState('add_event')
+  const [eventType, setEventType] = useState('clock_in')
   const [localTime, setLocalTime] = useState('')
   const [localError, setLocalError] = useState<Error | null>(null)
   const detail = useQuery({ queryKey: ['incident', id], queryFn: () => api<Incident>(`/incidents/${id}`), retry: false })
@@ -155,6 +158,9 @@ function IncidentDetail({ id, me, initialWeek, onClose }: { id: string; me: Me; 
           {incident.resolution.adjustment && <div>{adjustmentLabels[incident.resolution.adjustment.kind]}{incident.resolution.adjustment.eventType && ` · ${eventTypes[incident.resolution.adjustment.eventType]}`}{incident.resolution.adjustment.occurredAt && ` · ${showTime(incident.resolution.adjustment.occurredAt, zone)}`}</div>}
         </Alert>}
         {incident.employeeId && <>
+          {writable && incident.type === 'missing_pair' && week.data?.segments.some(segment => segment.kind === 'work' && !segment.endAt) && <Alert severity="warning" action={<Button disabled={save.isPending} onClick={() => { setDecision('adjusted'); setKind('add_event'); setEventType('clock_out') }}>Agregar salida faltante</Button>}>
+            La jornada tiene una entrada sin salida. Justificar o confirmar la incidencia no completa el tramo: agrega la salida real con fecha, hora y motivo.
+          </Alert>}
           <Typography variant="h6">Semana del empleado</Typography>
           <TextField name="weekDate" label="Fecha de la semana a consultar" type="date" value={weekDate} onChange={event => setWeekDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} helperText="Elige una fecha del marcaje; la fecha de apertura puede ser posterior si llegó tarde." />
           <ErrorNotice error={week.error} />{week.isError && <Button onClick={() => void week.refetch()}>Reintentar semana</Button>}
@@ -188,9 +194,9 @@ function IncidentDetail({ id, me, initialWeek, onClose }: { id: string; me: Me; 
               <Alert severity="info">El ajuste conserva el marcaje original y agrega una corrección con tu motivo.</Alert>
               <TextField select name="kind" label="Tipo de ajuste" value={kind} onChange={event => setKind(event.target.value)} disabled={save.isPending}>{Object.entries(adjustmentLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
               {kind !== 'add_event' && <TextField key={weekDate} select name="eventId" label="Marcaje a ajustar" defaultValue="" required disabled={save.isPending} error={!!fieldError('resolution.adjustment.eventId')} helperText={fieldError('resolution.adjustment.eventId')}><MenuItem value="">Selecciona un marcaje</MenuItem>{events.map(mark => <MenuItem key={mark.id} value={mark.id}>{showTime(mark.observedAt, zone)} · {eventTypes[mark.type] || mark.type}</MenuItem>)}</TextField>}
-              {kind !== 'exclude_event' && <TextField select name="eventType" label="Tipo de marcaje" defaultValue="clock_in" disabled={save.isPending}>{Object.entries(eventTypes).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>}
+              {kind !== 'exclude_event' && <TextField select name="eventType" label="Tipo de marcaje" value={eventType} onChange={event => setEventType(event.target.value)} disabled={save.isPending}>{Object.entries(eventTypes).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>}
               {kind === 'add_event' && <>
-                <TextField name="localTime" label={`Fecha y hora (${zone})`} type="datetime-local" value={localTime} onChange={event => setLocalTime(event.target.value)} required disabled={save.isPending} slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1 } }} error={!!fieldError('resolution.adjustment.occurredAt')} helperText={fieldError('resolution.adjustment.occurredAt')} />
+                <TextField autoFocus name="localTime" label={`Fecha y hora (${zone})`} type="datetime-local" value={localTime} onChange={event => setLocalTime(event.target.value)} required disabled={save.isPending} slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1 } }} error={!!fieldError('resolution.adjustment.occurredAt')} helperText={fieldError('resolution.adjustment.occurredAt')} />
                 {localTime && !candidates.length && <Alert severity="error">La fecha u hora no es válida o no existe por un cambio horario.</Alert>}
                 {candidates.length > 1 ? <TextField key={localTime} select name="occurredAt" label="La hora se repite: elige la ocurrencia" defaultValue="" required disabled={save.isPending}><MenuItem value="">Selecciona una ocurrencia</MenuItem>{candidates.map((candidate, index) => <MenuItem key={candidate} value={candidate}>{index === 0 ? 'Primera' : 'Segunda'} · {new Intl.DateTimeFormat('es-MX', { timeZone: zone, timeStyle: 'long' }).format(new Date(candidate))}</MenuItem>)}</TextField> : <input type="hidden" name="occurredAt" value={candidates[0] || ''} />}
               </>}
