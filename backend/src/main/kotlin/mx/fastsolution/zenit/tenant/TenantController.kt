@@ -8,12 +8,14 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 
 data class TenantView(
     val id: String,
@@ -24,6 +26,7 @@ data class TenantView(
     val breakPolicy: String,
     val status: String,
     val createdAt: String,
+    val autoCloseAfterHours: Int?,
 ) {
     companion object {
         fun of(row: TenantRow) = TenantView(
@@ -35,6 +38,7 @@ data class TenantView(
             breakPolicy = row.breakPolicy,
             status = row.status,
             createdAt = row.createdAt.toInstant().toString(),
+            autoCloseAfterHours = row.autoCloseAfterHours,
         )
     }
 }
@@ -56,6 +60,20 @@ class TenantController(private val service: TenantService) {
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@AuthenticationPrincipal operator: CurrentPerson, @RequestBody request: TenantCreateRequest): TenantView =
         TenantView.of(service.create(operator, request))
+
+    @PostMapping("/tenants/{tenantId}/suspension")
+    fun suspend(
+        @AuthenticationPrincipal operator: CurrentPerson,
+        @PathVariable tenantId: UUID,
+        @RequestBody request: TenantStatusRequest,
+    ): TenantView = TenantView.of(service.suspend(operator, tenantId, request))
+
+    @PostMapping("/tenants/{tenantId}/reactivation")
+    fun reactivate(
+        @AuthenticationPrincipal operator: CurrentPerson,
+        @PathVariable tenantId: UUID,
+        @RequestBody request: TenantStatusRequest,
+    ): TenantView = TenantView.of(service.reactivate(operator, tenantId, request))
 
     @GetMapping("/tenant")
     fun current(@AuthenticationPrincipal person: CurrentPerson): TenantView = TenantView.of(service.current(person))

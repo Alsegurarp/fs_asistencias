@@ -47,7 +47,10 @@ import kotlin.test.assertTrue
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 // Las pruebas usan la tarjeta simulada; CaptureOffIT comprueba que nace apagada.
 // Los trabajos no corren solos en las pruebas: cada prueba llama al trabajador cuando le toca.
-@TestPropertySource(properties = ["zenit.capture.simulated-cards=true", "zenit.jobs.enabled=false"])
+// La cuota por persona se abre: toda la suite llama con pocas identidades. QuotaIT la prueba de punta a punta, con un límite bajo.
+@TestPropertySource(
+    properties = ["zenit.capture.simulated-cards=true", "zenit.jobs.enabled=false", "zenit.api.person-requests-per-minute=1000000"],
+)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class ApiTestBase {
     companion object {
@@ -129,8 +132,8 @@ abstract class ApiTestBase {
         request.method(method, body?.let { HttpRequest.BodyPublishers.ofString(it) } ?: HttpRequest.BodyPublishers.noBody())
         val response = http.send(request.build(), HttpResponse.BodyHandlers.ofString())
         val reply = Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""), response.headers().map())
-        // Toda respuesta se compara con lo que el contrato publica para esa operación.
-        ContractCheck.verify(request.build().method(), request.build().uri().rawPath, reply.status, reply.contentType, reply.body)
+        // Toda respuesta se compara con lo que el contrato publica para esa operación, y todo cuerpo aceptado también.
+        ContractCheck.verify(request.build().method(), request.build().uri().rawPath, reply.status, reply.contentType, reply.body, body)
         return reply
     }
 
@@ -159,7 +162,7 @@ abstract class ApiTestBase {
         request.POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
         val response = http.send(request.build(), HttpResponse.BodyHandlers.ofString())
         val reply = Reply(response.statusCode(), response.body(), response.headers().firstValue("Content-Type").orElse(""), response.headers().map())
-        // Toda respuesta se compara con lo que el contrato publica para esa operación.
+        // Toda respuesta se compara con lo que el contrato publica para esa operación. El archivo no es JSON: no se compara.
         ContractCheck.verify(request.build().method(), request.build().uri().rawPath, reply.status, reply.contentType, reply.body)
         return reply
     }

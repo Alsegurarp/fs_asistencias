@@ -187,6 +187,11 @@ class ExportRepository(private val dsl: DSLContext) {
         dsl.fetchOne("select $COLUMNS, content from export where tenant_id = ? and id = ? for update", tenantId, id)
             ?.let { ExportFile(row(it), it.get("content", ByteArray::class.java)) }
 
+    /** El exporte con el texto de su manifiesto, tal como se guardó; el texto es nulo mientras no está listo. */
+    fun manifest(tenantId: UUID, id: UUID): Pair<ExportRecord, String?>? =
+        dsl.fetchOne("select $COLUMNS, cast(manifest as text) as manifest from export where tenant_id = ? and id = ?", tenantId, id)
+            ?.let { row(it) to it.get("manifest", String::class.java) }
+
     fun insert(
         tenantId: UUID,
         id: UUID,
@@ -372,6 +377,19 @@ class ExportService(
         return "zenit-${tenant.slug}-${file.record.weekStart}.${file.record.format}" to content!!
     }
 
+    /**
+     * El manifiesto, byte por byte como se guardó: su huella se vuelve a
+     * calcular sobre lo que se entrega aquí. Sigue disponible después de
+     * descargar el archivo o de que venza.
+     */
+    @Transactional(readOnly = true)
+    fun manifest(person: CurrentPerson, id: UUID): ByteArray {
+        val (record, manifest) = exports.manifest(person.requireTenant(), id) ?: throw Problems.notFound()
+        if (manifest != null) return manifest.toByteArray(Charsets.UTF_8)
+        if (record.status == "failed") throw Problems.gone("export_failed", "El exporte no se pudo preparar; hay que pedirlo otra vez.")
+        throw Problems.conflict("export_not_ready", "El exporte todavía se está preparando.")
+    }
+
     private fun gone() = Problems.gone("export_expired", "El enlace ya se usó o venció; hay que pedir el exporte otra vez.")
 
     private fun idempotencyConflict() = Problems.conflict("idempotency_conflict", "La clave de idempotencia ya se usó con otro contenido.")
@@ -491,6 +509,13 @@ class ExportController(private val service: ExportService) {
     @GetMapping("/{exportId}")
     fun get(@AuthenticationPrincipal person: CurrentPerson, @PathVariable exportId: UUID): ExportView =
         ExportView.of(service.get(person, exportId))
+
+    @GetMapping("/{exportId}/manifest")
+    fun manifest(@AuthenticationPrincipal person: CurrentPerson, @PathVariable exportId: UUID): ResponseEntity<ByteArray> =
+        ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_JSON)
+            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .body(service.manifest(person, exportId))
 
     @GetMapping("/{exportId}/download")
     fun download(@AuthenticationPrincipal person: CurrentPerson, @PathVariable exportId: UUID): ResponseEntity<ByteArray> {

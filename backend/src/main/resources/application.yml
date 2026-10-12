@@ -52,6 +52,12 @@ zenit:
   exports:
     # Minutos durante los que un exporte listo se puede descargar.
     ttl-minutes: ${EXPORTS_TTL_MINUTES:15}
+  api:
+    # Peticiones por minuto que se le aceptan a una persona, sumando sus sesiones.
+    person-requests-per-minute: ${API_PERSON_REQUESTS_PER_MINUTE:600}
+  closures:
+    # Segundos entre revisiones del cierre programado de las empresas que lo pidieron.
+    schedule-check-seconds: ${CLOSURES_SCHEDULE_CHECK_SECONDS:60}
 
 management:
   endpoints:

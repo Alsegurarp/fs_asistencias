@@ -12,11 +12,13 @@ import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.Role
 import mx.fastsolution.zenit.site.SiteRepository
 import mx.fastsolution.zenit.tenant.TenantRepository
+import mx.fastsolution.zenit.tenant.TenantRow
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -49,7 +51,7 @@ data class ClosureRow(
     val totals: Totals,
     val hash: String,
     val closedAt: OffsetDateTime,
-    val closedBy: UUID,
+    val closedBy: UUID?,
     val acknowledgement: AcknowledgementView?,
 )
 
@@ -63,14 +65,14 @@ data class WeekClosureView(
     val totals: Totals,
     val hash: String,
     val closedAt: String,
-    val closedBy: String,
+    val closedBy: String?,
     val acknowledgement: AcknowledgementView?,
 ) {
     companion object {
         fun of(row: ClosureRow) = WeekClosureView(
             row.id.toString(), row.employeeId.toString(), row.weekStart.toString(), row.version, row.status,
             RuleSetRef(row.ruleSetId.toString(), row.ruleSetVersion), row.totals, row.hash, row.closedAt.toInstant().toString(),
-            row.closedBy.toString(), row.acknowledgement,
+            row.closedBy?.toString(), row.acknowledgement,
         )
     }
 }
@@ -122,11 +124,11 @@ class ClosureRepository(private val dsl: DSLContext) {
         return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { row(it) }
     }
 
-    fun insert(tenantId: UUID, id: UUID, employeeId: UUID, weekStart: LocalDate, version: Int, rules: RuleSetRow, totals: Totals, snapshot: String, hash: String, closedBy: UUID) {
+    fun insert(tenantId: UUID, id: UUID, employeeId: UUID, weekStart: LocalDate, version: Int, rules: RuleSetRow, totals: Totals, snapshot: String, hash: String, closedBy: UUID?) {
         dsl.execute(
             "insert into week_closure (tenant_id, id, employee_id, week_start, version, status, rule_set_id, rule_set_version, " +
                 "worked_minutes, break_minutes, ordinary_minutes, overtime_minutes, snapshot, hash, closed_by) " +
-                "values (?, ?, ?, cast(? as date), ?, 'closed', ?, ?, ?, ?, ?, ?, cast(? as json), ?, ?)",
+                "values (?, ?, ?, cast(? as date), ?, 'closed', ?, ?, ?, ?, ?, ?, cast(? as json), ?, cast(? as uuid))",
             tenantId, id, employeeId, weekStart.toString(), version, rules.id, rules.version, totals.workedMinutes, totals.breakMinutes,
             totals.ordinaryMinutes, totals.overtimeMinutes, snapshot, hash, closedBy,
         )
@@ -219,6 +221,68 @@ class ClosureRepository(private val dsl: DSLContext) {
     }
 }
 
+private fun sha256(text: String): String =
+    MessageDigest.getInstance("SHA-256").digest(text.toByteArray()).joinToString("") { "%02x".format(it) }
+
+/** Quién cierra: una persona de la empresa o el propio sistema, que no tiene persona. */
+data class Closer(val userId: UUID?, val actorType: String, val actorId: String?)
+
+/** Qué pasó al intentar cerrar la semana de una persona. */
+sealed interface CloseOutcome {
+    /** Quedó con un cierre vigente: se acaba de cerrar, o ya lo estaba. */
+    data class Closed(val closure: ClosureRow) : CloseOutcome
+
+    data class Blocked(val reason: String, val incidentIds: List<UUID>) : CloseOutcome
+
+    /** Esa persona no existe en la empresa. */
+    data object Unknown : CloseOutcome
+}
+
+/**
+ * Cierra la semana de una persona. Lo usan el cierre que pide alguien y espera
+ * la respuesta, y la corrida que cierra a toda la empresa como trabajo.
+ */
+@Component
+class WeekCloser(
+    private val closures: ClosureRepository,
+    private val weeks: WeekService,
+    private val employees: EmployeeRepository,
+    private val audit: AuditLog,
+) {
+    /** Se llama dentro de una transacción. Repetirlo no cambia a quien ya está cerrado. */
+    fun closeOne(tenant: TenantRow, employeeId: UUID, weekStart: LocalDate, by: Closer): CloseOutcome {
+        val tenantId = tenant.id
+        // Los cierres de una persona pasan de uno en uno.
+        if (!employees.lock(tenantId, employeeId)) return CloseOutcome.Unknown
+        val current = closures.latest(tenantId, employeeId, weekStart)
+        if (current != null && current.status == "closed") return CloseOutcome.Closed(current)
+        val computed = weeks.compute(tenant, employeeId, weekStart)
+        if (computed.openIncidentIds.isNotEmpty()) return CloseOutcome.Blocked("open_incidents", computed.openIncidentIds)
+        if (computed.hasOpenSegment) {
+            // Un tramo abierto sin incidencia no tendría con qué corregirse: se abre una sobre
+            // el marcaje que lo inició, para que alguien agregue la salida o lo excluya.
+            val opened = computed.core.segments.filter { it.endAt == null }
+                .mapNotNull { closures.openMissingPair(tenantId, employeeId, UUID.fromString(it.startEventId)) }
+            opened.forEach { audit.record(tenantId, by.actorType, by.actorId, "incident.opened", "incident", it, mapOf("type" to "missing_pair")) }
+            return CloseOutcome.Blocked("open_segment", opened)
+        }
+        val snapshot = weeks.snapshot(computed.core)
+        val id = UUID.randomUUID()
+        val version = (current?.version ?: 0) + 1
+        closures.insert(tenantId, id, employeeId, weekStart, version, computed.rules, computed.core.totals, snapshot, sha256(snapshot), by.userId)
+        audit.record(
+            tenantId, by.actorType, by.actorId, "week.closed", "week_closure", id,
+            mapOf("weekStart" to weekStart.toString(), "version" to version.toString()),
+        )
+        return CloseOutcome.Closed(closures.find(tenantId, id)!!)
+    }
+
+    /** Lo mismo en su propia transacción: lo que pase con una persona no deshace lo de las demás. */
+    @Transactional
+    fun closeAlone(tenant: TenantRow, employeeId: UUID, weekStart: LocalDate, by: Closer): CloseOutcome =
+        closeOne(tenant, employeeId, weekStart, by)
+}
+
 /**
  * Cierre semanal: congela el cálculo de cada persona con las reglas vigentes.
  * Reabrir conserva la versión cerrada; volver a cerrar crea una nueva.
@@ -226,10 +290,9 @@ class ClosureRepository(private val dsl: DSLContext) {
 @Service
 class ClosureService(
     private val closures: ClosureRepository,
-    private val weeks: WeekService,
-    private val employees: EmployeeRepository,
     private val sites: SiteRepository,
     private val tenants: TenantRepository,
+    private val closer: WeekCloser,
     private val audit: AuditLog,
 ) {
     @Transactional
@@ -254,40 +317,18 @@ class ClosureService(
 
         val selected = listed ?: closures.candidates(tenantId, siteId, from, until, MAX_EMPLOYEES + 1)
         if (selected.size > MAX_EMPLOYEES) {
-            throw Problems.validation("siteId", "too_many", "Son más de $MAX_EMPLOYEES personas: hay que cerrar por sede o por lista.")
+            throw Problems.validation("siteId", "too_many", "Son más de $MAX_EMPLOYEES personas: hay que pedir una corrida de cierre, o cerrar por sede o por lista.")
         }
+        val by = Closer(closedBy, "user", person.actorId)
         val closed = mutableListOf<WeekClosureView>()
         val blocked = mutableListOf<BlockedClosureView>()
         for (employeeId in selected.distinct()) {
-            // Los cierres de una persona pasan de uno en uno.
-            if (!employees.lock(tenantId, employeeId)) {
-                throw Problems.validation("employeeIds", "employee_not_found", "Una de las personas no existe.")
+            when (val outcome = closer.closeOne(tenant, employeeId, weekStart, by)) {
+                is CloseOutcome.Closed -> closed += WeekClosureView.of(outcome.closure)
+                is CloseOutcome.Blocked ->
+                    blocked += BlockedClosureView(employeeId.toString(), outcome.reason, outcome.incidentIds.map { it.toString() })
+                CloseOutcome.Unknown -> throw Problems.validation("employeeIds", "employee_not_found", "Una de las personas no existe.")
             }
-            val current = closures.latest(tenantId, employeeId, weekStart)
-            if (current != null && current.status == "closed") {
-                closed += WeekClosureView.of(current)
-                continue
-            }
-            val computed = weeks.compute(tenant, employeeId, weekStart)
-            if (computed.openIncidentIds.isNotEmpty()) {
-                blocked += BlockedClosureView(employeeId.toString(), "open_incidents", computed.openIncidentIds.map { it.toString() })
-                continue
-            }
-            if (computed.hasOpenSegment) {
-                // Un tramo abierto sin incidencia no tendría con qué corregirse: se abre una sobre
-                // el marcaje que lo inició, para que alguien agregue la salida o lo excluya.
-                val opened = computed.core.segments.filter { it.endAt == null }
-                    .mapNotNull { closures.openMissingPair(tenantId, employeeId, UUID.fromString(it.startEventId)) }
-                opened.forEach { audit.record(tenantId, person, "incident.opened", "incident", it, mapOf("type" to "missing_pair")) }
-                blocked += BlockedClosureView(employeeId.toString(), "open_segment", opened.map { it.toString() })
-                continue
-            }
-            val snapshot = weeks.snapshot(computed.core)
-            val id = UUID.randomUUID()
-            val version = (current?.version ?: 0) + 1
-            closures.insert(tenantId, id, employeeId, weekStart, version, computed.rules, computed.core.totals, snapshot, sha256(snapshot), closedBy)
-            audit.record(tenantId, person, "week.closed", "week_closure", id, mapOf("weekStart" to weekStart.toString(), "version" to version.toString()))
-            closed += WeekClosureView.of(closures.find(tenantId, id)!!)
         }
         return WeekClosureResultView(weekStart.toString(), closed, blocked)
     }
@@ -353,9 +394,6 @@ class ClosureService(
         audit.record(tenantId, actorType, actorId, "week.acknowledged", "week_closure", id, mapOf("type" to type))
         return closures.find(tenantId, id)!!.acknowledgement!!
     }
-
-    private fun sha256(text: String): String =
-        MessageDigest.getInstance("SHA-256").digest(text.toByteArray()).joinToString("") { "%02x".format(it) }
 
     private companion object {
         const val MAX_EMPLOYEES = 500

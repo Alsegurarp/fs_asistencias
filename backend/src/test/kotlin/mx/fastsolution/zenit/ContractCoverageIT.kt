@@ -46,7 +46,10 @@ class ContractCoverageIT : ApiTestBase() {
         assertTrue(ContractCheck.checked.get() > ContractCheck.described().size, "Sólo se comprobaron ${ContractCheck.checked.get()} respuestas")
         // Deja a la vista cuánto se comprobó en esta corrida.
         java.io.File("build/contract-check.txt")
-            .writeText("${ContractCheck.checked.get()} respuestas comprobadas de ${ContractCheck.described().size} operaciones")
+            .writeText(
+                "${ContractCheck.checked.get()} respuestas y ${ContractCheck.requestsChecked.get()} cuerpos de petición comprobados, " +
+                    "de ${ContractCheck.described().size} operaciones",
+            )
     }
 
     @Test
@@ -63,5 +66,19 @@ class ContractCoverageIT : ApiTestBase() {
         ContractCheck.verify("GET", "/api/v1/users", 403, "application/problem+json", problem.format("0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e"))
         assertFailsWith<AssertionError> { ContractCheck.verify("GET", "/api/v1/users", 403, "application/problem+json", problem.format("no-es-un-uuid")) }
         assertFailsWith<AssertionError> { ContractCheck.verify("GET", "/api/v1/users", 403, "application/json", problem.format("0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e")) }
+
+        // Lo mismo con el cuerpo de una petición que el backend aceptó: de menos, fuera de rango y de más no pasan.
+        val c = company()
+        val site = """{"name":"Sede de prueba","timeZone":"America/Mexico_City","latitude":19.4,"longitude":-99.1,"radiusMeters":80}"""
+        val made = call("POST", "/api/v1/sites", c.adminToken, site)
+        assertEquals(201, made.status, made.toString())
+        fun accepted(body: String) = ContractCheck.verify("POST", "/api/v1/sites", 201, "application/json", made.body, body)
+        accepted(site)
+        assertFailsWith<AssertionError> { accepted("""{"name":"Sede de prueba"}""") }
+        assertFailsWith<AssertionError> { accepted(site.replace("\"radiusMeters\":80", "\"radiusMeters\":5")) }
+        assertFailsWith<AssertionError> { accepted(site.dropLast(1) + ""","extra":true}""") }
+        // Un cuerpo que el backend rechazó no se compara: rechazarlo es lo correcto.
+        assertEquals(422, call("POST", "/api/v1/sites", c.adminToken, """{"name":"Sede de prueba"}""").status)
+        assertTrue(ContractCheck.requestsChecked.get() > 0)
     }
 }

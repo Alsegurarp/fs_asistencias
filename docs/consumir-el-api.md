@@ -14,7 +14,9 @@ páginas, idempotencia y recomendaciones. La referencia de cada ruta es
   minutos.
 - Los valores enumerados y los códigos van en minúsculas con guion bajo.
 - Un cuerpo con un campo que el contrato no describe se rechaza con 422.
-- La empresa nunca se manda: sale de la credencial.
+- La empresa nunca se manda: sale de la credencial. La única excepción son
+  las rutas de quien opera el servicio para suspender y reactivar una empresa,
+  porque esa persona no pertenece a ninguna.
 
 ## Dos credenciales
 
@@ -116,7 +118,7 @@ Todo error llega como `application/problem+json`:
 | 409 | El estado actual no lo permite; `code` dice por qué | Recargar el recurso y mostrar el motivo |
 | 410 | Ya no está disponible: un código gastado, un exporte descargado o vencido | Pedirlo otra vez |
 | 422 | El cuerpo, un filtro, el cursor o el límite no son válidos | Corregir lo que dice `errors` |
-| 429 | Demasiadas peticiones | Esperar y reintentar con pausa creciente |
+| 429 | Quien llama pasó su cuota de peticiones por minuto | Esperar y reintentar con pausa creciente |
 | 5xx | Falla del servidor | Reintentar con pausa creciente; guardar el `correlationId` |
 
 Un 404 no distingue «no existe» de «es de otra empresa», a propósito.
@@ -152,6 +154,33 @@ cliente: marcar, cargar el padrón y pedir un exporte.
 
 Cerrar una semana no lleva clave, pero también es repetible: quien ya está
 cerrado no cambia.
+
+Pedir una corrida de cierre tampoco lleva clave: mientras una corrida de esa
+semana y ese alcance no termina, pedirla otra vez devuelve la misma.
+
+## Lo que tarda se pide y se consulta
+
+Dos operaciones no responden con el resultado, sino con 202 y un recurso que
+se consulta hasta que termina:
+
+| Qué | Se pide | Se consulta | Termina en |
+| --- | --- | --- | --- |
+| Exporte | `POST /exports` | `GET /exports/{exportId}` | `ready` o `failed` |
+| Corrida de cierre | `POST /week-closure-runs` | `GET /week-closure-runs/{runId}` | `done` o `failed` |
+
+Consultar cada dos o tres segundos basta. No hay aviso cuando terminan.
+
+## Cuotas
+
+- Una persona puede hacer 600 peticiones por minuto, sumando todas sus
+  sesiones. Al pasarla recibe 429 con `code` `rate_limited` en cualquier ruta,
+  y esa petición no se ejecuta.
+- Un dispositivo, 240 por minuto en las rutas de captura.
+- La activación de dispositivos corta a una dirección tras 10 intentos
+  fallidos en un minuto.
+
+Las cuentas se reinician cada minuto. Un cliente bien hecho no se acerca: si
+recibe 429, lo que toca es revisar un ciclo sin pausa.
 
 ## Fechas y zonas horarias
 
@@ -208,12 +237,13 @@ las rutas en PowerShell no se probó.
 
 ## Qué cambia sin aviso y qué no
 
-El contrato va en la versión 0.9: está completo para el recorrido del
+El contrato va en la versión 0.10: está completo para el recorrido del
 producto, pero todavía no está congelado.
 
 - No se quita ni se renombra un campo, un valor o una ruta sin subir la
   versión y avisar.
 - Sí pueden agregarse rutas, campos opcionales, códigos de alerta y códigos de
   error.
-- Las pruebas del backend comparan cada respuesta con el contrato: lo que el
-  contrato dice es lo que el servidor responde.
+- Las pruebas del backend comparan con el contrato cada respuesta y cada
+  cuerpo de petición que el servidor acepta: lo que el contrato dice es lo que
+  el servidor responde y lo que admite.

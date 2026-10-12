@@ -1,0 +1,17 @@
+# Configuración del análisis de vulnerabilidades (servicio vuln-scan).
+#
+# Aquí se anotan los hallazgos que una persona decidió aceptar. Aceptar no es
+# corregir: es dejar constancia de que se revisó, por qué no aplica o por qué no
+# tiene arreglo todavía, y cuándo se vuelve a revisar. Cada entrada lleva ese
+# motivo y esa fecha en un comentario, y se retira en cuanto exista la
+# corrección. Sin entradas, el análisis falla con cualquier hallazgo alto o
+# crítico.
+#
+# Ejemplo:
+#   ignore:
+#     # 2026-10-11. La imagen base aún no publica el paquete corregido y el
+#     # backend no usa esa función. Revisar al actualizar la imagen base.
+#     - vulnerability: CVE-0000-00000
+#       package:
+#         name: nombre-del-paquete
+ignore: []

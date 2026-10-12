@@ -27,13 +27,13 @@ servicio y su controlador.
 | Paquete | Qué tiene |
 | --- | --- |
 | `api` | Lo común: validación de campos (`Checks`), errores (`Problems`), páginas (`Paging`), conflictos de unicidad (`Conflicts`) y correlación |
-| `security` | Qué rol entra a qué ruta (`SecurityConfig`) y cómo se responde un rechazo |
+| `security` | Qué rol entra a qué ruta (`SecurityConfig`), la cuota por persona (`PersonQuota`) y cómo se responde un rechazo |
 | `identity` | Quién llama: del token a la persona, su empresa y sus roles (`CurrentPerson`) |
 | `tenant`, `user` | Empresas, personas con acceso y roles |
 | `site`, `schedule`, `employee`, `card` | Sedes, horarios, padrón con su importación, y tarjetas |
 | `device` | Enrolamiento, activación, sesiones y la credencial del dispositivo |
 | `capture` | Recibir un marcaje: reglas (`CaptureRules`), valores (`CaptureProperties`) y el proceso |
-| `workday` | Cálculo de la semana (`WeekCalculator`), incidencias y cierres |
+| `workday` | Cálculo de la semana (`WeekCalculator`), incidencias, cierres, y corridas de cierre con el cierre programado (`ClosureRuns`) |
 | `export` | Exportes y su archivo |
 | `jobs` | Trabajos durables y quien los atiende |
 | `integration` | Fuentes del padrón |
@@ -41,7 +41,8 @@ servicio y su controlador.
 | `persistence` | Comprobación del esquema al arrancar |
 | `system` | Estado del servicio |
 
-Las migraciones están en `backend/src/main/resources/db/migration/` y la
+El simulador de dispositivo está aparte, en `backend/src/simulator/`. Las
+migraciones están en `backend/src/main/resources/db/migration/` y la
 configuración en `backend/src/main/resources/application.yml`.
 
 ## Reglas que no se rompen
@@ -113,6 +114,8 @@ docker compose --profile test down db-it backend-it
 | Dejar rastro | `AuditLog.record(...)`; hay una variante para lo que no hace una persona |
 | Evitar dos cambios simultáneos sobre lo mismo | Bloquear la fila al empezar: `lock(...)` con `for update` |
 | Hacer algo fuera de la petición | `JobRepository.enqueue` y un `JobHandler` |
+| Limitar cuántas veces se hace algo por minuto | `FixedWindowLimiter`; la cuota por persona está en `PersonQuotaFilter` |
+| Cerrar la semana de una persona | `WeekCloser.closeOne`, dentro de una transacción; `closeAlone`, en la suya |
 
 Detalles que ahorran tiempo:
 
@@ -132,6 +135,9 @@ Detalles que ahorran tiempo:
 3. Encolarlo dentro de la misma transacción que crea lo que espera:
    `jobs.enqueue(tenantId, tipo, referencia, intentos)`.
 4. El trabajo no lleva datos: apunta a un registro por su identificador.
+5. Si el trabajo es largo, que alargue su plazo cada cierto avance con
+   `jobs.extend`, y que haga cada paso en su propia transacción: así lo hecho
+   no se pierde si se interrumpe. La corrida de cierre es el ejemplo.
 
 En las pruebas los trabajos no corren solos: se llama `jobWorker.drain()`.
 
@@ -146,6 +152,32 @@ En las pruebas los trabajos no corren solos: se llama `jobWorker.drain()`.
 - Cambiar una regla cambia la jornada de las semanas que no están cerradas.
   Las cerradas no cambian: están congeladas.
 
+## Dependencias y vulnerabilidades
+
+Las versiones de las bibliotecas las fija Spring Boot. Cuando una de ellas
+tiene una vulnerabilidad ya corregida y Spring Boot todavía no la sube, se
+adelanta en `backend/build.gradle.kts` con `extra["….version"]`, con un
+comentario que dice por qué. Hoy van adelantadas dos: Tomcat y Jackson. Se
+retiran cuando una versión de Spring Boot traiga esas o más nuevas.
+
+Lo mismo pasa con los paquetes del sistema de las imágenes: los que tienen
+corrección publicada y la imagen base todavía no trae se suben en el
+`Dockerfile`, con la versión mínima corregida.
+
+Cómo se revisa está en
+[Entorno local](entorno-local.md#revisar-vulnerabilidades).
+
+## El simulador de dispositivo
+
+Vive en `backend/src/simulator/`, en su propio conjunto de fuentes: usa las
+mismas bibliotecas que el backend, pero no entra al artefacto que se despliega
+ni a las pruebas. Se compila al construir la imagen, para que un error salga
+ahí, y se corre con la tarea `simulate`.
+
+Habla con el backend sólo por el API, como lo haría la app. Si el contrato
+del marcaje cambia, hay que cambiarlo también aquí: no lo cubren las pruebas.
+Qué simula cada persona está en la lista `SCENARIOS`.
+
 ## Las pruebas
 
 | Clase | Qué recorre |
@@ -154,10 +186,18 @@ En las pruebas los trabajos no corren solos: se llama `jobWorker.drain()`.
 | `DirectoryIT` | Sedes, horarios, padrón, importación y tarjetas |
 | `CaptureIT` | Dispositivos y captura |
 | `WorkdayIT` | Jornada, incidencias, cierres y acuses |
+| `ClosureRunsIT` | Corridas de cierre y cierre programado |
+| `AdministrationIT` | Suspender y reactivar una empresa, y soltar la liga de una cuenta |
+| `QuotaIT` | Cuota de peticiones por persona, de punta a punta, con un límite bajo |
 | `ExportsIT` | Exportes y fuentes del padrón |
 | `JobsIT` | Trabajos: reintento, abandono, plazo y varios procesos a la vez |
 | `DatabaseRolesIT` | Lo que el rol de la base no puede hacer |
 | `ContractCoverageIT` | Que el contrato y el backend digan lo mismo |
+
+Cada llamada de las pruebas pasa por `ContractCheck`: la respuesta se compara
+con el esquema del contrato, y el cuerpo de una petición que el backend
+aceptó, también. Si el backend acepta algo que el contrato no describe, la
+prueba falla.
 
 - `ApiTestBase` da las llamadas, los tokens de prueba y los ayudantes para
   crear una empresa y sus personas. `CaptureTestBase` simula un dispositivo.
@@ -172,6 +212,8 @@ En las pruebas los trabajos no corren solos: se llama `jobWorker.drain()`.
 - [ ] Pruebas unitarias y de integración sin fallos.
 - [ ] Contrato validado, si cambió.
 - [ ] Búsqueda de secretos en el historial, sin hallazgos.
+- [ ] Análisis de vulnerabilidades sin altas ni críticas, si cambió una
+      dependencia o una imagen.
 - [ ] README y esta carpeta al día.
 - [ ] Sin contenedores, redes ni volúmenes de prueba olvidados.
 

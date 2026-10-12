@@ -71,6 +71,11 @@ class JobRepository(private val dsl: DSLContext) {
             leaseSeconds,
         )?.let(::row)
 
+    /** Alarga el plazo de un trabajo largo que sigue vivo, para que nadie más lo tome. */
+    fun extend(id: UUID, leaseSeconds: Long) {
+        dsl.execute("update job set lease_until = now() + (? * interval '1 second') where id = ? and status = 'running'", leaseSeconds, id)
+    }
+
     fun done(id: UUID) {
         dsl.execute("update job set status = 'done', lease_until = null, last_error = null, finished_at = now() where id = ?", id)
     }

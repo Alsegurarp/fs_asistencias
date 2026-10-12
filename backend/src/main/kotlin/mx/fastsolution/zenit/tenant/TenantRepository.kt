@@ -16,6 +16,8 @@ data class TenantRow(
     val weekStartsOn: String,
     val breakPolicy: String,
     val createdAt: OffsetDateTime,
+    /** Horas tras el fin de la semana a las que el sistema la cierra; nulo si sólo la cierra una persona. */
+    val autoCloseAfterHours: Int? = null,
 )
 
 @Repository
@@ -49,16 +51,37 @@ class TenantRepository(private val dsl: DSLContext) {
         return rows.map { row(it) }
     }
 
-    /** Un valor nulo deja el campo como estaba. */
-    fun update(id: UUID, name: String?, timeZone: String?, weekStartsOn: String?, breakPolicy: String?): TenantRow? =
+    /**
+     * Un valor nulo deja el campo como estaba. El cierre programado es distinto,
+     * porque nulo es un valor suyo: sólo cambia cuando se pide cambiarlo.
+     */
+    fun update(
+        id: UUID,
+        name: String?,
+        timeZone: String?,
+        weekStartsOn: String?,
+        breakPolicy: String?,
+        changeAutoClose: Boolean,
+        autoCloseAfterHours: Int?,
+    ): TenantRow? =
         dsl.fetchOne(
             "update tenant set name = coalesce(cast(? as text), name), " +
                 "time_zone = coalesce(cast(? as text), time_zone), " +
                 "week_starts_on = coalesce(cast(? as text), week_starts_on), " +
-                "break_policy = coalesce(cast(? as text), break_policy) " +
+                "break_policy = coalesce(cast(? as text), break_policy), " +
+                "auto_close_after_hours = case when cast(? as boolean) then cast(? as integer) else auto_close_after_hours end " +
                 "where id = ? returning $COLUMNS",
-            name, timeZone, weekStartsOn, breakPolicy, id,
+            name, timeZone, weekStartsOn, breakPolicy, changeAutoClose, autoCloseAfterHours, id,
         )?.let(::row)
+
+    /** Cambia el estado sólo si estaba en el que se espera; devuelve nulo si no. */
+    fun setStatus(id: UUID, from: String, to: String): TenantRow? =
+        dsl.fetchOne("update tenant set status = ? where id = ? and status = ? returning $COLUMNS", to, id, from)?.let(::row)
+
+    /** Empresas activas que pidieron que sus semanas se cierren solas. */
+    fun autoClosing(): List<TenantRow> =
+        dsl.fetch("select $COLUMNS from tenant where status = 'active' and auto_close_after_hours is not null order by created_at, id")
+            .map { row(it) }
 
     private fun row(r: Record) = TenantRow(
         id = r.get("id", UUID::class.java),
@@ -69,9 +92,10 @@ class TenantRepository(private val dsl: DSLContext) {
         weekStartsOn = r.get("week_starts_on", String::class.java),
         breakPolicy = r.get("break_policy", String::class.java),
         createdAt = r.get("created_at", OffsetDateTime::class.java),
+        autoCloseAfterHours = r.get("auto_close_after_hours", Number::class.java)?.toInt(),
     )
 
     private companion object {
-        const val COLUMNS = "id, slug, name, status, time_zone, week_starts_on, break_policy, created_at"
+        const val COLUMNS = "id, slug, name, status, time_zone, week_starts_on, break_policy, created_at, auto_close_after_hours"
     }
 }

@@ -47,6 +47,11 @@ class SecurityProblemWriter(private val clock: Clock = Clock.systemUTC()) :
         write(request, response, HttpStatus.FORBIDDEN, "forbidden", "Permiso insuficiente", serverTime = false)
     }
 
+    /** Quien llama agotó su cuota: se responde aquí, antes de llegar a la ruta. */
+    fun tooManyRequests(request: HttpServletRequest, response: HttpServletResponse) {
+        write(request, response, HttpStatus.TOO_MANY_REQUESTS, "rate_limited", "Demasiadas peticiones", serverTime = false, type = "rate-limited")
+    }
+
     private fun write(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -54,10 +59,11 @@ class SecurityProblemWriter(private val clock: Clock = Clock.systemUTC()) :
         code: String,
         title: String,
         serverTime: Boolean,
+        type: String = code,
     ) {
         // Todos los valores son fijos o generados aquí; nada viene de la petición.
         val fields = buildList {
-            add("\"type\":\"https://zenit.invalid/problems/$code\"")
+            add("\"type\":\"https://zenit.invalid/problems/$type\"")
             add("\"title\":\"$title\"")
             add("\"status\":${status.value()}")
             add("\"code\":\"$code\"")

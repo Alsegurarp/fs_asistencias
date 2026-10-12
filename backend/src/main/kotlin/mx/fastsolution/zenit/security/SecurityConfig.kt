@@ -26,6 +26,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter
 import org.springframework.security.web.SecurityFilterChain
 
 /**
@@ -36,7 +37,7 @@ import org.springframework.security.web.SecurityFilterChain
 // El paso de migraciones no abre puertos y no necesita nada de esto.
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @EnableWebSecurity
-@EnableConfigurationProperties(IdentityProperties::class)
+@EnableConfigurationProperties(IdentityProperties::class, ApiProperties::class)
 class SecurityConfig {
     @Bean
     fun securityFilterChain(
@@ -45,6 +46,7 @@ class SecurityConfig {
         people: PersonAuthenticationConverter,
         decoder: JwtDecoder,
         deviceAuthenticator: DeviceAuthenticator,
+        api: ApiProperties,
     ): SecurityFilterChain {
         val operator = Role.OPERADOR_SAAS.wire
         val admin = Role.ADMIN_EMPRESA.wire
@@ -77,11 +79,14 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.GET, "/api/v1/me").authenticated()
                 it.requestMatchers(HttpMethod.GET, "/api/v1/tenants").hasRole(operator)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/tenants").hasRole(operator)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/tenants/{tenantId}/suspension", "/api/v1/tenants/{tenantId}/reactivation")
+                    .hasRole(operator)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/tenant").hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/tenant").hasRole(admin)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/users", "/api/v1/users/{userId}").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole(admin)
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/users/{userId}").hasRole(admin)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/users/{userId}/unlink").hasRole(admin)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/audit-log").hasAnyRole(admin, auditor)
                 // Sedes y horarios.
                 it.requestMatchers(HttpMethod.GET, "/api/v1/sites", "/api/v1/sites/{siteId}").hasAnyRole(admin, rh, supervisor, auditor)
@@ -122,10 +127,13 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.GET, "/api/v1/week-closures/{closureId}").hasAnyRole(admin, rh, supervisor, auditor, worker)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/week-closures/{closureId}/reopen").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/week-closures/{closureId}/acknowledgements").hasAnyRole(worker, device)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/week-closure-runs").hasAnyRole(admin, rh)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/week-closure-runs", "/api/v1/week-closure-runs/{runId}")
+                    .hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/rule-sets").hasAnyRole(admin, rh, supervisor, auditor)
                 // Exportes y fuentes del padrón.
                 it.requestMatchers(HttpMethod.POST, "/api/v1/exports").hasAnyRole(admin, rh, auditor)
-                it.requestMatchers(HttpMethod.GET, "/api/v1/exports/{exportId}", "/api/v1/exports/{exportId}/download")
+                it.requestMatchers(HttpMethod.GET, "/api/v1/exports/{exportId}", "/api/v1/exports/{exportId}/download", "/api/v1/exports/{exportId}/manifest")
                     .hasAnyRole(admin, rh, auditor)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/integrations/checkpoints").hasAnyRole(admin, rh)
                 it.anyRequest().denyAll()
@@ -136,6 +144,8 @@ class SecurityConfig {
                 it.authenticationEntryPoint(problems)
                 it.accessDeniedHandler(problems)
             }
+            // La cuota por persona se cuenta cuando ya se sabe quién llama.
+            .addFilterAfter(PersonQuotaFilter(api, problems), BearerTokenAuthenticationFilter::class.java)
             .exceptionHandling {
                 it.authenticationEntryPoint(problems)
                 it.accessDeniedHandler(problems)

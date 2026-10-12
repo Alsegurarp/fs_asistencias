@@ -70,4 +70,8 @@ class UserController(private val service: UserService) {
         @PathVariable userId: UUID,
         @RequestBody request: UserUpdateRequest,
     ): UserView = UserView.of(service.update(admin, userId, request))
+
+    @PostMapping("/{userId}/unlink")
+    fun unlink(@AuthenticationPrincipal admin: CurrentPerson, @PathVariable userId: UUID): UserView =
+        UserView.of(service.unlink(admin, userId))
 }

@@ -37,7 +37,21 @@ final.
   servidor. Mientras esté vacía, nadie puede dar de alta una empresa.
 - Una empresa no puede quedarse sin nadie que la administre: quitar el rol o
   el acceso a su último administrador responde 409 `last_admin`.
-- Una empresa suspendida queda cerrada para su propia gente.
+- Una empresa suspendida queda cerrada para su propia gente y para sus
+  dispositivos: sus personas dejan de tener roles, sus dispositivos dejan de
+  autenticarse, sus códigos de enrolamiento dejan de canjearse, el cierre
+  programado deja de pasar y una corrida de cierre pendiente termina como
+  fallida. No se borra ni se cambia nada más: al reactivarla, todo sigue como
+  estaba. La suspende y la reactiva quien opera el servicio, con un motivo
+  que queda en la bitácora de la empresa.
+- La liga entre una persona y su cuenta se puede soltar. La persona vuelve a
+  quedar invitada, con sus roles y su fila del padrón, y se liga otra vez al
+  entrar con ese correo verificado. Soltarla no quita el acceso: la cuenta
+  anterior, si todavía existe, también puede volver a ligarse. Quien estaba
+  sin acceso sigue sin acceso.
+- Cada persona tiene una cuota de peticiones por minuto, sumando todas sus
+  sesiones. Al pasarla recibe 429 en cualquier ruta, sin que la petición
+  llegue a ejecutarse. Los dispositivos tienen la suya aparte, en la captura.
 - Una cuenta de trabajador se liga con una sola fila del padrón, y una fila
   con una sola cuenta. La liga quien administra.
 
@@ -243,6 +257,17 @@ Cada ajuste sube en uno la versión de los tramos de esa semana.
 - Cerrar congela el cálculo completo de la persona, con su huella y con la
   versión de reglas usada. Una semana cerrada se entrega tal como se congeló.
 - Cerrar otra vez no crea nada: devuelve los mismos cierres.
+- El cierre directo responde en la misma petición y admite hasta 500
+  personas. Para más, o para no esperar, se pide una corrida de cierre: un
+  trabajo cierra a cada persona por separado, sin tope. Lo que ya se cerró
+  sigue cerrado aunque la corrida se interrumpa, y un nuevo intento retoma lo
+  que faltó. Sólo hay una corrida en curso por semana y alcance.
+- **Cierre programado.** Una empresa puede pedir que el sistema cierre cada
+  semana cierto número de horas después de que termina. Nace apagado. El
+  sistema pasa una vez por semana, cierra a quien no tiene nada pendiente y
+  no vuelve a pasar: a los demás los cierra una persona. Un cierre del
+  sistema no tiene persona que lo haya cerrado. Al encenderlo, la última
+  semana terminada se cierra en la siguiente revisión si ya pasó el plazo.
 - Reabrir pide motivo y conserva la versión cerrada. El siguiente cierre crea
   la versión siguiente.
 - Un marcaje que llega de una semana cerrada se guarda y abre una incidencia;
@@ -265,8 +290,10 @@ Cada ajuste sube en uno la versión de los tramos de esa semana.
 - El archivo se puede descargar durante quince minutos, una sola vez y con
   credencial. Después se descarta. Quedan la huella del archivo y la del
   manifiesto.
-- El manifiesto, que el servidor guarda, declara la huella del archivo y la de
-  cada cierre que entró: liga lo exportado con lo cerrado.
+- El manifiesto declara la huella del archivo y la de cada cierre que entró:
+  liga lo exportado con lo cerrado. Se guarda una vez y se puede leer siempre,
+  también cuando el archivo ya no existe. Se entrega byte por byte como se
+  guardó, de modo que su propia huella se puede volver a calcular.
 - **Provisional:** la plantilla del archivo trae una fila por cierre con sus
   totales. No trae el detalle por día.
 
@@ -274,8 +301,12 @@ Cada ajuste sube en uno la versión de los tramos de esa semana.
 
 Las acciones administrativas quedan en una bitácora que sólo se agrega: altas,
 invitaciones, cambios de rol, sedes, horarios, tarjetas, dispositivos,
-incidencias, cierres, acuses y exportes. Dice quién, qué y cuándo, con un
-identificador de correlación. No guarda motivos, notas ni cuerpos completos.
+incidencias, cierres, corridas de cierre, acuses, exportes, y la suspensión o
+reactivación de la empresa. Dice quién, qué y cuándo, con un
+identificador de correlación. Lo que hace el sistema por su cuenta, como un
+cierre programado, queda a nombre del sistema. No guarda notas ni cuerpos
+completos. De los motivos guarda tres: el de revocar un dispositivo, el de
+reabrir un cierre y el de suspender o reactivar una empresa.
 
 ## Lo provisional, reunido
 
@@ -286,6 +317,8 @@ identificador de correlación. No guarda motivos, notas ni cuerpos completos.
 | Reglas del último día de la semana; turno del día en que empieza | Prorratear la semana que cruza de año o el turno que cruza la medianoche |
 | Sin tipo de jornada ni comparación con el horario | Topes diarios por tipo, retardos y faltas |
 | Quien no marcó se cierra en ceros | Ausencias justificadas |
+| El cierre programado pasa una vez por semana y cierra sólo a quien no tiene pendientes | Que insista, que avise, o que no exista |
+| Cuota por persona de 600 peticiones por minuto | El número, según el uso real del portal |
 | Gravedad de la incidencia según su tipo | El orden de atención |
 | La baja no revoca la tarjeta | Que la baja lo haga todo |
 | Un supervisor ve toda su empresa | Que vea sólo sus sedes |

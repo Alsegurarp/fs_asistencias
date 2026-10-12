@@ -151,6 +151,22 @@ class UserService(
         return users.find(tenantId, id)!!
     }
 
+    /**
+     * Suelta la liga entre la persona y su cuenta, para cuando la cuenta se
+     * perdió y la persona tiene otra con el mismo correo. No quita el acceso:
+     * la cuenta anterior, si todavía existe con ese correo verificado, vuelve
+     * a ligarse al entrar. Para quitar el acceso está `disabled`.
+     */
+    @Transactional
+    fun unlink(admin: CurrentPerson, id: UUID): UserRow {
+        val tenantId = admin.requireTenant()
+        tenants.lock(tenantId)
+        if (users.find(tenantId, id) == null) throw Problems.notFound()
+        if (!users.unlink(tenantId, id)) throw Problems.conflict("user_not_linked", "Esa persona no está ligada a ninguna cuenta.")
+        audit.record(tenantId, admin, "user.unlinked", "user", id)
+        return users.find(tenantId, id)!!
+    }
+
     private fun parseRoles(checks: Checks, raw: List<String>?, required: Boolean): Set<String>? {
         if (raw == null) {
             if (required) checks.fail("roles", "required", "Hay que dar al menos un rol.")

@@ -9,8 +9,11 @@ datos, tabla por tabla.
 | Término | En el API | En la base | Qué es |
 | --- | --- | --- | --- |
 | Empresa | `tenant` | `tenant` | Cada cliente del servicio. Todo dato pertenece a una |
+| Suspensión | `suspension`, `reactivation` | `tenant.status` | Cerrar una empresa para su gente y sus dispositivos, sin borrar nada |
 | Operador | rol `operador_saas` | Lista de correos en un secreto | Quien opera Zenit; da de alta empresas |
 | Persona con acceso | `user` | `tenant_user` | Quien entra al portal: tiene correo, roles y estado |
+| Liga | `linkedAt`, `unlink` | `tenant_user.subject` | La unión entre una persona con acceso y su cuenta en el proveedor de identidad |
+| Cuota | 429 `rate_limited` | No se guarda | Cuántas peticiones por minuto se le aceptan a una persona o a un dispositivo |
 | Rol | `roles` | `tenant_user_role` | Lo que una persona puede hacer en su empresa |
 | Padrón | `employees` | `employee` | Las personas cuya asistencia se registra. No es lo mismo que una persona con acceso |
 | Identificador externo | `externalId` | `external_id` | El número de empleado que usa la empresa; único dentro de ella |
@@ -36,9 +39,11 @@ datos, tabla por tabla.
 | Reglas laborales | `rule set` | `rule_set` | Los topes de jornada, con vigencia y fuente |
 | Tiempo extraordinario | `overtimeMinutes` | `overtime_minutes` | Lo que excede el tope semanal ordinario |
 | Cierre | `week closure` | `week_closure` | El cálculo de la semana de una persona, congelado |
+| Corrida de cierre | `week closure run` | `week_closure_run` | Trabajo que cierra la semana de toda la empresa o de una sede, persona por persona |
+| Cierre programado | `autoCloseAfterHours` | `tenant.auto_close_after_hours` | Que el sistema cierre la semana por su cuenta, cierto número de horas después de que termina |
 | Acuse | `acknowledgement` | `closure_acknowledgement` | Conformidad u objeción del trabajador con su cierre |
 | Exporte | `export` | `export` | Archivo con los cierres vigentes de una semana |
-| Manifiesto | `manifestHash` | `export.manifest` | Declaración de qué entró al exporte y de dónde salió |
+| Manifiesto | `manifest`, `manifestHash` | `export.manifest` | Declaración de qué entró al exporte y de dónde salió |
 | Huella | `hash`, `fileHash`, `evidenceHash` | Columnas `char(64)` | SHA-256 en hexadecimal: prueba que algo no cambió |
 | Trabajo | No se expone | `job` | Tarea que se atiende fuera de la petición, con reintento |
 | Fuente del padrón | `integration checkpoint` | `integration_source`, `integration_checkpoint` | De dónde viene el padrón y hasta dónde se sincronizó |
@@ -76,6 +81,7 @@ datos, tabla por tabla.
 | Incidencia | `open`, `resolved` |
 | Cierre | `closed`, `reopened` |
 | Exporte | `queued`: en preparación · `ready`: se puede descargar · `expired`: descargado o vencido · `failed`: no se pudo preparar |
+| Corrida de cierre | `queued`: encolada · `running`: cerrando · `done`: terminó · `failed`: no terminó; lo ya cerrado sigue cerrado |
 | Fuente del padrón | `active`, `paused`, `error` |
 | Trabajo | `queued`, `running`, `done`, `failed` |
 
@@ -103,6 +109,8 @@ datos, tabla por tabla.
 | Origen de una persona del padrón | `manual`, `csv`, `api`, `connector` |
 | Tipo de fuente del padrón | `csv`, `api`, `connector` |
 | Formato de exporte | `csv` |
+| Origen de una corrida de cierre | `requested`: la pidió una persona · `scheduled`: la abrió el cierre programado |
+| Por qué falló una corrida de cierre | `job_abandoned`: agotó sus intentos · `tenant_not_active`: la empresa se suspendió antes |
 
 ### Códigos de error
 
@@ -117,6 +125,9 @@ cada campo viene en `errors[].code`.
 | 409 | `slug_taken` | Ya hay una empresa con ese identificador corto |
 | 409 | `email_unavailable` | Ese correo ya pertenece a alguien |
 | 409 | `last_admin` | La empresa se quedaría sin quien la administre |
+| 409 | `user_not_linked` | La persona no está ligada a ninguna cuenta |
+| 409 | `tenant_not_active` | La empresa ya está suspendida |
+| 409 | `tenant_not_suspended` | La empresa no está suspendida |
 | 409 | `employee_already_linked` | Esa fila del padrón ya está ligada a otra cuenta |
 | 409 | `external_id_taken` | Ya hay una persona con ese identificador externo |
 | 409 | `employee_inactive` | La persona está dada de baja |
@@ -134,7 +145,7 @@ cada campo viene en `errors[].code`.
 | 410 | `export_expired` | El exporte ya se descargó o venció |
 | 410 | `export_failed` | El exporte no se pudo preparar |
 | 422 | `validation` | El cuerpo o un parámetro no es válido |
-| 429 | `rate_limited` | Demasiadas peticiones |
+| 429 | `rate_limited` | La persona, el dispositivo o la dirección pasó su cuota |
 | 500 | `internal_error` | Falla del servidor |
 
 Motivos frecuentes dentro de un 422, en `errors[].code`: `required`,
@@ -164,7 +175,8 @@ Vienen en `rejection.code` del recibo, con estado 200.
 
 ### Acciones de la bitácora
 
-`tenant.created`, `tenant.updated`, `user.invited`, `user.linked`,
+`tenant.created`, `tenant.updated`, `tenant.suspended`, `tenant.reactivated`,
+`user.invited`, `user.linked`, `user.unlinked`,
 `user.updated`, `user.roles_changed`, `user.disabled`, `user.enabled`,
 `site.created`, `site.updated`, `schedule.created`, `employee.created`,
 `employee.updated`, `employee.deactivated`, `employee.reactivated`,
@@ -172,7 +184,9 @@ Vienen en `rejection.code` del recibo, con estado 200.
 `import.applied`, `import.failed`, `card.registered`, `card.assigned`,
 `card.revoked`, `device.enrollment_created`, `device.activated`,
 `device.revoked`, `incident.opened`, `incident.assigned`, `incident.resolved`,
-`week.closed`, `week.reopened`, `week.acknowledged`, `export.requested`,
+`week.closed`, `week.reopened`, `week.acknowledged`,
+`week.closure_run_requested`, `week.closure_run_finished`,
+`week.closure_run_failed`, `export.requested`,
 `export.ready`, `export.failed` y `export.downloaded`.
 
 ### Límites
@@ -194,11 +208,14 @@ Vienen en `rejection.code` del recibo, con estado 200.
 | Sobres por lote | 1 a 100 |
 | Motivo de una resolución o de una reapertura | 10 a 500 caracteres |
 | Nota de un acuse | Hasta 500 caracteres |
-| Personas por cierre | Hasta 500; más, por sede o por lista |
+| Personas por cierre directo | Hasta 500; más, con una corrida de cierre, que no tiene tope |
+| Cierre programado | De 1 a 168 horas después del fin de la semana; apagado por omisión |
+| Motivo de una suspensión o reactivación | 10 a 500 caracteres |
 | Vigencia de un exporte listo | 15 minutos |
 | Intentos de un trabajo | 5 |
 | Intentos fallidos de activación | 10 por minuto y por dirección |
 | Peticiones de un dispositivo | 240 por minuto |
+| Peticiones de una persona | 600 por minuto, sumando sus sesiones |
 | Token de acceso de una persona | 5 minutos |
 
 ## Diccionario de datos
@@ -212,11 +229,14 @@ El backend atiende con un rol que no es dueño de las tablas. La columna
 con una excepción: quitarle un rol a una persona borra esa fila, y queda en la
 bitácora.
 
+Hay un tercer rol, `zenit_backup`, que sólo lee las dos bases. Lo usa el
+ensayo de respaldo; no escribe, no cambia el esquema y no es dueño de nada.
+
 ### Empresa y acceso
 
 | Tabla | Columnas | Escritura |
 | --- | --- | --- |
-| `tenant` | `id`, `slug` único, `name`, `status`, `time_zone`, `week_starts_on`, `break_policy`, `created_at` | Insertar y actualizar |
+| `tenant` | `id`, `slug` único, `name`, `status`, `time_zone`, `week_starts_on`, `break_policy`, `created_at`, `auto_close_after_hours?` cierre programado | Insertar y actualizar |
 | `tenant_user` | `tenant_id`, `id`, `email` único en toda la instancia, `subject?` identificador de la cuenta, `display_name`, `status`, `created_at`, `linked_at?` primera entrada, `employee_id?` su fila del padrón | Insertar y actualizar |
 | `tenant_user_role` | `tenant_id`, `user_id`, `role`, `granted_at`, `granted_by` | Insertar y quitar un rol |
 | `audit_log` | `id`, `tenant_id?`, `at`, `actor_type` (`user`, `device`, `system`), `actor_id?`, `action`, `target_type`, `target_id?`, `correlation_id`, `metadata` | Sólo insertar |
@@ -254,8 +274,9 @@ bitácora.
 | `rule_set` | `id`, `jurisdiction`, `version`, `valid_from`, `valid_to?`, `weekly_ordinary_max_minutes`, `parameters` demás topes, `sources`, `created_at` | Sólo leer |
 | `incident` | `tenant_id`, `id`, `event_id`, `employee_id`, `site_id?`, `type`, `severity`, `status`, `created_at`, `assignee_user_id?`, `resolution_decision?`, `resolution_reason?`, `adjustment_id?`, `resolved_by?`, `resolved_at?` | Insertar; actualizar sólo su atención |
 | `adjustment` | `tenant_id`, `id`, `employee_id`, `kind`, `event_id?`, `event_type?`, `occurred_at?`, `reason`, `created_by`, `created_at` | Sólo insertar |
-| `week_closure` | `tenant_id`, `id`, `employee_id`, `week_start`, `version`, `status`, `rule_set_id`, `rule_set_version`, `worked_minutes`, `break_minutes`, `ordinary_minutes`, `overtime_minutes`, `snapshot` el cálculo congelado, `hash`, `closed_at`, `closed_by`, `reopened_at?`, `reopened_by?`, `reopen_reason?` | Insertar; actualizar sólo la reapertura |
+| `week_closure` | `tenant_id`, `id`, `employee_id`, `week_start`, `version`, `status`, `rule_set_id`, `rule_set_version`, `worked_minutes`, `break_minutes`, `ordinary_minutes`, `overtime_minutes`, `snapshot` el cálculo congelado, `hash`, `closed_at`, `closed_by?` nulo si lo cerró el sistema, `reopened_at?`, `reopened_by?`, `reopen_reason?` | Insertar; actualizar sólo la reapertura |
 | `closure_acknowledgement` | `tenant_id`, `id`, `closure_id` único, `employee_id`, `type`, `note?`, `at`, `actor_type` (`user`, `device`), `actor_id`, `evidence_hash` | Sólo insertar |
+| `week_closure_run` | `tenant_id`, `id`, `week_start`, `site_id?`, `origin`, `status`, `requested_by?` nulo si la abrió el sistema, `total?`, `closed`, `blocked_open_incidents`, `blocked_open_segment`, `failure?`, `created_at`, `started_at?`, `finished_at?` | Insertar; actualizar sólo su avance |
 
 ### Exportes y trabajos
 
@@ -272,10 +293,14 @@ herramienta de migraciones y el backend sólo lo lee.
 - Borrar una fila con el rol que atiende, salvo la de un rol que se quita.
 - Corregir un marcaje, una coordenada, un rechazo, un ajuste, un acuse o una
   entrada de la bitácora.
-- Cambiar lo que un cierre congeló o lo que se pidió en un exporte.
+- Cambiar lo que un cierre congeló, o lo que se pidió en un exporte o en una
+  corrida de cierre.
 - Que un registro apunte a algo de otra empresa.
 - Que una incidencia quede resuelta sin decisión, motivo, autor y hora.
 - Que un exporte quede listo sin archivo, manifiesto y vencimiento, o vencido
   con el archivo todavía guardado.
 - Que una persona tenga dos cierres vigentes de la misma semana, o un cierre
   dos acuses.
+- Que haya dos corridas de cierre en curso para la misma semana y el mismo
+  alcance, o dos corridas del cierre programado para la misma semana.
+- Que una empresa pida el cierre programado fuera de 1 a 168 horas.

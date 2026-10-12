@@ -24,6 +24,8 @@ class ExportsIT : WorkdayTestBase() {
 
     private fun download(c: Company, id: String, token: String = c.adminToken): Reply = call("GET", "/api/v1/exports/$id/download", token)
 
+    private fun manifest(c: Company, id: String, token: String = c.adminToken): Reply = call("GET", "/api/v1/exports/$id/manifest", token)
+
     private fun digest(text: String): String =
         MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
 
@@ -44,6 +46,8 @@ class ExportsIT : WorkdayTestBase() {
     fun `an export is asked for once, prepared by a job and downloaded once`() {
         val c = companyWithFinishedWeek()
         val tenant = UUID.fromString(c.id)
+        // Un nombre con acentos: la huella del manifiesto se compara byte por byte.
+        assertEquals(200, call("PATCH", "/api/v1/tenant", c.adminToken, """{"name":"Panadería La Ñ"}""").status)
         val rh = member(c, "rh")
         val siteId = newSite(c)
         val siteName = call("GET", "/api/v1/sites/$siteId", c.adminToken).at<String>("name")
@@ -89,7 +93,8 @@ class ExportsIT : WorkdayTestBase() {
         assertEquals(id, request(c, """{"weekStart":"$lastWeek","format":"csv"}""", key).at("id"))
         assertProblem(409, "idempotency_conflict", request(c, """{"weekStart":"$yesterday","format":"csv","siteId":"$siteId"}""", key))
         assertEquals(1, count("select count(*) from job where tenant_id = ? and type = 'export'", tenant))
-        // Todavía no hay archivo.
+        // Todavía no hay archivo ni manifiesto.
+        assertProblem(409, "export_not_ready", manifest(c, id))
         assertProblem(409, "export_not_ready", download(c, id))
         assertEquals("queued", export(c, id).at("status"))
 
@@ -100,6 +105,20 @@ class ExportsIT : WorkdayTestBase() {
         assertTrue(sha256.matches(ready.at("manifestHash")) && sha256.matches(ready.at("fileHash")))
         val expires = Instant.parse(ready.at("expiresAt"))
         assertTrue(expires.isAfter(Instant.now().plusSeconds(14 * 60)) && expires.isBefore(Instant.now().plusSeconds(16 * 60)))
+
+        // El manifiesto se entrega tal como se guardó: su huella es la publicada, y liga el archivo con los cierres.
+        val declared = manifest(c, id, rh.token)
+        assertEquals(200, declared.status, declared.toString())
+        assertTrue(declared.contentType.startsWith("application/json"), declared.contentType)
+        assertEquals("no-store", declared.header("Cache-Control"))
+        assertEquals(ready.at<String>("manifestHash"), digest(declared.body))
+        assertEquals(
+            listOf(id, c.id, "Panadería La Ñ", lastWeek.toString(), ready.at<String>("fileHash")),
+            listOf<String>(declared.at("exportId"), declared.at("tenant.id"), declared.at("tenant.name"), declared.at("weekStart"), declared.at("fileSha256")),
+        )
+        assertEquals(2, declared.at<Int>("rowCount"))
+        assertEquals(listOf(closureOfAna["id"], closureOfFormula["id"]), declared.list("closures[*].closureId"))
+        assertEquals(listOf(closureOfAna["hash"], closureOfFormula["hash"]), declared.list("closures[*].hash"))
 
         val file = download(c, id, member(c, "auditor").token)
         assertEquals(200, file.status, file.toString())
@@ -134,6 +153,8 @@ class ExportsIT : WorkdayTestBase() {
         assertNull(after.at<Any?>("expiresAt"))
         assertEquals(ready.at<String>("fileHash"), after.at("fileHash"))
         assertEquals(1, count("select count(*) from export where tenant_id = ? and status = 'expired' and content is null and downloaded_by is not null", tenant))
+        // El manifiesto sigue ahí después de descargar, idéntico.
+        assertEquals(declared.body, manifest(c, id).body)
         // El manifiesto queda, y liga el archivo con los cierres por sus huellas; su propia huella se vuelve a calcular.
         val chained = "select count(*) from export where tenant_id = ? and manifest_hash = encode(sha256(convert_to(cast(manifest as text), 'UTF8')), 'hex') " +
             "and manifest ->> 'fileSha256' = cast(file_hash as text) and json_array_length(manifest -> 'closures') = 2 " +
@@ -179,6 +200,7 @@ class ExportsIT : WorkdayTestBase() {
         assertEquals("failed", failed.at("status"))
         assertNull(failed.at<Any?>("downloadUrl"))
         assertProblem(410, "export_failed", download(c, second))
+        assertProblem(410, "export_failed", manifest(c, second))
         assertProblem(422, "validation", request(c))
 
         // El proceso que lo preparaba murió en su último intento: el exporte no se queda esperando para siempre.
@@ -234,6 +256,7 @@ class ExportsIT : WorkdayTestBase() {
             Route("POST", "/api/v1/exports", wholeWeek(), *exporters),
             Route("GET", "/api/v1/exports/$whole", null, *exporters),
             Route("GET", "/api/v1/exports/$whole/download", null, *exporters),
+            Route("GET", "/api/v1/exports/$whole/manifest", null, *exporters),
             Route("GET", "/api/v1/integrations/checkpoints", null, "admin_empresa", "rh"),
             // Lo que el contrato no abre sigue cerrado, también para quien administra.
             Route("GET", "/api/v1/exports", null),
@@ -257,6 +280,7 @@ class ExportsIT : WorkdayTestBase() {
         val phone = phone(c, newEmployee(c))
         assertProblem(401, "unauthorized", call("GET", "/api/v1/exports/$whole", assertion(phone)))
         assertProblem(401, "unauthorized", call("GET", "/api/v1/exports/$whole/download", assertion(phone)))
+        assertProblem(401, "unauthorized", call("GET", "/api/v1/exports/$whole/manifest", assertion(phone)))
     }
 
     @Test
@@ -277,6 +301,7 @@ class ExportsIT : WorkdayTestBase() {
         // Para la otra empresa, el exporte no existe: ni se ve ni se descarga.
         assertProblem(404, "not_found", export(b, exportOfA))
         assertProblem(404, "not_found", download(b, exportOfA))
+        assertProblem(404, "not_found", manifest(b, exportOfA))
         assertEquals("ready", export(a, exportOfA).at("status"))
         // Y un exporte no se limita a la sede de otra empresa.
         assertProblem(422, "validation", request(a, """{"weekStart":"$yesterday","format":"csv","siteId":"${newSite(b)}"}"""))

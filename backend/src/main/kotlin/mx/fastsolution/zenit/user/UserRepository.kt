@@ -65,6 +65,18 @@ class UserRepository(private val dsl: DSLContext) {
             subject, displayName, email,
         ) == 1
 
+    /**
+     * Suelta la liga con la identidad. Quien estaba activa vuelve a quedar
+     * invitada; quien estaba deshabilitada sigue así. Falso si no estaba ligada.
+     */
+    fun unlink(tenantId: UUID, id: UUID): Boolean =
+        dsl.execute(
+            "update tenant_user set subject = null, linked_at = null, " +
+                "status = case when status = 'active' then 'invited' else status end " +
+                "where tenant_id = ? and id = ? and subject is not null",
+            tenantId, id,
+        ) == 1
+
     /** Liga a la persona con su fila del padrón, o la suelta con nulo. */
     fun setEmployee(tenantId: UUID, id: UUID, employeeId: UUID?) {
         dsl.execute("update tenant_user set employee_id = cast(? as uuid) where tenant_id = ? and id = ?", employeeId, tenantId, id)

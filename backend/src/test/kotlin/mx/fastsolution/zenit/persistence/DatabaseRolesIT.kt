@@ -293,6 +293,65 @@ class DatabaseRolesIT {
     }
 
     @Test
+    fun `closure runs are never deleted, and what was asked for is never rewritten`() {
+        asApp().use { db ->
+            assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM week_closure_run") } })
+            // De una corrida cambia su avance, nunca qué se pidió ni quién lo pidió.
+            for (change in listOf("week_start = DATE '2026-01-05'", "site_id = null", "origin = 'scheduled'", "requested_by = null", "created_at = now()")) {
+                assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE week_closure_run SET $change") } }, change)
+            }
+            db.createStatement().use {
+                it.execute("UPDATE week_closure_run SET status = 'done', closed = 1, finished_at = now() WHERE false")
+            }
+            // Quién cerró una semana tampoco se reescribe, aunque un cierre del sistema no tenga persona.
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE week_closure SET closed_by = null") } })
+        }
+    }
+
+    @Test
+    fun `the backup role reads both databases and cannot write, change the schema or create roles`() {
+        val password = secret("db_backup_password")
+        DriverManager.getConnection(url, "zenit_backup", password).use { db ->
+            db.createStatement().use { st ->
+                st.executeQuery(
+                    "SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls FROM pg_roles WHERE rolname = 'zenit_backup'",
+                ).use {
+                    it.next()
+                    assertFalse(it.getBoolean(1))
+                }
+                st.executeQuery("SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tableowner = 'zenit_backup'").use {
+                    it.next()
+                    assertEquals(0, it.getInt(1))
+                }
+                // Lee todas las tablas, también las que una migración no abrió para el backend.
+                for (table in listOf("tenant", "audit_log", "week_closure", "location_evidence", "export", "flyway_schema_history")) {
+                    st.execute("SELECT count(*) FROM $table")
+                }
+            }
+            val refused = listOf(
+                "INSERT INTO tenant (id, slug, name, status, time_zone, week_starts_on, break_policy) " +
+                    "VALUES (gen_random_uuid(), 'intrusa', 'Intrusa', 'active', 'UTC', 'monday', 'not_considered')",
+                "UPDATE tenant SET name = 'otro'",
+                "DELETE FROM audit_log",
+                "TRUNCATE job",
+                "CREATE TABLE intruso (id int)",
+                "ALTER TABLE tenant ADD COLUMN x int",
+                "DROP TABLE job",
+                "CREATE ROLE otro",
+            )
+            for (statement in refused) {
+                assertEquals("42501", denied { db.createStatement().use { it.execute(statement) } }, statement)
+            }
+        }
+        DriverManager.getConnection(identityUrl, "zenit_backup", password).use { db ->
+            db.createStatement().use { it.execute("SELECT count(*) FROM pg_tables WHERE schemaname = 'public'") }
+            assertEquals("42501", denied { db.createStatement().use { it.execute("CREATE TABLE intruso (id int)") } })
+        }
+        // La contraseña de otro rol no le sirve.
+        assertEquals("28P01", denied { DriverManager.getConnection(url, "zenit_backup", appPassword).close() })
+    }
+
+    @Test
     fun `a directory record cannot point at another company's data`() {
         asApp().use { db ->
             val one = db.newTenant()

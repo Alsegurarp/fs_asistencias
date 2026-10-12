@@ -131,11 +131,15 @@ Lo hace la app, no una persona: cada paso va firmado con la clave del
 dispositivo. Está descrito en la
 [Guía de la app Android](guia-app-android.md).
 
-Mientras la app no lo haga, no hay forma cómoda de generar marcajes a mano.
-La referencia que sí se ejecuta es la prueba
-`backend/src/test/kotlin/mx/fastsolution/zenit/CaptureTestBase.kt`: genera
-una clave, se activa, firma su aserción y firma cada sobre. Un simulador de
-dispositivo para el entorno local es trabajo pendiente.
+Mientras la app no lo haga, lo hace el simulador de dispositivo: da de alta
+una sede, personas y tarjetas, activa sus teléfonos y manda marcajes firmados.
+Sustituye los pasos 3 a 7 de este recorrido. Cómo se corre está en
+[Entorno local](entorno-local.md#llenar-el-entorno-con-el-simulador-de-dispositivo).
+
+Quien quiera ver cada paso en código tiene dos referencias que sí se
+ejecutan: el propio simulador, en `backend/src/simulator/`, y la prueba
+`backend/src/test/kotlin/mx/fastsolution/zenit/CaptureTestBase.kt`. Las dos
+generan una clave, se activan, firman su aserción y firman cada sobre.
 
 Lo que sigue supone que la persona ya tiene marcajes.
 
@@ -183,6 +187,18 @@ atiende lo pendiente y se repite la llamada.
 Si responde 422 con el error `week_not_finished`, la semana todavía no
 termina: ver la nota del paso 1.
 
+Para toda la empresa, sin esperar la respuesta y sin tope de personas, se pide
+una corrida y se consulta hasta que termina:
+
+```bash
+curl -s "$API/week-closure-runs" -H "Authorization: Bearer $ADMIN" -H "Content-Type: application/json" \
+  -d '{ "weekStart": "2026-10-05" }'
+curl -s "$API/week-closure-runs/$CORRIDA" -H "Authorization: Bearer $ADMIN"
+```
+
+`CORRIDA` es el `id` de la primera respuesta. Al terminar dice cuántas
+personas cerró y cuántas no, por motivo.
+
 ## 11. El acuse del trabajador
 
 Con el teléfono personal de la persona, o con su cuenta ligada a su fila del
@@ -228,6 +244,17 @@ coincidir con `fileHash`:
 sha256sum semana.csv
 ```
 
+El manifiesto dice qué entró al archivo y de qué cierre salió cada fila. Se
+puede pedir cuantas veces haga falta, también después de descargar:
+
+```bash
+curl -s "$API/exports/$EXPORTE/manifest" -H "Authorization: Bearer $ADMIN" -o manifiesto.json
+sha256sum manifiesto.json
+```
+
+Esa huella tiene que coincidir con `manifestHash` del exporte, y el
+`fileSha256` que trae adentro, con la del archivo.
+
 ## 13. Qué quedó registrado
 
 ```bash
@@ -246,5 +273,6 @@ hizo.
 | 404 | El identificador, o que el recurso sea de esa empresa |
 | 409 | El `code` de la respuesta dice el motivo |
 | 422 | El campo y el motivo vienen en `errors` |
+| 429 | Demasiadas peticiones en un minuto: esperar |
 
 Los códigos están en el [Diccionario](diccionario.md#códigos-de-error).

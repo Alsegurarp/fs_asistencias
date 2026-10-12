@@ -61,18 +61,32 @@ Las rutas van sin el prefijo `/api/v1`.
 | Pantalla | Rutas |
 | --- | --- |
 | Empresas | `GET /tenants`, `POST /tenants` |
+| Suspender y reactivar | `POST /tenants/{tenantId}/suspension`, `POST /tenants/{tenantId}/reactivation` |
+
+Suspender y reactivar piden un motivo, que queda en la bitácora de la empresa.
+Conviene pedir confirmación: al suspender, toda su gente y sus dispositivos
+pierden el acceso en ese momento.
 
 ### Empresa y acceso (administrador)
 
 | Pantalla | Rutas |
 | --- | --- |
 | Datos de la empresa | `GET /tenant`, `PATCH /tenant` |
-| Personas con acceso | `GET /users`, `POST /users`, `GET /users/{userId}`, `PATCH /users/{userId}` |
+| Personas con acceso | `GET /users`, `POST /users`, `GET /users/{userId}`, `PATCH /users/{userId}`, `POST /users/{userId}/unlink` |
 | Bitácora | `GET /audit-log` |
 
 Al dar de alta una empresa hay que pedir su política de descanso: si la comida
 se marca o no se considera. Al invitar a un trabajador, ligarlo a su fila del
 padrón con `employeeId`; sin esa liga no podrá ver su semana en el portal.
+
+En los datos de la empresa va el cierre programado, `autoCloseAfterHours`:
+un interruptor y un número de horas, de 1 a 168. Apagado se manda `null`.
+Explicar ahí que el sistema pasa una sola vez por semana y que cierra sólo a
+quien no tiene nada pendiente.
+
+«Soltar la liga» (`unlink`) es para la persona que perdió su cuenta y volvió
+con otra del mismo correo. No es la forma de quitarle el acceso a alguien:
+para eso está `disabled`. Conviene decirlo en la propia pantalla.
 
 ### Configuración (administrador y RH)
 
@@ -109,8 +123,9 @@ Notas:
 | Semana de una persona | `GET /employees/{employeeId}/attendance?week=` |
 | Incidencias | `GET /incidents`, `GET /incidents/{incidentId}`, `PATCH /incidents/{incidentId}` |
 | Cierres | `GET /week-closures`, `POST /week-closures`, `GET /week-closures/{closureId}`, `POST /week-closures/{closureId}/reopen` |
+| Corridas de cierre | `POST /week-closure-runs`, `GET /week-closure-runs`, `GET /week-closure-runs/{runId}` |
 | Reglas laborales | `GET /rule-sets` |
-| Exportes | `POST /exports`, `GET /exports/{exportId}`, `GET /exports/{exportId}/download` |
+| Exportes | `POST /exports`, `GET /exports/{exportId}`, `GET /exports/{exportId}/download`, `GET /exports/{exportId}/manifest` |
 
 Notas:
 
@@ -186,6 +201,29 @@ tienen revisión jurídica.
 Un 422 con el error `week_not_finished` quiere decir que la semana todavía no
 termina.
 
+### Toda la empresa: la corrida de cierre
+
+`POST /week-closures` responde en la misma petición y admite hasta 500
+personas. Para cerrar a toda la empresa conviene la corrida, que no tiene
+tope y no hace esperar a la pantalla:
+
+1. `POST /week-closure-runs` con la semana y, opcionalmente, una sede.
+   Responde 202 con la corrida en `queued`.
+2. Consultar `GET /week-closure-runs/{runId}` cada pocos segundos hasta `done`
+   o `failed`. Mientras corre, `closed` y `blocked` avanzan por tandas: sirven
+   para una barra de avance sobre `total`.
+3. Al terminar, mostrar cuántas se cerraron y cuántas no. Para ver cuáles
+   faltan: `GET /incidents?status=open&week=`.
+
+- Mientras una corrida de esa semana y ese alcance no termina, pedirla otra
+  vez devuelve la misma: el botón se puede oprimir dos veces sin daño.
+- `failed` no deshace nada: lo que alcanzó a cerrar sigue cerrado. Se pide
+  otra.
+- `GET /week-closure-runs?week=` lista las corridas de una semana, también las
+  que abrió el cierre programado, con `origin` en `scheduled`.
+- Un cierre hecho por el sistema trae `closedBy` en nulo: mostrar «cierre
+  programado» donde iría el nombre de quien cerró.
+
 ## Exportes
 
 Pedir, esperar y descargar:
@@ -223,6 +261,11 @@ async function exportar(api: string, token: string, semana: string): Promise<Blo
 - 422 con el error `no_closed_weeks`: esa semana, o esa sede, no tiene cierres
   vigentes.
 - `failed`: no se pudo preparar; pedirlo otra vez.
+- El manifiesto (`GET /exports/{exportId}/manifest`) sigue disponible después
+  de descargar. Sirve para comprobar un archivo guardado: su `fileSha256` debe
+  ser el SHA-256 del archivo. Si la pantalla comprueba la huella del propio
+  manifiesto contra `manifestHash`, debe calcularla sobre los bytes de la
+  respuesta, sin pasarla antes por `JSON.parse`.
 - El archivo es un CSV en UTF-8 que una hoja de cálculo abre con sus acentos.
 
 ## Listas
@@ -236,6 +279,9 @@ continuo, no números de página: el API no da el total.
 - 409: mostrar el motivo según `code` y recargar.
 - 403: no debería ocurrir si el menú respeta los roles; si ocurre, avisar y
   volver a pedir `GET /me`, porque los roles pudieron cambiar.
+- 429: la persona pasó su cuota de peticiones por minuto. Esperar y reintentar
+  con pausa creciente; no reintentar en ciclo cerrado. Una pantalla que
+  consulta el avance de algo debe hacerlo cada varios segundos, no sin pausa.
 - En cualquier error, dejar a la vista el `correlationId`.
 
 ## Lista de comprobación
@@ -247,4 +293,8 @@ continuo, no números de página: el API no da el total.
 - [ ] El código de enrolamiento se muestra una vez, con su vencimiento.
 - [ ] Resolver una incidencia exige motivo.
 - [ ] El exporte se descarga con credencial, no con un enlace.
+- [ ] Cerrar a toda la empresa usa la corrida de cierre y muestra su avance.
+- [ ] Un cierre sin `closedBy` se muestra como hecho por el cierre programado.
+- [ ] Soltar la liga de una cuenta explica que no quita el acceso.
+- [ ] Suspender una empresa pide motivo y confirmación.
 - [ ] Ninguna pantalla recalcula lo que el servidor ya calculó.

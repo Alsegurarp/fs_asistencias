@@ -4,7 +4,7 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
-Monorepo del producto. El backend atiende las 52 operaciones del contrato, con
+Monorepo del producto. El backend atiende las 59 operaciones del contrato, con
 pruebas contra PostgreSQL real. El portal web y la aplicación Android son
 esqueletos que compilan y todavía no llaman al API. Cada aplicación mantiene
 toolchain, dependencias y build propios.
@@ -17,6 +17,7 @@ y cómo se continúa:
 | Para | Documento |
 | --- | --- |
 | Levantar el sistema y obtener un token | [Entorno local](docs/entorno-local.md) |
+| Llenarlo de datos simulados, ensayar el respaldo y revisar vulnerabilidades | [Entorno local](docs/entorno-local.md) |
 | Conocer el API de punta a punta | [Recorrido completo](docs/recorrido-completo.md) |
 | Saber quién hace qué | [Casos de uso](docs/casos-de-uso.md) |
 | Entender las reglas | [Lógica de negocio](docs/logica-de-negocio.md) |
@@ -62,8 +63,11 @@ Al levantar, el servicio `migrate` aplica las migraciones y termina; el backend
 espera a que acabe bien. Es normal verlo como `Exited (0)`.
 
 Para empezar de cero: `docker compose down -v` y borrar el contenido de
-`secrets/`. Quien ya tenía el entorno debe hacerlo una vez, porque los roles de
-la base y la base de identidad se crean al inicializar el volumen.
+`secrets/`.
+
+Quien ya tenía el entorno no necesita empezar de cero, pero sí tres pasos, una
+vez: generar el secreto nuevo, volver a levantar y crear el rol de respaldo.
+Están en [Entorno local](docs/entorno-local.md#si-el-entorno-ya-existía).
 
 ## Base de datos
 
@@ -75,6 +79,7 @@ Cada conexión usa el rol con menos permisos que le sirve.
 | `zenit_migrator` | El servicio `migrate` | Es dueño del esquema y lo cambia |
 | `zenit_app` | El backend al atender | Lee y escribe sólo lo que una migración le abrió |
 | `keycloak_app` | El proveedor de identidad | Su propia base; no entra a la del producto |
+| `zenit_backup` | El ensayo de respaldo | Lee las dos bases; no escribe ni cambia el esquema |
 
 - El backend no cambia el esquema. Al arrancar comprueba que esté al día y, si
   falta una migración o no puede conectarse, no arranca.
@@ -85,7 +90,8 @@ Cada conexión usa el rol con menos permisos que le sirve.
   backend puede insertar y leer, no corregir ni borrar. Lo mismo vale para un
   ajuste y para un acuse. De una incidencia y de un cierre sólo puede cambiar
   su atención y su estado, columna por columna: nunca lo que dicen. De un
-  trabajo cambia su avance y de un exporte su resultado, nunca lo que se pidió.
+  trabajo y de una corrida de cierre cambia su avance, y de un exporte su
+  resultado: nunca lo que se pidió.
 - Las reglas laborales (`rule_set`) sólo se leen. Cambian con una migración.
 - Toda tabla de una empresa lleva `tenant_id`, y sus llaves foráneas lo
   incluyen: un registro no puede apuntar a datos de otra empresa.
@@ -106,7 +112,8 @@ El segundo comando retira la base de pruebas sin tocar el entorno levantado.
 Una prueba de integración lleva `@Tag("integration")` y comprueba también lo
 que debe fallar: el caso negativo es parte de la prueba.
 
-`ApiIT`, `DirectoryIT`, `CaptureIT`, `WorkdayIT` y `ExportsIT` recorren el API
+`ApiIT`, `DirectoryIT`, `CaptureIT`, `WorkdayIT`, `ClosureRunsIT`,
+`AdministrationIT` y `ExportsIT` recorren el API
 por HTTP con dos empresas y tokens firmados por una clave de prueba, que el
 backend valida como los del proveedor de identidad. Comparten `ApiTestBase`.
 `CaptureTestBase` simula lo que hace la app: genera su clave, se activa, firma
@@ -121,7 +128,12 @@ la hora. Lo comparten en `WorkdayTestBase`.
 En las pruebas los trabajos no corren solos: `zenit.jobs.enabled` va apagado y
 cada prueba llama a `jobWorker` cuando le toca, sin esperas. `JobsIT` prueba el
 trabajador con un trabajo que falla a propósito, y simula el paso del tiempo
-moviendo la fecha del trabajo en la base.
+moviendo la fecha del trabajo en la base. `ClosureRunsIT` interrumpe una
+corrida de cierre a la mitad y comprueba que lo ya cerrado se conserva y que
+el siguiente intento la termina.
+
+La cuota por persona va abierta en las pruebas, porque toda la suite llama con
+pocas identidades. `QuotaIT` la prueba de punta a punta con un límite bajo.
 
 Cada respuesta que reciben las pruebas de integración se compara con el
 contrato (`ContractCheck`): su estado tiene que estar descrito para esa
@@ -130,9 +142,10 @@ operación y su cuerpo tiene que cumplir el esquema, con sus formatos.
 backend sean exactamente las operaciones del contrato, y que cada operación
 haya respondido bien al menos una vez. Una ruta nueva sin contrato, o una
 respuesta que cambia sin cambiar el contrato, rompe las pruebas: los dos se
-cambian en el mismo commit. No se comprueba el formato de correo, porque los
-datos ficticios usan el dominio reservado `.invalid`, ni el cuerpo de las
-peticiones.
+cambian en el mismo commit. También se compara el cuerpo de cada petición que
+el backend aceptó: si acepta algo que el contrato no describe, la prueba
+falla. No se comprueba el formato de correo, porque los datos ficticios usan
+el dominio reservado `.invalid`, ni la carga del padrón, que no es JSON.
 
 ## Identidad
 
@@ -185,9 +198,21 @@ El token dice quién es la persona; su empresa y sus roles salen de la base.
 - Altas, invitaciones, cambios de rol y de acceso quedan en la bitácora, que
   se lee en `GET /api/v1/audit-log`. Los rechazos por permiso quedan en los
   registros del backend, con el identificador de correlación de la respuesta.
+- Quien opera el servicio suspende y reactiva una empresa, con un motivo que
+  queda en su bitácora. Suspendida, queda cerrada para su gente y para sus
+  dispositivos; no se borra nada y al reactivarla todo sigue como estaba.
+- Si una persona pierde su cuenta y vuelve con otra del mismo correo, quien
+  administra suelta su liga (`POST /api/v1/users/{userId}/unlink`) y la
+  persona se liga otra vez al entrar. Soltar la liga no quita el acceso: para
+  eso está `disabled`.
+- Cada persona tiene una cuota de peticiones por minuto, 600 por defecto
+  (`API_PERSON_REQUESTS_PER_MINUTE`). Se cuenta dentro de la cadena de
+  seguridad, cuando ya se sabe quién llama, y responde 429 antes de llegar a
+  la ruta. Vive en memoria: vale para una sola instancia.
 - Una ruta nueva se abre en `SecurityConfig` con los mismos roles que el
   contrato declara en `x-roles`, y lee la empresa de `CurrentPerson`, nunca
-  del cuerpo ni de la ruta.
+  del cuerpo ni de la ruta. La única excepción son las dos rutas con las que
+  quien opera el servicio suspende y reactiva una empresa.
 
 ## Padrón, sedes, horarios y tarjetas
 
@@ -273,6 +298,17 @@ guarda hasta que se cierra.
   motivo. Reabrir conserva la versión cerrada y volver a cerrar crea otra.
 - Un marcaje que llega de una semana ya cerrada se guarda y abre una
   incidencia; el cierre no cambia solo.
+- El cierre directo responde en la petición y admite hasta 500 personas. Una
+  corrida de cierre (`POST /api/v1/week-closure-runs`) cierra a toda la
+  empresa o a una sede como trabajo, sin tope: cada persona en su propia
+  transacción, de modo que lo ya cerrado se conserva si se interrumpe y el
+  siguiente intento retoma lo que faltó. La lógica de cerrar a una persona es
+  una sola, en `WeekCloser`, para los dos caminos.
+- El cierre programado nace apagado. La empresa lo enciende con
+  `autoCloseAfterHours`; el sistema pasa una vez por semana, cierra a quien no
+  tiene nada pendiente y no vuelve a pasar. Un cierre del sistema no tiene
+  persona en `closedBy`. Cada cuánto se revisa lo dice
+  `CLOSURES_SCHEDULE_CHECK_SECONDS`.
 - El trabajador ve su semana y acusa su cierre, conforme u objetándolo, una vez
   por cierre. Lo hace desde su teléfono personal o desde el portal, con su
   cuenta ligada a su fila del padrón (`employeeId` de la persona). Una terminal
@@ -297,8 +333,10 @@ lo encola; lo prepara un trabajo.
   credencial y los mismos roles que el exporte; después se descarta. Quedan
   su manifiesto y sus huellas, y en la bitácora quién lo descargó.
 - El manifiesto declara empresa, semana, la huella del archivo y la de cada
-  cierre que entró: liga lo exportado con lo cerrado. Su propia huella se
-  vuelve a calcular desde la base.
+  cierre que entró: liga lo exportado con lo cerrado. Se lee con
+  `GET /api/v1/exports/{exportId}/manifest`, que lo entrega byte por byte como
+  se guardó: su propia huella se vuelve a calcular sobre esa respuesta. Sigue
+  disponible cuando el archivo ya no existe.
 - Plantilla 1 del archivo: CSV en UTF-8 con marca de orden de bytes y fin de
   línea CRLF, una fila por cierre. A la celda que una hoja de cálculo tomaría
   por fórmula se le antepone un apóstrofo. Cambiar las columnas sube
@@ -331,6 +369,18 @@ El entorno local sigue las mismas reglas que tendrá un ambiente publicado.
   contenido.
 - Las imágenes base llevan versión y digest. Al actualizar una se cambian los
   dos.
+- Las imágenes se revisan contra vulnerabilidades conocidas, con su inventario
+  de componentes. Lo que tiene corrección publicada y la imagen base o Spring
+  Boot todavía no traen se adelanta, con la versión mínima corregida y un
+  comentario que dice por qué.
+- El respaldo se ensaya: un rol que sólo lee respalda las dos bases, se
+  restauran en una instancia desechable y se comparan los conteos.
+
+Las herramientas que no atienden peticiones tienen sus propias reglas. El
+generador de secretos, el inventario y el análisis de vulnerabilidades corren
+como root dentro de su contenedor, con una sola capacidad, para poder escribir
+en una carpeta del repositorio; ninguno recibe una contraseña ni el control de
+Docker.
 
 ## Contrato y verificaciones
 
@@ -355,6 +405,26 @@ openapi-typescript 7.13.0; ambos compilan. En Kotlin hay que excluir
 `infrastructure/ApiClient.kt` con `.openapi-generator-ignore`: el contrato
 declara dos credenciales de tipo bearer y el generador duplica su ayudante. No
 hace falta, porque la app firma su propia aserción con un interceptor.
+
+## Herramientas de operación
+
+| Para | Comando |
+| --- | --- |
+| Llenar el entorno con personas, dispositivos y marcajes simulados | `docker compose --profile tools run --rm device-sim` |
+| Ensayar el respaldo y la restauración | `docker compose --profile ops run --rm backup-rehearsal` |
+| Inventario de lo que lleva una imagen | `docker compose --profile tools run --rm sbom` |
+| Vulnerabilidades conocidas de ese inventario | `docker compose --profile tools run --rm vuln-scan` |
+
+Cada una pide algo antes de correr: un token, el entorno levantado o la imagen
+exportada a un archivo. Está en [Entorno local](docs/entorno-local.md).
+
+- El simulador vive en `backend/src/simulator/` y habla con el backend sólo
+  por el API. Sólo sirve con la tarjeta simulada encendida y datos ficticios.
+- El ensayo de respaldo no conserva nada: prueba que el respaldo se puede
+  restaurar. Dónde se guarda un respaldo de verdad se decide con el primer
+  ambiente publicado.
+- `vuln-scan` termina con error si hay una vulnerabilidad alta o crítica. Lo
+  que una persona decide aceptar se anota en `.grype.yaml`, con su motivo.
 
 ## Desarrollo exclusivamente con Docker
 

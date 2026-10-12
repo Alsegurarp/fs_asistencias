@@ -17,13 +17,19 @@ kotlin {
     }
 }
 
+// Versiones que se adelantan a las que trae Spring Boot 4.1.1, porque las suyas
+// tienen vulnerabilidades ya corregidas: Tomcat embebido 11.0.24 (críticas) y
+// Jackson 3.1.5 (altas). Se retiran cuando una versión de Spring Boot traiga
+// estas o más nuevas; el análisis de vulnerabilidades lo dirá.
+extra["tomcat.version"] = "11.0.26"
+extra["jackson-bom.version"] = "3.1.7"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
@@ -65,6 +71,20 @@ tasks.register<Test>("integrationTest") {
     inputs.file(contract)
     systemProperty("zenit.contract", contract.asFile.absolutePath)
     shouldRunAfter(tasks.test)
+}
+
+// Simulador de dispositivo para el entorno local. Vive en su propio conjunto de
+// fuentes: usa las mismas bibliotecas que el backend, pero no entra al artefacto
+// que se despliega ni a las pruebas.
+val simulator: SourceSet by sourceSets.creating
+configurations[simulator.implementationConfigurationName].extendsFrom(configurations.implementation.get())
+configurations[simulator.runtimeOnlyConfigurationName].extendsFrom(configurations.runtimeOnly.get())
+
+tasks.register<JavaExec>("simulate") {
+    description = "Activa dispositivos simulados y manda marcajes firmados al backend local."
+    group = "application"
+    classpath = simulator.runtimeClasspath
+    mainClass.set("mx.fastsolution.zenit.simulator.DeviceSimulatorKt")
 }
 
 tasks.bootJar {

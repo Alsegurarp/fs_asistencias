@@ -34,6 +34,7 @@ services:
       - db_migrator_password
       - db_app_password
       - keycloak_db_password
+      - db_backup_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -145,6 +146,10 @@ services:
       EXPORTS_TTL_MINUTES: ${EXPORTS_TTL_MINUTES:-15}
       # Apagado, este proceso no atiende trabajos encolados.
       JOBS_ENABLED: ${JOBS_ENABLED:-true}
+      # Peticiones por minuto que se le aceptan a una persona.
+      API_PERSON_REQUESTS_PER_MINUTE: ${API_PERSON_REQUESTS_PER_MINUTE:-600}
+      # Segundos entre revisiones del cierre programado.
+      CLOSURES_SCHEDULE_CHECK_SECONDS: ${CLOSURES_SCHEDULE_CHECK_SECONDS:-60}
     # Atiende con un rol que no es dueño de las tablas ni puede cambiarlas.
     secrets:
       - db_app_password
@@ -214,6 +219,7 @@ services:
         generar db_migrator_password
         generar db_app_password
         generar keycloak_db_password
+        generar db_backup_password
         generar keycloak_admin_password
         # El proveedor de identidad lee sus contraseñas de un archivo de
         # configuración; se arma a partir de las dos anteriores.
@@ -270,6 +276,7 @@ services:
       - db_migrator_password
       - db_app_password
       - keycloak_db_password
+      - db_backup_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 3s
@@ -299,6 +306,7 @@ services:
       - db_migrator_password
       - db_app_password
       - keycloak_db_password
+      - db_backup_password
     depends_on:
       db-it:
         condition: service_healthy
@@ -306,6 +314,63 @@ services:
       - pruebas
     pids_limit: 1024
     mem_limit: 2g
+
+  # Simulador de dispositivo: llena el entorno local con personas, tarjetas,
+  # dispositivos y marcajes firmados, todo ficticio. Pide un token de quien
+  # administra la empresa y que el backend acepte la tarjeta simulada:
+  #   SIM_TOKEN=<token> docker compose --profile tools run --rm device-sim
+  device-sim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: it
+    profiles: ["tools"]
+    <<: *hardening
+    environment:
+      SIM_API: http://backend:8080
+      # Token de acceso de una persona con el rol admin_empresa. Dura cinco minutos.
+      SIM_TOKEN: ${SIM_TOKEN:-}
+      SIM_PEOPLE: ${SIM_PEOPLE:-8}
+      # Mueve el inicio de semana de la empresa a hoy, para que lo marcado se pueda cerrar.
+      SIM_FINISHED_WEEK: ${SIM_FINISHED_WEEK:-true}
+    command: ["gradle", ":backend:simulate", "--no-daemon", "--offline", "--quiet", "--console=plain"]
+    networks:
+      - borde
+    pids_limit: 1024
+    mem_limit: 2g
+
+  # Ensayo de respaldo y restauración. Respalda las dos bases con un rol que
+  # sólo lee, las restaura en una instancia desechable dentro del propio
+  # contenedor y compara el conteo de cada tabla. No conserva nada:
+  #   docker compose --profile ops run --rm backup-rehearsal
+  backup-rehearsal:
+    image: postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c
+    profiles: ["ops"]
+    <<: *hardening
+    # Sin privilegios: ni el respaldo ni la instancia desechable los necesitan.
+    user: postgres
+    read_only: true
+    tmpfs:
+      - /tmp
+      # Todo el ensayo vive en memoria y desaparece con el contenedor.
+      - /work:uid=999,gid=999,mode=0700
+    environment:
+      PGHOST: db
+      BACKUP_DATABASES: ${POSTGRES_DB:-zenit} keycloak
+      # En verdadero, estropea la restauración a propósito: el ensayo debe fallar.
+      BACKUP_TAMPER: ${BACKUP_TAMPER:-false}
+    secrets:
+      - db_backup_password
+    entrypoint: ["bash", "/opt/zenit/rehearse.sh"]
+    volumes:
+      - ./infra/postgres/backup/rehearse.sh:/opt/zenit/rehearse.sh:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - datos
+    pids_limit: 256
+    mem_limit: 1g
 
   # Valida el contrato y sus ejemplos:
   #   docker compose --profile tools run --rm contract-lint
@@ -325,6 +390,68 @@ services:
       - ./contracts:/spec/contracts:ro
       - ./redocly.yaml:/spec/redocly.yaml:ro
     command: ["lint", "contracts/openapi.yaml"]
+
+  # Inventario de lo que lleva una imagen (SBOM, en formato CycloneDX). La
+  # imagen se exporta antes a un archivo, para no darle a la herramienta el
+  # control de Docker; no usa la red:
+  #   docker save fastsolution-zenit-backend -o build/security/backend.tar
+  #   docker compose --profile tools run --rm sbom
+  # Para otra imagen, SCAN_TARGET lleva el nombre del archivo, sin extensión.
+  sbom:
+    image: anchore/syft:v1.54.1@sha256:3eb5379ba7b409c3f4069b686110527af0c47df993fa5c10d13e7cf34f49b1aa
+    profiles: ["tools"]
+    <<: *hardening
+    # Para escribir en la carpeta de trabajo, que es de quien clonó el repositorio.
+    cap_add:
+      - DAC_OVERRIDE
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      SYFT_CHECK_FOR_APP_UPDATE: "false"
+    volumes:
+      - ./build/security:/work
+    command:
+      - scan
+      - docker-archive:/work/${SCAN_TARGET:-backend}.tar
+      - --output
+      - cyclonedx-json=/work/${SCAN_TARGET:-backend}.cdx.json
+      - --quiet
+
+  # Vulnerabilidades conocidas de lo que dice ese inventario. Sale a Internet
+  # sólo para bajar la base de vulnerabilidades; no manda nada del proyecto.
+  # Termina con error si encuentra alguna alta o crítica sin aceptar:
+  #   docker compose --profile tools run --rm vuln-scan
+  vuln-scan:
+    image: anchore/grype:v0.120.1@sha256:e4a44ef45d285b829ce6efe2642980329661bd2d18eab5fc539138d4adaebbbe
+    profiles: ["tools"]
+    <<: *hardening
+    cap_add:
+      - DAC_OVERRIDE
+    # La red por defecto de Docker: no crea una red del proyecto ni ve sus servicios.
+    network_mode: bridge
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      GRYPE_CHECK_FOR_APP_UPDATE: "false"
+      GRYPE_DB_CACHE_DIR: /work/db
+    volumes:
+      - ./build/security:/work
+      # Hallazgos aceptados, cada uno con su motivo. Aceptar es decisión de una persona.
+      - ./.grype.yaml:/config/grype.yaml:ro
+    command:
+      - sbom:/work/${SCAN_TARGET:-backend}.cdx.json
+      - --config
+      - /config/grype.yaml
+      - --fail-on
+      - high
+      - --output
+      - table
+      - --output
+      - json=/work/${SCAN_TARGET:-backend}.vulns.json
+      - --quiet
 
   # Busca secretos en todo el historial de Git:
   #   docker compose --profile tools run --rm secret-scan
@@ -356,6 +483,8 @@ secrets:
     file: ./secrets/db_migrator_password
   db_app_password:
     file: ./secrets/db_app_password
+  db_backup_password:
+    file: ./secrets/db_backup_password
   keycloak_db_password:
     file: ./secrets/keycloak_db_password
   keycloak_conf:

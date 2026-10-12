@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.9.1
+  version: 0.10.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -14,7 +14,8 @@ info:
     - Identificadores UUID. Instantes en RFC 3339 y UTC; fechas locales como
       `date`; duraciones en minutos.
     - La empresa se deriva de la credencial, nunca del cuerpo ni de la ruta.
-      Un recurso de otra empresa responde 404.
+      Un recurso de otra empresa responde 404. La única excepción son las
+      operaciones de quien opera el servicio, que no pertenece a ninguna.
     - Errores en `application/problem+json` (RFC 9457) con `code` estable y
       `correlationId`.
     - Listas paginadas por cursor: `cursor` y `limit` en la consulta,
@@ -22,6 +23,8 @@ info:
       inválidos responden 422, aunque la operación no lo liste.
     - Toda operación con `x-roles` responde 403 a quien no tiene uno de esos
       roles, aunque la operación no lo liste.
+    - Una persona que excede su cuota de peticiones por minuto recibe 429
+      en cualquier operación, aunque la operación no lo liste.
     - Los nombres de rol son los del producto: `operador_saas`,
       `admin_empresa`, `rh`, `supervisor`, `trabajador`, `auditor` y
       `conector`. Cada operación declara los suyos en `x-roles`.
@@ -155,6 +158,7 @@ paths:
                     breakPolicy: not_considered
                     status: active
                     createdAt: "2026-10-05T15:00:00Z"
+                    autoCloseAfterHours: null
                 nextCursor: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -198,12 +202,140 @@ paths:
                 breakPolicy: not_considered
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
+                autoCloseAfterHours: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /tenants/{tenantId}/suspension:
+    parameters:
+      - $ref: "#/components/parameters/TenantId"
+    post:
+      tags: [empresa]
+      operationId: suspendTenant
+      summary: Suspende una empresa
+      description: |
+        Cierra la empresa para su propia gente y para sus dispositivos: sus
+        personas dejan de tener roles, sus dispositivos dejan de autenticarse
+        y sus códigos de enrolamiento dejan de canjearse. El cierre programado
+        deja de pasar y una corrida de cierre pendiente termina como fallida.
+        No borra ni cambia nada más: al reactivarla, todo sigue como estaba.
+
+        Junto con la reactivación, es la única operación que recibe la
+        empresa en la dirección: quien opera el servicio no pertenece a
+        ninguna. Queda en la bitácora de la empresa, con el motivo.
+
+        Responde 409 con `code` `tenant_not_active` si ya está suspendida.
+      x-roles: [operador_saas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantStatusChange"
+            example:
+              reason: Falta de pago del periodo de octubre.
+      responses:
+        "200":
+          description: Empresa suspendida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+              example:
+                id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                name: Panificadora Ejemplo
+                slug: panificadora-ejemplo
+                timeZone: America/Mexico_City
+                weekStartsOn: monday
+                breakPolicy: not_considered
+                status: suspended
+                createdAt: "2026-10-05T15:00:00Z"
+                autoCloseAfterHours: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: La empresa ya está suspendida
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/conflict
+                title: Conflicto con el estado actual
+                status: 409
+                code: tenant_not_active
+                detail: Esa empresa ya está suspendida.
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /tenants/{tenantId}/reactivation:
+    parameters:
+      - $ref: "#/components/parameters/TenantId"
+    post:
+      tags: [empresa]
+      operationId: reactivateTenant
+      summary: Reactiva una empresa suspendida
+      description: |
+        Devuelve el acceso a sus personas y a sus dispositivos, tal como
+        estaban. Queda en la bitácora de la empresa, con el motivo.
+
+        Responde 409 con `code` `tenant_not_suspended` si no está suspendida.
+      x-roles: [operador_saas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantStatusChange"
+            example:
+              reason: Pago recibido; se restablece el servicio.
+      responses:
+        "200":
+          description: Empresa reactivada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+              example:
+                id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                name: Panificadora Ejemplo
+                slug: panificadora-ejemplo
+                timeZone: America/Mexico_City
+                weekStartsOn: monday
+                breakPolicy: not_considered
+                status: active
+                createdAt: "2026-10-05T15:00:00Z"
+                autoCloseAfterHours: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: La empresa no está suspendida
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/conflict
+                title: Conflicto con el estado actual
+                status: 409
+                code: tenant_not_suspended
+                detail: Esa empresa no está suspendida.
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -229,6 +361,7 @@ paths:
                 breakPolicy: not_considered
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
+                autoCloseAfterHours: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -236,7 +369,14 @@ paths:
     patch:
       tags: [empresa]
       operationId: updateTenant
-      summary: Cambia nombre, zona horaria o inicio de semana de la empresa
+      summary: Cambia nombre, zona horaria, inicio de semana o cierre programado de la empresa
+      description: |
+        `autoCloseAfterHours` enciende el cierre programado: el sistema cierra
+        cada semana ese número de horas después de que termina, en la zona
+        horaria de la empresa. En nulo lo apaga, que es como nace; no mandarlo
+        no cambia nada. Al encenderlo, la última semana terminada se cierra en
+        la siguiente revisión si ya pasó ese plazo. Lo que hace está en
+        `requestWeekClosureRun`.
       x-roles: [admin_empresa]
       requestBody:
         required: true
@@ -263,6 +403,7 @@ paths:
                 breakPolicy: not_considered
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
+                autoCloseAfterHours: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -428,6 +569,64 @@ paths:
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/Unprocessable"
+
+  /users/{userId}/unlink:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+    post:
+      tags: [identidad]
+      operationId: unlinkUser
+      summary: Suelta la liga entre una persona y su cuenta
+      description: |
+        Para cuando la persona perdió su cuenta en el proveedor de identidad
+        y tiene otra con el mismo correo: mientras la liga anterior exista, la
+        cuenta nueva no entra. Al soltarla, la persona vuelve a `invited` y
+        conserva sus roles y su fila del padrón; queda ligada otra vez la
+        siguiente vez que entre con ese correo verificado. Quien estaba
+        `disabled` sigue así.
+
+        No quita el acceso: si la cuenta anterior todavía existe con ese
+        correo verificado, vuelve a ligarse al entrar. Para quitar el acceso
+        está `disabled`, en `updateUser`.
+
+        Responde 409 con `code` `user_not_linked` si la persona no está
+        ligada a ninguna cuenta.
+      x-roles: [admin_empresa]
+      responses:
+        "200":
+          description: Persona sin liga
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                email: rh@panificadora.example
+                displayName: Persona de Recursos Humanos
+                roles: [rh]
+                status: invited
+                createdAt: "2026-10-05T15:05:00Z"
+                linkedAt: null
+                employeeId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: La persona no está ligada a ninguna cuenta
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/conflict
+                title: Conflicto con el estado actual
+                status: 409
+                code: user_not_linked
+                detail: Esa persona no está ligada a ninguna cuenta.
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
 
   /sites:
     get:
@@ -1984,7 +2183,8 @@ paths:
         `weekStart` admite cualquier fecha de la semana. Sin `siteId` ni
         `employeeIds` entran las personas activas de la empresa y las que
         marcaron esa semana; quien no marcó se cierra en ceros. Con más de 500
-        personas hay que cerrar por sede o por lista.
+        personas hay que pedir una corrida con `requestWeekClosureRun`, o
+        cerrar por sede o por lista.
 
         Es repetible: quien ya tiene un cierre vigente aparece en `closed` con
         ese mismo cierre y no se crea otro. `hash` es el SHA-256 del cálculo
@@ -2186,6 +2386,167 @@ paths:
         "422":
           $ref: "#/components/responses/Unprocessable"
 
+  /week-closure-runs:
+    get:
+      tags: [jornada]
+      operationId: listWeekClosureRuns
+      summary: Lista las corridas de cierre
+      description: |
+        De la más antigua a la más reciente. Incluye las que abrió el cierre
+        programado, con `origin` en `scheduled`.
+      x-roles: [admin_empresa, rh, supervisor, auditor]
+      parameters:
+        - name: week
+          in: query
+          description: Cualquier fecha de la semana. Sin ella, las de todas las semanas.
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de corridas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekClosureRunList"
+              example:
+                items:
+                  - id: 4d6f8a0c-2e4a-4c6e-8a0c-4e6a8c0e2a4c
+                    weekStart: "2026-10-05"
+                    siteId: null
+                    origin: requested
+                    status: done
+                    total: 640
+                    closed: 628
+                    blocked:
+                      openIncidents: 9
+                      openSegment: 3
+                    requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    failure: null
+                    createdAt: "2026-10-12T16:00:00Z"
+                    startedAt: "2026-10-12T16:00:02Z"
+                    finishedAt: "2026-10-12T16:00:41Z"
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [jornada]
+      operationId: requestWeekClosureRun
+      summary: Pide cerrar la semana de toda la empresa o de una sede, como trabajo
+      description: |
+        Hace lo mismo que `closeWeek`, sin tope de personas y sin esperar la
+        respuesta: la corrida queda en `queued`, la atiende un trabajo y hay
+        que consultar `getWeekClosureRun` hasta verla en `done` o en `failed`.
+
+        Entran las personas activas y las que marcaron esa semana, de toda la
+        empresa o de la sede de `siteId`. `weekStart` admite cualquier fecha
+        de la semana. Cada persona se cierra por separado: lo que ya se cerró
+        sigue cerrado aunque la corrida se interrumpa, y pedirla otra vez
+        retoma lo que faltó. Quien tiene incidencias abiertas o un tramo sin
+        cerrar no se cierra y se cuenta en `blocked`; se le encuentra con
+        `listIncidents`, pidiendo las abiertas de esa semana.
+
+        Mientras una corrida de esa semana y ese alcance no termina, pedirla
+        otra vez devuelve la misma.
+
+        Cierre programado: si la empresa tiene `autoCloseAfterHours`, el
+        sistema abre por su cuenta una corrida de toda la empresa cuando pasa
+        ese plazo desde el fin de la semana, una sola vez por semana. Sus
+        cierres llevan `closedBy` en nulo. A quien deje bloqueado lo cierra
+        después una persona.
+
+        Responde 422 con el error `week_not_finished` si la semana todavía no
+        termina en la zona horaria de la empresa, o con `no_rules_for_date`
+        si no hay reglas laborales registradas para esa semana.
+      x-roles: [admin_empresa, rh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeekClosureRunCreate"
+            example:
+              weekStart: "2026-10-05"
+      responses:
+        "202":
+          description: Corrida encolada, o la que ya estaba en curso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekClosureRun"
+              example:
+                id: 4d6f8a0c-2e4a-4c6e-8a0c-4e6a8c0e2a4c
+                weekStart: "2026-10-05"
+                siteId: null
+                origin: requested
+                status: queued
+                total: null
+                closed: 0
+                blocked:
+                  openIncidents: 0
+                  openSegment: 0
+                requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                failure: null
+                createdAt: "2026-10-12T16:00:00Z"
+                startedAt: null
+                finishedAt: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /week-closure-runs/{runId}:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    get:
+      tags: [jornada]
+      operationId: getWeekClosureRun
+      summary: Devuelve el avance y el resultado de una corrida de cierre
+      description: |
+        `total` es nulo hasta que la corrida empieza. `closed` cuenta a
+        quienes quedaron con un cierre vigente, incluidos los que ya lo
+        tenían. Mientras corre, las cuentas avanzan por tandas.
+
+        `failed` quiere decir que la corrida no terminó, y `failure` dice por
+        qué: `job_abandoned` si agotó sus intentos, o `tenant_not_active` si
+        la empresa se suspendió antes. Lo que alcanzó a cerrar sigue cerrado.
+      x-roles: [admin_empresa, rh, supervisor, auditor]
+      responses:
+        "200":
+          description: Corrida de cierre
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekClosureRun"
+              example:
+                id: 4d6f8a0c-2e4a-4c6e-8a0c-4e6a8c0e2a4c
+                weekStart: "2026-10-05"
+                siteId: null
+                origin: requested
+                status: done
+                total: 640
+                closed: 628
+                blocked:
+                  openIncidents: 9
+                  openSegment: 3
+                requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                failure: null
+                createdAt: "2026-10-12T16:00:00Z"
+                startedAt: "2026-10-12T16:00:02Z"
+                finishedAt: "2026-10-12T16:00:41Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /rule-sets:
     get:
       tags: [jornada]
@@ -2323,7 +2684,7 @@ paths:
         conservarse; quedan `fileHash`, `manifestHash` y `rowCount`.
 
         `fileHash` es el SHA-256 del archivo, byte por byte. `manifestHash`
-        es el SHA-256 del manifiesto que el servidor guarda: declara
+        es el SHA-256 del manifiesto, que se lee con `getExportManifest`: declara
         empresa, semana, zona horaria, la huella del archivo y la huella de
         cada cierre que entró, y así liga el archivo con lo que se cerró.
 
@@ -2412,6 +2773,89 @@ paths:
                 status: 410
                 code: export_expired
                 detail: El enlace ya se usó o venció; hay que pedir el exporte otra vez.
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+
+  /exports/{exportId}/manifest:
+    parameters:
+      - $ref: "#/components/parameters/ExportId"
+    get:
+      tags: [exportes]
+      operationId: getExportManifest
+      summary: Devuelve el manifiesto de un exporte
+      description: |
+        El manifiesto declara qué se exportó y de dónde salió: empresa,
+        semana, zona horaria, la huella del archivo y, por cada fila, el
+        cierre del que salió con su versión y su huella. Con él se comprueba
+        que un archivo guardado es el que se generó, comparando `fileSha256`
+        con el SHA-256 del archivo, y que cada fila corresponde a un cierre,
+        comparando `closures[].hash` con el `hash` de ese cierre.
+
+        Se entrega byte por byte como se guardó: el SHA-256 del cuerpo de
+        esta respuesta es el `manifestHash` del exporte. Hay que calcularlo
+        sobre el cuerpo tal como llega, sin volver a darle formato.
+
+        Sigue disponible después de descargar el archivo o de que venza.
+        Responde 409 con `code` `export_not_ready` mientras se prepara, y 410
+        con `export_failed` si no se pudo preparar.
+      x-roles: [admin_empresa, rh, auditor]
+      responses:
+        "200":
+          description: Manifiesto del exporte
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportManifest"
+              example:
+                exportId: e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+                templateVersion: 1
+                format: csv
+                tenant:
+                  id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                  slug: panificadora-ejemplo
+                  name: Panificadora Ejemplo
+                weekStart: "2026-10-05"
+                timeZone: America/Mexico_City
+                siteId: null
+                rowCount: 1
+                fileSha256: 7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b
+                closures:
+                  - closureId: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
+                    employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    version: 1
+                    ruleSetVersion: 1
+                    hash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+                generatedAt: "2026-10-12T16:05:03Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: El exporte todavía se está preparando
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/conflict
+                title: Conflicto con el estado actual
+                status: 409
+                code: export_not_ready
+                detail: El exporte todavía se está preparando.
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+        "410":
+          description: El exporte no se pudo preparar
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/gone
+                title: Ya no está disponible
+                status: 410
+                code: export_failed
+                detail: El exporte no se pudo preparar; hay que pedirlo otra vez.
                 correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
 
   /audit-log:
@@ -2549,6 +2993,13 @@ components:
       schema:
         type: string
         format: uuid
+    TenantId:
+      name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     UserId:
       name: userId
       in: path
@@ -2614,6 +3065,13 @@ components:
         format: uuid
     ExportId:
       name: exportId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RunId:
+      name: runId
       in: path
       required: true
       schema:
@@ -2831,7 +3289,7 @@ components:
 
     Tenant:
       type: object
-      required: [id, name, slug, timeZone, weekStartsOn, breakPolicy, status, createdAt]
+      required: [id, name, slug, timeZone, weekStartsOn, breakPolicy, status, createdAt, autoCloseAfterHours]
       properties:
         id:
           type: string
@@ -2853,6 +3311,13 @@ components:
         createdAt:
           type: string
           format: date-time
+        autoCloseAfterHours:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 168
+          description: >-
+            Horas después del fin de la semana a las que el sistema la cierra
+            por su cuenta. Nulo: sólo la cierra una persona.
     TenantCreate:
       type: object
       additionalProperties: false
@@ -2896,6 +3361,21 @@ components:
         breakPolicy:
           $ref: "#/components/schemas/BreakPolicy"
           description: El cambio no reescribe semanas ya cerradas.
+        autoCloseAfterHours:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 168
+          description: Nulo apaga el cierre programado.
+    TenantStatusChange:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+          description: Por qué se suspende o se reactiva; queda en la bitácora de la empresa.
     TenantList:
       type: object
       required: [items, nextCursor]
@@ -4275,8 +4755,9 @@ components:
           type: string
           format: date-time
         closedBy:
-          type: string
+          type: [string, "null"]
           format: uuid
+          description: Quien lo cerró; nulo si lo cerró el cierre programado.
         acknowledgement:
           oneOf:
             - $ref: "#/components/schemas/Acknowledgement"
@@ -4342,6 +4823,94 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WeekClosure"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+    WeekClosureRunCreate:
+      type: object
+      additionalProperties: false
+      required: [weekStart]
+      properties:
+        weekStart:
+          type: string
+          format: date
+        siteId:
+          type: string
+          format: uuid
+          description: Limita la corrida a una sede.
+    WeekClosureRun:
+      type: object
+      required:
+        - id
+        - weekStart
+        - siteId
+        - origin
+        - status
+        - total
+        - closed
+        - blocked
+        - requestedBy
+        - failure
+        - createdAt
+        - startedAt
+        - finishedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        weekStart:
+          type: string
+          format: date
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        origin:
+          type: string
+          enum: [requested, scheduled]
+          description: >-
+            `requested` si la pidió una persona; `scheduled` si la abrió el
+            cierre programado.
+        status:
+          type: string
+          enum: [queued, running, done, failed]
+        total:
+          type: [integer, "null"]
+          description: Personas que entran a la corrida; nulo hasta que empieza.
+        closed:
+          type: integer
+          description: Personas que quedaron con un cierre vigente, incluidas las que ya lo tenían.
+        blocked:
+          type: object
+          description: Personas que no se cerraron, por motivo.
+          required: [openIncidents, openSegment]
+          properties:
+            openIncidents:
+              type: integer
+            openSegment:
+              type: integer
+        requestedBy:
+          type: [string, "null"]
+          format: uuid
+          description: Quien la pidió; nulo si la abrió el cierre programado.
+        failure:
+          type: [string, "null"]
+          description: Por qué no terminó; nulo si no falló.
+        createdAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: [string, "null"]
+          format: date-time
+        finishedAt:
+          type: [string, "null"]
+          format: date-time
+    WeekClosureRunList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeekClosureRun"
         nextCursor:
           $ref: "#/components/schemas/NextCursor"
     WeekClosureReopen:
@@ -4501,6 +5070,80 @@ components:
           format: date-time
           description: Hasta cuándo se puede descargar; nulo si no hay nada que descargar.
         createdAt:
+          type: string
+          format: date-time
+
+    ExportManifest:
+      type: object
+      description: >-
+        Lo que un exporte declara de sí mismo. Se guarda una vez, al preparar
+        el archivo, y no cambia.
+      required:
+        - exportId
+        - templateVersion
+        - format
+        - tenant
+        - weekStart
+        - timeZone
+        - siteId
+        - rowCount
+        - fileSha256
+        - closures
+        - generatedAt
+      properties:
+        exportId:
+          type: string
+          format: uuid
+        templateVersion:
+          type: integer
+          description: Versión de la plantilla del archivo.
+        format:
+          type: string
+          enum: [csv]
+        tenant:
+          type: object
+          required: [id, slug, name]
+          properties:
+            id:
+              type: string
+              format: uuid
+            slug:
+              type: string
+            name:
+              type: string
+        weekStart:
+          type: string
+          format: date
+        timeZone:
+          type: string
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        rowCount:
+          type: integer
+        fileSha256:
+          $ref: "#/components/schemas/Sha256Hex"
+          description: SHA-256 del archivo, byte por byte; el mismo valor que `fileHash` del exporte.
+        closures:
+          type: array
+          description: Un elemento por fila del archivo, en el mismo orden.
+          items:
+            type: object
+            required: [closureId, employeeId, version, ruleSetVersion, hash]
+            properties:
+              closureId:
+                type: string
+                format: uuid
+              employeeId:
+                type: string
+                format: uuid
+              version:
+                type: integer
+              ruleSetVersion:
+                type: integer
+              hash:
+                $ref: "#/components/schemas/Sha256Hex"
+        generatedAt:
           type: string
           format: date-time
 

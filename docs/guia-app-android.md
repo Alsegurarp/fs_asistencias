@@ -9,6 +9,12 @@ guarda el marcaje en una cola local cifrada. Todavía no se enrola, no firma ni
 sincroniza. Nada de esta guía se ha probado en un teléfono: se probó con un
 dispositivo simulado que hace exactamente estas llamadas.
 
+Ese dispositivo simulado se puede leer y correr: está en
+`backend/src/simulator/` y hace, contra el entorno local, la activación, la
+aserción y el sobre firmado de cada marcaje. Sirve de referencia mientras la
+app no lo haga. Cómo se corre está en
+[Entorno local](entorno-local.md#llenar-el-entorno-con-el-simulador-de-dispositivo).
+
 ## El recorrido
 
 ```text

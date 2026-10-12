@@ -27,6 +27,21 @@ class TenantUpdateRequest {
     var timeZone: String? = null
     var weekStartsOn: String? = null
     var breakPolicy: String? = null
+
+    // Aquí importa la diferencia entre no mandar el campo y mandarlo nulo: nulo
+    // apaga el cierre programado.
+    private var autoCloseGiven = false
+    var autoCloseAfterHours: Int? = null
+        set(value) {
+            field = value
+            autoCloseGiven = true
+        }
+
+    fun changesAutoClose(): Boolean = autoCloseGiven
+}
+
+class TenantStatusRequest {
+    var reason: String? = null
 }
 
 @Service
@@ -89,7 +104,8 @@ class TenantService(
         val timeZone = checks.timeZone("timeZone", request.timeZone, required = false)
         val weekStartsOn = checks.oneOf("weekStartsOn", request.weekStartsOn, Checks.WEEK_DAYS, required = false)
         val breakPolicy = checks.oneOf("breakPolicy", request.breakPolicy, Checks.BREAK_POLICIES, required = false)
-        if (name == null && timeZone == null && weekStartsOn == null && breakPolicy == null) {
+        val autoClose = checks.whole("autoCloseAfterHours", request.autoCloseAfterHours, MIN_AUTO_CLOSE, MAX_AUTO_CLOSE, required = false)
+        if (name == null && timeZone == null && weekStartsOn == null && breakPolicy == null && !request.changesAutoClose()) {
             checks.fail("", "empty_update", "Hay que cambiar al menos un campo.")
         }
         checks.done()
@@ -99,9 +115,56 @@ class TenantService(
             timeZone?.let { "timeZone" },
             weekStartsOn?.let { "weekStartsOn" },
             breakPolicy?.let { "breakPolicy" },
+            "autoCloseAfterHours".takeIf { request.changesAutoClose() },
         )
-        val tenant = tenants.update(tenantId, name, timeZone, weekStartsOn, breakPolicy) ?: throw Problems.notFound()
+        val tenant = tenants.update(tenantId, name, timeZone, weekStartsOn, breakPolicy, request.changesAutoClose(), autoClose)
+            ?: throw Problems.notFound()
         audit.record(tenantId, person, "tenant.updated", "tenant", tenantId, mapOf("fields" to changed.joinToString(",")))
         return tenant
+    }
+
+    /**
+     * Cierra la empresa para su propia gente y para sus dispositivos. No borra
+     * ni cambia nada: al reactivarla todo sigue como estaba.
+     */
+    @Transactional
+    fun suspend(operator: CurrentPerson, id: UUID, request: TenantStatusRequest): TenantRow =
+        changeStatus(operator, id, request, "active", "suspended", "tenant.suspended") {
+            Problems.conflict("tenant_not_active", "Esa empresa ya está suspendida.")
+        }
+
+    @Transactional
+    fun reactivate(operator: CurrentPerson, id: UUID, request: TenantStatusRequest): TenantRow =
+        changeStatus(operator, id, request, "suspended", "active", "tenant.reactivated") {
+            Problems.conflict("tenant_not_suspended", "Esa empresa no está suspendida.")
+        }
+
+    private fun changeStatus(
+        operator: CurrentPerson,
+        id: UUID,
+        request: TenantStatusRequest,
+        from: String,
+        to: String,
+        action: String,
+        conflict: () -> RuntimeException,
+    ): TenantRow {
+        val checks = Checks()
+        val reason = checks.text("reason", request.reason, MAX_REASON, required = true)
+        if (reason != null && reason.length in 1 until MIN_REASON) checks.fail("reason", "too_short", "Lleva al menos $MIN_REASON caracteres.")
+        checks.done()
+
+        if (tenants.find(id) == null) throw Problems.notFound()
+        // El cambio sólo ocurre si la empresa estaba en el estado del que se parte: dos peticiones a la vez no lo repiten.
+        val tenant = tenants.setStatus(id, from, to) ?: throw conflict()
+        // Queda en la bitácora de la propia empresa: quien la administra lo ve al volver.
+        audit.record(id, operator, action, "tenant", id, mapOf("reason" to reason!!))
+        return tenant
+    }
+
+    private companion object {
+        const val MIN_AUTO_CLOSE = 1
+        const val MAX_AUTO_CLOSE = 168
+        const val MIN_REASON = 10
+        const val MAX_REASON = 500
     }
 }

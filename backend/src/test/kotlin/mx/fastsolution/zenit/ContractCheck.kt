@@ -43,6 +43,9 @@ object ContractCheck {
     val checked = AtomicInteger()
     val answeredOk: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
+    /** Cuántos cuerpos de petición aceptados se han comprobado. */
+    val requestsChecked = AtomicInteger()
+
     private class Operation(val method: String, val template: String, val pattern: Regex, val pointer: String, val node: JsonNode)
 
     private val operations: List<Operation> by lazy {
@@ -61,7 +64,7 @@ object ContractCheck {
     /** Operaciones que el contrato describe, como «GET /ruta». */
     fun described(): Set<String> = operations.map { "${it.method} ${it.template}" }.toSet()
 
-    fun verify(method: String, rawPath: String, status: Int, contentType: String, body: String) {
+    fun verify(method: String, rawPath: String, status: Int, contentType: String, body: String, requestBody: String? = null) {
         val path = rawPath.substringBefore('?')
         if (!path.startsWith("$BASE/")) return
         val relative = path.removePrefix(BASE)
@@ -69,7 +72,11 @@ object ContractCheck {
         val operation = operations.firstOrNull { it.method == method && it.pattern.matches(relative) } ?: return
         val mediaType = contentType.substringBefore(';').trim().lowercase()
         checked.incrementAndGet()
-        if (status in 200..299) answeredOk += "${operation.method} ${operation.template}"
+        if (status in 200..299) {
+            answeredOk += "${operation.method} ${operation.template}"
+            // Lo que se aceptó también se compara: el cuerpo de la petición contra su esquema.
+            if (!requestBody.isNullOrEmpty()) checkRequest(operation, requestBody)
+        }
 
         var pointer = "${operation.pointer}/responses/$status"
         var response = operation.node.get("responses").get(status.toString())
@@ -97,7 +104,29 @@ object ContractCheck {
         check(operation, status, target, body)
     }
 
+    /**
+     * Lo que el backend aceptó tiene que ser un cuerpo que el contrato admite.
+     * Si acepta algo que el contrato no describe, un cliente generado del
+     * contrato no podría mandarlo y nadie sabría que existe.
+     */
+    private fun checkRequest(operation: Operation, body: String) {
+        val media = operation.node.get("requestBody")?.get("content")?.get("application/json") ?: return
+        val schema = media.get("schema") ?: return
+        val target = schema.get("\$ref")?.asString()?.removePrefix("#") ?: "${operation.pointer}/requestBody/content/${escape("application/json")}/schema"
+        requestsChecked.incrementAndGet()
+        val errors = violations(target, body)
+        if (errors.isNotEmpty()) {
+            throw AssertionError("${operation.method} ${operation.template} aceptó un cuerpo que el contrato no admite: $errors. Cuerpo: $body")
+        }
+    }
+
     private fun check(operation: Operation, status: Int, pointer: String, body: String) {
+        val errors = violations(pointer, body)
+        if (errors.isNotEmpty()) fail(operation, status, errors)
+    }
+
+    /** Lo que ese cuerpo incumple del esquema; vacío si lo cumple. */
+    private fun violations(pointer: String, body: String): String {
         val schema = schemas.computeIfAbsent(pointer) {
             registry.getSchema(SchemaLocation.of("$DOCUMENT#" + it.replace("{", "%7B").replace("}", "%7D")))
         }
@@ -108,7 +137,7 @@ object ContractCheck {
         // El validador sólo da por bueno un correo cuyo dominio está registrado, y los datos
         // ficticios usan a propósito el dominio reservado «.invalid»: ese formato no se exige.
         val real = errors.filterNot { it.keyword == "format" && "email" in it.message }
-        if (real.isNotEmpty()) fail(operation, status, real.joinToString("; ") { "${it.instanceLocation}: ${it.message}" })
+        return real.joinToString("; ") { "${it.instanceLocation}: ${it.message}" }
     }
 
     private fun fail(operation: Operation, status: Int, reason: String): Nothing =
