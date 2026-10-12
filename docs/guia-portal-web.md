@@ -14,8 +14,9 @@ probar el recorrido completo contra Keycloak y el backend real.
 
 La navegación de Incidencias, Cierres y Exportes respeta los roles de `/me`.
 Incidencias ya tiene listado, filtros, detalle, semana del empleado,
-asignación y resolución con los tres tipos de ajuste. Cierres y Exportes
-todavía muestran que están en preparación. El supervisor ve Incidencias y Cierres;
+asignación y resolución con los tres tipos de ajuste. Cierres ya permite
+consultar, cerrar, reabrir y seguir corridas; Exportes sigue en preparación.
+El supervisor ve Incidencias y Cierres;
 el auditor también ve Exportes. El administrador y RH ven las tres secciones.
 Los permisos de resolver, cerrar y reabrir se distinguen en `permissions()`;
 el servidor sigue siendo quien autoriza cada operación.
@@ -226,6 +227,12 @@ otra persona ya resolvió, se recarga el detalle y se retiran los controles;
 si la semana está cerrada, se pide que el administrador la reabra. Resolver
 actualiza la lista y vuelve a consultar la semana del empleado.
 
+Una incidencia abierta de marcaje faltante, con un tramo de trabajo sin salida,
+muestra **Agregar salida faltante** antes del resumen semanal. El botón prepara
+«Ajustar jornada → Agregar marcaje → Salida» y enfoca la fecha y hora; no
+inventa la hora ni guarda sin motivo. Justificar o confirmar una incidencia
+no agrega la salida y puede dejar la semana bloqueada.
+
 Verificado con pruebas de formularios y eventos React en jsdom, además de
 pruebas de payloads y zonas horarias. El PMO verifica el recorrido contra el
 backend real; estas pruebas usan respuestas simuladas.
@@ -258,6 +265,25 @@ backend real; estas pruebas usan respuestas simuladas.
 
 ## Cierre
 
+Implementado en `web/src/Closures.tsx`. La consulta usa una fecha de la semana
+y, opcionalmente, un empleado, con cursor. El API no filtra esta lista por
+sede: la sede sirve para filtrar la selección de empleados y para definir
+el alcance de una corrida. Se muestran todas las versiones, incluidas las
+reabiertas; el detalle conserva los totales de esa versión, sus reglas,
+huella, autor y acuse. Un autor nulo se identifica como cierre programado.
+
+Administrador y RH pueden cerrar; supervisor y auditor sólo consultan.
+Sólo el administrador puede reabrir, con motivo de 10 a 500 caracteres. Una
+selección vacía no se envía, para que nunca se interprete como cerrar toda la
+empresa. El cierre directo admite de 1 a 500 empleados; una sede es opcional.
+Los campos y el cierre del diálogo se deshabilitan durante la petición.
+Los errores conservan la selección y muestran la referencia de correlación.
+
+El resultado separa cierres vigentes y bloqueados. Cada incidencia ligada a
+un bloqueo abre su detalle con la semana correspondiente en Incidencias.
+Si el tramo procede de un ajuste sin marcaje original, puede no haber una
+incidencia ligada: el portal lo explica y no inventa una corrección.
+
 1. Elegir la semana y, opcionalmente, una sede.
 2. `POST /week-closures`. La respuesta separa `closed` y `blocked`.
 3. Para cada bloqueado, llevar a lo que falta: sus incidencias vienen en
@@ -268,6 +294,17 @@ Un 422 con el error `week_not_finished` quiere decir que la semana todavía no
 termina.
 
 ### Toda la empresa: la corrida de cierre
+
+La pantalla lista las corridas de la semana, con origen, sede, estado y
+conteos. El detalle sigue las pendientes cada cinco segundos y se detiene
+al terminar, fallar o recibir un error; un error permite reintentar el
+seguimiento. Al terminar se actualizan cierres, incidencias y jornadas.
+Una corrida fallida permite solicitar otra con la misma semana y sede.
+Los bloqueos enlazan las incidencias abiertas de ese alcance: el API entrega
+conteos, no una lista nominal de empleados bloqueados.
+
+La validación ejecutada y el guion de aceptación están en
+[Validación de cierres](validacion-cierres.md).
 
 `POST /week-closures` responde en la misma petición y admite hasta 500
 personas. Para cerrar a toda la empresa conviene la corrida, que no tiene

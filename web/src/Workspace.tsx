@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { Alert, Stack, Tab, Tabs, Typography } from '@mui/material'
 import { type Me, permissions } from './api'
 import { Directory } from './Directory'
-import { Incidents } from './Incidents'
+import { Incidents, type IncidentTarget } from './Incidents'
+import { Closures } from './Closures'
 
 const sections = ['sites', 'employees', 'cards', 'incidents', 'closures', 'exports'] as const
 const labels = { sites: 'Sedes', employees: 'Empleados', cards: 'Tarjetas', incidents: 'Incidencias', closures: 'Cierres', exports: 'Exportes' }
 
 export function Workspace({ me }: { me: Me }) {
   const [selected, setSelected] = useState<string>('sites')
+  const [incidentTarget, setIncidentTarget] = useState<IncidentTarget | undefined>()
   const allowed = permissions(me.roles)
   const tabs = me.tenant ? sections.filter(key => allowed[key]) : []
   const active = tabs.find(key => key === selected) || tabs[0]
@@ -23,7 +25,8 @@ export function Workspace({ me }: { me: Me }) {
     <Stack role="tabpanel" id={`panel-${active}`} aria-labelledby={`tab-${active}`} spacing={2}>
       {active === 'sites' || active === 'employees' || active === 'cards'
         ? <Directory key={active} kind={active} me={me} />
-        : active === 'incidents' ? <Incidents me={me} /> : <>
+        : active === 'incidents' ? <Incidents me={me} initial={incidentTarget} />
+        : active === 'closures' ? <Closures me={me} onIncidents={target => { setIncidentTarget(target); setSelected('incidents') }} /> : <>
           <Typography variant="h5">{labels[active]}</Typography>
           <Alert severity="info">Esta sección está en preparación. Sus funciones estarán disponibles en la siguiente etapa.</Alert>
         </>}

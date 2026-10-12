@@ -9,7 +9,7 @@ type Action = { mode: 'create' | 'edit' | 'assign' | 'revoke'; row?: Row }
 const names = { sites: 'Sedes', employees: 'Empleados', cards: 'Tarjetas' }
 const statuses: Record<string, string> = { active: 'Activo', inactive: 'Inactivo', inventory: 'Inventario', assigned: 'Asignada', revoked: 'Revocada', lost: 'Extraviada', damaged: 'Dañada', replaced: 'Reemplazada' }
 
-export function EntitySelect({ kind, name, label, value = '', required = false, onChange }: { kind: 'sites' | 'employees'; name: string; label: string; value?: string; required?: boolean; onChange?: (value: string) => void }) {
+export function EntitySelect({ kind, name, label, value = '', required = false, onChange, disabled = false }: { kind: 'sites' | 'employees'; name: string; label: string; value?: string; required?: boolean; onChange?: (value: string) => void; disabled?: boolean }) {
   const options = useInfiniteQuery({
     queryKey: [kind], initialPageParam: '',
     queryFn: ({ pageParam }) => api<Page<Site | Employee>>(`/${kind}${pageParam ? `?cursor=${encodeURIComponent(pageParam)}` : ''}`),
@@ -17,8 +17,8 @@ export function EntitySelect({ kind, name, label, value = '', required = false, 
   })
   const items = options.data?.pages.flatMap(page => page.items) || []
   return <>
-    <TextField select name={name} label={label} {...(onChange ? { value } : { defaultValue: value })} onChange={event => onChange?.(event.target.value)} required disabled={options.isPending}>
-      <MenuItem value="">{onChange && kind === 'sites' ? 'Todas las sedes' : required ? 'Selecciona una persona' : 'Sin sede'}</MenuItem>
+    <TextField select name={name} label={label} {...(onChange ? { value } : { defaultValue: value })} onChange={event => onChange?.(event.target.value)} required={required} disabled={disabled || options.isPending}>
+      <MenuItem value="">{onChange ? kind === 'sites' ? 'Todas las sedes' : 'Todos los empleados' : required ? 'Selecciona una persona' : 'Sin sede'}</MenuItem>
       {value && !items.some(item => item.id === value) && <MenuItem value={value}>Asignación actual</MenuItem>}
       {items.map(item => <MenuItem key={item.id} value={item.id}>{'name' in item ? item.name : `${item.displayName} · ${item.externalId}`}{item.status === 'inactive' ? ' (inactivo)' : ''}</MenuItem>)}
     </TextField>
