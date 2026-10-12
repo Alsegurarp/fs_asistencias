@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Alert, Stack, Tab, Tabs, Typography } from '@mui/material'
+import { Alert, Stack, Tab, Tabs } from '@mui/material'
 import { type Me, permissions } from './api'
 import { Directory } from './Directory'
 import { Incidents, type IncidentTarget } from './Incidents'
 import { Closures } from './Closures'
+import { Exports } from './Exports'
 
 const sections = ['sites', 'employees', 'cards', 'incidents', 'closures', 'exports'] as const
 const labels = { sites: 'Sedes', employees: 'Empleados', cards: 'Tarjetas', incidents: 'Incidencias', closures: 'Cierres', exports: 'Exportes' }
@@ -26,10 +27,7 @@ export function Workspace({ me }: { me: Me }) {
       {active === 'sites' || active === 'employees' || active === 'cards'
         ? <Directory key={active} kind={active} me={me} />
         : active === 'incidents' ? <Incidents me={me} initial={incidentTarget} />
-        : active === 'closures' ? <Closures me={me} onIncidents={target => { setIncidentTarget(target); setSelected('incidents') }} /> : <>
-          <Typography variant="h5">{labels[active]}</Typography>
-          <Alert severity="info">Esta sección está en preparación. Sus funciones estarán disponibles en la siguiente etapa.</Alert>
-        </>}
+        : active === 'closures' ? <Closures me={me} onIncidents={target => { setIncidentTarget(target); setSelected('incidents') }} /> : <Exports me={me} />}
     </Stack>
   </>
 }
