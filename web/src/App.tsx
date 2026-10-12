@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Alert, AppBar, Button, CircularProgress, Container, Stack, Tab, Tabs, Toolbar, Typography } from '@mui/material'
+import { Alert, AppBar, Button, CircularProgress, Container, Stack, Toolbar, Typography } from '@mui/material'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { auth, authReady } from './auth'
-import { api, type Me, permissions } from './api'
-import { Directory, ErrorNotice } from './Directory'
+import { api, type Me } from './api'
+import { ErrorNotice } from './Directory'
+import { Workspace } from './Workspace'
 
 export function App() {
   const cache = useQueryClient()
   const [ready, setReady] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
   const [error, setError] = useState('')
-  const [tab, setTab] = useState('sites')
   useEffect(() => {
     auth.onAuthLogout = () => { setSignedIn(false); cache.clear() }
     authReady.then(() => { setSignedIn(!!auth.authenticated); setReady(true) })
@@ -21,10 +21,6 @@ export function App() {
     return () => { window.clearInterval(timer); auth.onAuthLogout = undefined }
   }, [cache])
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), enabled: signedIn, retry: false })
-  const allowed = permissions(me.data?.roles || [])
-  const tabs = (['sites', 'employees', 'cards'] as const).filter(key => allowed[key])
-  const activeTab = tabs.find(key => key === tab) || tabs[0]
-  const labels = { sites: 'Sedes', employees: 'Empleados', cards: 'Tarjetas' }
   return <>
     <AppBar position="static"><Toolbar sx={{ gap: 2 }}>
       <Typography variant="h6" sx={{ flexGrow: 1 }}>Zenit · {me.data?.tenant?.name || 'fastSolution'}</Typography>
@@ -43,12 +39,7 @@ export function App() {
         {me.isError && <Button onClick={() => void me.refetch()}>Reintentar</Button>}
         {me.data && <>
           <Typography variant="h5">Hola, {me.data.displayName}</Typography>
-          {!me.data.tenant && <Alert severity="info">{me.data.roles.includes('operador_saas') ? 'Tu cuenta opera el servicio. La administración de empresas se implementará en una etapa posterior.' : 'Tu cuenta no tiene acceso a una empresa. Solicita una invitación a quien la administra.'}</Alert>}
-          {me.data.tenant && !tabs.length && <Alert severity="info">Tu cuenta está activa. Las pantallas de tu rol se implementarán en una etapa posterior.</Alert>}
-          {!!tabs.length && <>
-            <Tabs value={activeTab} onChange={(_, value: string) => setTab(value)} aria-label="Configuración de empresa">{tabs.map(key => <Tab key={key} value={key} label={labels[key]} />)}</Tabs>
-            <Directory key={activeTab} kind={activeTab} me={me.data} />
-          </>}
+          <Workspace me={me.data} />
         </>}
       </Stack>}
     </Container>
