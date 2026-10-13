@@ -328,6 +328,47 @@ tope y no hace esperar a la pantalla:
 - Un cierre hecho por el sistema trae `closedBy` en nulo: mostrar «cierre
   programado» donde iría el nombre de quien cerró.
 
+## Usuarios y roles
+
+La pestaña **Usuarios** sólo se muestra a `admin_empresa`. Lista usuarios con
+cursor, estado, roles y empleado vinculado. Usa `GET /users`, `POST /users`,
+`PATCH /users/{id}` y `POST /users/{id}/unlink`.
+
+La invitación exige correo y al menos un rol; permite nombre y empleado
+opcionales. No crea identidades, contraseñas ni envía correo. Crear la cuenta
+en el realm `zenit` con el mismo correo verificado y configurar su contraseña
+temporal y segundo factor sigue siendo tarea del administrador de Keycloak.
+
+La edición no cambia el correo y manda sólo los campos modificados. Desvincular
+del empleado envía `employeeId: null`; omitirlo conserva el vínculo. Habilitar
+restaura el estado activo si existe identidad ligada, o invitado si no existe.
+Si el backend responde `last_admin`, el formulario conserva sus valores:
+agregar otro administrador habilitado antes de quitar ese rol o acceso.
+Editar el propio acceso actualiza `/me` para ajustar la navegación.
+
+**Desvincular cuenta** exige confirmar que la identidad anterior fue desactivada
+en Keycloak: esta operación conserva los roles y no bloquea el acceso.
+Si la cuenta anterior sigue activa con el mismo correo verificado, vuelve
+a vincularse al entrar. Para quitar el acceso a la empresa, deshabilitarlo.
+Ni habilitación ni desvinculación cambian contraseñas o segundo factor.
+La pantalla de Trabajador continúa pendiente, aunque ya se puede asignar su rol.
+
+Prueba manual sugerida en Zenit Demo:
+
+1. Entrar como administración; comprobar que aparecen las cuatro cuentas demo.
+2. Invitar `demo.nuevo@zenit.example` con rol Auditoría: queda Invitado,
+   sin recibir correo. No necesita crear otra identidad para comprobar la lista.
+3. Cambiar nombre o roles de esa invitación y vincular/desvincular un empleado.
+4. Deshabilitar y habilitar la invitación; debe volver a Invitado.
+5. Intentar deshabilitar al único administrador: debe conservar el formulario
+   y mostrar el rechazo del servidor. Cancelar y conservar el acceso demo.
+6. Entrar como RH, supervisión y auditoría: no deben ver Usuarios.
+
+La desvinculación real se prueba sólo con una cuenta secundaria desactivada
+previamente en Keycloak. No usar la cuenta del único administrador para ese ensayo.
+Pruebas automatizadas: formularios y permisos en jsdom con API simulada;
+pendiente este recorrido con sesión real. No cambió el backend.
+
 ## Exportes
 
 La pantalla implementada permite elegir una fecha de la semana y una sede

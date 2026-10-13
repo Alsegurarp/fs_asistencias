@@ -46,6 +46,7 @@ export type Page<T> = { items: T[]; nextCursor: string | null }
 export type Site = { id: string; name: string; timeZone: string; latitude: number; longitude: number; radiusMeters: number; status: string }
 export type Employee = { id: string; externalId: string; displayName: string; siteId: string | null; employmentStart: string; employmentEnd: string | null; status: string; activeCardId: string | null }
 export type Card = { id: string; label: string; status: string; assignment: { employeeId: string } | null }
+export type TenantUser = { id: string; email: string; displayName: string; roles: string[]; status: 'invited' | 'active' | 'disabled'; createdAt: string; linkedAt: string | null; employeeId: string | null }
 
 export function permissions(roles: string[]) {
   return {
@@ -55,6 +56,7 @@ export function permissions(roles: string[]) {
     incidents: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     closures: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     exports: roles.some(r => ['admin_empresa', 'rh', 'auditor'].includes(r)),
+    users: roles.includes('admin_empresa'),
     editSites: roles.includes('admin_empresa'),
     editDirectory: roles.some(r => ['admin_empresa', 'rh'].includes(r)),
     resolveIncidents: roles.some(r => ['admin_empresa', 'rh', 'supervisor'].includes(r)),

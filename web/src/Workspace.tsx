@@ -5,9 +5,10 @@ import { Directory } from './Directory'
 import { Incidents, type IncidentTarget } from './Incidents'
 import { Closures } from './Closures'
 import { Exports } from './Exports'
+import { Users } from './Users'
 
-const sections = ['sites', 'employees', 'cards', 'incidents', 'closures', 'exports'] as const
-const labels = { sites: 'Sedes', employees: 'Empleados', cards: 'Tarjetas', incidents: 'Incidencias', closures: 'Cierres', exports: 'Exportes' }
+const sections = ['sites', 'employees', 'cards', 'incidents', 'closures', 'exports', 'users'] as const
+const labels = { sites: 'Sedes', employees: 'Empleados', cards: 'Tarjetas', incidents: 'Incidencias', closures: 'Cierres', exports: 'Exportes', users: 'Usuarios' }
 
 export function Workspace({ me }: { me: Me }) {
   const [selected, setSelected] = useState<string>('sites')
@@ -27,7 +28,7 @@ export function Workspace({ me }: { me: Me }) {
       {active === 'sites' || active === 'employees' || active === 'cards'
         ? <Directory key={active} kind={active} me={me} />
         : active === 'incidents' ? <Incidents me={me} initial={incidentTarget} />
-        : active === 'closures' ? <Closures me={me} onIncidents={target => { setIncidentTarget(target); setSelected('incidents') }} /> : <Exports me={me} />}
+        : active === 'closures' ? <Closures me={me} onIncidents={target => { setIncidentTarget(target); setSelected('incidents') }} /> : active === 'exports' ? <Exports me={me} /> : <Users me={me} />}
     </Stack>
   </>
 }

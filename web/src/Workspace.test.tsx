@@ -25,6 +25,11 @@ it('el supervisor ve incidencias y cierres, pero no exportes', () => {
   expect(html).not.toContain('id="tab-exports"')
 })
 
+it('sólo el administrador ve Usuarios', () => {
+  expect(render(['admin_empresa'])).toContain('id="tab-users"')
+  for (const role of ['rh', 'supervisor', 'auditor', 'trabajador']) expect(render([role])).not.toContain('id="tab-users"')
+})
+
 it.each(['trabajador', 'operador_saas', 'desconocido'])('no muestra navegación de empresa a %s', role => {
   expect(render([role])).not.toContain('role="tab"')
 })
