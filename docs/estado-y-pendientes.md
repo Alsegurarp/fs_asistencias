@@ -46,7 +46,7 @@ ni está publicado.
 | Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse |
-| Un ambiente publicado | No hay staging ni dirección pública. El portal ya admite la URL de identidad al construir su imagen y CSP; falta verificarlo y definir servidor, dominios, TLS, SMTP y cuentas personales |
+| Un ambiente publicado | No hay staging ni dirección pública. El portal ya admite la URL de identidad al construir su imagen y CSP; la imagen ya se construyó y comprobó con dos direcciones. Falta definir servidor, dominios, TLS, SMTP y cuentas personales |
 
 ## Pendientes del backend
 

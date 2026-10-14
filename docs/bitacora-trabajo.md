@@ -82,3 +82,9 @@ Faltan servidor y dominios, emisión y renovación de certificados, SMTP,
 configuración del realm activo, prueba de verificación y recuperación,
 cuentas personales con OTP y retiro de la cuenta temporal tras comprobar
 el acceso. No se habilitaron cambios de identidad sin SMTP ni se publicó.
+
+Actualización del 14 de octubre de 2026: la imagen del portal se construyó con
+la dirección de identidad local y con una ficticia HTTPS. En los dos casos la
+CSP de nginx y el cliente contienen la misma dirección, y la otra no aparece
+en el código servido. La imagen quedó restaurada con la dirección local.
+Siguen sin comprobarse nginx en ejecución y el recorrido de acceso por HTTPS.

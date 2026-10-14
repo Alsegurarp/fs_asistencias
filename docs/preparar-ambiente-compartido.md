@@ -18,8 +18,10 @@ usa esa dirección para el emisor y Keycloak para su hostname y los retornos
 del cliente del portal.
 
 Se comprobó la resolución de Compose con un dominio ficticio HTTPS y con la
-dirección local: portal, Keycloak y emisor coinciden. La construcción de la
-imagen y el recorrido de acceso siguen pendientes por Docker detenido.
+dirección local: portal, Keycloak y emisor coinciden. La imagen se construyó
+con la dirección local y con una ficticia HTTPS; en ambos casos la CSP de
+nginx y el cliente contienen la misma dirección y la otra no aparece. Siguen
+pendientes nginx en ejecución y el recorrido de acceso por HTTPS.
 
 ## Datos necesarios para continuar
 
