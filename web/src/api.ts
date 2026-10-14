@@ -9,16 +9,17 @@ export class ApiError extends Error {
 
 async function request(path: string, method = 'GET', body?: unknown, idempotencyKey?: string): Promise<Response> {
   const token = await accessToken()
+  const multipart = body instanceof FormData
   const response = await fetch(`/api/v1${path}`, {
     method,
     redirect: 'error',
     cache: 'no-store',
     headers: {
       Authorization: `Bearer ${token}`,
-      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      ...(body === undefined || multipart ? {} : { 'Content-Type': 'application/json' }),
       ...(idempotencyKey === undefined ? {} : { 'Idempotency-Key': idempotencyKey }),
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : multipart ? body : JSON.stringify(body),
   })
   if (!response.ok) {
     if (response.status === 401) auth.clearToken()
@@ -44,7 +45,7 @@ export async function apiDownload(path: string): Promise<{ blob: Blob; filename:
 export type Me = { userId: string; displayName: string; roles: string[]; tenant: { name: string; timeZone: string } | null }
 export type Page<T> = { items: T[]; nextCursor: string | null }
 export type Site = { id: string; name: string; timeZone: string; latitude: number; longitude: number; radiusMeters: number; status: string }
-export type Employee = { id: string; externalId: string; displayName: string; siteId: string | null; employmentStart: string; employmentEnd: string | null; status: string; activeCardId: string | null }
+export type Employee = { id: string; externalId: string; displayName: string; siteId: string | null; employmentStart: string; employmentEnd: string | null; status: string; activeCardId: string | null; currentScheduleId?: string | null }
 export type Card = { id: string; label: string; status: string; assignment: { employeeId: string } | null }
 export type TenantUser = { id: string; email: string; displayName: string; roles: string[]; status: 'invited' | 'active' | 'disabled'; createdAt: string; linkedAt: string | null; employeeId: string | null }
 
@@ -57,6 +58,8 @@ export function permissions(roles: string[]) {
     closures: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     exports: roles.some(r => ['admin_empresa', 'rh', 'auditor'].includes(r)),
     users: roles.includes('admin_empresa'),
+    schedules: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
+    imports: roles.some(r => ['admin_empresa', 'rh'].includes(r)),
     editSites: roles.includes('admin_empresa'),
     editDirectory: roles.some(r => ['admin_empresa', 'rh'].includes(r)),
     resolveIncidents: roles.some(r => ['admin_empresa', 'rh', 'supervisor'].includes(r)),

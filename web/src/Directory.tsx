@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, permissions, type Card, type Employee, type Me, type Page, type Site } from './api'
 
 type Kind = 'sites' | 'employees' | 'cards'
@@ -34,6 +34,14 @@ export function ErrorNotice({ error }: { error: Error | null }) {
     {error.errors.map((item, index) => <div key={index}>{item.field}: {item.message}</div>)}
     {error.correlationId && <div>Referencia: {error.correlationId}</div>}
   </>}</Alert>
+}
+
+function CurrentSchedule({ id }: { id: string | null }) {
+  const cache = useQueryClient()
+  const schedule = useQuery({ queryKey: ['schedule', id], queryFn: () => api<{ name: string }>(`/schedules/${id}`), enabled: !!id, retry: false })
+  useEffect(() => { if (schedule.error instanceof ApiError && schedule.error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) }, [schedule.error, cache])
+  if (!id) return <>Sin horario vigente</>
+  return <>{schedule.data?.name || 'Consultando horario…'}<ErrorNotice error={schedule.error} />{schedule.isError && <Button onClick={() => void schedule.refetch()}>Reintentar horario</Button>}</>
 }
 
 export function Directory({ kind, me }: { kind: Kind; me: Me }) {
@@ -94,7 +102,7 @@ export function Directory({ kind, me }: { kind: Kind; me: Me }) {
       <TableHead><TableRow><TableCell>{kind === 'employees' ? 'Empleado' : 'Nombre / número'}</TableCell><TableCell>Detalle</TableCell><TableCell>Estado</TableCell>{writable && <TableCell>Acciones</TableCell>}</TableRow></TableHead>
       <TableBody>{rows.map(row => <TableRow key={row.id}>
         <TableCell>{'displayName' in row ? row.displayName : 'name' in row ? row.name : row.label}</TableCell>
-        <TableCell>{'radiusMeters' in row ? `${row.timeZone} · Radio ${row.radiusMeters} m` : 'externalId' in row ? `${row.externalId} · Alta ${row.employmentStart}` : row.assignment ? `Empleado: ${row.assignment.employeeId}` : 'Sin asignar'}</TableCell>
+        <TableCell>{'radiusMeters' in row ? `${row.timeZone} · Radio ${row.radiusMeters} m` : 'externalId' in row ? `${row.externalId} · Alta ${row.employmentStart}` : row.assignment ? `Empleado: ${row.assignment.employeeId}` : 'Sin asignar'}{'externalId' in row && 'currentScheduleId' in row && <div>Horario vigente hoy: <CurrentSchedule id={row.currentScheduleId || null} /></div>}</TableCell>
         <TableCell>{statuses[row.status] || row.status}</TableCell>
         {writable && <TableCell>{kind !== 'cards' ? <Button onClick={() => open({ mode: 'edit', row })}>Editar</Button> : <>
           {row.status === 'inventory' && <Button onClick={() => open({ mode: 'assign', row })}>Asignar</Button>}

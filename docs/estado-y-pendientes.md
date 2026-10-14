@@ -3,6 +3,9 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
+El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
+respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
+
 ## Qué está hecho
 
 | Pieza | Estado |
@@ -13,9 +16,9 @@ cambia alguna de las tres cosas.
 | Identidad | Proveedor de identidad en el entorno local, con segundo factor obligatorio |
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
-| Respaldo | Ensayo que respalda, restaura en una instancia desechable y compara conteos. No guarda el respaldo |
+| Respaldo | Ensayo existente y nuevos modos para guardar paquetes age y restaurarlos sin origen, comparando conteos y huellas de contenido. Nuevos modos preparados; ejecución pendiente por Docker detenido |
 | Vulnerabilidades | Inventario y análisis de las cuatro imágenes. Ninguna tiene una alta o crítica sin atender: tres no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | Inicio de sesión PKCE, `/me`, sedes, empleados, tarjetas, incidencias, cierres, exportes CSV y usuarios con roles, habilitación y desvinculación. 107 pruebas del portal y compilación verificadas. El usuario comprobó acceso, catálogos, resolución de incidencias hasta cuatro cierres demo y descarga única del CSV; falta probar usuarios con sesión real y otros recorridos |
+| Portal | Inicio de sesión PKCE, `/me`, sedes, empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. 128 pruebas del portal y compilación verificadas. El usuario comprobó acceso, catálogos, incidencias hasta cuatro cierres demo, descarga única y usuarios; falta probar horarios e importación con sesión real y otros recorridos |
 | App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización por lotes, recibos y renovación. 6 pruebas unitarias y autoensayo en teléfono con servidor HTTP de prueba; debug y release compilan |
 | Conector | No existe |
 
@@ -39,11 +42,11 @@ ni está publicado.
 
 | Qué | Por qué importa |
 | --- | --- |
-| Completar el portal | Ya tiene acceso, padrón básico, incidencias, cierres, exportes y usuarios. Faltan horarios, importación, dispositivos y pantallas de operador y trabajador |
+| Completar el portal | Ya tiene acceso, padrón, horarios, importación, incidencias, cierres, exportes y usuarios. Faltan configuración de empresa, dispositivos y pantallas de operador y trabajador |
 | Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
-| Revisión jurídica | Los topes de jornada y el valor del acuse salen de una lectura de la ley sin revisar |
-| Un ambiente publicado | No hay staging ni dirección pública |
+| Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse |
+| Un ambiente publicado | No hay staging ni dirección pública. El portal ya admite la URL de identidad al construir su imagen y CSP; falta verificarlo y definir servidor, dominios, TLS, SMTP y cuentas personales |
 
 ## Pendientes del backend
 
@@ -79,7 +82,8 @@ ni está publicado.
 | Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática del correo ni recuperación de contraseña |
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
 | Staging y TLS | Un ambiente publicado |
-| Guardar el respaldo: dónde, cifrado, cuánto tiempo y la copia fuera de la máquina | Un ambiente publicado. El ensayo ya existe |
+| Verificar los nuevos respaldos cifrados y la restauración aislada | Docker Desktop funcionando. Código, autoprueba y comandos en [Respaldos cifrados](respaldos-cifrados.md) |
+| Destino externo, periodicidad y retención del respaldo; recuperación completa del servicio | Decisiones del ambiente publicado. La copia local cifrada no sustituye la copia fuera de la máquina |
 | Cuotas compartidas entre instancias y dirección real del cliente | Cómo se publique el servidor |
 
 ## Vulnerabilidades conocidas
@@ -163,15 +167,16 @@ defecto se pueda aprovechar aquí.
   confiable después de guardar y reabrir el archivo.
 - **Un marcaje rechazado por sesión vencida se pierde.** Pasadas 72 horas sin
   conexión, la app tiene que abrir otra sesión antes de seguir marcando.
-- **El respaldo no se guarda.** El ensayo prueba que se puede restaurar; no
-  deja una copia.
+- **El respaldo cifrado aún no se ejecutó.** El nuevo modo conserva una copia
+  local; falta probarlo y definir copia externa, periodicidad y retención.
 - **No hay notificaciones.** Nadie recibe aviso de una incidencia, un cierre,
   una corrida terminada o un exporte listo: se consulta.
 - **No hay totales en las listas.** Se recorren con cursor.
 
 ## Sin verificar
 
-- La lectura jurídica de los topes y de a qué semana pertenece un turno.
+- El dictamen jurídico del cálculo y del acuse. La revisión documental
+  identificó brechas en [Revisión jurídica](revision-juridica-jornada-acuse.md).
 - El formato que pide un sistema de nómina real.
 - El recorrido del portal contra Keycloak y el backend real: ya implementa
   las llamadas, pero sólo se verificaron la compilación y pruebas del cliente.
@@ -189,6 +194,8 @@ defecto se pueda aprovechar aquí.
   sobre Windows.
 - El ensayo de respaldo con una base que no quepa en memoria, y una
   restauración sobre un entorno nuevo de verdad, con sus secretos.
+- Construcción y autoprueba de los nuevos modos de respaldo age y restauración
+  sin origen; comparación de contenido añadida también al ensayo existente.
 - Empezar de cero un entorno que ya existía, en la máquina de otra persona:
   se comprobó que un volumen de la imagen anterior no arranca con la nueva y
   que un entorno nuevo sí, no el cambio en un entorno con uso.
