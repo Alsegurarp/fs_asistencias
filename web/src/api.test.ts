@@ -34,6 +34,13 @@ describe('Permisos del contrato', () => {
 describe('Cliente del API', () => {
   beforeEach(() => { session.accessToken.mockResolvedValue('token-renovado'); session.auth.clearToken.mockClear() })
   afterEach(() => vi.unstubAllGlobals())
+  it('envía multipart con token y clave, dejando al navegador generar el límite', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response('{"status":"ready"}', { status: 202 }))
+    vi.stubGlobal('fetch', fetch)
+    const body = new FormData(); body.append('file', new Blob(['external_id']), 'empleados.csv'); body.append('dryRun', 'true')
+    await api('/imports/csv', 'POST', body, 'clave-importacion')
+    expect(fetch).toHaveBeenCalledWith('/api/v1/imports/csv', { method: 'POST', redirect: 'error', cache: 'no-store', headers: { Authorization: 'Bearer token-renovado', 'Idempotency-Key': 'clave-importacion' }, body })
+  })
   it('usa el token renovado y envía JSON sólo en una mutación', async () => {
     const fetch = vi.fn().mockResolvedValue(new Response('{"id":"sede"}', { status: 201 }))
     vi.stubGlobal('fetch', fetch)

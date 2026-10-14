@@ -30,6 +30,85 @@ archivo indicado por el servidor, sin interpretar el CSV como JSON. Ambos
 caminos renuevan la credencial y conservan los errores de campos y la
 referencia de correlación; las descargas no se reintentan automáticamente.
 Las peticiones autenticadas no admiten redirecciones ni caché HTTP.
+`api()` también admite `FormData` para importar el CSV: conserva token y clave,
+sin fijar `Content-Type`, para que el navegador genere el límite multipart.
+
+## Horarios y asignaciones
+
+La pestaña **Horarios** permite consultar a administración, RH, supervisión
+y auditoría; sólo administración y RH crean y asignan. Lista los horarios
+con cursor y muestra zona, vigencia, días, entrada, salida y descanso.
+Una salida anterior a la entrada termina al día siguiente. No se edita un
+horario existente: se crea otro con su vigencia.
+
+Crear usa `POST /schedules` con entre uno y siete días distintos. El servidor
+valida zona IANA, vigencias, entrada distinta de salida y descanso de 0 a 480
+minutos que quepa en el turno. Los errores conservan el formulario.
+
+**Asignar** elige un empleado y una fecha, y usa
+`POST /employees/{id}/schedule-assignments`. La fecha debe estar dentro de la
+vigencia del horario y después del inicio de la última asignación. La anterior
+se cierra el día previo si se cruza; la nueva termina con la vigencia del horario.
+El resultado confirma las fechas. Empleados muestra el horario **vigente hoy**:
+una asignación futura no aparece como vigente todavía. El API no ofrece una
+lista de historial de asignaciones. El horario tampoco determina retardos,
+faltas ni salida anticipada en el cálculo actual de asistencia.
+
+## Importación de empleados
+
+La pestaña **Importar empleados** sólo está disponible para administración y RH.
+Permite descargar un ejemplo, seleccionar un CSV, validarlo sin escribir el
+padrón y aplicar explícitamente las filas aceptadas. Muestra conteos, errores
+por fila y huella del manifiesto del servidor. No verifica esa huella localmente.
+
+El formato UTF-8 es:
+
+```csv
+external_id,display_name,employment_start,site_name
+IMPORT-DEMO-001,Elena Demo,2026-10-01,
+IMPORT-DEMO-002,Fernando Demo,2026-10-01,
+```
+
+El límite es 1 MB de archivo y 5.000 filas. `site_name` es el nombre exacto de
+una sede activa; nombres ambiguos se rechazan. Una sede vacía deja al empleado
+sin sede, también al actualizarlo. El identificador externo hace alta o
+actualización de nombre, sede y fecha de alta, conservando estado y tarjetas.
+No se eliminan empleados. Las filas rechazadas no se aplican; se muestran para
+corregirlas. Un error estructural de encabezados o codificación impide aplicar.
+
+Se envía multipart a `POST /imports/csv`: `file`, `dryRun=true` al validar y
+`dryRun=false` al aplicar. Cada paso conserva su clave de idempotencia al
+reintentar y usa una distinta del otro. Cambiar el archivo descarta la validación
+y exige confirmar de nuevo. Aplicar exige al menos una fila aceptada y una
+confirmación que incluye conteos y el aviso de actualización de empleados.
+Después de aplicar se actualiza la consulta del padrón. Nginx admite 2 MB de
+petición para que el envoltorio multipart no rechace un archivo válido de 1 MB;
+el backend mantiene los límites de archivo y petición.
+
+La validación es una vista previa: aplicar vuelve a validar contra el estado
+actual del backend. Los resultados pueden variar si cambian las sedes entre
+ambos pasos. No hay historial en pantalla ni se conserva el archivo al abandonar
+la pestaña. Si se perdió la respuesta, reintentar antes de cambiar el archivo.
+
+### Prueba manual de ambos entregables
+
+1. Como administración o RH, crear un horario lunes a viernes, 09:00–17:00,
+   descanso 0, zona `America/Mexico_City`, vigente desde `2026-10-01`.
+2. Asignarlo a Ana Demo desde `2026-10-01`. Verificar la confirmación y el
+   horario vigente en Empleados. Si ya tiene asignación, usar una fecha posterior
+   a su inicio y dentro de la vigencia del horario nuevo.
+3. Crear otro turno, 22:00–06:00, y comprobar la indicación del día siguiente.
+4. Probar salida igual a entrada o descanso demasiado largo: debe rechazar y
+   conservar el formulario. Consultar como auditor: sin botones de escritura.
+5. Descargar el CSV de ejemplo, validarlo y comprobar dos filas aceptadas
+   antes de aplicar. Confirmar y aplicar; buscar `IMPORT-DEMO-001` y
+   `IMPORT-DEMO-002` en Empleados. No asigna tarjetas ni horarios automáticamente.
+6. Repetir con una fila de fecha inválida: mostrar el error y exigir confirmar
+   cuántas filas se aplican. No aplicar si sólo se quería probar la validación.
+
+Verificación automática: 128 pruebas del portal y compilación correctas.
+Las pruebas de UI usan API simulada; queda pendiente este recorrido con la
+sesión real. Se reutilizaron las rutas existentes, sin cambios en el backend.
 
 Para desarrollar el portal fuera de Docker: `cd web`, `pnpm install` y
 `pnpm dev`. Usa `http://localhost:8081`, la misma dirección de retorno que el

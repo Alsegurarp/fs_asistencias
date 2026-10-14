@@ -30,6 +30,14 @@ it('sólo el administrador ve Usuarios', () => {
   for (const role of ['rh', 'supervisor', 'auditor', 'trabajador']) expect(render([role])).not.toContain('id="tab-users"')
 })
 
+it('permite consultar horarios a los cuatro roles e importar sólo a administración y RH', () => {
+  for (const role of ['admin_empresa', 'rh', 'supervisor', 'auditor']) {
+    const html = render([role])
+    expect(html).toContain('id="tab-schedules"')
+    expect(html.includes('id="tab-imports"')).toBe(['admin_empresa', 'rh'].includes(role))
+  }
+})
+
 it.each(['trabajador', 'operador_saas', 'desconocido'])('no muestra navegación de empresa a %s', role => {
   expect(render([role])).not.toContain('role="tab"')
 })
