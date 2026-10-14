@@ -118,9 +118,10 @@ a pulsar «Iniciar sesión»: los tokens no se guardan; Keycloak conserva su
 sesión y decide si hace falta pedir credenciales otra vez.
 
 `VITE_IDENTITY_URL` permite cambiar la dirección de identidad en desarrollo.
-Para otro ambiente, también debe ajustarse el origen permitido en `connect-src`
-de `web/nginx.conf`, el realm y las direcciones del backend; la configuración
-de Docker actual está preparada para el entorno local.
+En Docker, Compose pasa `IDENTITY_URL` a la construcción del portal y a
+`connect-src` de nginx; cambiarla exige reconstruir la imagen. El backend y
+Keycloak usan la misma dirección. La publicación, TLS y configuración del
+realm activo siguen pendientes; ver [Ambiente compartido](preparar-ambiente-compartido.md).
 
 Comprobaciones del portal: `pnpm build` y `pnpm test` desde `web/`.
 

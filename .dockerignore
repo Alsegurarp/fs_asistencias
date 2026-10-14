@@ -3,6 +3,7 @@
 .env
 .env.*
 secrets/
+backups/
 *.key
 *.pem
 .idea/

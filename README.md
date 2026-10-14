@@ -390,8 +390,9 @@ El entorno local sigue las mismas reglas que tendrá un ambiente publicado.
   de componentes. Lo que tiene corrección publicada y la imagen base o Spring
   Boot todavía no traen se adelanta, con la versión mínima corregida y un
   comentario que dice por qué.
-- El respaldo se ensaya: un rol que sólo lee respalda las dos bases, se
-  restauran en una instancia desechable y se comparan los conteos.
+- El respaldo usa un rol que sólo lee. Los nuevos modos guardan un paquete
+  cifrado y lo restauran sin el origen, comparando conteos y huellas de
+  contenido; están preparados, pendientes de ejecución.
 
 Las herramientas que no atienden peticiones tienen sus propias reglas. El
 generador de secretos, el inventario y el análisis de vulnerabilidades corren
@@ -429,6 +430,8 @@ hace falta, porque la app firma su propia aserción con un interceptor.
 | --- | --- |
 | Llenar el entorno con personas, dispositivos y marcajes simulados | `docker compose --profile tools run --rm device-sim` |
 | Ensayar el respaldo y la restauración | `docker compose --profile ops run --rm backup-rehearsal` |
+| Guardar una copia cifrada | `docker compose --profile ops run --rm backup` |
+| Verificar esa copia sin el origen | `docker compose --profile ops run --rm backup-restore` |
 | Inventario de lo que lleva una imagen | `docker compose --profile tools run --rm sbom` |
 | Vulnerabilidades conocidas de ese inventario | `docker compose --profile tools run --rm vuln-scan` |
 
@@ -437,9 +440,9 @@ exportada a un archivo. Está en [Entorno local](docs/entorno-local.md).
 
 - El simulador vive en `backend/src/simulator/` y habla con el backend sólo
   por el API. Sólo sirve con la tarjeta simulada encendida y datos ficticios.
-- El ensayo de respaldo no conserva nada: prueba que el respaldo se puede
-  restaurar. Dónde se guarda un respaldo de verdad se decide con el primer
-  ambiente publicado.
+- El ensayo no conserva nada. El nuevo modo guarda una copia cifrada local;
+  preparar las claves según [Respaldos cifrados](docs/respaldos-cifrados.md).
+  La copia externa, retención y recuperación completa siguen pendientes.
 - `vuln-scan` termina con error si hay una vulnerabilidad alta o crítica sin
   atender. Lo que una persona decide aceptar se anota en `.grype.yaml`, con
   su motivo, alcance y fecha de revisión.

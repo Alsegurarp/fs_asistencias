@@ -73,7 +73,7 @@ Copiar `.env.example` a `.env` es opcional. Sólo hace falta para cambiar algo:
 | --- | --- | --- |
 | `BIND_ADDRESS` | `127.0.0.1` | En qué interfaz se publican los puertos |
 | `BACKEND_PORT`, `WEB_PORT`, `KEYCLOAK_PORT` | 8080, 8081, 8082 | Los puertos |
-| `PORTAL_URL`, `IDENTITY_URL` | Las direcciones locales | Cómo se anuncian el portal y la identidad |
+| `PORTAL_URL`, `IDENTITY_URL` | Las direcciones locales | Cómo se anuncian el portal y la identidad; `IDENTITY_URL` también se incorpora al portal y su CSP al construir la imagen |
 | `CAPTURE_SIMULATED_CARDS` | `false` | Aceptar la tarjeta simulada. Sólo con datos ficticios |
 | `EXPORTS_TTL_MINUTES` | 15 | Cuánto se puede descargar un exporte listo |
 | `JOBS_ENABLED` | `true` | Que este backend atienda los trabajos encolados |
@@ -319,6 +319,10 @@ historial.
 
 ## Ensayar el respaldo y la restauración
 
+Para conservar una copia cifrada y restaurarla en un contenedor nuevo sin
+acceso al origen, ver [Respaldos cifrados](respaldos-cifrados.md). Los modos
+nuevos y la comparación de contenido están preparados, pendientes de ejecución.
+
 Un respaldo que nunca se ha restaurado no es un respaldo. Este ensayo lo
 comprueba de punta a punta, con el entorno levantado:
 
@@ -334,7 +338,8 @@ de identidad:
    dentro de esa misma instantánea.
 3. Levanta una instancia de PostgreSQL desechable dentro del propio
    contenedor, sin puerto de red, y restaura ahí el respaldo.
-4. Vuelve a contar y exige que cada tabla tenga las mismas filas.
+4. Vuelve a contar y compara además una huella SHA-256 del contenido de cada
+   tabla; una modificación que conserve el conteo también debe detectarse.
 
 Como el conteo y el respaldo ven la misma instantánea, la comparación es
 exacta aunque el backend siga escribiendo mientras tanto.
@@ -353,15 +358,14 @@ BACKUP_TAMPER=true docker compose --profile ops run --rm backup-rehearsal
 
 Límites de este ensayo:
 
-- **No guarda el respaldo.** Dónde se guarda, cómo se cifra, cuánto se
-  conserva y la copia fuera de la máquina se deciden con el primer ambiente
-  publicado. Aquí se prueba que el respaldo se puede restaurar.
+- **El modo de ensayo no guarda el respaldo.** El nuevo modo `backup` guarda
+  un paquete cifrado local; la retención y copia externa siguen pendientes.
 - **Restaura en memoria.** Sirve mientras la base quepa en la memoria del
   contenedor, que es el caso en local.
 - **Las contraseñas de los roles no van en el respaldo.** Al restaurar en un
   entorno nuevo las ponen los secretos y la inicialización de la base.
-- **Compara conteos, no contenido.** Una fila alterada sin cambiar el número
-  de filas no se detecta.
+- **La comparación de contenido usa memoria por tabla.** Antes de tablas de
+  millones de filas hay que verificar por lotes.
 
 Una base sin tablas también hace fallar el ensayo: no habría nada que
 comprobar.
@@ -370,7 +374,8 @@ Se corrió 16 veces con la imagen anterior de la base, 12 de ellas mientras el
 backend escribía: 130 tablas iguales en todas, con el total de filas
 creciendo de una corrida a la siguiente. Con la imagen actual se repitió 4
 veces, sin escrituras a la vez. En las dos, el modo de control falló como
-debe.
+debe. Esas ejecuciones verificaron la versión que comparaba sólo conteos;
+la nueva comparación de contenido todavía no se ejecutó.
 
 ## Revisar vulnerabilidades
 

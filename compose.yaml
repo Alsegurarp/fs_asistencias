@@ -14,6 +14,7 @@ x-postgres: &postgres
   build:
     context: infra/postgres
     dockerfile: Dockerfile
+    target: database
 
 # La ordenación y las mayúsculas las resuelve el propio motor, por código de
 # carácter: no dependen del sistema operativo de la imagen.
@@ -176,6 +177,8 @@ services:
     build:
       context: web
       dockerfile: Dockerfile
+      args:
+        VITE_IDENTITY_URL: ${IDENTITY_URL:-http://localhost:8082}
     <<: *hardening
     read_only: true
     tmpfs:
@@ -366,6 +369,59 @@ services:
         condition: service_healthy
     networks:
       - datos
+    pids_limit: 256
+    mem_limit: 1g
+
+  # Guarda sólo el paquete cifrado; no recibe la clave privada.
+  backup:
+    profiles: ["ops"]
+    <<: *hardening
+    build:
+      context: infra/postgres
+      target: backup-tools
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /work:uid=70,gid=70,mode=0700
+    environment:
+      PGHOST: db
+      BACKUP_MODE: backup
+      BACKUP_DATABASES: ${POSTGRES_DB:-zenit} keycloak
+      BACKUP_RECIPIENT: ${BACKUP_RECIPIENT:-}
+    secrets: [db_backup_password]
+    entrypoint: ["bash", "/opt/zenit/rehearse.sh"]
+    volumes:
+      - ./infra/postgres/backup/rehearse.sh:/opt/zenit/rehearse.sh:ro
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [datos]
+    pids_limit: 256
+    mem_limit: 1g
+
+  # Instancia nueva sin red ni acceso a la base original ni sus contraseñas.
+  backup-restore:
+    profiles: ["ops"]
+    <<: *hardening
+    build:
+      context: infra/postgres
+      target: backup-tools
+    read_only: true
+    tmpfs: [/tmp]
+    environment:
+      BACKUP_MODE: restore
+      BACKUP_FILE: ${BACKUP_FILE:-}
+      BACKUP_TAMPER: ${BACKUP_TAMPER:-false}
+      RESTORE_INITDB_ARGS: *postgres-initdb
+    entrypoint: ["bash", "/opt/zenit/rehearse.sh"]
+    volumes:
+      - ./infra/postgres/backup/rehearse.sh:/opt/zenit/rehearse.sh:ro
+      - ./backups:/backups:ro
+      - ./secrets/backup-age.key:/run/secrets/backup-age.key:ro
+      # Volumen nuevo por ejecución, en disco; --rm lo elimina al terminar.
+      - /work
+    network_mode: none
     pids_limit: 256
     mem_limit: 1g
 

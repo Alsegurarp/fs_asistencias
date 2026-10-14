@@ -193,8 +193,10 @@ nace con el calendario de reducción de la jornada en México.
 
 El máximo diario combinado, ordinario más extraordinario, es de 12 horas.
 
-Esta lectura de la ley **no tiene revisión jurídica**. No debe usarse con datos
-reales hasta tenerla.
+El calendario se contrastó con el DOF el 14 de octubre de 2026, pero el cálculo
+**no tiene dictamen jurídico**. La [revisión documental](revision-juridica-jornada-acuse.md)
+identifica límites diarios, descansos y otras reglas que el código todavía
+no aplica. No debe usarse como cálculo legal de nómina.
 
 ### Totales y alertas
 
@@ -281,6 +283,11 @@ Cada ajuste sube en uno la versión de los tramos de esa semana.
   versión nueva nace sin acuse y la anterior conserva el suyo.
 - Sólo el del propio trabajador: el cierre de otra persona no existe para él.
 - Un cierre reabierto no se puede acusar.
+
+El acuse es una manifestación registrada sobre el resumen; la huella la
+calcula el servidor. No se acredita automáticamente una firma avanzada ni
+el acuerdo exigido para el registro electrónico. Véase la
+[revisión documental del acuse](revision-juridica-jornada-acuse.md#acuse-evidencia-disponible-y-lo-que-falta).
 
 ## Exportes
 
