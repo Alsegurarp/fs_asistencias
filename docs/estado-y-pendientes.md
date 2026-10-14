@@ -1,4 +1,4 @@
-# Estado y pendientes
+﻿# Estado y pendientes
 
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.

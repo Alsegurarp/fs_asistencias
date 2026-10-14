@@ -1,4 +1,4 @@
-# Zenit
+﻿# Zenit
 
 Plataforma de control de jornada desarrollada por fastSolution.
 
@@ -11,6 +11,10 @@ pendiente de verificar. Android implementa enrolamiento, sobres firmados y
 sincronización con cola cifrada; se verificó en un teléfono con un servidor de
 prueba, todavía sin tarjetas ni backend reales. Cada aplicación mantiene
 toolchain, dependencias y build propios.
+
+Android debug también incluye una presentación independiente del producto,
+con históricos y panel de Administrador/RH. Su alcance está en
+[Producto móvil](docs/alcance-producto-movil.md).
 
 ## Documentación
 

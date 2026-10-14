@@ -1,4 +1,4 @@
-# Guía de la app Android
+﻿# Guía de la app Android
 
 Qué tiene que hacer la app para enrolarse, identificarse, marcar, trabajar sin
 conexión y mostrar la semana. Antes conviene leer
@@ -11,6 +11,11 @@ Guarda los recibos cifrados y muestra el tipo decidido por el servidor; un
 rechazo con recibo sale de pendientes y queda disponible para revisión.
 Puede renovar la sesión y volver a enrolarse. Semana y acuse todavía no están
 implementados.
+
+La variante debug añade el botón «Ver presentación del producto». Abre una
+actividad separada con el diseño, los históricos y el panel de Administrador/RH
+descritos en [Producto móvil](alcance-producto-movil.md). Sus datos son locales
+y no sustituyen la captura, los recibos ni la vinculación del flujo operativo.
 
 Debug y release compilan; pasan 6 pruebas unitarias. El autoensayo pasó en un
 Samsung SM-S928B con Android API 36: verifica firmas reales de Keystore,

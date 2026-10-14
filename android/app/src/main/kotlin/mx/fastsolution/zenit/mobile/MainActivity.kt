@@ -1,6 +1,7 @@
-package mx.fastsolution.zenit.mobile
+﻿package mx.fastsolution.zenit.mobile
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
 import android.nfc.Tag
@@ -60,6 +61,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
             val state by viewModel.state.collectAsStateWithLifecycle()
             ZenitApp(
                 state = state,
+                onOpenPresentation = { startActivity(Intent(this, PresentationActivity::class.java)) },
                 nfcAvailable = nfcReady,
                 locationGranted = locationGranted,
                 onActivate = viewModel::activate,
@@ -126,6 +128,7 @@ private fun ZenitApp(
     onSynchronize: () -> Unit,
     onRenewSession: () -> Unit,
     onSelectType: (String?) -> Unit,
+    onOpenPresentation: () -> Unit,
 ) {
     var baseUrl by remember(state.serverUrl) { mutableStateOf(state.serverUrl) }
     var code by remember { mutableStateOf("") }
@@ -136,7 +139,7 @@ private fun ZenitApp(
         if (state.breakPolicy != "marked" && selectedType in setOf("break_start", "break_end")) selectedType = null
         onSelectType(selectedType)
     }
-    MaterialTheme {
+    MaterialTheme(colorScheme = ZenitColors) {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
@@ -152,6 +155,7 @@ private fun ZenitApp(
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
+                if (BuildConfig.DEBUG) Button(onClick = onOpenPresentation) { Text("Ver presentación del producto") }
                 if (BuildConfig.DEBUG) Text("Modo de pruebas: tarjetas simuladas. Sólo datos ficticios.", color = MaterialTheme.colorScheme.error)
                 if (state.registered) Text(state.deviceLabel, style = MaterialTheme.typography.titleMedium)
                 if (!state.registered || reenrolling) {
