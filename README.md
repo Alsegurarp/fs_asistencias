@@ -1,12 +1,13 @@
-# Zenit
+﻿# Zenit
 
 Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
 Monorepo del producto. El backend atiende las 60 operaciones del contrato, con
-pruebas contra PostgreSQL real. El portal web y la aplicación Android son
-esqueletos que compilan y todavía no llaman al API. Cada aplicación mantiene
+pruebas contra PostgreSQL real. El portal web consulta el estado del API;
+Android incorpora una primera activación con un flujo de vinculación por código,
+con captura deshabilitada hasta completar firma y sincronización. Cada aplicación mantiene
 toolchain, dependencias y build propios.
 
 ## Documentación

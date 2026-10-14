@@ -1,4 +1,4 @@
-# Estado y pendientes
+﻿# Estado y pendientes
 
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
@@ -16,7 +16,7 @@ cambia alguna de las tres cosas.
 | Respaldo | Ensayo que respalda, restaura en una instancia desechable y compara conteos. No guarda el respaldo |
 | Vulnerabilidades | Inventario y análisis de las cuatro imágenes. Ninguna tiene una alta o crítica sin atender: tres no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
 | Portal | Esqueleto que compila; no inicia sesión ni tiene pantallas |
-| App Android | Esqueleto que lee NFC, toma ubicación y guarda en una cola cifrada; no se enrola ni sincroniza |
+| App Android | Primera activación implementada; falta verificar la activación y completar sesiones, sobres y sincronización. Captura deshabilitada |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -173,8 +173,10 @@ defecto se pueda aprovechar aquí.
 
 - La lectura jurídica de los topes y de a qué semana pertenece un turno.
 - El formato que pide un sistema de nómina real.
-- Cualquier cliente contra el servidor: ni el portal ni la app llaman al API
-  todavía. Los clientes generados del contrato sólo se compilaron.
+- La activación de Android contra el servidor y su sincronización. La app
+  incorpora las llamadas de activación ; el portal
+  sólo consulta el estado del API. Los clientes generados del contrato sólo
+  se compilaron.
 - La app en un teléfono, con una tarjeta real.
 - Carga: una corrida de cierre se probó con 511 personas y un exporte con
   unas decenas de filas, no con más.

@@ -1,12 +1,25 @@
-# Guía de la app Android
+﻿# Guía de la app Android
 
 Qué tiene que hacer la app para enrolarse, identificarse, marcar, trabajar sin
 conexión y mostrar la semana. Antes conviene leer
 [Consumir el API](consumir-el-api.md).
 
-Estado: el módulo `android/` lee la tarjeta por NFC, toma una ubicación y
-guarda el marcaje en una cola local cifrada. Todavía no se enrola, no firma ni
-sincroniza. Nada de esta guía se ha probado en un teléfono: se probó con un
+La versión compartida actualmente es una presentación navegable con marcaje,
+Administrador/RH, históricos y dispositivo mostrado como vinculado.
+Su alcance y los recorridos de revisión están en
+[Producto móvil](alcance-producto-movil.md).
+Los datos y acciones de esa presentación son locales; no registran asistencia
+ni autentican usuarios contra el servidor.
+
+Estado técnico: se agregó una primera implementación de activación con código y clave
+P-256 en Android Keystore; se verificaron compilación, pruebas unitarias y lint
+en Docker, pero falta probar la activación contra el backend.
+El esqueleto incluye NFC, ubicación y cola local cifrada, pero la
+captura está deshabilitada hasta implementar sobres firmados y sincronización.
+Consulta [Inicio del desarrollo móvil](inicio-app-android.md) para el alcance
+de esta entrega y las siguientes tareas.
+La instalación y la pantalla inicial se comprobaron en un teléfono;
+las llamadas de este recorrido se probaron con un
 dispositivo simulado que hace exactamente estas llamadas.
 
 Ese dispositivo simulado se puede leer y correr: está en

@@ -1,4 +1,4 @@
-# Documentación de Zenit
+﻿# Documentación de Zenit
 
 Zenit registra la asistencia de las personas de una empresa con una tarjeta
 NFC y un teléfono Android, calcula su jornada semanal con reglas laborales que
@@ -30,6 +30,7 @@ contradice al contrato, manda el contrato.
 | [Lógica de negocio](logica-de-negocio.md) | Las reglas que el servidor aplica y cuáles son provisionales |
 | [Consumir el API](consumir-el-api.md) | Credenciales, errores, páginas, idempotencia y recomendaciones de uso |
 | [Guía de la app Android](guia-app-android.md) | Enrolar, firmar, marcar, trabajar sin conexión y mostrar la semana |
+| [Producto móvil](alcance-producto-movil.md) | Pantallas del producto, endpoints y qué funciones están conectadas |
 | [Guía del portal web](guia-portal-web.md) | Inicio de sesión, pantallas contra rutas, roles y exportes |
 | [Diccionario](diccionario.md) | Glosario, catálogos de valores y diccionario de datos |
 | [Entorno local](entorno-local.md) | Levantar, crear cuentas, obtener un token, simular dispositivos, ensayar el respaldo, revisar vulnerabilidades y resolver problemas frecuentes |
@@ -44,7 +45,7 @@ contradice al contrato, manda el contrato.
 | Backend | `backend/` | Atiende las 60 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
 | Portal web | `web/` | Esqueleto que compila; todavía no inicia sesión ni llama al API |
-| App Android | `android/` | Esqueleto que lee NFC, toma ubicación y guarda en una cola local cifrada; todavía no se enrola ni sincroniza |
+| App Android | `android/` | Primera activación implementada; captura deshabilitada hasta completar firma y sincronización. Ver [Inicio móvil](inicio-app-android.md) |
 | Conector | `connector/` | Vacío; es el futuro agente que sincronice el padrón desde la red de un cliente |
 | Infraestructura | `infra/` | Imagen y realm del proveedor de identidad, guiones de la base y ensayo de respaldo |
 
