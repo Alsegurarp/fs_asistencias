@@ -1,4 +1,4 @@
-﻿package mx.fastsolution.zenit.mobile
+package mx.fastsolution.zenit.mobile
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable

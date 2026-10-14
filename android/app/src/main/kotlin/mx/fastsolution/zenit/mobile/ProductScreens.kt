@@ -1,4 +1,4 @@
-﻿package mx.fastsolution.zenit.mobile
+package mx.fastsolution.zenit.mobile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

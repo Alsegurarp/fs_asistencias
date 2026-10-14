@@ -1,4 +1,4 @@
-﻿# Guía de la app Android
+# Guía de la app Android
 
 Qué tiene que hacer la app para enrolarse, identificarse, marcar, trabajar sin
 conexión y mostrar la semana. Antes conviene leer
