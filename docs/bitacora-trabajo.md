@@ -59,6 +59,23 @@ Comprobado: `docker compose --profile ops config --quiet` y
 `git diff --check`, sin errores. No ejecutados: construcción, autoprueba,
 restauración, análisis de vulnerabilidades ni pruebas funcionales.
 
+Actualización del 14 de octubre de 2026: la imagen se construyó y la parte de
+autoprueba del punto 2 terminó correctamente. Restauró dos bases ficticias sin
+el origen disponible y rechazó filas eliminadas, contenido distinto con el
+mismo conteo, un paquete alterado y otra clave privada. Los paquetes ocuparon
+2,333 y 2,345 bytes. Sigue pendiente repetir el ensayo existente y recorrer las
+bases locales.
+
+También se completó la parte de análisis del punto 4. El primer inventario
+encontró 2 críticas y 10 altas en age; por decisión del usuario se corrigió la
+imagen en vez de aceptar el riesgo. age 1.3.2 y age-keygen se recompilaron con
+Go 1.27.2 y `x/crypto` 0.56.0. El segundo análisis terminó sin error, con 0
+críticas, 0 altas, 4 medias y 1 de gravedad desconocida; esta última sólo
+afecta a `openpgp`, ausente del grafo de importación de los ejecutables. No se
+generaron claves de operación ni respaldos locales. Siguen abiertos el ensayo
+existente del punto 2, los puntos 3, 5 y 6, y la comprobación del procedimiento
+en el sistema operativo que se elija para el servidor.
+
 ### Siguiente tarea
 
 Preparar el ambiente compartido con TLS, correo verificado, recuperación de

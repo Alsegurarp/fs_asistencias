@@ -105,7 +105,22 @@ Las claves y todos los archivos de esa prueba desaparecen con el contenedor.
 
 ## Verificación de esta entrega
 
-La configuración de Compose y `git diff --check` se comprobaron sin errores.
-La construcción, la autoprueba y el recorrido con las bases locales están
-pendientes: Docker Desktop estaba detenido y el entorno restringido no pudo
-iniciarlo. Los comandos anteriores están preparados, pero todavía no probados.
+El 14 de octubre de 2026 se construyó la imagen y la autoprueba terminó con
+`AUTOPRUEBA CORRECTA`: restauró sin el origen disponible y rechazó filas
+eliminadas, contenido distinto con el mismo conteo, ciphertext alterado y una
+clave privada incorrecta. Los paquetes ficticios de las dos bases ocuparon
+2,333 y 2,345 bytes.
+
+La primera revisión de la imagen encontró 2 vulnerabilidades críticas y 10
+altas en el binario de age provisto por Alpine. Se recompilaron únicamente
+`age` y `age-keygen` 1.3.2 con Go 1.27.2 y `x/crypto` 0.56.0, sin agregar Go a
+la aplicación ni instalar el toolchain en la imagen final. Los ejecutables sí
+son binarios Go y llevan su biblioteca estándar enlazada, que por eso aparece
+en el inventario. El análisis posterior terminó sin error: 0 críticas, 0 altas,
+4 medias y 1 de gravedad desconocida. Esta última corresponde al paquete
+`openpgp` de `x/crypto`, que no forma parte del grafo de importación de los dos
+ejecutables. No se aceptó ni exceptuó ningún hallazgo.
+
+Siguen pendientes el ensayo existente y el recorrido con las bases locales,
+incluida su comparación de contenido. Tampoco se generaron claves de operación
+ni respaldos con datos locales.

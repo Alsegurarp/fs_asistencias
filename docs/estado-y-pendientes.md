@@ -16,8 +16,8 @@ respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 | Identidad | Proveedor de identidad en el entorno local, con segundo factor obligatorio |
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
-| Respaldo | Ensayo existente y nuevos modos para guardar paquetes age y restaurarlos sin origen, comparando conteos y huellas de contenido. Nuevos modos preparados; ejecución pendiente por Docker detenido |
-| Vulnerabilidades | Inventario y análisis de las cuatro imágenes. Ninguna tiene una alta o crítica sin atender: tres no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
+| Respaldo | Ensayo existente y nuevos modos para guardar paquetes age y restaurarlos sin origen, comparando conteos y huellas de contenido. La autoprueba aislada pasó; falta el recorrido con las bases locales |
+| Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
 | Portal | Inicio de sesión PKCE, `/me`, sedes, empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. 128 pruebas del portal y compilación verificadas. El usuario comprobó acceso, catálogos, incidencias hasta cuatro cierres demo, descarga única y usuarios; falta probar horarios e importación con sesión real y otros recorridos |
 | App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización por lotes, recibos y renovación. 6 pruebas unitarias y autoensayo en teléfono con servidor HTTP de prueba; debug y release compilan |
 | Conector | No existe |
@@ -82,13 +82,13 @@ ni está publicado.
 | Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática del correo ni recuperación de contraseña |
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
 | Staging y TLS | Un ambiente publicado |
-| Verificar los nuevos respaldos cifrados y la restauración aislada | Docker Desktop funcionando. Código, autoprueba y comandos en [Respaldos cifrados](respaldos-cifrados.md) |
+| Ejecutar el ensayo existente y el recorrido con las bases locales | El entorno local levantado con sus secretos. La autoprueba aislada ya pasó; falta comparar el contenido de las bases locales |
 | Destino externo, periodicidad y retención del respaldo; recuperación completa del servicio | Decisiones del ambiente publicado. La copia local cifrada no sustituye la copia fuera de la máquina |
 | Cuotas compartidas entre instancias y dirección real del cliente | Cómo se publique el servidor |
 
 ## Vulnerabilidades conocidas
 
-Último análisis: 11 de octubre de 2026, con la base de vulnerabilidades de ese
+Último análisis: 14 de octubre de 2026, con la base de vulnerabilidades de ese
 día. Cómo se repite está en
 [Entorno local](entorno-local.md#revisar-vulnerabilidades).
 
@@ -97,9 +97,10 @@ día. Cómo se repite está en
 | Backend | 66, con 3 críticas y 18 altas | 15, todas medias | Ninguna |
 | Portal | 7, con 2 altas | 5, todas medias | Ninguna |
 | Base | 466, con 11 críticas y 118 altas | 4, todas medias | Ninguna |
+| Herramientas de respaldo | 20, con 2 críticas y 10 altas | 5: 4 medias y 1 de gravedad desconocida | Ninguna alta o crítica |
 | Proveedor de identidad | 64, con 6 altas | Igual | 6 altas, aceptadas por escrito |
 
-El análisis de las cuatro termina sin error.
+El análisis de las cinco termina sin error.
 
 Qué se corrigió:
 
@@ -115,6 +116,11 @@ Qué se corrigió:
   que la imagen oficial baja de privilegios al arrancar, que concentraba 34
   de las graves y ya no hace falta, porque el contenedor arranca sin
   privilegios.
+- **Herramientas de respaldo.** El paquete de Alpine incluía age compilado con
+  Go 1.26.8 y `x/crypto` 0.55.0. Ahora sólo `age` y `age-keygen` se compilan en
+  una etapa separada con Go 1.27.2 y `x/crypto` 0.56.0; la imagen final no trae
+  el compilador. El hallazgo de gravedad desconocida afecta a `openpgp`, que no
+  aparece en el grafo de importación de esos ejecutables.
 
 Qué se aceptó, y por qué:
 
@@ -167,8 +173,8 @@ defecto se pueda aprovechar aquí.
   confiable después de guardar y reabrir el archivo.
 - **Un marcaje rechazado por sesión vencida se pierde.** Pasadas 72 horas sin
   conexión, la app tiene que abrir otra sesión antes de seguir marcando.
-- **El respaldo cifrado aún no se ejecutó.** El nuevo modo conserva una copia
-  local; falta probarlo y definir copia externa, periodicidad y retención.
+- **El respaldo cifrado sólo pasó su autoprueba.** Falta recorrer las bases
+  locales y definir copia externa, periodicidad y retención.
 - **No hay notificaciones.** Nadie recibe aviso de una incidencia, un cierre,
   una corrida terminada o un exporte listo: se consulta.
 - **No hay totales en las listas.** Se recorren con cursor.
@@ -194,8 +200,8 @@ defecto se pueda aprovechar aquí.
   sobre Windows.
 - El ensayo de respaldo con una base que no quepa en memoria, y una
   restauración sobre un entorno nuevo de verdad, con sus secretos.
-- Construcción y autoprueba de los nuevos modos de respaldo age y restauración
-  sin origen; comparación de contenido añadida también al ensayo existente.
+- Comparación de contenido del ensayo existente y recorrido con las bases
+  locales; la autoprueba aislada de los nuevos modos ya pasó.
 - Empezar de cero un entorno que ya existía, en la máquina de otra persona:
   se comprobó que un volumen de la imagen anterior no arranca con la nueva y
   que un entorno nuevo sí, no el cambio en un entorno con uso.
