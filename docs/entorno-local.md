@@ -322,7 +322,7 @@ historial.
 Para conservar una copia cifrada y restaurarla en un contenedor nuevo sin
 acceso al origen, ver [Respaldos cifrados](respaldos-cifrados.md). Los modos
 nuevos y la comparación de contenido pasaron la autoprueba aislada el 17 de
-octubre de 2026. Falta comprobar una copia de operación y la recuperación completa.
+octubre de 2026. Falta definir custodio y copia aislada de la clave privada, comprobar una copia de operación y la recuperación completa. El ensayo existente también comparó el contenido de las bases locales.
 
 Un respaldo que nunca se ha restaurado no es un respaldo. Este ensayo lo
 comprueba de punta a punta, con el entorno levantado:

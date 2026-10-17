@@ -105,6 +105,35 @@ Las claves y todos los archivos de esa prueba desaparecen con el contenedor.
 
 ## Verificación de esta entrega
 
+### Verificación del 14 de octubre de 2026
+
+El 14 de octubre de 2026 se construyó la imagen y la autoprueba terminó con
+`AUTOPRUEBA CORRECTA`: restauró sin el origen disponible y rechazó filas
+eliminadas, contenido distinto con el mismo conteo, ciphertext alterado y una
+clave privada incorrecta. Los paquetes ficticios de las dos bases ocuparon
+2,333 y 2,345 bytes.
+
+La primera revisión de la imagen encontró 2 vulnerabilidades críticas y 10
+altas en el binario de age provisto por Alpine. Se recompilaron únicamente
+`age` y `age-keygen` 1.3.2 con Go 1.27.2 y `x/crypto` 0.56.0, sin agregar Go a
+la aplicación ni instalar el toolchain en la imagen final. Los ejecutables sí
+son binarios Go y llevan su biblioteca estándar enlazada, que por eso aparece
+en el inventario. El análisis posterior terminó sin error: 0 críticas, 0 altas,
+4 medias y 1 de gravedad desconocida. Esta última corresponde al paquete
+`openpgp` de `x/crypto`, que no forma parte del grafo de importación de los dos
+ejecutables. No se aceptó ni exceptuó ningún hallazgo.
+
+Ese mismo día, con el entorno local levantado desde un volumen nuevo, el
+ensayo existente respaldó la base del producto en 108,830 bytes y la de
+identidad en 204,322; restauró 29 y 96 tablas y comparó 12 y 203 filas, en
+total 125 tablas y 215 filas con contenido idéntico, en 2 segundos.
+
+Sigue pendiente guardar un paquete age con las bases locales y restaurarlo:
+espera decidir quién custodia la clave privada y dónde queda su copia aislada.
+No se generaron claves de operación ni respaldos con datos locales.
+
+### Repetición del 17 de octubre de 2026
+
 El 17 de octubre de 2026 se construyó el target `backup-tools` y pasó la
 autoprueba sin red ni datos reales: restauración sin origen, filas eliminadas,
 contenido distinto con el mismo conteo, paquete alterado y clave incorrecta.

@@ -1,4 +1,4 @@
-﻿# Documentación de Zenit
+# Documentación de Zenit
 
 Zenit registra la asistencia de las personas de una empresa con una tarjeta
 NFC y un teléfono Android, calcula su jornada semanal con reglas laborales que

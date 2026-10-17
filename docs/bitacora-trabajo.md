@@ -97,6 +97,32 @@ Comprobado: `docker compose --profile ops config --quiet` y
 `git diff --check`, sin errores. No ejecutados: construcción, autoprueba,
 restauración, análisis de vulnerabilidades ni pruebas funcionales.
 
+Actualización del 14 de octubre de 2026: la imagen se construyó y la parte de
+autoprueba del punto 2 terminó correctamente. Restauró dos bases ficticias sin
+el origen disponible y rechazó filas eliminadas, contenido distinto con el
+mismo conteo, un paquete alterado y otra clave privada. Los paquetes ocuparon
+2,333 y 2,345 bytes. Sigue pendiente repetir el ensayo existente y recorrer las
+bases locales.
+
+También se completó la parte de análisis del punto 4. El primer inventario
+encontró 2 críticas y 10 altas en age; por decisión del usuario se corrigió la
+imagen en vez de aceptar el riesgo. age 1.3.2 y age-keygen se recompilaron con
+Go 1.27.2 y `x/crypto` 0.56.0. El segundo análisis terminó sin error, con 0
+críticas, 0 altas, 4 medias y 1 de gravedad desconocida; esta última sólo
+afecta a `openpgp`, ausente del grafo de importación de los ejecutables. No se
+generaron claves de operación ni respaldos locales. Siguen abiertos el ensayo
+existente del punto 2, los puntos 3, 5 y 6, y la comprobación del procedimiento
+en el sistema operativo que se elija para el servidor.
+
+Actualización del 14 de octubre de 2026, con el entorno local levantado desde
+un volumen nuevo: el ensayo existente respaldó y restauró la base del producto
+y la de identidad y comparó 125 tablas y 215 filas con contenido idéntico, en
+2 segundos. Queda cerrado el punto 2. Los puntos 3, 5 y 6 esperan decidir
+custodio de la clave privada y de su copia aislada, destino fuera de la
+máquina, frecuencia, retención, quién atiende un fallo y objetivos de
+recuperación; sin eso no se genera una clave de operación. La comprobación en
+el sistema operativo del servidor espera que exista el servidor.
+
 ### Siguiente tarea
 
 Preparar el ambiente compartido con TLS, correo verificado, recuperación de
@@ -120,3 +146,14 @@ Faltan servidor y dominios, emisión y renovación de certificados, SMTP,
 configuración del realm activo, prueba de verificación y recuperación,
 cuentas personales con OTP y retiro de la cuenta temporal tras comprobar
 el acceso. No se habilitaron cambios de identidad sin SMTP ni se publicó.
+
+Actualización del 14 de octubre de 2026: la imagen del portal se construyó con
+la dirección de identidad local y con una ficticia HTTPS. En los dos casos la
+CSP de nginx y el cliente contienen la misma dirección, y la otra no aparece
+en el código servido. La imagen quedó restaurada con la dirección local.
+Siguen sin comprobarse nginx en ejecución y el recorrido de acceso por HTTPS.
+
+Actualización del 14 de octubre de 2026: con el entorno local completo, nginx
+respondió `200` en la raíz con la CSP y las cabeceras esperadas, y su proxy
+devolvió el estado del backend. Sigue sin comprobarse el recorrido de acceso
+por HTTPS: espera servidor, dominios y certificados.

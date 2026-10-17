@@ -1,4 +1,4 @@
-﻿package mx.fastsolution.zenit.mobile
+package mx.fastsolution.zenit.mobile
 
 import android.Manifest
 import android.content.Intent

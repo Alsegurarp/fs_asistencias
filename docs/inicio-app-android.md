@@ -1,4 +1,4 @@
-﻿# Inicio del desarrollo móvil
+# Inicio del desarrollo móvil
 
 La app Android registra asistencia mediante NFC. No administra el padrón,
 horarios ni tarjetas: eso corresponde al portal. No requiere una cuenta de

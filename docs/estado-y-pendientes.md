@@ -1,4 +1,4 @@
-﻿# Estado y pendientes
+# Estado y pendientes
 
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
@@ -20,9 +20,9 @@ separa resultados comprobados de decisiones y pruebas manuales pendientes.
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | Modos age construidos y autoprueba aislada aprobada el 17 de octubre de 2026. Ensayo local: 130 tablas/1.772 filas idénticas por conteo y contenido. Copia cifrada de operación y recuperación completa pendientes |
-| Vulnerabilidades | Último análisis documentado: 11 de octubre de 2026, sin altas o críticas sin atender; seis aceptadas en identidad. No actualizado en esta revisión |
-| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. Compilación y 128 pruebas con dos procesos comprobadas el 17 de octubre de 2026; hubo fallos con paralelismo por omisión. El usuario comprobó acceso, catálogos, incidencias, cuatro cierres demo, descarga única y usuarios; faltan horarios/importación con sesión real y otros recorridos |
-| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 17 de octubre de 2026 pasaron 9 pruebas unitarias, lint y APK debug en Docker. Release y autoensayo en teléfono con servidor HTTP de prueba tienen verificaciones anteriores; no repetidos en esta revisión |
+| Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
+| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. Compilación y 128 pruebas con dos procesos comprobadas el 17 de octubre de 2026; hubo fallos con paralelismo por omisión. El usuario comprobó acceso, catálogos, incidencias, cuatro cierres demo, descarga única y usuarios; faltan horarios/importación con sesión real y otros recorridos. Llama 39 operaciones distintas, todas presentes en el contrato con el mismo método y ruta; nginx y su proxy al backend fueron comprobados en local |
+| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 17 de octubre de 2026 pasaron 9 pruebas unitarias, lint y APK debug en Docker. Release y autoensayo en teléfono con servidor HTTP de prueba tienen verificaciones anteriores; no repetidos en esta revisión. Sus 3 operaciones existen en el contrato |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -48,7 +48,7 @@ ni está publicado.
 | Completar el portal | Ya tiene acceso, padrón, horarios, importación, incidencias, cierres, exportes y usuarios. Faltan configuración de empresa, dispositivos y pantallas de operador y trabajador |
 | Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
-| Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse |
+| Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
 | Un ambiente publicado | No hay staging ni dirección pública. Construcción del portal, cliente, nginx y CSP verificados con URL local y HTTPS ficticia. Faltan servidor, dominios, TLS, SMTP, cuentas personales y acceso real por HTTPS |
 
 ## Pendientes del backend
@@ -77,7 +77,7 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Ausencias | Cómo tratar vacaciones e incapacidades, para no cerrar en ceros |
 | Otra plantilla de exporte | Según lo que pida la nómina del primer cliente |
 | Dónde vive el archivo de un exporte | Hoy en la base, unos minutos; la alternativa es un almacén de objetos |
-| Versión 1.0 del contrato | Cuándo deja de cambiar sin aviso: cuando el portal o la app ya lo consuman |
+| Versión 1.0 del contrato | Cuándo deja de cambiar sin aviso. El portal y la app ya llaman 42 de las 60 operaciones, sin diferencias con el contrato; falta recorrerlos con sesión real contra el backend y confirmar las decisiones de esta tabla |
 
 ### Dependen de algo externo
 
@@ -89,13 +89,13 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática del correo ni recuperación de contraseña |
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
 | Staging y TLS | Un ambiente publicado |
-| Comprobar una copia cifrada de operación | Autoprueba aislada ya aprobada; faltan claves de operación, custodia y prueba con las bases locales según [Respaldos cifrados](respaldos-cifrados.md) |
-| Destino externo, periodicidad y retención del respaldo; recuperación completa del servicio | Decisiones del ambiente publicado. La copia local cifrada no sustituye la copia fuera de la máquina |
+| Guardar y restaurar una copia cifrada de las bases locales | Quién custodia la clave privada y dónde queda su copia aislada. Generar la clave antes crea un secreto sin dueño. El ensayo existente ya comparó el contenido de las dos bases |
+| Destino externo, periodicidad y retención del respaldo; recuperación completa del servicio | Decisiones del ambiente publicado: destino fuera de la máquina, frecuencia, retención, quién atiende un fallo y objetivos de recuperación. La copia local cifrada no sustituye la copia fuera de la máquina |
 | Cuotas compartidas entre instancias y dirección real del cliente | Cómo se publique el servidor |
 
 ## Vulnerabilidades conocidas
 
-Último análisis: 11 de octubre de 2026, con la base de vulnerabilidades de ese
+Último análisis: 14 de octubre de 2026, con la base de vulnerabilidades de ese
 día. Cómo se repite está en
 [Entorno local](entorno-local.md#revisar-vulnerabilidades).
 
@@ -104,9 +104,10 @@ día. Cómo se repite está en
 | Backend | 66, con 3 críticas y 18 altas | 15, todas medias | Ninguna |
 | Portal | 7, con 2 altas | 5, todas medias | Ninguna |
 | Base | 466, con 11 críticas y 118 altas | 4, todas medias | Ninguna |
+| Herramientas de respaldo | 20, con 2 críticas y 10 altas | 5: 4 medias y 1 de gravedad desconocida | Ninguna alta o crítica |
 | Proveedor de identidad | 64, con 6 altas | Igual | 6 altas, aceptadas por escrito |
 
-El análisis de las cuatro termina sin error.
+El análisis de las cinco termina sin error.
 
 Qué se corrigió:
 
@@ -122,6 +123,11 @@ Qué se corrigió:
   que la imagen oficial baja de privilegios al arrancar, que concentraba 34
   de las graves y ya no hace falta, porque el contenedor arranca sin
   privilegios.
+- **Herramientas de respaldo.** El paquete de Alpine incluía age compilado con
+  Go 1.26.8 y `x/crypto` 0.55.0. Ahora sólo `age` y `age-keygen` se compilan en
+  una etapa separada con Go 1.27.2 y `x/crypto` 0.56.0; la imagen final no trae
+  el compilador. El hallazgo de gravedad desconocida afecta a `openpgp`, que no
+  aparece en el grafo de importación de esos ejecutables.
 
 Qué se aceptó, y por qué:
 
@@ -174,8 +180,10 @@ defecto se pueda aprovechar aquí.
   confiable después de guardar y reabrir el archivo.
 - **Un marcaje rechazado por sesión vencida se pierde.** Pasadas 72 horas sin
   conexión, la app tiene que abrir otra sesión antes de seguir marcando.
-- **El respaldo cifrado pasó sólo la autoprueba aislada.** Falta una copia de
-  operación comprobada y definir copia externa, periodicidad y retención.
+- **No hay respaldo real todavía.** El procedimiento pasó su autoprueba y el
+  ensayo con las bases locales, pero no se ha generado una clave de operación
+  ni se guarda ninguna copia; faltan custodio, copia externa, periodicidad y
+  retención.
 - **No hay notificaciones.** Nadie recibe aviso de una incidencia, un cierre,
   una corrida terminada o un exporte listo: se consulta.
 - **No hay totales en las listas.** Se recorren con cursor.
@@ -194,7 +202,9 @@ defecto se pueda aprovechar aquí.
 - La app en un teléfono, con una tarjeta real.
 - Carga: una corrida de cierre se probó con 511 personas y un exporte con
   unas decenas de filas, no con más.
-- El comportamiento detrás de un proxy con HTTPS.
+- El comportamiento detrás de un proxy con HTTPS. En local, sin HTTPS, nginx
+  sirvió el portal con sus cabeceras y su proxy respondió con el estado del
+  backend.
 - Los trabajos y las cuotas con más de una instancia del backend, fuera de
   las pruebas.
 - Los guiones de secretos, de la base, del respaldo y del análisis de
@@ -202,8 +212,9 @@ defecto se pueda aprovechar aquí.
   sobre Windows.
 - El ensayo de respaldo con una base que no quepa en memoria, y una
   restauración sobre un entorno nuevo de verdad, con sus secretos.
-- Copia cifrada de operación y restauración de esas bases sin origen. La
-  construcción y autoprueba de los modos age ya pasaron.
+- Guardar y restaurar un paquete age con las bases locales: espera la clave
+  de operación. La autoprueba aislada de los modos nuevos y la comparación de
+  contenido del ensayo existente ya pasaron.
 - Empezar de cero un entorno que ya existía, en la máquina de otra persona:
   se comprobó que un volumen de la imagen anterior no arranca con la nueva y
   que un entorno nuevo sí, no el cambio en un entorno con uso.

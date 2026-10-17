@@ -1,4 +1,4 @@
-﻿# Zenit
+# Zenit
 
 Plataforma de control de jornada desarrollada por fastSolution.
 
