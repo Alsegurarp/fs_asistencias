@@ -121,6 +121,11 @@ en el inventario. El análisis posterior terminó sin error: 0 críticas, 0 alta
 `openpgp` de `x/crypto`, que no forma parte del grafo de importación de los dos
 ejecutables. No se aceptó ni exceptuó ningún hallazgo.
 
-Siguen pendientes el ensayo existente y el recorrido con las bases locales,
-incluida su comparación de contenido. Tampoco se generaron claves de operación
-ni respaldos con datos locales.
+Ese mismo día, con el entorno local levantado desde un volumen nuevo, el
+ensayo existente respaldó la base del producto en 108,830 bytes y la de
+identidad en 204,322; restauró 29 y 96 tablas y comparó 12 y 203 filas, en
+total 125 tablas y 215 filas con contenido idéntico, en 2 segundos.
+
+Sigue pendiente guardar un paquete age con las bases locales y restaurarlo:
+espera decidir quién custodia la clave privada y dónde queda su copia aislada.
+No se generaron claves de operación ni respaldos con datos locales.

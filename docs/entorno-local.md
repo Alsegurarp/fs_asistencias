@@ -320,8 +320,10 @@ historial.
 ## Ensayar el respaldo y la restauración
 
 Para conservar una copia cifrada y restaurarla en un contenedor nuevo sin
-acceso al origen, ver [Respaldos cifrados](respaldos-cifrados.md). Los modos
-nuevos y la comparación de contenido están preparados, pendientes de ejecución.
+acceso al origen, ver [Respaldos cifrados](respaldos-cifrados.md). Esos modos
+pasaron su autoprueba aislada; guardar una copia de las bases locales espera
+una clave de operación con custodio. El ensayo de esta sección ya se repitió
+con el entorno levantado y comparó el contenido de las dos bases.
 
 Un respaldo que nunca se ha restaurado no es un respaldo. Este ensayo lo
 comprueba de punta a punta, con el entorno levantado:

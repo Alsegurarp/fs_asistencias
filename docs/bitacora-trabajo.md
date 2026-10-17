@@ -76,6 +76,15 @@ generaron claves de operación ni respaldos locales. Siguen abiertos el ensayo
 existente del punto 2, los puntos 3, 5 y 6, y la comprobación del procedimiento
 en el sistema operativo que se elija para el servidor.
 
+Actualización del 14 de octubre de 2026, con el entorno local levantado desde
+un volumen nuevo: el ensayo existente respaldó y restauró la base del producto
+y la de identidad y comparó 125 tablas y 215 filas con contenido idéntico, en
+2 segundos. Queda cerrado el punto 2. Los puntos 3, 5 y 6 esperan decidir
+custodio de la clave privada y de su copia aislada, destino fuera de la
+máquina, frecuencia, retención, quién atiende un fallo y objetivos de
+recuperación; sin eso no se genera una clave de operación. La comprobación en
+el sistema operativo del servidor espera que exista el servidor.
+
 ### Siguiente tarea
 
 Preparar el ambiente compartido con TLS, correo verificado, recuperación de
@@ -105,3 +114,8 @@ la dirección de identidad local y con una ficticia HTTPS. En los dos casos la
 CSP de nginx y el cliente contienen la misma dirección, y la otra no aparece
 en el código servido. La imagen quedó restaurada con la dirección local.
 Siguen sin comprobarse nginx en ejecución y el recorrido de acceso por HTTPS.
+
+Actualización del 14 de octubre de 2026: con el entorno local completo, nginx
+respondió `200` en la raíz con la CSP y las cabeceras esperadas, y su proxy
+devolvió el estado del backend. Sigue sin comprobarse el recorrido de acceso
+por HTTPS: espera servidor, dominios y certificados.

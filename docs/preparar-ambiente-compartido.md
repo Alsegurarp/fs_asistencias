@@ -20,8 +20,11 @@ del cliente del portal.
 Se comprobó la resolución de Compose con un dominio ficticio HTTPS y con la
 dirección local: portal, Keycloak y emisor coinciden. La imagen se construyó
 con la dirección local y con una ficticia HTTPS; en ambos casos la CSP de
-nginx y el cliente contienen la misma dirección y la otra no aparece. Siguen
-pendientes nginx en ejecución y el recorrido de acceso por HTTPS.
+nginx y el cliente contienen la misma dirección y la otra no aparece. Con el
+entorno local completo, nginx respondió `200` en la raíz con la CSP y las
+cabeceras esperadas, y su proxy devolvió el estado del backend en
+`/api/v1/system/status`. Sigue pendiente el recorrido de acceso por HTTPS,
+que necesita servidor, dominios y certificados.
 
 ## Datos necesarios para continuar
 

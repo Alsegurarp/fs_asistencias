@@ -16,10 +16,10 @@ respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 | Identidad | Proveedor de identidad en el entorno local, con segundo factor obligatorio |
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
-| Respaldo | Ensayo existente y nuevos modos para guardar paquetes age y restaurarlos sin origen, comparando conteos y huellas de contenido. La autoprueba aislada pasó; falta el recorrido con las bases locales |
+| Respaldo | Ensayo existente y nuevos modos para guardar paquetes age y restaurarlos sin origen, comparando conteos y huellas de contenido. La autoprueba aislada de los modos nuevos pasó, y el ensayo existente, con el entorno levantado, comparó 125 tablas y 215 filas de las dos bases con contenido idéntico. Todavía no se guarda ninguna copia real: falta decidir quién custodia la clave |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | Inicio de sesión PKCE, `/me`, sedes, empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. 128 pruebas del portal y compilación verificadas. El usuario comprobó acceso, catálogos, incidencias hasta cuatro cierres demo, descarga única y usuarios; falta probar horarios e importación con sesión real y otros recorridos |
-| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización por lotes, recibos y renovación. 6 pruebas unitarias y autoensayo en teléfono con servidor HTTP de prueba; debug y release compilan |
+| Portal | Inicio de sesión PKCE, `/me`, sedes, empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. 128 pruebas del portal y compilación verificadas. El usuario comprobó acceso, catálogos, incidencias hasta cuatro cierres demo, descarga única y usuarios; falta probar horarios e importación con sesión real y otros recorridos. Llama 39 operaciones distintas y todas existen en el contrato con el mismo método y ruta. Servido por nginx en local, responde con sus cabeceras y su proxy llega al backend |
+| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización por lotes, recibos y renovación. 6 pruebas unitarias y autoensayo en teléfono con servidor HTTP de prueba; debug y release compilan. Llama 3 operaciones y las tres existen en el contrato |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -45,8 +45,8 @@ ni está publicado.
 | Completar el portal | Ya tiene acceso, padrón, horarios, importación, incidencias, cierres, exportes y usuarios. Faltan configuración de empresa, dispositivos y pantallas de operador y trabajador |
 | Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
-| Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse |
-| Un ambiente publicado | No hay staging ni dirección pública. El portal ya admite la URL de identidad al construir su imagen y CSP; la imagen ya se construyó y comprobó con dos direcciones. Falta definir servidor, dominios, TLS, SMTP y cuentas personales |
+| Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
+| Un ambiente publicado | No hay staging ni dirección pública. El portal ya admite la URL de identidad al construir su imagen y CSP; la imagen ya se construyó y comprobó con dos direcciones, y nginx ya se probó en ejecución en local. Falta definir servidor, dominios, TLS, SMTP y cuentas personales |
 
 ## Pendientes del backend
 
@@ -70,7 +70,7 @@ ni está publicado.
 | Ausencias | Cómo tratar vacaciones e incapacidades, para no cerrar en ceros |
 | Otra plantilla de exporte | Según lo que pida la nómina del primer cliente |
 | Dónde vive el archivo de un exporte | Hoy en la base, unos minutos; la alternativa es un almacén de objetos |
-| Versión 1.0 del contrato | Cuándo deja de cambiar sin aviso: cuando el portal o la app ya lo consuman |
+| Versión 1.0 del contrato | Cuándo deja de cambiar sin aviso. El portal y la app ya llaman 42 de las 60 operaciones, sin diferencias con el contrato; falta recorrerlos con sesión real contra el backend y confirmar las decisiones de esta tabla |
 
 ### Dependen de algo externo
 
@@ -82,8 +82,8 @@ ni está publicado.
 | Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática del correo ni recuperación de contraseña |
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
 | Staging y TLS | Un ambiente publicado |
-| Ejecutar el ensayo existente y el recorrido con las bases locales | El entorno local levantado con sus secretos. La autoprueba aislada ya pasó; falta comparar el contenido de las bases locales |
-| Destino externo, periodicidad y retención del respaldo; recuperación completa del servicio | Decisiones del ambiente publicado. La copia local cifrada no sustituye la copia fuera de la máquina |
+| Guardar y restaurar una copia cifrada de las bases locales | Quién custodia la clave privada y dónde queda su copia aislada. Generar la clave antes crea un secreto sin dueño. El ensayo existente ya comparó el contenido de las dos bases |
+| Destino externo, periodicidad y retención del respaldo; recuperación completa del servicio | Decisiones del ambiente publicado: destino fuera de la máquina, frecuencia, retención, quién atiende un fallo y objetivos de recuperación. La copia local cifrada no sustituye la copia fuera de la máquina |
 | Cuotas compartidas entre instancias y dirección real del cliente | Cómo se publique el servidor |
 
 ## Vulnerabilidades conocidas
@@ -173,8 +173,10 @@ defecto se pueda aprovechar aquí.
   confiable después de guardar y reabrir el archivo.
 - **Un marcaje rechazado por sesión vencida se pierde.** Pasadas 72 horas sin
   conexión, la app tiene que abrir otra sesión antes de seguir marcando.
-- **El respaldo cifrado sólo pasó su autoprueba.** Falta recorrer las bases
-  locales y definir copia externa, periodicidad y retención.
+- **No hay respaldo real todavía.** El procedimiento pasó su autoprueba y el
+  ensayo con las bases locales, pero no se ha generado una clave de operación
+  ni se guarda ninguna copia; faltan custodio, copia externa, periodicidad y
+  retención.
 - **No hay notificaciones.** Nadie recibe aviso de una incidencia, un cierre,
   una corrida terminada o un exporte listo: se consulta.
 - **No hay totales en las listas.** Se recorren con cursor.
@@ -185,14 +187,17 @@ defecto se pueda aprovechar aquí.
   identificó brechas en [Revisión jurídica](revision-juridica-jornada-acuse.md).
 - El formato que pide un sistema de nómina real.
 - El recorrido del portal contra Keycloak y el backend real: ya implementa
-  las llamadas, pero sólo se verificaron la compilación y pruebas del cliente.
+  las llamadas, pero sólo se verificaron la compilación, las pruebas del
+  cliente y que cada llamada exista en el contrato.
   La app también implementa las llamadas de dispositivo y se verificó contra un
   servidor de prueba en un Samsung SM-S928B (Android API 36), no contra el
   backend real. Los clientes generados del contrato sólo se compilaron.
 - La app en un teléfono, con una tarjeta real.
 - Carga: una corrida de cierre se probó con 511 personas y un exporte con
   unas decenas de filas, no con más.
-- El comportamiento detrás de un proxy con HTTPS.
+- El comportamiento detrás de un proxy con HTTPS. En local, sin HTTPS, nginx
+  sirvió el portal con sus cabeceras y su proxy respondió con el estado del
+  backend.
 - Los trabajos y las cuotas con más de una instancia del backend, fuera de
   las pruebas.
 - Los guiones de secretos, de la base, del respaldo y del análisis de
@@ -200,8 +205,9 @@ defecto se pueda aprovechar aquí.
   sobre Windows.
 - El ensayo de respaldo con una base que no quepa en memoria, y una
   restauración sobre un entorno nuevo de verdad, con sus secretos.
-- Comparación de contenido del ensayo existente y recorrido con las bases
-  locales; la autoprueba aislada de los nuevos modos ya pasó.
+- Guardar y restaurar un paquete age con las bases locales: espera la clave
+  de operación. La autoprueba aislada de los modos nuevos y la comparación de
+  contenido del ensayo existente ya pasaron.
 - Empezar de cero un entorno que ya existía, en la máquina de otra persona:
   se comprobó que un volumen de la imagen anterior no arranca con la nueva y
   que un entorno nuevo sí, no el cambio en un entorno con uso.
