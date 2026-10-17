@@ -6,6 +6,9 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
+Última revisión: 17 de octubre de 2026. La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
+separa resultados comprobados de decisiones y pruebas manuales pendientes.
+
 ## Qué está hecho
 
 | Pieza | Estado |
@@ -16,10 +19,10 @@ respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 | Identidad | Proveedor de identidad en el entorno local, con segundo factor obligatorio |
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
-| Respaldo | Ensayo existente y nuevos modos para guardar paquetes age y restaurarlos sin origen, comparando conteos y huellas de contenido. La autoprueba aislada de los modos nuevos pasó, y el ensayo existente, con el entorno levantado, comparó 125 tablas y 215 filas de las dos bases con contenido idéntico. Todavía no se guarda ninguna copia real: falta decidir quién custodia la clave |
+| Respaldo | Modos age construidos y autoprueba aislada aprobada el 17 de octubre de 2026. Ensayo local: 130 tablas/1.772 filas idénticas por conteo y contenido. Copia cifrada de operación y recuperación completa pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | Inicio de sesión PKCE, `/me`, sedes, empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. 128 pruebas del portal y compilación verificadas. El usuario comprobó acceso, catálogos, incidencias hasta cuatro cierres demo, descarga única y usuarios; falta probar horarios e importación con sesión real y otros recorridos. Llama 39 operaciones distintas y todas existen en el contrato con el mismo método y ruta. Servido por nginx en local, responde con sus cabeceras y su proxy llega al backend |
-| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización por lotes, recibos y renovación. 6 pruebas unitarias y autoensayo en teléfono con servidor HTTP de prueba; debug y release compilan. Llama 3 operaciones y las tres existen en el contrato |
+| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. Compilación y 128 pruebas con dos procesos comprobadas el 17 de octubre de 2026; hubo fallos con paralelismo por omisión. El usuario comprobó acceso, catálogos, incidencias, cuatro cierres demo, descarga única y usuarios; faltan horarios/importación con sesión real y otros recorridos. Llama 39 operaciones distintas, todas presentes en el contrato con el mismo método y ruta; nginx y su proxy al backend fueron comprobados en local |
+| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 17 de octubre de 2026 pasaron 9 pruebas unitarias, lint y APK debug en Docker. Release y autoensayo en teléfono con servidor HTTP de prueba tienen verificaciones anteriores; no repetidos en esta revisión. Sus 3 operaciones existen en el contrato |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -46,7 +49,7 @@ ni está publicado.
 | Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
-| Un ambiente publicado | No hay staging ni dirección pública. El portal ya admite la URL de identidad al construir su imagen y CSP; la imagen ya se construyó y comprobó con dos direcciones, y nginx ya se probó en ejecución en local. Falta definir servidor, dominios, TLS, SMTP y cuentas personales |
+| Un ambiente publicado | No hay staging ni dirección pública. Construcción del portal, cliente, nginx y CSP verificados con URL local y HTTPS ficticia. Faltan servidor, dominios, TLS, SMTP, cuentas personales y acceso real por HTTPS |
 
 ## Pendientes del backend
 
@@ -58,6 +61,10 @@ ni está publicado.
 | Detalle de quién quedó sin cerrar | Una corrida de cierre dice cuántas personas no cerró y por qué, no cuáles; se buscan por sus incidencias abiertas |
 
 ### Esperan una decisión
+
+Suspensión, baja, alcance del supervisor y tipo de marcaje tienen
+[propuestas concretas para aprobación](decisiones-de-negocio.md). No se han
+cambiado sus comportamientos ni se consideran decisiones cerradas.
 
 | Pendiente | Qué hay que decidir |
 | --- | --- |
@@ -186,9 +193,9 @@ defecto se pueda aprovechar aquí.
 - El dictamen jurídico del cálculo y del acuse. La revisión documental
   identificó brechas en [Revisión jurídica](revision-juridica-jornada-acuse.md).
 - El formato que pide un sistema de nómina real.
-- El recorrido del portal contra Keycloak y el backend real: ya implementa
-  las llamadas, pero sólo se verificaron la compilación, las pruebas del
-  cliente y que cada llamada exista en el contrato.
+- El recorrido completo del portal contra Keycloak y el backend real: el usuario
+  comprobó acceso, catálogos, incidencias, cierres, descarga y usuarios. Horarios
+  e importación con sesión real siguen pendientes; se preparó su guion.
   La app también implementa las llamadas de dispositivo y se verificó contra un
   servidor de prueba en un Samsung SM-S928B (Android API 36), no contra el
   backend real. Los clientes generados del contrato sólo se compilaron.
@@ -216,12 +223,44 @@ defecto se pueda aprovechar aquí.
 - El simulador con la política de descanso marcado, y con más de 8 personas.
 - El formato de correo y las cabeceras, contra el contrato.
 
-## Por dónde seguir
+## Lista consolidada de tareas pendientes
+
+Declaración al 17 de octubre de 2026. Se conserva la numeración de la evaluación
+original y el orden de menor a mayor complejidad; este orden no sustituye la
+prioridad de los bloqueos de lanzamiento. Las tareas 1, 3, 5 y 6 están completadas
+en el alcance de la [validación](validacion-tareas-1-a-6.md). La 5 no incluye
+acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
+
+| N.º original | Tarea pendiente | Estado o dependencia para continuar |
+| --- | --- | --- |
+| 2 | Acordar suspensión de empresa, baja de empleado, alcance del supervisor y tipo de marcaje | Propuestas en [Decisiones de negocio](decisiones-de-negocio.md); falta elección del responsable del producto. No se han cambiado las reglas |
+| 4 | Probar horarios e importación con sesión real en el portal | Guion preparado; requiere sesión de administración/RH y acceso al navegador. El control de Chrome fue detenido por no poder verificar su URL activa |
+| 7 | Probar enrolamiento, captura simulada, cola sin conexión, sincronización y renovación Android contra el backend local | Implementación existente; falta recorrido completo con datos ficticios |
+| 8 | Definir e implementar retención de sobres y recibos Android | Acordar qué se conserva y durante cuánto tiempo; proteger pendientes y evidencia |
+| 9 | Completar configuración de empresa y administración de dispositivos en el portal | Reutilizar operaciones existentes del backend y comprobar permisos |
+| 10 | Mostrar las personas que no pudieron cerrar y sus causas | Actualmente la corrida muestra conteos y motivos, sin identificar a cada persona |
+| 11 | Automatizar verificaciones en cada cambio | Elegir servicio de integración continua y ejecutar las comprobaciones existentes |
+| 12 | Completar semana y acuse del trabajador | Integrar datos reales, identidad y permisos; el texto y evidencia del acuse dependen también de la tarea 17 |
+| 13 | Completar pantallas del operador del servicio | Administración de empresas desde el portal con permisos reales |
+| 14 | Publicar ambiente de pruebas con TLS, SMTP y cuentas personales | Faltan servidor, dominios, certificados, correo, responsables y comprobación de acceso HTTPS; retirar cuenta temporal sólo tras verificar las nuevas |
+| 15 | Comprobar recuperación completa y automatizar respaldos externos | Claves de operación y custodia, copia cifrada persistente restaurada, destino externo, periodicidad, retención, responsables y objetivos de recuperación; probar backend e identidad recuperados |
+| 16 | Validar captura autenticada con tarjetas reales | Definir y probar autenticación y entrega de claves con tarjetas y teléfonos físicos |
+| 17 | Aprobar e implementar reglas de jornada y evidencia del acuse | Dictamen profesional, criterios y casos esperados; conservar reglas y cierres históricos |
+| 18 | Comparar asistencia con horarios y gestionar ausencias | Definir retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y probar |
+| 19 | Validar carga y comportamiento del despliegue | Volumen del cliente, proxy, dirección real, trabajos y cuotas; compartir cuotas si habrá varias instancias |
+| 20 | Construir conector y adaptar exporte a nómina real | Sistema y formato del primer cliente; aceptación del archivo y sincronización |
+
+Siguen diferidos jOOQ generado, notificaciones y un almacén externo para exportes;
+no forman parte de las tareas completadas. Las verificaciones adicionales de
+Linux, datos grandes, escrituras simultáneas, teléfono, release y otros casos
+siguen abiertas donde se indican en **Sin verificar** y en la validación.
+
+### Primer paso por área
 
 | Quién | Primer paso sugerido |
 | --- | --- |
 | App | Verificar enrolamiento y marcajes con tarjeta simulada contra el backend local. Después, semana y acuse; la tarjeta real requiere su prueba externa |
-| Portal | Verificar inicio de sesión, sedes, padrón y tarjetas contra el entorno local. Después, ampliar las pantallas operativas; correr antes el simulador |
+| Portal | Ejecutar el guion pendiente de horarios/importación con sesión real. Después, completar empresa, dispositivos, operador y trabajador |
 | Backend | Lo que queda sin esperar a nadie es una mejora interna, las clases de jOOQ generadas, que se dejó para después. Lo demás espera una decisión o a un tercero |
 
 El portal ya no depende de la app para tener datos: el simulador deja

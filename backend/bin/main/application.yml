@@ -1,0 +1,94 @@
+spring:
+  application:
+    name: zenit-backend
+  config:
+    # Lee los secretos montados como archivo; el nombre del archivo es la propiedad.
+    import: optional:configtree:/run/secrets/
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:zenit}
+    # Al atender se usa un rol que no es dueño de las tablas.
+    username: ${DB_USER:zenit_app}
+    # Sin valor por defecto: sin secreto la aplicación no arranca.
+    password: ${DB_PASSWORD:${db_app_password}}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 1
+  flyway:
+    # Al atender sólo se comprueba que el esquema esté al día (SchemaConfig).
+    # Las migraciones se aplican aparte, con el perfil migrate y otro rol.
+    enabled: true
+    locations: classpath:db/migration
+  jooq:
+    sql-dialect: postgres
+  jackson:
+    deserialization:
+      # El contrato no admite campos de más en un cuerpo.
+      fail-on-unknown-properties: true
+  servlet:
+    multipart:
+      # El padrón de una empresa cabe de sobra; un archivo mayor se rechaza.
+      max-file-size: 1MB
+      max-request-size: 2MB
+
+zenit:
+  identity:
+    # Sin valor por defecto: sin proveedor de identidad la aplicación no arranca.
+    issuer: ${IDENTITY_ISSUER}
+    jwks-uri: ${IDENTITY_JWKS_URI}
+    audience: ${IDENTITY_AUDIENCE:zenit-api}
+  operators:
+    # Correos de quienes operan el servicio, uno por línea, montados como
+    # secreto. Sin archivo o vacío, nadie opera: no se puede dar de alta una
+    # empresa.
+    emails: ${operator_emails:}
+  capture:
+    # Tarjeta simulada del prototipo: no está autenticada. Nace apagada y sólo
+    # se enciende a propósito, con datos ficticios.
+    simulated-cards: ${CAPTURE_SIMULATED_CARDS:false}
+  jobs:
+    # Trabajos que se atienden fuera de la petición, como preparar un exporte.
+    enabled: ${JOBS_ENABLED:true}
+    poll-interval-ms: ${JOBS_POLL_INTERVAL_MS:2000}
+  exports:
+    # Minutos durante los que un exporte listo se puede descargar.
+    ttl-minutes: ${EXPORTS_TTL_MINUTES:15}
+  api:
+    # Peticiones por minuto que se le aceptan a una persona, sumando sus sesiones.
+    person-requests-per-minute: ${API_PERSON_REQUESTS_PER_MINUTE:600}
+  closures:
+    # Segundos entre revisiones del cierre programado de las empresas que lo pidieron.
+    schedule-check-seconds: ${CLOSURES_SCHEDULE_CHECK_SECONDS:60}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+server:
+  shutdown: graceful
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+---
+# Paso de migraciones: aplica el esquema con el rol dueño y termina. No abre
+# puertos ni atiende peticiones.
+spring:
+  config:
+    activate:
+      on-profile: migrate
+  main:
+    web-application-type: none
+  datasource:
+    username: ${DB_MIGRATOR_USER:zenit_migrator}
+    password: ${DB_MIGRATOR_PASSWORD:${db_migrator_password}}
+    hikari:
+      maximum-pool-size: 2

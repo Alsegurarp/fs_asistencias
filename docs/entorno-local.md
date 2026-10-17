@@ -160,8 +160,8 @@ Cinco intentos fallidos bloquean la cuenta por un tiempo.
 
 ## Obtener un token para probar
 
-El portal todavía no inicia sesión, así que para llamar al API a mano hay que
-obtener un token. El proveedor sólo acepta el flujo de código de autorización
+El portal ya inicia sesión. Para llamar al API a mano se puede obtener un
+token aparte. El proveedor sólo acepta el flujo de código de autorización
 con PKCE: no hay concesión directa con usuario y contraseña.
 
 Con la terminal que instala Git, o cualquiera de tipo Unix:
@@ -320,10 +320,9 @@ historial.
 ## Ensayar el respaldo y la restauración
 
 Para conservar una copia cifrada y restaurarla en un contenedor nuevo sin
-acceso al origen, ver [Respaldos cifrados](respaldos-cifrados.md). Esos modos
-pasaron su autoprueba aislada; guardar una copia de las bases locales espera
-una clave de operación con custodio. El ensayo de esta sección ya se repitió
-con el entorno levantado y comparó el contenido de las dos bases.
+acceso al origen, ver [Respaldos cifrados](respaldos-cifrados.md). Los modos
+nuevos y la comparación de contenido pasaron la autoprueba aislada el 17 de
+octubre de 2026. Falta definir custodio y copia aislada de la clave privada, comprobar una copia de operación y la recuperación completa. El ensayo existente también comparó el contenido de las bases locales.
 
 Un respaldo que nunca se ha restaurado no es un respaldo. Este ensayo lo
 comprueba de punta a punta, con el entorno levantado:
@@ -377,7 +376,8 @@ backend escribía: 130 tablas iguales en todas, con el total de filas
 creciendo de una corrida a la siguiente. Con la imagen actual se repitió 4
 veces, sin escrituras a la vez. En las dos, el modo de control falló como
 debe. Esas ejecuciones verificaron la versión que comparaba sólo conteos;
-la nueva comparación de contenido todavía no se ejecutó.
+el 17 de octubre de 2026 se repitió con comparación de contenido: 130 tablas
+y 1.772 filas idénticas, sin escrituras simultáneas provocadas por la prueba.
 
 ## Revisar vulnerabilidades
 

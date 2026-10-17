@@ -105,6 +105,8 @@ Las claves y todos los archivos de esa prueba desaparecen con el contenedor.
 
 ## Verificación de esta entrega
 
+### Verificación del 14 de octubre de 2026
+
 El 14 de octubre de 2026 se construyó la imagen y la autoprueba terminó con
 `AUTOPRUEBA CORRECTA`: restauró sin el origen disponible y rechazó filas
 eliminadas, contenido distinto con el mismo conteo, ciphertext alterado y una
@@ -129,3 +131,19 @@ total 125 tablas y 215 filas con contenido idéntico, en 2 segundos.
 Sigue pendiente guardar un paquete age con las bases locales y restaurarlo:
 espera decidir quién custodia la clave privada y dónde queda su copia aislada.
 No se generaron claves de operación ni respaldos con datos locales.
+
+### Repetición del 17 de octubre de 2026
+
+El 17 de octubre de 2026 se construyó el target `backup-tools` y pasó la
+autoprueba sin red ni datos reales: restauración sin origen, filas eliminadas,
+contenido distinto con el mismo conteo, paquete alterado y clave incorrecta.
+Las claves y copias ficticias desaparecieron con el contenedor.
+
+El ensayo existente también pasó con las bases locales y la comparación de
+contenido: 130 tablas y 1.772 filas idénticas. No guardó un respaldo persistente
+ni comprobó escrituras simultáneas en esta ejecución.
+
+Siguen pendientes la generación y custodia de claves de operación, una copia
+cifrada comprobada de las bases locales y la recuperación completa del servicio.
+La autoprueba no sustituye esos recorridos. Resultados en la
+[validación de tareas 1 a 6](validacion-tareas-1-a-6.md).

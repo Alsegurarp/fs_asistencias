@@ -1,6 +1,6 @@
 # Preparar el ambiente compartido
 
-Estado al 14 de octubre de 2026: preparación iniciada, sin publicar.
+Estado al 17 de octubre de 2026: preparación iniciada, sin publicar.
 No están confirmados servidor, dominios ni servicio de correo. No usar
 `compose.yaml` como publicación directa: su configuración sigue siendo local.
 
@@ -25,6 +25,7 @@ entorno local completo, nginx respondió `200` en la raíz con la CSP y las
 cabeceras esperadas, y su proxy devolvió el estado del backend en
 `/api/v1/system/status`. Sigue pendiente el recorrido de acceso por HTTPS,
 que necesita servidor, dominios y certificados.
+La comprobación se repitió el 17 de octubre de 2026; véase [la validación](validacion-tareas-1-a-6.md).
 
 ## Datos necesarios para continuar
 

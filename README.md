@@ -5,9 +5,11 @@ Plataforma de control de jornada desarrollada por fastSolution.
 ## Estado técnico
 
 Monorepo del producto. El backend atiende las 60 operaciones del contrato, con
-pruebas contra PostgreSQL real. El portal implementa inicio de sesión y gestión
-de sedes, empleados y tarjetas; su conexión completa con el entorno local está
-pendiente de verificar. Android implementa enrolamiento, sobres firmados y
+pruebas contra PostgreSQL real. El portal implementa inicio de sesión, sedes,
+empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias,
+cierres, exportes y usuarios. Hay recorridos locales comprobados por el usuario;
+horarios e importación con sesión real siguen pendientes. Android implementa
+enrolamiento, sobres firmados y
 sincronización con cola cifrada; se verificó en un teléfono con un servidor de
 prueba, todavía sin tarjetas ni backend reales. Cada aplicación mantiene
 toolchain, dependencias y build propios.
@@ -17,6 +19,10 @@ con históricos y panel de Administrador/RH. Su alcance está en
 [Producto móvil](docs/alcance-producto-movil.md).
 
 ## Documentación
+
+La [validación del 17 de octubre de 2026](docs/validacion-tareas-1-a-6.md)
+registra las comprobaciones actuales y los pendientes que requieren al usuario:
+decisiones de negocio y recorrido de horarios/importación con sesión real.
 
 La carpeta [`docs/`](docs/README.md) explica qué hace el sistema, cómo se usa
 y cómo se continúa:
@@ -390,9 +396,10 @@ El entorno local sigue las mismas reglas que tendrá un ambiente publicado.
   de componentes. Lo que tiene corrección publicada y la imagen base o Spring
   Boot todavía no traen se adelanta, con la versión mínima corregida y un
   comentario que dice por qué.
-- El respaldo usa un rol que sólo lee. Los nuevos modos guardan un paquete
-  cifrado y lo restauran sin el origen, comparando conteos y huellas de
-  contenido; están preparados, pendientes de ejecución.
+- El respaldo usa un rol que sólo lee. Los modos cifrados guardan un paquete
+  age y lo restauran sin el origen, comparando conteos y huellas de contenido.
+  La autoprueba aislada pasó; la copia de operación y la recuperación completa
+  del servicio siguen pendientes.
 
 Las herramientas que no atienden peticiones tienen sus propias reglas. El
 generador de secretos, el inventario y el análisis de vulnerabilidades corren
@@ -413,8 +420,8 @@ docker compose --profile tools run --rm secret-scan
 El primero valida el contrato y sus ejemplos. El segundo busca secretos en todo
 el historial de Git; conviene correrlo antes de cada push, porque el
 repositorio es público. Sus reglas están en `.gitleaks.toml`, que sólo
-exceptúa dos valores ficticios de los ejemplos del contrato: la firma de
-muestra y una clave de idempotencia. Un ejemplo nuevo con forma de token
+exceptúa valores ficticios concretos del contrato y de pruebas: la firma de
+muestra y claves de idempotencia. Un ejemplo nuevo con forma de token
 reutiliza esa firma; no se exceptúan archivos completos.
 
 El contrato se probó generando un cliente Kotlin con OpenAPI Generator 7.26.0

@@ -1,5 +1,43 @@
 # Bitácora de trabajo
 
+## 17 de octubre de 2026 — Declaración de pendientes
+
+Se consolidaron en [Estado y pendientes](estado-y-pendientes.md#lista-consolidada-de-tareas-pendientes)
+las tareas 2 y 4 aún abiertas y las tareas 7 a 20 sin abordar, conservando
+la numeración y el orden de complejidad originales. Se registraron sus
+dependencias y los límites de las tareas 5 y 6 completadas. No se aprobaron
+reglas de negocio, no se ejecutaron funciones nuevas ni se publicó el sistema.
+
+## 17 de octubre de 2026 — Ejecución de tareas 1 a 6
+
+**Estado: avance comprobado; decisiones y recorrido manual abiertos.**
+Docker Desktop se inició y el entorno local se reconstruyó sin borrar volúmenes.
+El API respondió `UP` en el puerto local 18080 y el portal HTTP 200 en 8081.
+
+- Documentación unificada: alcance actual del portal, presentación móvil,
+  verificaciones de respaldos y URL de identidad. Se retiró la indicación
+  desactualizada de que el portal no iniciaba sesión y el desarrollo fuera de Docker.
+- Backend: construcción con pruebas unitarias y 73 pruebas de integración correctas.
+  Contrato válido. Búsqueda de secretos del historial sin hallazgos tras una
+  excepción exacta, por valor y archivo, para un UUID ficticio de una prueba.
+- Portal: 128 pruebas correctas con dos procesos. El primer intento por omisión
+  tuvo 8 fallos de espera/sincronización; `pnpm test` ahora usa ese límite.
+- Android: construcción Docker correcta con 9 pruebas unitarias, lint y APK
+  debug. No se repitieron release ni instrumentación en el teléfono.
+- Identidad configurable: imágenes local y HTTPS ficticia construidas; cliente,
+  nginx y CSP coinciden; HTTP 200 comprobado. No se publicó ni verificó TLS real.
+- Respaldos: autoprueba aislada correcta, incluidos casos de alteración y clave
+  incorrecta. Ensayo local correcto: 130 tablas/1.772 filas con contenido idéntico.
+  No se generaron claves de operación ni se guardó una copia cifrada persistente.
+- Decisiones de negocio: [propuestas preparadas](decisiones-de-negocio.md),
+  pendientes de respuesta; no se modificaron reglas ni permisos.
+- Horarios/importación: [guion preparado](validacion-tareas-1-a-6.md#guion-pendiente-con-sesión-real).
+  Computer Use detuvo el control de Chrome al no poder determinar la URL activa
+  con suficiente certeza. La prueba con sesión real sigue pendiente.
+
+La [validación detallada](validacion-tareas-1-a-6.md) conserva comandos,
+resultados y el estado final de Android.
+
 ## 14 de octubre de 2026 — Jornada, acuse y respaldos
 
 **Estado: avance parcial; tareas abiertas.** El usuario pidió registrar lo

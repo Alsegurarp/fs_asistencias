@@ -9,8 +9,11 @@ Estado: el módulo `web/` implementa inicio de sesión con el adaptador oficial
 Consulta `/me` y ofrece sedes (alta y edición), empleados (alta y edición) y
 tarjetas (registro, asignación y revocación), con permisos por rol y listas
 con cursor. Incluye estados de carga, errores de campos y referencia de
-correlación. La compilación y las pruebas del cliente pasan; todavía falta
-probar el recorrido completo contra Keycloak y el backend real.
+correlación. También implementa horarios y asignaciones, importación CSV y
+usuarios. El 17 de octubre de 2026 pasaron compilación y 128 pruebas con dos
+procesos. El usuario ya comprobó acceso, catálogos, incidencias, cuatro cierres,
+descarga única y usuarios; falta validar horarios e importación con sesión real
+y completar los demás recorridos. Véase la [validación actual](validacion-tareas-1-a-6.md).
 
 La navegación de Incidencias, Cierres y Exportes respeta los roles de `/me`.
 Incidencias ya tiene listado, filtros, detalle, semana del empleado,
@@ -110,9 +113,10 @@ Verificación automática: 128 pruebas del portal y compilación correctas.
 Las pruebas de UI usan API simulada; queda pendiente este recorrido con la
 sesión real. Se reutilizaron las rutas existentes, sin cambios en el backend.
 
-Para desarrollar el portal fuera de Docker: `cd web`, `pnpm install` y
-`pnpm dev`. Usa `http://localhost:8081`, la misma dirección de retorno que el
-realm local permite, y envía `/api` a `http://localhost:8080`. El proveedor
+El desarrollo se verifica dentro de Docker, conforme a las reglas del
+repositorio. Reconstruir con `docker compose up --build --detach web` y abrir
+`http://localhost:8081`, la dirección de retorno permitida por el realm local.
+nginx envía `/api` al backend por la red interna. El proveedor
 de identidad sigue en `http://localhost:8082`. Al recargar la página se vuelve
 a pulsar «Iniciar sesión»: los tokens no se guardan; Keycloak conserva su
 sesión y decide si hace falta pedir credenciales otra vez.
@@ -123,7 +127,9 @@ En Docker, Compose pasa `IDENTITY_URL` a la construcción del portal y a
 Keycloak usan la misma dirección. La publicación, TLS y configuración del
 realm activo siguen pendientes; ver [Ambiente compartido](preparar-ambiente-compartido.md).
 
-Comprobaciones del portal: `pnpm build` y `pnpm test` desde `web/`.
+Compilación: `docker compose build web`. Para las pruebas, construir
+`docker build --target build --tag zenit-web-check web` y ejecutar
+`docker run --rm --network none zenit-web-check pnpm test`.
 
 ## Inicio de sesión
 
@@ -446,8 +452,9 @@ Prueba manual sugerida en Zenit Demo:
 
 La desvinculación real se prueba sólo con una cuenta secundaria desactivada
 previamente en Keycloak. No usar la cuenta del único administrador para ese ensayo.
-Pruebas automatizadas: formularios y permisos en jsdom con API simulada;
-pendiente este recorrido con sesión real. No cambió el backend.
+Pruebas automatizadas: formularios y permisos en jsdom con API simulada.
+El usuario comprobó Usuarios con sesión real; los casos específicos de
+desvinculación y último administrador no se dan por verificados sin evidencia.
 
 ## Exportes
 
@@ -466,8 +473,8 @@ no comprueba automáticamente la huella del archivo ni del manifiesto.
 No hay historial: el API no lista exportes y al abandonar la pestaña se
 pierde la referencia del pedido en pantalla. No se persisten tokens ni archivos.
 
-Verificación: 93 pruebas del portal y compilación correctas; pendiente el
-recorrido manual de descarga con la sesión real. Para la demo, elegir
+Verificación actual: 128 pruebas del portal y compilación correctas. El usuario
+comprobó la descarga única con sesión real. Para repetir en la demo, elegir
 `2026-10-05`, dejar todas las sedes y comprobar cuatro filas en el CSV.
 
 Pedir, esperar y descargar:

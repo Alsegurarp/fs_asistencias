@@ -42,6 +42,8 @@ contradice al contrato, manda el contrato.
 | [Respaldos cifrados](respaldos-cifrados.md) | Claves age, copia persistente y restauración sin acceso al origen |
 | [Bitácora de trabajo](bitacora-trabajo.md) | Avances, tareas abiertas y requisitos para retomarlas |
 | [Preparar el ambiente compartido](preparar-ambiente-compartido.md) | URL del portal, TLS, SMTP y cuentas personales; decisiones y verificaciones pendientes |
+| [Validación de tareas 1 a 6](validacion-tareas-1-a-6.md) | Resultados del 17 de octubre de 2026, comandos y pendientes de aceptación |
+| [Decisiones de negocio](decisiones-de-negocio.md) | Comportamiento vigente, propuestas y decisiones pendientes del producto |
 
 ## Las piezas
 
@@ -49,7 +51,7 @@ contradice al contrato, manda el contrato.
 | --- | --- | --- |
 | Backend | `backend/` | Atiende las 60 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
-| Portal web | `web/` | Inicio de sesión PKCE y gestión de sedes, empleados y tarjetas; falta probar el recorrido contra el entorno local |
+| Portal web | `web/` | PKCE, sedes, empleados, horarios, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios; horarios/importación con sesión real pendientes |
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Verificada en un teléfono con servidor de prueba; falta el recorrido contra el backend y las tarjetas reales |
 | Conector | `connector/` | Vacío; es el futuro agente que sincronice el padrón desde la red de un cliente |
 | Infraestructura | `infra/` | Imagen y realm del proveedor de identidad, guiones de la base y ensayo de respaldo |

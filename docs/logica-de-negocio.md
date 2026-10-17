@@ -8,6 +8,10 @@ Lo marcado como **provisional** se construyó con un supuesto razonable y puede
 cambiar cuando el equipo o la asesoría jurídica lo decidan. Está reunido al
 final.
 
+Las propuestas de suspensión, baja, alcance del supervisor y tipo de marcaje
+se registran en [Decisiones de negocio](decisiones-de-negocio.md). Están
+pendientes de aprobación y no sustituyen las reglas vigentes descritas aquí.
+
 ## Principios
 
 1. **El servidor decide.** El dispositivo declara lo que vio; el servidor
@@ -22,7 +26,6 @@ final.
 5. **Cada empresa ve sólo lo suyo.** Lo de otra empresa responde 404, como si
    no existiera.
 6. **Nada se borra.** Se desactiva, se revoca, se da de baja o se reabre. Lo
-   único que se quita es un rol, y queda en la bitácora. Lo
    único que se quita es un rol, y queda en la bitácora.
 
 ## Empresas, personas y acceso
