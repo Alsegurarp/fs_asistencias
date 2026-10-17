@@ -105,7 +105,16 @@ Las claves y todos los archivos de esa prueba desaparecen con el contenedor.
 
 ## Verificación de esta entrega
 
-La configuración de Compose y `git diff --check` se comprobaron sin errores.
-La construcción, la autoprueba y el recorrido con las bases locales están
-pendientes: Docker Desktop estaba detenido y el entorno restringido no pudo
-iniciarlo. Los comandos anteriores están preparados, pero todavía no probados.
+El 17 de octubre de 2026 se construyó el target `backup-tools` y pasó la
+autoprueba sin red ni datos reales: restauración sin origen, filas eliminadas,
+contenido distinto con el mismo conteo, paquete alterado y clave incorrecta.
+Las claves y copias ficticias desaparecieron con el contenedor.
+
+El ensayo existente también pasó con las bases locales y la comparación de
+contenido: 130 tablas y 1.772 filas idénticas. No guardó un respaldo persistente
+ni comprobó escrituras simultáneas en esta ejecución.
+
+Siguen pendientes la generación y custodia de claves de operación, una copia
+cifrada comprobada de las bases locales y la recuperación completa del servicio.
+La autoprueba no sustituye esos recorridos. Resultados en la
+[validación de tareas 1 a 6](validacion-tareas-1-a-6.md).

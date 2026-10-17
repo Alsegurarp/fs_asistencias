@@ -1,6 +1,5 @@
 # Reglas del buscador de secretos. Parte de las reglas por defecto y exceptúa
-# sólo dos valores ficticios de los ejemplos del contrato: la firma de muestra,
-# que dice en claro que no es válida, y una clave de idempotencia de muestra.
+# sólo valores ficticios de los ejemplos del contrato y de las pruebas.
 # No exceptúa archivos: otro secreto en el contrato se sigue detectando.
 [extend]
 useDefault = true
@@ -11,3 +10,10 @@ regexes = [
   '''\.ZmlybWEtZGUtZWplbXBsby1uby12YWxpZGE''',
   '''2d4f6a8c-0e2b-4d6f-8a0c-2e4b6d8f0a2c''',
 ]
+
+[[allowlists]]
+description = "UUID ficticio de idempotencia en la prueba de reintentos del cliente"
+condition = "AND"
+paths = ['''^web/src/api\.test\.ts$''']
+regexTarget = "secret"
+regexes = ['''^c6167cf8-e8bb-4ea5-ade9-cd33b39e3261$''']

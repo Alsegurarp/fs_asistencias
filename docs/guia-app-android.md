@@ -17,7 +17,9 @@ actividad separada con el diseño, los históricos y el panel de Administrador/R
 descritos en [Producto móvil](alcance-producto-movil.md). Sus datos son locales
 y no sustituyen la captura, los recibos ni la vinculación del flujo operativo.
 
-Debug y release compilan; pasan 6 pruebas unitarias. El autoensayo pasó en un
+El 17 de octubre de 2026 pasaron 9 pruebas unitarias, lint y compilación debug
+dentro de Docker. Release tiene una compilación anterior comprobada, no repetida
+en esa revisión. El autoensayo pasó en un
 Samsung SM-S928B con Android API 36: verifica firmas reales de Keystore,
 migración sin pérdida, activación, persistencia, reintentos sin cambiar el
 sobre, rechazo de recibos ajenos, recibos aceptados y rechazados, captura

@@ -1,6 +1,6 @@
 # Preparar el ambiente compartido
 
-Estado al 14 de octubre de 2026: preparación iniciada, sin publicar.
+Estado al 17 de octubre de 2026: preparación iniciada, sin publicar.
 No están confirmados servidor, dominios ni servicio de correo. No usar
 `compose.yaml` como publicación directa: su configuración sigue siendo local.
 
@@ -18,8 +18,11 @@ usa esa dirección para el emisor y Keycloak para su hostname y los retornos
 del cliente del portal.
 
 Se comprobó la resolución de Compose con un dominio ficticio HTTPS y con la
-dirección local: portal, Keycloak y emisor coinciden. La construcción de la
-imagen y el recorrido de acceso siguen pendientes por Docker detenido.
+dirección local: portal, Keycloak y emisor coinciden. El 17 de octubre se
+construyeron las imágenes del portal con URL local y HTTPS ficticia. Se
+comprobó nginx, URL en el cliente y HTTP 200 con la CSP correspondiente.
+El recorrido de acceso por HTTPS sigue pendiente de dominios e infraestructura.
+Véase [la validación](validacion-tareas-1-a-6.md).
 
 ## Datos necesarios para continuar
 
