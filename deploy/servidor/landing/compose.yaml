@@ -6,7 +6,7 @@
 # fastsolution-entrada con el alias `landing`.
 #
 # Las credenciales del correo del formulario viven en LANDING_SECRETOS/smtp.env
-# (SMTP_HOST, SMTP_PORT, SMTP_USER y SMTP_PASS), fuera de Git:
+# (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS y SMTP_FROM), fuera de Git:
 #   LANDING_VERSION=<commit> docker compose --env-file servidor.env up -d --build
 name: fastsolution-landing
 

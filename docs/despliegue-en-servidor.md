@@ -2,8 +2,10 @@
 
 Estado al 18 de octubre de 2026: Zenit está publicado en
 <https://zenit.fastsolution.com.mx> con datos ficticios y sin cuentas de
-personas todavía. La landing de fastSolution está construida en el mismo
-servidor y arranca en cuanto exista la credencial de correo de su formulario.
+personas todavía. La landing de fastSolution corre en
+<https://fastsolution.com.mx> desde el mismo día; su formulario envía por
+Brevo y necesita un remitente verificado (`SMTP_FROM`) para que los mensajes
+salgan.
 
 Es un servidor que presta un tercero. Sólo admite datos ficticios hasta que
 exista un acuerdo por escrito con su dueño; no se cargan datos de personas
@@ -125,6 +127,12 @@ LANDING_VERSION=<commit> docker compose --env-file servidor.env up -d --build
 `compose.yaml` y `servidor.env` de esa carpeta son copia de
 `deploy/servidor/landing/`. El servidor de la landing no arranca sin
 `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` y `SMTP_PASS` en `secretos/smtp.env`.
+El correo sale por Brevo (`smtp-relay.brevo.com`, puerto 587). Su login SMTP,
+`...@smtp-brevo.com`, sólo autentica: no es un remitente válido y Brevo
+rechaza un mensaje que lo use como `From`. Por eso `SMTP_FROM` lleva un
+remitente verificado en Brevo o una dirección de un dominio autenticado ahí.
+Si la cuenta de Brevo bloquea las direcciones IP no autorizadas, un cambio de
+la IP del servidor detiene el envío hasta autorizar la nueva.
 
 ## Certificados
 
@@ -154,7 +162,7 @@ bloque nuevo se copia después de emitirlo.
 | API | `200` en `/api/v1/system/status`; `401` en `/api/v1/me` sin token |
 | Identidad | Descubrimiento con el emisor público; la página de acceso carga con el retorno del portal y rechaza (`400`) un retorno ajeno |
 | Administración | `404` por la dirección pública para `master`, `/id/admin/`, la salud y la raíz de `/id/`; la consola carga por túnel |
-| Landing | `www` redirige con la ruta y la consulta; la raíz responde `502` hasta que arranque con su credencial |
+| Landing | Corre sobre el commit `6d00456`: raíz `200`, `www` redirige con la ruta y la consulta, y un contacto inválido responde `400`. Desde el servidor, el login de Brevo conecta y autentica; todavía no se envió ningún mensaje |
 | Dirección real | El borde registra la dirección del visitante, no la del anfitrión |
 | Límites | Probados con la misma configuración en local, no en el servidor: el formulario de contacto acepta 3 envíos seguidos por dirección y responde `429` después. Zenit está configurado con ráfagas de 80 y 20 por segundo por dirección, sin prueba de carga |
 | Vulnerabilidades | Borde, certificados y landing (con el `Dockerfile` corregido) sin altas ni críticas en Grype. Las imágenes de Zenit se construyeron en el servidor con los mismos `Dockerfile` que en local; no se volvieron a analizar en este despliegue |
@@ -171,7 +179,7 @@ bloque nuevo se copia después de emitirlo.
 
 | Qué | Para qué |
 | --- | --- |
-| Credencial de correo de la landing y el commit de su `Dockerfile` corregido | Que arranque y su formulario envíe. La imagen original traía 20 vulnerabilidades altas: OpenSSL y zlib de Alpine y paquetes del npm global, que la app no usa al correr |
+| Remitente verificado de la landing (`SMTP_FROM`) y su cambio de código | Que su formulario envíe: con Brevo, usar el login SMTP como remitente hace que rechace el mensaje. Lo mejor es autenticar `fastsolution.com.mx` en Brevo, con registros en su DNS |
 | Cuentas personales en la consola de identidad, con segundo factor | Retirar la cuenta temporal de arranque después de comprobarlas |
 | Correos de quien opera el servicio (`operator_emails`) | Nadie puede dar de alta una empresa mientras esté vacío |
 | Servicio de correo en la identidad | Verificación de correo y recuperación de contraseña |
