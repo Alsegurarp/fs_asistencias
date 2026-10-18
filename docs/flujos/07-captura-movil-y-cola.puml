@@ -1,0 +1,45 @@
+@startuml
+title Android operativo — del NFC a la confirmación
+skinparam shadowing false
+start
+:MainActivity recibe Tag.id mediante NFC;
+:AttendanceViewModel llama AttendanceRepository.capture;
+if (¿Debug, activado, bloqueo de pantalla\ny sesión utilizable?) then (no)
+  :Mostrar error; no crear marcaje;
+  stop
+endif
+:Validar tipo declarado según breakPolicy;
+:Reservar consecutivo y persistir nextSequence;
+:Tomar ubicación puntual o motivo de indisponibilidad;
+:Generar UUID de idempotencia; hora de pared,\nreloj monotónico, sesión y prueba uid_sha256;
+:Firmar sobre ES256 con clave del dispositivo;
+:Cifrar con OfflineEventCipher y guardar en Room\npending_attendance_event: pending_signed;
+:Programar AttendanceSyncWorker con conectividad;
+if (¿Red disponible?) then (no)
+  :Conservar cola y esperar conectividad;
+  stop
+endif
+:Desencriptar hasta 100 sobres pendientes\ny enviar lote con aserción firmada;
+if (¿Fallo de red, 429 o 5xx?) then (sí)
+  :Conservar sobres idénticos;\nreintento exponencial desde 30 s;
+  stop
+endif
+if (¿Error definitivo de petición/autenticación?) then (sí)
+  :Conservar pendientes y pedir revisión a RH;\nWorker termina failure;
+  stop
+endif
+:Validar cantidad, orden, claves, fechas y resultado\nde todos los recibos antes de completar el lote;
+if (¿Respuesta inconsistente?) then (sí)
+  :Conservar pendientes; pedir revisión;
+  stop
+endif
+:Transacción Room: guardar recibos cifrados\ny estado accepted / accepted_with_incident / rejected;
+:Mostrar últimas 10 confirmaciones;\nprocesar hasta 10 lotes por sincronización;
+stop
+legend bottom
+Rechazo en recibo es definitivo: no se reenvía como pendiente.
+Los sobres y recibos no se purgan automáticamente.
+No hay captura de tarjeta real en release: la implementación la bloquea.
+Presentación debug usa otro recorrido sin cola ni API.
+endlegend
+@enduml

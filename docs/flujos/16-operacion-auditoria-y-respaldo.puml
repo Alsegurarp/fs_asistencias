@@ -1,0 +1,41 @@
+@startuml
+title Operación — esquema, auditoría y recuperación
+skinparam shadowing false
+start
+partition "Arranque del servicio" {
+  :secrets-init crea secretos faltantes; no los sustituye;
+  :PostgreSQL nuevo inicializa roles separados\ny bases de producto e identidad;
+  :migrate aplica Flyway con zenit_migrator;
+  :Backend valida esquema y atiende con zenit_app;\nKeycloak usa keycloak_app;
+  :Portal y borde publican HTTPS;\nservicios internos sin puertos públicos;
+}
+partition "Operación normal" {
+  :Mutaciones administrativas agregan audit_log\ncon actor, acción, objetivo y correlación;
+  :GET /audit-log para admin/auditor de su tenant;
+  :Listas paginadas por cursor;\ncontrato, roles y validaciones en servidor;
+}
+partition "Respaldo y recuperación preparados en el repositorio" {
+  :backup usa rol zenit_backup de sólo lectura;
+  :Por cada base: pg_dump y huellas de filas\nen la misma instantánea;
+  :Cifrar paquete age sólo con clave pública;
+  :Publicar archivo completo y su SHA-256;
+  :Custodio facilita clave privada sólo para recuperar;
+  :restore: descifrar, validar formato/huellas y\nrestaurar sin red en PostgreSQL desechable;
+  if (¿Recuperación persistente solicitada?) then (sí)
+    :recover exige destino vacío y secretos nuevos de base;
+    :Comparar tablas y contenido;\nconservar clúster sólo si termina correctamente;
+    :Arrancar backend/Keycloak en proyecto separado;\ncomprobar esquema, salud y acceso;
+  else (no)
+    :Eliminar instancia desechable al terminar;
+  endif
+}
+stop
+legend bottom
+Ensayo local completado; no demuestra una copia externa operativa.
+Pendiente con Gabriel: custodio, segunda copia, servidor destino y transferencia.
+Política aprobada: diaria, 30 días, pérdida objetivo 24 h, recuperación 4 h.
+Fallos: equipo fastSolution. SSH al servidor exclusivamente mediante Gabriel.
+No se automatizó esa política ni se recuperó el ambiente público todavía.
+Cada base usa su propia instantánea; no hay instante común entre ambas.
+endlegend
+@enduml

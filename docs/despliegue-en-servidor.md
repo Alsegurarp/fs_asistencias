@@ -11,6 +11,10 @@ Es un servidor que presta un tercero. Sólo admite datos ficticios hasta que
 exista un acuerdo por escrito con su dueño; no se cargan datos de personas
 reales.
 
+El acceso SSH al servidor de Zenit se realiza únicamente por el usuario Gabriel
+del proyecto. Las intervenciones remotas se coordinan con él; este registro no
+incluye credenciales ni habilita cuentas adicionales.
+
 ## Cómo llega una petición
 
 ```text

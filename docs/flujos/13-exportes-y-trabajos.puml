@@ -1,0 +1,48 @@
+@startuml
+title Exporte y trabajos — generación y descarga
+skinparam shadowing false
+actor "Admin/RH/auditor" as person
+participant "API / ExportService" as api
+database "export / job / week_closure" as db
+participant "JobWorker" as worker
+participant "ExportJob" as handler
+person -> api : POST /exports + Idempotency-Key\nsemana, sede opcional y formato csv
+api -> api : validar permisos, parámetros y reglas
+alt misma clave y misma petición
+  api --> person : devolver exporte existente
+else misma clave y distinto pedido
+  api --> person : 409 idempotency_conflict
+else nuevo pedido con cierres vigentes
+  api -> db : INSERT export queued y job type=export; auditar
+  api --> person : 202 con referencia para consultar
+end
+worker -> db : claim de trabajo disponible con lease\ny bloqueo SKIP LOCKED
+worker -> handler : handle(job)
+handler -> db : bloquear exporte y releer cierres vigentes
+alt no quedan cierres vigentes
+  handler -> db : export failed; auditar
+else hay cierres
+  handler -> handler : generar CSV y manifiesto\ncon huellas de archivo y cierres
+  handler -> db : export ready, archivo en base\ny expires_at (15 min por defecto)
+end
+alt handler termina correctamente
+  worker -> db : job done
+else excepción e intentos disponibles
+  worker -> db : job queued con espera exponencial
+else intentos agotados / lease abandonada
+  worker -> db : job failed; handler.abandoned\nmarca recurso fallido
+end
+person -> api : GET /exports/{exportId}
+api --> person : estado y metadatos
+person -> api : GET /exports/{exportId}/download
+api -> db : bloquear, verificar ready y vigencia;\nmarcar expired, registrar downloaded_at/by\ny quitar content
+api --> person : archivo, una sola vez;\n409 si no listo / 410 si fallido, usado o vencido
+worker -> db : mantenimiento: expired y content=null\npara archivos vencidos sin descargar
+person -> api : GET /exports/{exportId}/manifest
+api --> person : manifiesto original persistente\nincluso tras descargar o vencer
+note over worker,handler
+Worker es parte del backend; JOBS_ENABLED lo activa/desactiva.
+También procesa week_closure y ejecuta mantenimiento/programación.
+No hay notificaciones ni almacén externo de archivos de exporte.
+end note
+@enduml

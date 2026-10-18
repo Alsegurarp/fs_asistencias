@@ -6,7 +6,32 @@ paquete cifrado con [age](https://github.com/FiloSottile/age); sólo recibe la
 clave pública. El segundo recibe la privada y restaura en una instancia
 nueva de PostgreSQL, sin red, sin contraseña del origen y sin consultarlo.
 
+Para conservar la instancia verificada y arrancar backend e identidad con
+contraseñas nuevas, usar [Recuperación del servicio](recuperacion-servicio.md).
+
 ## Preparar las claves una vez
+
+La clave privada age sirve para **descifrar los archivos de respaldo**. La
+clave pública correspondiente permite cifrarlos sin poder abrirlos, como muestra
+la [documentación de age](https://github.com/FiloSottile/age#usage).
+No es una licencia, una credencial de cliente, una clave SSH ni una clave del
+desarrollador. El servidor que respalda sólo necesita la pública.
+
+En el formato actual, cada paquete contiene las bases completas de Zenit y
+Keycloak: la privada permite recuperar los datos de todas las empresas incluidas
+en esos paquetes. Su custodia corresponde al responsable operativo designado,
+sin dar acceso automáticamente a todo desarrollador o cliente. El cliente no
+necesita introducirla para usar el producto.
+
+Una pareja de claves puede proteger sucesivos respaldos de una instalación;
+no se genera una por archivo ni se usa para asignar licencias. Se recomienda
+separar las claves de desarrollo y de producción. Si se pierde la privada y
+todas sus copias, los paquetes cifrados para ella dejan de ser recuperables;
+crear otra pareja no abre los anteriores. Quien tenga la privada y esos
+paquetes podrá descifrarlos. Conservarla separada del almacén de respaldos.
+La persona y el lugar de custodia todavía no están elegidos. Alexis indica
+consultar su definición y la continuación técnica con Gabriel, quien realiza
+las conexiones SSH; no se le asigna la custodia automáticamente.
 
 Con Docker Desktop funcionando, desde la raíz del repositorio:
 
@@ -78,13 +103,15 @@ Las claves y todos los archivos de esa prueba desaparecen con el contenedor.
 
 ## Límites y recuperación operativa
 
-- La restauración aislada comprueba bases y contenido; no levanta el backend
+- El modo `restore` comprueba bases y contenido; no levanta el backend
   ni Keycloak. Conserva propietarios y membresías, pero crea los roles sin
   login y no copia contraseñas ni privilegios globales de administración.
   Para recuperar un ambiente de servicio, asignar contraseñas nuevas desde
   sus secretos, habilitar únicamente los roles de servicio correspondientes,
   revisar privilegios y comprobar migraciones, salud del API e inicio de sesión.
-  Ese recorrido completo sigue pendiente; no apuntar producción al ensayo.
+  El modo `recover` y su configuración separada preparan ese recorrido, según
+  [Recuperación del servicio](recuperacion-servicio.md); no apuntar producción
+  al ensayo. La copia externa operativa sigue pendiente.
 - Los datos en claro viven sólo en `/work` durante el proceso. Al respaldar
   está en memoria; al restaurar, en el volumen temporal de Docker. La
   eliminación del volumen no equivale a borrado físico seguro: usar cifrado
@@ -147,3 +174,15 @@ Siguen pendientes la generación y custodia de claves de operación, una copia
 cifrada comprobada de las bases locales y la recuperación completa del servicio.
 La autoprueba no sustituye esos recorridos. Resultados en la
 [validación de tareas 1 a 6](validacion-tareas-1-a-6.md).
+
+### Recuperación del servicio del 18 de octubre de 2026
+
+El modo `recover` pasó su autoprueba y un recorrido con las bases ficticias
+locales: 130 tablas y 1.867 filas con contenido idéntico, contraseñas nuevas de
+base de datos, siete migraciones correctas, backend saludable y autenticación
+de la cuenta de Keycloak restaurada. El origen estuvo apagado durante la
+recuperación. Detalles y límites en [Recuperación del servicio](recuperacion-servicio.md).
+
+Esto comprueba recuperación local de bases y servicios; no cierra destino
+externo, custodia, programación, retención ni recuperación del ambiente público.
+Las claves usadas fueron de ensayo y se eliminaron, sin generar una de operación.

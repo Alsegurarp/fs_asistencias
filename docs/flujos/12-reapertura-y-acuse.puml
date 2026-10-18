@@ -1,0 +1,34 @@
+@startuml
+title Cierre vigente — acuse del trabajador y reapertura
+skinparam shadowing false
+participant "Admin de empresa" as admin
+participant "Trabajador o teléfono personal" as worker
+participant "API / ClosureService" as api
+database "week_closure\nclosure_acknowledgement\naudit_log" as db
+worker -> api : GET /me/attendance\nconsulta de su propia semana
+api -> db : leer snapshot si el cierre está vigente
+api --> worker : resumen, versión y referencia de cierre
+worker -> api : POST /week-closures/{closureId}/acknowledgements\ntype=agreed u objected, nota opcional
+api -> api : comprobar titular, empresa, cierre closed\ny ausencia de acuse previo
+alt ajeno / reabierto / ya acusado
+  api --> worker : 404 / 409
+else válido
+  api -> db : INSERT acuse con identidad, hora y evidence_hash;\nINSERT auditoría
+  api --> worker : acuse guardado de esa versión
+end
+admin -> api : POST /week-closures/{closureId}/reopen + motivo
+api -> db : estado reopened; conservar snapshot y acuse;\nINSERT auditoría con motivo
+api --> admin : cierre reabierto
+admin -> api : corregir incidencias y pedir nuevo cierre
+api -> db : INSERT nueva versión; nuevo snapshot y huella
+note over worker,db
+La nueva versión nace sin acuse; la anterior conserva el suyo.
+El acuse no modifica marcajes ni totales.
+Un dispositivo terminal no puede consultar/aceptar la semana de una persona.
+end note
+note over worker,api
+Capacidad implementada en API.
+Semana y acuse aún no están conectados a datos reales en el móvil:
+su presentación debug sólo modifica estado visual de demostración.
+end note
+@enduml

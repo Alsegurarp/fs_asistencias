@@ -9,6 +9,7 @@
 # siga recibiendo escrituras.
 #
 # BACKUP_MODE=backup guarda un paquete age; restore lo verifica sin el origen.
+# recover conserva la instancia verificada en un volumen vacío, con claves nuevas.
 # rehearsal conserva el ensayo en memoria. Nunca imprime contenido de filas.
 #
 # Modo de control: con BACKUP_TAMPER=true borra una fila de la base restaurada
@@ -24,13 +25,25 @@ SOURCE_USER="${BACKUP_USER:-zenit_backup}"
 DATABASES="${BACKUP_DATABASES:-}"
 TAMPER="${BACKUP_TAMPER:-false}"
 RESTORE_USER=restaura
+RESTORE_DATA="$WORK/pgdata"
 
 fail() {
   echo "ENSAYO FALLIDO: $*" >&2
   exit 1
 }
 
-case "$MODE" in rehearsal|backup|restore) ;; *) fail "modo desconocido." ;; esac
+case "$MODE" in rehearsal|backup|restore|recover) ;; *) fail "modo desconocido." ;; esac
+if [ "$MODE" = recover ]; then
+  RESTORE_DATA="${RECOVERY_PGDATA:-/var/lib/postgresql/18/docker}"
+  [[ "$RESTORE_DATA" = /* ]] || fail "la ruta de recuperación debe ser absoluta."
+  if [ -e "$RESTORE_DATA" ]; then
+    [ -d "$RESTORE_DATA" ] && [ ! -L "$RESTORE_DATA" ] && [ -z "$(ls -A "$RESTORE_DATA")" ] \
+      || fail "el destino de recuperación no está vacío; no se modifica."
+  fi
+  for secret in db_admin_password db_migrator_password db_app_password keycloak_db_password db_backup_password; do
+    [ -s "/run/secrets/$secret" ] || fail "falta el secreto nuevo $secret."
+  done
+fi
 # Representación estable de fechas y números en las huellas de contenido.
 export PGOPTIONS='-c timezone=UTC -c datestyle=ISO,YMD -c extra_float_digits=3'
 mkdir "$WORK/payload"
@@ -49,8 +62,8 @@ restored_psql() {
 }
 
 stop_instance() {
-  if [ -f "$WORK/pgdata/postmaster.pid" ]; then
-    pg_ctl -D "$WORK/pgdata" -m immediate -w stop > /dev/null 2>&1 || true
+  if [ -f "$RESTORE_DATA/postmaster.pid" ]; then
+    pg_ctl -D "$RESTORE_DATA" -m immediate -w stop > /dev/null 2>&1 || true
   fi
   if [ -n "${PENDING_FILE:-}" ]; then rm -f -- "$PENDING_FILE"; fi
   rm -rf -- "$WORK"
@@ -58,7 +71,7 @@ stop_instance() {
 trap stop_instance EXIT
 
 started=$(date +%s)
-if [ "$MODE" = restore ]; then
+if [ "$MODE" = restore ] || [ "$MODE" = recover ]; then
   FILE="${BACKUP_FILE:?Falta BACKUP_FILE}"
   [[ "$FILE" =~ ^[a-zA-Z0-9_.-]+\.tar\.age$ ]] || fail "nombre de archivo inválido."
   [ -s /run/secrets/backup-age.key ] || fail "falta la clave privada de restauración."
@@ -78,7 +91,7 @@ for db in $DATABASES; do
   [[ "$db" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || fail "nombre de base inválido."
 done
 
-if [ "$MODE" != restore ]; then
+if [ "$MODE" = backup ] || [ "$MODE" = rehearsal ]; then
 [ -n "$SOURCE_HOST" ] || fail "falta PGHOST."
 PASSWORD_FILE="${BACKUP_PASSWORD_FILE:-/run/secrets/db_backup_password}"
 [ -s "$PASSWORD_FILE" ] || fail "falta db_backup_password."
@@ -131,12 +144,19 @@ cmp -s "$PAYLOAD/SHA256SUMS" "$WORK/checksums" || fail "el paquete no coincide c
 # 2. Instancia desechable. Sólo escucha en un socket dentro de este contenedor.
 mkdir -p "$WORK/run"
 # Con la misma ordenación que la base real, para que los índices se reconstruyan igual.
+# La instancia recuperable conserva fsync y exige contraseña en conexiones TCP.
+init_options=(--auth=trust --no-sync)
+server_options="-c fsync=off"
+if [ "$MODE" = recover ]; then
+  init_options=(--auth-local=trust --auth-host=scram-sha-256)
+  server_options="-c fsync=on"
+fi
 # shellcheck disable=SC2086
-if ! initdb -D "$WORK/pgdata" -U "$RESTORE_USER" --auth=trust --encoding=UTF8 --no-sync ${RESTORE_INITDB_ARGS:-} > "$WORK/initdb.log" 2>&1; then
+if ! initdb -D "$RESTORE_DATA" -U "$RESTORE_USER" "${init_options[@]}" --encoding=UTF8 ${RESTORE_INITDB_ARGS:-} > "$WORK/initdb.log" 2>&1; then
   cat "$WORK/initdb.log" >&2
   fail "no se pudo crear la instancia desechable."
 fi
-pg_ctl -D "$WORK/pgdata" -o "-c listen_addresses='' -c unix_socket_directories=$WORK/run -c fsync=off" -l "$WORK/restore.log" -w start > /dev/null
+pg_ctl -D "$RESTORE_DATA" -o "-c listen_addresses='' -c unix_socket_directories=$WORK/run $server_options" -l "$WORK/restore.log" -w start > /dev/null
 
 # El respaldo nombra a los dueños y a quienes tienen permisos: esos roles deben
 # existir para restaurar. Se crean sin acceso; las contraseñas no viajan en el
@@ -170,4 +190,30 @@ for db in $DATABASES; do
   rows=$((rows + db_rows))
 done
 
-echo "ENSAYO CORRECTO: $tables tablas y $rows filas con contenido idéntico, en $(($(date +%s) - started)) s. La instancia de prueba se elimina."
+if [ "$MODE" = recover ]; then
+  # Las contraseñas no pasan por argumentos, registros ni el paquete de respaldo.
+  restored_psql -d postgres --set=admin="${POSTGRES_ADMIN_USER:-zenit_admin}" <<'SQL'
+SELECT pg_read_file('/run/secrets/db_admin_password') AS admin_password,
+       pg_read_file('/run/secrets/db_migrator_password') AS migrator_password,
+       pg_read_file('/run/secrets/db_app_password') AS app_password,
+       pg_read_file('/run/secrets/keycloak_db_password') AS identity_password,
+       pg_read_file('/run/secrets/db_backup_password') AS backup_password \gset
+SELECT format('CREATE ROLE %I NOLOGIN', :'admin')
+WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'admin') \gexec
+SET password_encryption = 'scram-sha-256';
+ALTER ROLE :"admin" LOGIN SUPERUSER PASSWORD :'admin_password';
+ALTER ROLE zenit_migrator LOGIN PASSWORD :'migrator_password';
+ALTER ROLE zenit_app LOGIN PASSWORD :'app_password';
+ALTER ROLE keycloak_app LOGIN PASSWORD :'identity_password';
+ALTER ROLE zenit_backup LOGIN PASSWORD :'backup_password';
+-- PostgreSQL exige que el rol bootstrap conserve SUPERUSER; no admite acceso.
+ALTER ROLE restaura NOLOGIN;
+SQL
+  pg_ctl -D "$RESTORE_DATA" -m fast -w stop > /dev/null
+  printf "\nlisten_addresses = '*'\n" >> "$RESTORE_DATA/postgresql.conf"
+  printf '\nhost all all all scram-sha-256\n' >> "$RESTORE_DATA/pg_hba.conf"
+  touch "$RESTORE_DATA/.zenit-recovery-ready"
+  echo "RECUPERACIÓN CORRECTA: $tables tablas y $rows filas verificadas, con contraseñas nuevas, en $(($(date +%s) - started)) s. Instancia conservada y detenida."
+else
+  echo "ENSAYO CORRECTO: $tables tablas y $rows filas con contenido idéntico, en $(($(date +%s) - started)) s. La instancia de prueba se elimina."
+fi

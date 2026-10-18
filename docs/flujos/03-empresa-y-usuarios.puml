@@ -1,0 +1,50 @@
+@startuml
+title Empresa y usuarios — creación y ciclo administrativo
+skinparam shadowing false
+actor "Operador del servicio" as op
+actor "Admin de empresa" as admin
+actor "Persona invitada" as invited
+actor "Administración de identidad" as identityAdmin
+participant "API / TenantService" as api
+database "Base del producto" as db
+participant "Keycloak" as kc
+op -> api : POST /tenants\nname, slug, zona, inicio de semana,\npolítica de descanso, firstAdminEmail
+api -> api : comprobar rol operador y validar datos\ncorreo inicial no puede ser operador
+group Transacción de alta
+  api -> db : INSERT tenant (active)
+  api -> db : INSERT tenant_user (invited)\nINSERT rol admin_empresa
+  api -> db : INSERT audit_log
+end
+api --> op : 201 empresa creada
+note over op,api
+La empresa nace aquí. No existe todavía pantalla de operador:
+el portal sólo muestra un aviso al rol operador_saas.
+El alta no crea empleado, contraseña ni cuenta Keycloak.
+end note
+identityAdmin -> kc : crear por consola la cuenta personal correspondiente
+invited -> kc : acceder y demostrar control del correo
+invited -> api : GET /me con token zenit
+api -> db : ligar invitación por email verificado a subject
+api --> invited : admin_empresa y su empresa
+admin -> api : POST /users\nemail, roles, employeeId opcional
+api -> db : tenant_user invitado + roles + auditoría
+note over admin,db
+El usuario de acceso y el empleado son registros distintos.
+employeeId liga opcionalmente la cuenta con el padrón.
+Invitar no envía correo ni crea automáticamente una cuenta Keycloak.
+end note
+admin -> api : PATCH /users/{userId}\nroles, disabled o vínculo employeeId
+api -> api : no dejar a la empresa sin su último administrador
+admin -> api : POST /users/{userId}/unlink
+api -> db : quitar subject; conservar roles e históricos
+op -> api : POST /tenants/{tenantId}/administrators/unlink\nemail + motivo, para recuperación
+api -> db : soltar liga sólo de administrador; auditar
+op -> api : POST /tenants/{tenantId}/suspension\no /reactivation; con motivo
+api -> db : active <-> suspended + auditoría
+note over api,db
+Suspendida: usuarios sin permisos y dispositivos sin autenticación;
+captura y nuevo enrolamiento bloqueados, corridas pendientes fallan.
+Se conservan datos. Al reactivar vuelve el acceso vigente.
+PATCH /tenant permite al admin configurar su propia empresa.
+end note
+@enduml

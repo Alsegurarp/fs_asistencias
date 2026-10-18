@@ -3,7 +3,10 @@
 set -Eeuo pipefail
 umask 077
 mkdir -p /work/source-socket
-cleanup() { pg_ctl -D /work/source -m immediate -w stop >/dev/null 2>&1 || true; }
+cleanup() {
+  pg_ctl -D /work/source -m immediate -w stop >/dev/null 2>&1 || true
+  pg_ctl -D /work/recovered -m immediate -w stop >/dev/null 2>&1 || true
+}
 trap cleanup EXIT
 printf 'fixture-only\n' > /run/secrets/db_backup_password
 age-keygen -o /run/secrets/backup-age.key 2>/dev/null
@@ -15,6 +18,9 @@ psql -X -q -v ON_ERROR_STOP=1 -h /work/source-socket -U fixture -d postgres <<'S
 CREATE ROLE zenit_backup LOGIN PASSWORD 'fixture-only';
 GRANT pg_read_all_data TO zenit_backup;
 CREATE ROLE fixture_owner NOLOGIN;
+CREATE ROLE zenit_migrator NOLOGIN;
+CREATE ROLE zenit_app LOGIN PASSWORD 'old-fixture';
+CREATE ROLE keycloak_app NOLOGIN;
 CREATE DATABASE zenit OWNER fixture_owner;
 CREATE DATABASE keycloak OWNER fixture_owner;
 SQL
@@ -33,6 +39,25 @@ BACKUP_FILE=$(basename /backups/zenit-*.tar.age)
 cleanup
 BACKUP_MODE=restore bash /opt/zenit/rehearse.sh > /work/success.log 2>&1
 grep -q 'ENSAYO CORRECTO: 2 tablas y 4 filas' /work/success.log
+# La recuperación conserva un clúster utilizable y no acepta sobrescribirlo.
+for secret in db_admin_password db_migrator_password db_app_password keycloak_db_password db_backup_password; do
+  printf '%s' 'new-fixture-only' > "/run/secrets/$secret"
+done
+BACKUP_MODE=recover RECOVERY_PGDATA=/work/recovered bash /opt/zenit/rehearse.sh > /work/recover.log 2>&1
+test -f /work/recovered/.zenit-recovery-ready
+if BACKUP_MODE=recover RECOVERY_PGDATA=/work/recovered bash /opt/zenit/rehearse.sh > /work/existing.log 2>&1; then
+  echo 'FALLO: aceptó un destino de recuperación ocupado.' >&2; exit 1
+fi
+grep -q 'destino de recuperación no está vacío' /work/existing.log
+pg_ctl -D /work/recovered -o '-c listen_addresses=127.0.0.1 -p 55432 -c unix_socket_directories=/work/source-socket' -l /work/recovered.log -w start >/dev/null
+if PGPASSWORD=old-fixture psql -X -w -h 127.0.0.1 -p 55432 -U zenit_app -d zenit -c 'select 1' >/dev/null 2>&1; then
+  echo 'FALLO: aceptó la contraseña anterior.' >&2; exit 1
+fi
+test "$(PGPASSWORD=new-fixture-only psql -X -w -At -h 127.0.0.1 -p 55432 -U zenit_app -d zenit -c 'select 1')" = 1
+test "$(PGPASSWORD=new-fixture-only psql -X -w -At -h 127.0.0.1 -p 55432 -U zenit_admin -d zenit -c "select count(*) from probe")" = 2
+test "$(PGPASSWORD=new-fixture-only psql -X -w -At -h 127.0.0.1 -p 55432 -U zenit_admin -d postgres -c "select count(*) from pg_roles where rolname = 'restaura' and not rolcanlogin")" = 1
+test "$(PGPASSWORD=new-fixture-only psql -X -w -At -h 127.0.0.1 -p 55432 -U zenit_admin -d postgres -c "select count(*) from pg_roles where rolcanlogin and rolsuper")" = 1
+cleanup
 if BACKUP_MODE=restore BACKUP_TAMPER=true bash /opt/zenit/rehearse.sh > /work/deleted.log 2>&1; then
   echo 'FALLO: aceptó filas eliminadas.' >&2; exit 1
 fi
@@ -60,4 +85,4 @@ if BACKUP_MODE=restore bash /opt/zenit/rehearse.sh > /work/wrong.log 2>&1; then
   echo 'FALLO: aceptó otra clave privada.' >&2; exit 1
 fi
 grep -q 'no se pudo autenticar y descifrar' /work/wrong.log
-echo 'AUTOPRUEBA CORRECTA: restauración sin origen, filas eliminadas, contenido distinto, cifrado alterado y clave incorrecta.'
+echo 'AUTOPRUEBA CORRECTA: restauración sin origen, recuperación persistente con contraseñas nuevas, rechazo de destino ocupado, filas eliminadas, contenido distinto, cifrado alterado y clave incorrecta.'

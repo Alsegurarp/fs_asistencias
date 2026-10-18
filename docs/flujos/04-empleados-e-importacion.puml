@@ -1,0 +1,44 @@
+@startuml
+title Empleado — dónde nace y cómo se actualiza
+skinparam shadowing false
+start
+:Admin de empresa o RH en portal;
+if (¿Alta manual?) then (sí)
+  :POST /employees\nexternalId, nombre, fecha de alta, sede opcional;
+  :EmployeeService valida campos\ny sede de la misma empresa;
+  if (¿Identificador externo disponible?) then (no)
+    :409 external_id_taken;
+    stop
+  endif
+  :INSERT employee con tenant_id y source=manual;
+  :Auditar employee.created;
+else (CSV)
+  :POST /imports/csv\narchivo UTF-8, Idempotency-Key y dryRun;
+  :Hasta 1 MB / 5.000 filas; plantilla v1;
+  :Misma clave y contenido/modo: devolver resultado previo;\nmisma clave con otro contenido/modo: 409;
+  :Validar encabezados y filas, duplicados, fechas\ny sede activa no ambigua por nombre;
+  if (¿Error estructural?) then (sí)
+    :Guardar employee_import failed; no aplicar;
+    stop
+  endif
+  if (¿dryRun? por defecto sí) then (sí)
+    :Guardar employee_import ready;\nmostrar aceptados y errores sin cambiar empleados;
+    stop
+  endif
+  :En una transacción, aplicar sólo filas aceptadas;
+  :externalId nuevo: INSERT employee source=csv;\nexistente: actualizar nombre, sede y fecha de alta;
+  :Conservar estado, baja e históricos del existente;
+  :Guardar employee_import applied y auditoría;
+  :Crear/actualizar integration_source csv\ny su integration_checkpoint;
+endif
+:Empleado disponible en GET /employees\ny GET /employees/{employeeId};
+:PATCH /employees/{employeeId} permite cambios y baja;
+stop
+legend bottom
+Un empleado no crea cuenta de acceso ni contraseña.
+Cuenta de trabajador: crear identidad e invitar usuario con employeeId.
+La importación conserva huella/conteos/errores, no el archivo CSV.
+La baja impide marcar, pero hoy no revoca tarjeta ni cierra horario.
+No existe aún un conector externo; CSV es la única fuente implementada.
+endlegend
+@enduml

@@ -1,0 +1,50 @@
+@startuml
+title Evento de asistencia — nacimiento en el backend
+skinparam shadowing false
+start
+:POST /attendance-events (Idempotency-Key)\no POST /attendance-events/batch (1 a 100 sobres);
+:Autenticar aserción del dispositivo\ny comprobar dispositivo/empresa activos;
+:Aplicar cuota de dispositivo y validar petición;
+:CaptureProcessor: transacción independiente por sobre;
+:Leer JWS; comprobar kid, firma y carga estricta;
+if (¿Formato o firma inválidos?) then (sí)
+  :Recibo rejected: payload_invalid / signature_invalid;\nattendance_rejection si hay clave interpretable;
+  stop
+endif
+:Comparar cabecera de idempotencia con clave firmada;
+if (¿Ya existe evento/rechazo con la clave?) then (sí)
+  if (¿Misma huella del sobre?) then (sí)
+    :Devolver recibo guardado; no insertar otra vez;
+  else (no)
+    :Conflicto de idempotencia: 409 individual;\nrecibo rejected en lote;
+  endif
+  stop
+endif
+:Validar sesión del dispositivo, consecutivo único,\nlímite de 1.000 y antigüedad máxima 72 h;
+:Validar esquema de tarjeta y flag de simuladas;\ntarjeta registrada, activa y titular activo;
+if (¿Sesión/tiempo/tarjeta/titular inválidos?) then (sí)
+  :Guardar rechazo y devolver recibo rejected;
+  stop
+endif
+:Teléfono personal sólo acepta su propio empleado;
+:Bloquear empleado durante el procesamiento;
+:MarkRules deduce tipo y aplica declaración válida;
+:Evaluar geocerca y sede, duplicados, secuencia,\nreloj, demora y semana previamente cerrada;
+:INSERT attendance_event con sobre original y huella;\nINSERT location_evidence si existe ubicación;
+if (¿Hay anomalías?) then (sí)
+  :INSERT incident open por cada tipo;\noutcome=accepted_with_incident;
+else (no)
+  :outcome=accepted;
+endif
+:Actualizar última comunicación del dispositivo;
+:Devolver recibo; el lote conserva el orden de entrada;
+stop
+legend bottom
+El evento nace al aceptar el sobre, no al abrir la pantalla ni al cerrar semana.
+Eventos, ubicación y rechazos se agregan; no se corrigen ni borran.
+Una anomalía aceptada no equivale a sanción. La coordenada no sale al portal.
+Umbrales actuales: duplicado <60 s; nueva jornada tras 16 h;
+late_sync >24 h o semana cerrada; clock_anomaly con desfase >5 min.
+Un lote puede conservar eventos aceptados aunque otro sobre se rechace.
+endlegend
+@enduml

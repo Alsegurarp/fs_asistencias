@@ -1,0 +1,48 @@
+@startuml
+!pragma layout smetana
+title Zenit — componentes y fronteras actuales
+skinparam shadowing false
+actor "Persona del portal" as person
+actor "Empleado con tarjeta" as worker
+actor "Administración técnica\npor túnel gestionado por Gabriel" as technical
+node "Servidor compartido" {
+  component "Borde del anfitrión\nSNI / PROXY" as host
+  component "Borde fastSolution\nTLS / límites / rutas" as edge
+  component "Portal React + nginx\ninterfaz y proxy /api" as web
+  component "Keycloak\nrealm zenit: acceso al producto\nrealm master: administración" as kc
+  component "Backend Kotlin / Spring\n60 operaciones OpenAPI\npermisos y tenant en servidor" as api
+  component "JobWorker\nexport / week_closure\nproceso del mismo backend" as jobs
+  database "PostgreSQL\nbase producto + base Keycloak" as db
+}
+node "Teléfono Android" {
+  component "MainActivity\nNFC / ubicación puntual" as mobile
+  database "Room\nsobres y recibos cifrados" as queue
+  component "Keystore\nclave privada no exportable" as keys
+  component "PresentationActivity (debug)\nUI de demostración" as demo #FFF2CC
+}
+person --> host : HTTPS
+host --> edge : conexión TLS sin descifrar
+edge --> web : /
+edge --> kc : /id/realms/zenit y recursos
+web --> api : /api/
+web --> kc : OIDC + PKCE
+technical --> kc : consola por túnel; no pública
+worker --> mobile : NFC
+mobile --> queue
+mobile --> keys : firma ES256
+mobile --> host : HTTPS /api/v1
+api --> kc : claves públicas JWKS
+api --> db : zenit_app; tenant_id
+kc --> db : keycloak_app
+jobs --> db : cola persistida
+api --> jobs : encolar referencias
+note bottom of demo
+Sin llamadas de negocio ni login real.
+No escribe la cola de captura ni PostgreSQL.
+end note
+note bottom of api
+El backend recibe actualmente la IP del portal.
+SMTP, cuentas personales y acceso real por HTTPS
+continúan pendientes de configuración/aceptación.
+end note
+@enduml
