@@ -21,7 +21,8 @@ contradice al contrato, manda el contrato.
 | Continuar el backend | [Lógica de negocio](logica-de-negocio.md), [Continuar el backend](continuar-el-backend.md) y [Estado y pendientes](estado-y-pendientes.md) |
 | Entender un término, un estado o una tabla | [Diccionario](diccionario.md) |
 | Saber qué falta | [Estado y pendientes](estado-y-pendientes.md) |
-| Desplegar en el servidor o entender cómo está publicado | [Despliegue en el servidor](despliegue-en-servidor.md) |
+| Desplegar una versión en el servidor | [Instructivo de despliegue](instructivo-de-despliegue.md) |
+| Entender cómo está publicado | [Despliegue en el servidor](despliegue-en-servidor.md) |
 
 ## Documentos
 
@@ -44,6 +45,7 @@ contradice al contrato, manda el contrato.
 | [Bitácora de trabajo](bitacora-trabajo.md) | Avances, tareas abiertas y requisitos para retomarlas |
 | [Preparar el ambiente compartido](preparar-ambiente-compartido.md) | Requisitos del ambiente publicado: TLS, proxy, SMTP y cuentas personales; qué se cumple y qué falta |
 | [Despliegue en el servidor](despliegue-en-servidor.md) | Cómo está publicado Zenit, cómo se despliega una versión, certificados, verificación y lo que falta |
+| [Instructivo de despliegue](instructivo-de-despliegue.md) | El guion de despliegue de Zenit y la landing: configuración, uso, avance, registros y errores |
 | [Validación de tareas 1 a 6](validacion-tareas-1-a-6.md) | Resultados del 17 de octubre de 2026, comandos y pendientes de aceptación |
 | [Decisiones de negocio](decisiones-de-negocio.md) | Comportamiento vigente, propuestas y decisiones pendientes del producto |
 
@@ -57,7 +59,7 @@ contradice al contrato, manda el contrato.
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Verificada en un teléfono con servidor de prueba; falta el recorrido contra el backend y las tarjetas reales |
 | Conector | `connector/` | Vacío; es el futuro agente que sincronice el padrón desde la red de un cliente |
 | Infraestructura | `infra/` | Imagen y realm del proveedor de identidad, guiones de la base y ensayo de respaldo |
-| Despliegue | `deploy/servidor/` | Borde con certificados propios, Zenit encima de `compose.yaml` y la landing, tal como corren en el servidor compartido |
+| Despliegue | `deploy/servidor/` | Borde con certificados propios, Zenit encima de `compose.yaml` y la landing, tal como corren en el servidor compartido, y el guion `desplegar.sh` que los publica |
 
 ## Reglas de esta documentación
 

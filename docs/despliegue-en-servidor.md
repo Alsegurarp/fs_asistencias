@@ -85,6 +85,11 @@ capacidades de Linux y con el sistema de archivos de sólo lectura.
 
 ## Desplegar una versión nueva de Zenit
 
+La forma normal es el guion de despliegue, con una sola orden desde la
+estación: `bash deploy/servidor/desplegar.sh zenit`. Lo explica el
+[instructivo de despliegue](instructivo-de-despliegue.md). Lo que sigue es lo
+que el guion hace en el servidor, por si hay que hacerlo a mano.
+
 Sobre el árbol exportado de un commit (con `git -c core.autocrlf=false
 archive`, para que los guiones conserven LF) copiado a
 `/opt/.fastsolution/zenit/fuente/`:
@@ -116,7 +121,9 @@ cambia el realm en marcha; se cambia en la consola.
 
 ## Desplegar una versión nueva de la landing
 
-Sobre el árbol exportado de su repositorio, copiado a
+Con el guion: `bash deploy/servidor/desplegar.sh landing`, y
+`--credencial <smtp.env>` para subir además la credencial de correo. A mano,
+sobre el árbol exportado de su repositorio, copiado a
 `/opt/.fastsolution/landing/fuente/`:
 
 ```bash

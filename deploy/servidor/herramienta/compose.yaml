@@ -1,0 +1,30 @@
+# Herramienta de despliegue. La invoca deploy/servidor/desplegar.sh con las
+# rutas en variables; no se usa a mano.
+name: fastsolution-despliegue
+
+services:
+  herramienta:
+    build:
+      context: .
+    image: fastsolution-despliegue:1
+    read_only: true
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /home/deploy/.ssh:uid=10001,gid=10001,mode=0700
+      - /tmp:uid=10001,gid=10001,mode=1777
+    environment:
+      FS_SSH_ALIAS: ${FS_SSH_ALIAS:?Defina FS_SSH_ALIAS}
+    volumes:
+      - type: bind
+        source: ${FS_SSH_PERFIL:?Defina FS_SSH_PERFIL}
+        target: /perfil
+        read_only: true
+      - type: bind
+        source: ${FS_ARBOL:?Defina FS_ARBOL}
+        target: /arbol
+        read_only: true
+    network_mode: bridge
