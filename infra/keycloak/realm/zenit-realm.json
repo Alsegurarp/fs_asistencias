@@ -2380,6 +2380,7 @@
           "userSetupAllowed": false
         },
         {
+          "authenticatorConfig": "reset-require-login",
           "authenticator": "reset-credential-email",
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
@@ -2397,7 +2398,7 @@
         },
         {
           "authenticatorFlow": true,
-          "requirement": "CONDITIONAL",
+          "requirement": "DISABLED",
           "priority": 40,
           "autheticatorFlow": true,
           "flowAlias": "Reset - Conditional OTP",
@@ -2425,6 +2426,12 @@
     }
   ],
   "authenticatorConfig": [
+    {
+      "alias": "reset-require-login",
+      "config": {
+        "force-login": "true"
+      }
+    },
     {
       "id": "2d31428b-15de-4d6d-b7f7-a22ab9075944",
       "alias": "browser-conditional-credential",

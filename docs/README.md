@@ -21,6 +21,8 @@ contradice al contrato, manda el contrato.
 | Continuar el backend | [Lógica de negocio](logica-de-negocio.md), [Continuar el backend](continuar-el-backend.md) y [Estado y pendientes](estado-y-pendientes.md) |
 | Entender un término, un estado o una tabla | [Diccionario](diccionario.md) |
 | Saber qué falta | [Estado y pendientes](estado-y-pendientes.md) |
+| Elegir qué resolver primero | [Tareas críticas primero](tareas-criticas-primero.md) |
+| Revisar la lógica actual en diagramas | [Flujos PlantUML](flujos/README.md) |
 | Desplegar en el servidor o entender cómo está publicado | [Despliegue en el servidor](despliegue-en-servidor.md) |
 
 ## Documentos
@@ -29,6 +31,7 @@ contradice al contrato, manda el contrato.
 | --- | --- |
 | [Casos de uso](casos-de-uso.md) | Quién hace qué, con qué rutas y qué puede salir mal |
 | [Lógica de negocio](logica-de-negocio.md) | Las reglas que el servidor aplica y cuáles son provisionales |
+| [Flujos PlantUML](flujos/README.md) | 17 diagramas del estado actual, nacimiento de datos y cobertura de las 60 operaciones |
 | [Consumir el API](consumir-el-api.md) | Credenciales, errores, páginas, idempotencia y recomendaciones de uso |
 | [Guía de la app Android](guia-app-android.md) | Enrolar, firmar, marcar, trabajar sin conexión y mostrar la semana |
 | [Producto móvil](alcance-producto-movil.md) | Pantallas del producto, endpoints y qué funciones están conectadas |
@@ -41,6 +44,7 @@ contradice al contrato, manda el contrato.
 | [Validación de cierres](validacion-cierres.md) | Pruebas ejecutadas y guion de aceptación de cierres semanales |
 | [Revisión jurídica de jornada y acuse](revision-juridica-jornada-acuse.md) | Fuentes oficiales, brechas del código y decisiones para el dictamen |
 | [Respaldos cifrados](respaldos-cifrados.md) | Claves age, copia persistente y restauración sin acceso al origen |
+| [Recuperación del servicio](recuperacion-servicio.md) | Instancia verificada en un volumen separado, contraseñas nuevas y arranque de backend e identidad |
 | [Bitácora de trabajo](bitacora-trabajo.md) | Avances, tareas abiertas y requisitos para retomarlas |
 | [Preparar el ambiente compartido](preparar-ambiente-compartido.md) | Requisitos del ambiente publicado: TLS, proxy, SMTP y cuentas personales; qué se cumple y qué falta |
 | [Despliegue en el servidor](despliegue-en-servidor.md) | Cómo está publicado Zenit, cómo se despliega una versión, certificados, verificación y lo que falta |

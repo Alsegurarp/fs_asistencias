@@ -9,6 +9,10 @@ respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 Última revisión: 18 de octubre de 2026. La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
 separa resultados comprobados de decisiones y pruebas manuales pendientes.
 
+La revisión actual y el orden de ejecución están en
+[Tareas críticas primero](tareas-criticas-primero.md): incluye comprobaciones
+del 18, bloqueos para datos reales y tareas técnicas que pueden iniciarse.
+
 ## Qué está hecho
 
 | Pieza | Estado |
@@ -16,10 +20,10 @@ separa resultados comprobados de decisiones y pruebas manuales pendientes.
 | Contrato | Versión 0.11, con 60 operaciones. Completo para el recorrido del producto; todavía sin congelar |
 | Backend | Atiende las 60 operaciones. 47 pruebas unitarias y 73 de integración contra PostgreSQL real |
 | Base | 28 tablas en 7 migraciones, con roles separados para migrar, para atender y para respaldar. Imagen propia sobre Alpine, sin root ni privilegios, que ordena los textos por código de carácter |
-| Identidad | Proveedor de identidad en el entorno local, con segundo factor obligatorio |
+| Identidad | Segundo factor obligatorio en `zenit`. El 18 se preparó el realm para conservar OTP y exigir reautenticación al recuperar contraseña, con cuatro comprobaciones locales incluida importación. SMTP y cuentas personales del servidor siguen pendientes; [procedimiento](preparar-ambiente-compartido.md) |
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
-| Respaldo | Modos age construidos y autoprueba aislada aprobada el 17 de octubre de 2026. Ensayo local: 130 tablas/1.772 filas idénticas por conteo y contenido. Copia cifrada de operación y recuperación completa pendientes |
+| Respaldo | Modos age y autoprueba aprobados. El 18 de octubre pasó recuperación local con origen apagado: 130 tablas/1.867 filas idénticas, contraseñas nuevas de base, backend e identidad funcionales. [Detalle](recuperacion-servicio.md). Copia externa de operación, custodia, programación y recuperación pública pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
 | Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. Compilación y 128 pruebas con dos procesos comprobadas el 17 de octubre de 2026; hubo fallos con paralelismo por omisión. El usuario comprobó acceso, catálogos, incidencias, cuatro cierres demo, descarga única y usuarios; faltan horarios/importación con sesión real y otros recorridos. Llama 39 operaciones distintas, todas presentes en el contrato con el mismo método y ruta; nginx y su proxy al backend fueron comprobados en local |
 | App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 17 de octubre de 2026 pasaron 9 pruebas unitarias, lint y APK debug en Docker. Release y autoensayo en teléfono con servidor HTTP de prueba tienen verificaciones anteriores; no repetidos en esta revisión. Sus 3 operaciones existen en el contrato |
@@ -90,8 +94,8 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática del correo ni recuperación de contraseña |
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
 | Staging y TLS | Hecho el 18 de octubre de 2026: un ambiente publicado con HTTPS. Falta decidir si habrá un segundo ambiente separado para pruebas |
-| Guardar y restaurar una copia cifrada de las bases locales | Quién custodia la clave privada y dónde queda su copia aislada. Generar la clave antes crea un secreto sin dueño. El ensayo existente ya comparó el contenido de las dos bases |
-| Destino externo, periodicidad y retención del respaldo; recuperación completa del servicio | Decisiones del ambiente publicado: destino fuera de la máquina, frecuencia, retención, quién atiende un fallo y objetivos de recuperación. La copia local cifrada no sustituye la copia fuera de la máquina |
+| Guardar y restaurar una copia cifrada de operación | Consultar con Gabriel quién custodia la clave privada y dónde queda su copia aislada, por indicación de Alexis. El 18 se comprobó una copia local con claves de ensayo, eliminadas al terminar; no sustituye una copia recuperable de operación |
+| Destino externo y recuperación completa del servicio | Aprobados copia diaria, retención 30 días, pérdida máxima 24 h y recuperación 4 h; fallos a cargo de fastSolution. Destino en otro servidor por identificar, probablemente mediante VPN; SSH al origen exclusivamente por Gabriel. Faltan custodia, automatización y comprobación de recuperación pública |
 | Cuotas compartidas entre instancias y dirección real del cliente | El servidor ya está publicado: el borde conoce la dirección real, pero el backend recibe la del portal. Falta que el portal la reenvíe y que el backend confíe sólo en él |
 
 ## Vulnerabilidades conocidas
@@ -183,8 +187,8 @@ defecto se pueda aprovechar aquí.
   conexión, la app tiene que abrir otra sesión antes de seguir marcando.
 - **No hay respaldo real todavía.** El procedimiento pasó su autoprueba y el
   ensayo con las bases locales, pero no se ha generado una clave de operación
-  ni se guarda ninguna copia; faltan custodio, copia externa, periodicidad y
-  retención.
+  ni se guarda ninguna copia operativa; faltan custodia, destino concreto y
+  automatización. Copia diaria y retención de 30 días ya están aprobadas.
 - **No hay notificaciones.** Nadie recibe aviso de una incidencia, un cierre,
   una corrida terminada o un exporte listo: se consulta.
 - **No hay totales en las listas.** Se recorren con cursor.
@@ -212,11 +216,12 @@ defecto se pueda aprovechar aquí.
 - Los guiones de secretos, de la base, del respaldo y del análisis de
   vulnerabilidades en una máquina con Linux: sólo se probaron con Docker
   sobre Windows.
-- El ensayo de respaldo con una base que no quepa en memoria, y una
-  restauración sobre un entorno nuevo de verdad, con sus secretos.
-- Guardar y restaurar un paquete age con las bases locales: espera la clave
-  de operación. La autoprueba aislada de los modos nuevos y la comparación de
-  contenido del ensayo existente ya pasaron.
+- El ensayo de respaldo con una base que no quepa en memoria y la recuperación
+  del ambiente público en otra máquina, con DNS, TLS y sus accesos. La recuperación
+  de bases y servicios locales con secretos nuevos de base pasó el 18.
+- Guardar fuera del servidor y restaurar un paquete age de operación: espera
+  destino y custodia. El recorrido con las bases locales y claves de ensayo pasó
+  el 18; esas claves se eliminaron y no son claves de operación.
 - Empezar de cero un entorno que ya existía, en la máquina de otra persona:
   se comprobó que un volumen de la imagen anterior no arranca con la nueva y
   que un entorno nuevo sí, no el cambio en un entorno con uso.
@@ -229,7 +234,8 @@ defecto se pueda aprovechar aquí.
 
 Declaración al 17 de octubre de 2026. Se conserva la numeración de la evaluación
 original y el orden de menor a mayor complejidad; este orden no sustituye la
-prioridad de los bloqueos de lanzamiento. Las tareas 1, 3, 5 y 6 están completadas
+prioridad de [Tareas críticas primero](tareas-criticas-primero.md), revisada el
+18 de octubre. Las tareas 1, 3, 5 y 6 están completadas
 en el alcance de la [validación](validacion-tareas-1-a-6.md). La 5 no incluye
 acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 
@@ -245,7 +251,7 @@ acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 | 12 | Completar semana y acuse del trabajador | Integrar datos reales, identidad y permisos; el texto y evidencia del acuse dependen también de la tarea 17 |
 | 13 | Completar pantallas del operador del servicio | Administración de empresas desde el portal con permisos reales |
 | 14 | Publicar ambiente de pruebas con TLS, SMTP y cuentas personales | Publicado con TLS el 18 de octubre de 2026 ([Despliegue en el servidor](despliegue-en-servidor.md)). Faltan correo, cuentas personales, quién opera el servicio y el acceso con sesión por HTTPS; retirar la cuenta temporal sólo tras verificar las nuevas |
-| 15 | Comprobar recuperación completa y automatizar respaldos externos | Claves de operación y custodia, copia cifrada persistente restaurada, destino externo, periodicidad, retención, responsables y objetivos de recuperación; probar backend e identidad recuperados |
+| 15 | Comprobar recuperación completa y automatizar respaldos externos | Recuperación local comprobada. Política diaria/30 días, objetivos 24 h/4 h y atención por fastSolution aprobados; SSH por Gabriel y destino en otro servidor. Faltan custodia, concretar destino, automatizar y comprobar recuperación pública; [detalle](recuperacion-servicio.md) |
 | 16 | Validar captura autenticada con tarjetas reales | Definir y probar autenticación y entrega de claves con tarjetas y teléfonos físicos |
 | 17 | Aprobar e implementar reglas de jornada y evidencia del acuse | Dictamen profesional, criterios y casos esperados; conservar reglas y cierres históricos |
 | 18 | Comparar asistencia con horarios y gestionar ausencias | Definir retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y probar |

@@ -1,0 +1,39 @@
+@startuml
+!pragma layout smetana
+title Canales — qué está conectado y qué sigue pendiente
+skinparam shadowing false
+component "Portal web: OIDC + PKCE\n/me y permisos del backend" as web
+component "Catálogos: sedes, empleados,\nhorarios, CSV, tarjetas y usuarios" as catalog #D9EAD3
+component "Incidencias, cierres, corridas\ny exportes" as operational #D9EAD3
+component "Operador: sólo aviso de futura UI\nEmpresas se administran hoy por API" as operator #FFF2CC
+component "Trabajador: sin pantallas conectadas\nSemana/acuse existen en el API" as employee #FFF2CC
+component "Empresa/dispositivos:\nconfiguración de portal pendiente" as missing #FFF2CC
+component "Android MainActivity\nactivación / NFC / ubicación / firma\ncola / sincronización / recibos" as mobile #D9EAD3
+component "Android PresentationActivity (debug)\nInicio, Mi semana, Actividad, Dispositivo\nAdministrador/RH y empleados ficticios" as demo #FFF2CC
+component "API autenticado\nroles por empresa o credencial de dispositivo" as api
+component "Superadmin de producto\nselector entre empresas y acceso transversal\nNO IMPLEMENTADO" as superadmin #F4CCCC
+component "Administración Keycloak master\ncuentas y realms\nNO es rol de producto" as master
+web --> catalog : rol de empresa
+web --> operational : rol de empresa
+web --> operator : operador_saas, sin tenant
+web --> employee : trabajador sin sección disponible
+web ..> missing : por implementar
+catalog --> api
+operational --> api
+mobile --> api : tres operaciones de dispositivo
+mobile ..> demo : se abre desde debug; estado aislado
+master ..> web : no concede permisos de empresa automáticamente
+superadmin ..> api : requiere definición e implementación
+note bottom of demo
+No autentica ni persiste empleados/eventos reales.
+El formulario demo permite continuar con campos vacíos.
+Sus retardos, faltas, vacaciones y tolerancias son ejemplos visuales,
+no reglas implementadas por el backend.
+end note
+legend bottom
+Verde: conexión implementada (no implica aceptación en producción).
+Amarillo: presentación o interfaz pendiente sobre capacidades existentes.
+Rojo: capacidad solicitada que no existe en el contrato/servidor.
+Datos y alcance de superadmins se revisan antes de ampliar permisos.
+endlegend
+@enduml

@@ -1,0 +1,72 @@
+# Aplicar encima del compose.yaml raíz. Proyecto separado y puertos locales.
+# RECOVERY_SECRETOS: directorio absoluto de secretos NUEVOS, generado con secrets-init.
+# RECOVERY_BACKUPS: directorio absoluto que contiene el paquete recuperado del almacén externo.
+# RECOVERY_KEY: archivo absoluto de la clave age que entrega el custodio sólo para recuperar.
+name: zenit-recuperacion
+
+services:
+  db:
+    entrypoint: ["sh", "-ec", "test -f /var/lib/postgresql/18/docker/.zenit-recovery-ready || { echo 'Falta una recuperación verificada' >&2; exit 1; }; exec docker-entrypoint.sh postgres"]
+
+  keycloak:
+    environment:
+      KC_HOSTNAME: http://localhost:28082
+      ZENIT_PORTAL_URL: http://localhost:28081
+    ports: !override ["127.0.0.1:28082:8082"]
+
+  backend:
+    environment:
+      IDENTITY_ISSUER: http://localhost:28082/realms/zenit
+      JOBS_ENABLED: "false"
+    ports: !override ["127.0.0.1:28080:8080"]
+
+  web:
+    build:
+      args:
+        VITE_IDENTITY_URL: http://localhost:28082
+    ports: !override ["127.0.0.1:28081:8080"]
+
+  secrets-init:
+    volumes: !override
+      - ${RECOVERY_SECRETOS:?Defina RECOVERY_SECRETOS}:/out
+
+  backup-recover:
+    profiles: ["ops"]
+    build:
+      context: infra/postgres
+      target: backup-tools
+    read_only: true
+    network_mode: none
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: [/tmp]
+    environment:
+      BACKUP_MODE: recover
+      BACKUP_FILE: ${BACKUP_FILE:?Defina BACKUP_FILE}
+      RESTORE_INITDB_ARGS: "--locale-provider=builtin --builtin-locale=C.UTF-8"
+      POSTGRES_ADMIN_USER: ${POSTGRES_ADMIN_USER:-zenit_admin}
+    secrets: [db_admin_password, db_migrator_password, db_app_password, keycloak_db_password, db_backup_password]
+    entrypoint: ["bash", "/opt/zenit/rehearse.sh"]
+    volumes:
+      - zenit-db:/var/lib/postgresql
+      - /work
+      - ${RECOVERY_BACKUPS:?Defina RECOVERY_BACKUPS}:/backups:ro
+      - ${RECOVERY_KEY:?Defina RECOVERY_KEY}:/run/secrets/backup-age.key:ro
+    pids_limit: 256
+    mem_limit: 1g
+
+secrets:
+  db_admin_password:
+    file: ${RECOVERY_SECRETOS}/db_admin_password
+  db_migrator_password:
+    file: ${RECOVERY_SECRETOS}/db_migrator_password
+  db_app_password:
+    file: ${RECOVERY_SECRETOS}/db_app_password
+  db_backup_password:
+    file: ${RECOVERY_SECRETOS}/db_backup_password
+  keycloak_db_password:
+    file: ${RECOVERY_SECRETOS}/keycloak_db_password
+  keycloak_conf:
+    file: ${RECOVERY_SECRETOS}/keycloak.conf
+  operator_emails:
+    file: ${RECOVERY_SECRETOS}/operator_emails
