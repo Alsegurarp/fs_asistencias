@@ -6,7 +6,7 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
-Última revisión: 17 de octubre de 2026. La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
+Última revisión: 18 de octubre de 2026. La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
 separa resultados comprobados de decisiones y pruebas manuales pendientes.
 
 ## Qué está hecho
@@ -38,8 +38,9 @@ Lo que el backend ya hace, de punta a punta:
    padrón.
 6. Cuota de peticiones por persona.
 
-Todo se ha probado con datos ficticios. Nada se ha probado con datos reales
-ni está publicado.
+Todo se ha probado con datos ficticios. Nada se ha probado con datos reales.
+Desde el 18 de octubre de 2026 hay un ambiente publicado, sólo con datos
+ficticios: [Despliegue en el servidor](despliegue-en-servidor.md).
 
 ## Qué falta para tener el producto
 
@@ -49,7 +50,7 @@ ni está publicado.
 | Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
-| Un ambiente publicado | No hay staging ni dirección pública. Construcción del portal, cliente, nginx y CSP verificados con URL local y HTTPS ficticia. Faltan servidor, dominios, TLS, SMTP, cuentas personales y acceso real por HTTPS |
+| Un ambiente publicado | Desde el 18 de octubre de 2026 Zenit está en <https://zenit.fastsolution.com.mx>, con certificados propios, sólo datos ficticios y sin cuentas de personas ([Despliegue en el servidor](despliegue-en-servidor.md)). Faltan SMTP, cuentas personales, quién opera el servicio, respaldo fuera del servidor y el recorrido con sesión por HTTPS |
 
 ## Pendientes del backend
 
@@ -88,10 +89,10 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Conector para sincronizar el padrón | El sistema del primer cliente |
 | Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática del correo ni recuperación de contraseña |
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
-| Staging y TLS | Un ambiente publicado |
+| Staging y TLS | Hecho el 18 de octubre de 2026: un ambiente publicado con HTTPS. Falta decidir si habrá un segundo ambiente separado para pruebas |
 | Guardar y restaurar una copia cifrada de las bases locales | Quién custodia la clave privada y dónde queda su copia aislada. Generar la clave antes crea un secreto sin dueño. El ensayo existente ya comparó el contenido de las dos bases |
 | Destino externo, periodicidad y retención del respaldo; recuperación completa del servicio | Decisiones del ambiente publicado: destino fuera de la máquina, frecuencia, retención, quién atiende un fallo y objetivos de recuperación. La copia local cifrada no sustituye la copia fuera de la máquina |
-| Cuotas compartidas entre instancias y dirección real del cliente | Cómo se publique el servidor |
+| Cuotas compartidas entre instancias y dirección real del cliente | El servidor ya está publicado: el borde conoce la dirección real, pero el backend recibe la del portal. Falta que el portal la reenvíe y que el backend confíe sólo en él |
 
 ## Vulnerabilidades conocidas
 
@@ -202,9 +203,10 @@ defecto se pueda aprovechar aquí.
 - La app en un teléfono, con una tarjeta real.
 - Carga: una corrida de cierre se probó con 511 personas y un exporte con
   unas decenas de filas, no con más.
-- El comportamiento detrás de un proxy con HTTPS. En local, sin HTTPS, nginx
-  sirvió el portal con sus cabeceras y su proxy respondió con el estado del
-  backend.
+- Una sesión real detrás del proxy con HTTPS. Desde el 18 de octubre de 2026
+  el portal, el estado del backend y la página de acceso responden por
+  HTTPS en el ambiente publicado, pero nadie ha iniciado sesión ahí: faltan
+  cookies, renovación y cierre de sesión.
 - Los trabajos y las cuotas con más de una instancia del backend, fuera de
   las pruebas.
 - Los guiones de secretos, de la base, del respaldo y del análisis de
@@ -242,7 +244,7 @@ acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 | 11 | Automatizar verificaciones en cada cambio | Elegir servicio de integración continua y ejecutar las comprobaciones existentes |
 | 12 | Completar semana y acuse del trabajador | Integrar datos reales, identidad y permisos; el texto y evidencia del acuse dependen también de la tarea 17 |
 | 13 | Completar pantallas del operador del servicio | Administración de empresas desde el portal con permisos reales |
-| 14 | Publicar ambiente de pruebas con TLS, SMTP y cuentas personales | Faltan servidor, dominios, certificados, correo, responsables y comprobación de acceso HTTPS; retirar cuenta temporal sólo tras verificar las nuevas |
+| 14 | Publicar ambiente de pruebas con TLS, SMTP y cuentas personales | Publicado con TLS el 18 de octubre de 2026 ([Despliegue en el servidor](despliegue-en-servidor.md)). Faltan correo, cuentas personales, quién opera el servicio y el acceso con sesión por HTTPS; retirar la cuenta temporal sólo tras verificar las nuevas |
 | 15 | Comprobar recuperación completa y automatizar respaldos externos | Claves de operación y custodia, copia cifrada persistente restaurada, destino externo, periodicidad, retención, responsables y objetivos de recuperación; probar backend e identidad recuperados |
 | 16 | Validar captura autenticada con tarjetas reales | Definir y probar autenticación y entrega de claves con tarjetas y teléfonos físicos |
 | 17 | Aprobar e implementar reglas de jornada y evidencia del acuse | Dictamen profesional, criterios y casos esperados; conservar reglas y cierres históricos |

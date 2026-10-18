@@ -1,0 +1,88 @@
+# Zenit en el servidor compartido. Se aplica encima de compose.yaml, que sigue
+# siendo la definición de imágenes, endurecimiento y redes internas:
+#
+#   docker compose --project-directory <árbol> \
+#     -f <árbol>/compose.yaml -f <árbol>/deploy/servidor/zenit/compose.yaml \
+#     --env-file <árbol>/deploy/servidor/zenit/servidor.env up -d --build
+#
+# Lo que cambia respecto del entorno local:
+#   - las direcciones públicas salen de servidor.env;
+#   - los secretos viven fuera del árbol, en ZENIT_SECRETOS, para que un
+#     despliegue nuevo no los toque;
+#   - backend y portal no publican puertos; portal e identidad se unen a la
+#     red del borde con un alias propio;
+#   - la identidad sólo publica, en la interfaz local, el puerto de su consola,
+#     que se usa por túnel SSH;
+#   - todo se reinicia solo y sus registros tienen tope.
+
+x-servidor: &servidor
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  db:
+    <<: *servidor
+
+  migrate:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  keycloak:
+    <<: *servidor
+    environment:
+      # La consola no sale por el borde: se alcanza por túnel en esta dirección.
+      KC_HOSTNAME_ADMIN: ${IDENTITY_ADMIN_URL:?Defina IDENTITY_ADMIN_URL}
+      # Sólo le cree las cabeceras X-Forwarded-* al borde, que las sobrescribe.
+      KC_PROXY_HEADERS: xforwarded
+      KC_PROXY_TRUSTED_ADDRESSES: 172.30.88.0/24
+    networks:
+      datos:
+      borde:
+      entrada:
+        aliases:
+          - zenit-identidad
+
+  backend:
+    <<: *servidor
+    ports: !reset []
+
+  web:
+    <<: *servidor
+    ports: !reset []
+    networks:
+      borde:
+      entrada:
+        aliases:
+          - zenit-portal
+
+  secrets-init:
+    volumes:
+      - ${ZENIT_SECRETOS:?Defina ZENIT_SECRETOS}:/out
+
+networks:
+  entrada:
+    external: true
+    name: fastsolution-entrada
+
+secrets:
+  db_admin_password:
+    file: ${ZENIT_SECRETOS}/db_admin_password
+  db_migrator_password:
+    file: ${ZENIT_SECRETOS}/db_migrator_password
+  db_app_password:
+    file: ${ZENIT_SECRETOS}/db_app_password
+  db_backup_password:
+    file: ${ZENIT_SECRETOS}/db_backup_password
+  keycloak_db_password:
+    file: ${ZENIT_SECRETOS}/keycloak_db_password
+  keycloak_conf:
+    file: ${ZENIT_SECRETOS}/keycloak.conf
+  operator_emails:
+    file: ${ZENIT_SECRETOS}/operator_emails

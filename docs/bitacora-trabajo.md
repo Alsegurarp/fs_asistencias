@@ -1,5 +1,26 @@
 # Bitácora de trabajo
 
+## 18 de octubre de 2026 — Publicación en el servidor compartido
+
+**Estado: Zenit publicado con datos ficticios; la landing espera su
+credencial de correo.** Zenit corre en <https://zenit.fastsolution.com.mx>
+sobre el commit `2c24cde`, con la configuración de servidor de
+`deploy/servidor/`. Un borde propio de fastSolution termina TLS con
+certificados de Let's Encrypt que emite y renueva lego; el borde del
+anfitrión sólo enruta por nombre, sin descifrar. Los secretos se generaron en
+el servidor y no salen de él.
+
+Comprobado por la dirección pública: portal, estado del backend y página de
+acceso de la identidad; emisor público correcto aunque se falsifiquen
+cabeceras; `404` para la administración, `master` y la salud de la
+identidad; `421` para un `Host` ajeno; puertos internos cerrados; consola de
+identidad por túnel. Detalle en [Despliegue en el servidor](despliegue-en-servidor.md).
+
+No comprobado: ninguna sesión real (no hay cuentas de personas), correo,
+respaldo operativo, ni una renovación real de certificado. La landing quedó
+construida; su `Dockerfile` se corrigió para dejar su imagen sin
+vulnerabilidades altas y arranca cuando exista su credencial.
+
 ## 17 de octubre de 2026 — Declaración de pendientes
 
 Se consolidaron en [Estado y pendientes](estado-y-pendientes.md#lista-consolidada-de-tareas-pendientes)

@@ -1,0 +1,120 @@
+# Borde de fastSolution en el servidor compartido.
+#
+# El 443 del servidor lo escucha el borde del anfitrión, que sólo lee el nombre
+# pedido en el saludo TLS y entrega la conexión cifrada, sin abrirla, a este
+# borde por 127.0.0.1:19443, con el protocolo PROXY. Aquí termina TLS con los
+# certificados propios de fastSolution y se reparte por nombre a la landing y
+# a Zenit, que viven en la red `fastsolution-entrada`.
+#
+# El 80 del anfitrión reenvía estos nombres a 127.0.0.1:19080: aquí se sirve
+# la validación de certificados y la redirección a HTTPS.
+#
+# Se levanta desde su propio directorio en el servidor, con una copia de esta
+# carpeta y el estado (certificados y validación) en BORDE_ESTADO:
+#   docker compose --env-file servidor.env up -d --build
+name: fastsolution-borde
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  borde:
+    build:
+      context: imagenes/nginx
+    image: fastsolution-borde-nginx:1.30.6
+    <<: [*hardening, *logging]
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:uid=101,gid=101,mode=0700
+    # Recarga cada seis horas para tomar los certificados renovados; lego
+    # renueva con un tercio de la vigencia por delante.
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        while :; do sleep 21600; nginx -s reload; done &
+        exec nginx -g 'daemon off;'
+    volumes:
+      # Directorio, no archivos sueltos: al reemplazar un archivo, un montaje
+      # de archivo seguiría viendo el anterior.
+      - ./conf.d:/etc/nginx/conf.d:ro
+      # Sólo los certificados; la llave de la cuenta ACME no entra aquí.
+      - ${BORDE_ESTADO:?Defina BORDE_ESTADO}/lego/certificates:/etc/nginx/certificados:ro
+      - ${BORDE_ESTADO}/acme:/var/www/acme:ro
+    # Sólo en la interfaz local del servidor: lo alcanza el borde del anfitrión.
+    ports:
+      - "127.0.0.1:19080:8080"
+      - "127.0.0.1:19443:8443"
+    networks:
+      - entrada
+    healthcheck:
+      test: ["CMD", "nginx", "-t", "-q"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    pids_limit: 64
+    mem_limit: 128m
+
+  # Emite y renueva los certificados por validación HTTP, dejando el reto en
+  # el directorio que sirve el borde. Corre como el mismo usuario que el borde,
+  # para que éste lea las llaves sin abrirlas a nadie más. Cada grupo de
+  # CERTIFICADOS es un certificado; su primer nombre es el nombre del archivo.
+  # `lego run` sólo pide uno nuevo cuando falta o le queda un tercio de vida.
+  certificados:
+    build:
+      context: imagenes/lego
+    image: fastsolution-borde-lego:5.5.2
+    <<: [*hardening, *logging]
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:uid=101,gid=101,mode=0700
+    environment:
+      CERTIFICADOS: "fastsolution.com.mx,www.fastsolution.com.mx zenit.fastsolution.com.mx"
+      LEGO_PATH: /var/lib/lego
+      LEGO_ACCOUNT_ID: fastsolution
+      LEGO_ACCEPT_TOS: "true"
+      LEGO_HTTP: "true"
+      LEGO_HTTP_WEBROOT: /var/www/acme
+      LEGO_KEY_TYPE: EC256
+      LEGO_LOG_FORMAT: text
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        trap exit TERM
+        while :; do
+          for grupo in $$CERTIFICADOS; do
+            lego run --cert.name "$${grupo%%,*}" --domains "$$grupo" \
+              || echo "certificados: fallo $${grupo%%,*}" >&2
+          done
+          sleep 43200 & wait $$!
+        done
+    volumes:
+      - ${BORDE_ESTADO}/lego:/var/lib/lego
+      - ${BORDE_ESTADO}/acme:/var/www/acme
+    # Sale a Internet para hablar con la autoridad; no ve a las aplicaciones.
+    networks:
+      - salida
+    pids_limit: 64
+    mem_limit: 128m
+
+networks:
+  # Red compartida por el borde, la landing y Zenit. Su rango es fijo porque
+  # el borde sólo le cree el protocolo PROXY a quien llega desde ella.
+  entrada:
+    name: fastsolution-entrada
+    ipam:
+      config:
+        - subnet: 172.30.88.0/24
+  salida:

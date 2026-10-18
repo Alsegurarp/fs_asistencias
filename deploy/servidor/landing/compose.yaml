@@ -1,0 +1,52 @@
+# Landing de fastSolution en el servidor compartido.
+#
+# El código vive en su propio repositorio; aquí sólo se describe cómo corre en
+# el servidor. Se construye desde el árbol exportado de un commit, en
+# LANDING_FUENTE, y no publica puertos: la alcanza el borde por la red
+# fastsolution-entrada con el alias `landing`.
+#
+# Las credenciales del correo del formulario viven en LANDING_SECRETOS/smtp.env
+# (SMTP_HOST, SMTP_PORT, SMTP_USER y SMTP_PASS), fuera de Git:
+#   LANDING_VERSION=<commit> docker compose --env-file servidor.env up -d --build
+name: fastsolution-landing
+
+services:
+  landing:
+    build:
+      context: ${LANDING_FUENTE:?Defina LANDING_FUENTE}
+      dockerfile: Dockerfile
+    image: fastsolution-landing:${LANDING_VERSION:-sin-version}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    env_file:
+      - ${LANDING_SECRETOS:?Defina LANDING_SECRETOS}/smtp.env
+    environment:
+      PORT: "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      entrada:
+        aliases:
+          - landing
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    pids_limit: 64
+    mem_limit: 256m
+
+networks:
+  entrada:
+    external: true
+    name: fastsolution-entrada

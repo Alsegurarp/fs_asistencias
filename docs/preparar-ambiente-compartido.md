@@ -1,8 +1,14 @@
 # Preparar el ambiente compartido
 
-Estado al 17 de octubre de 2026: preparación iniciada, sin publicar.
-No están confirmados servidor, dominios ni servicio de correo. No usar
-`compose.yaml` como publicación directa: su configuración sigue siendo local.
+Estado al 18 de octubre de 2026: publicado en <https://zenit.fastsolution.com.mx>
+con datos ficticios. Cómo está montado y cómo se despliega está en
+[Despliegue en el servidor](despliegue-en-servidor.md); aquí queda lo que el
+ambiente debe cumplir y qué falta. Siguen pendientes SMTP, las cuentas
+personales y el recorrido de acceso con sesión.
+
+`compose.yaml` sola sigue siendo la configuración local. En el servidor se le
+aplica encima `deploy/servidor/zenit/compose.yaml`, con las direcciones
+públicas de `deploy/servidor/zenit/servidor.env`.
 
 ## Avance en el repositorio
 
@@ -29,13 +35,13 @@ La comprobación se repitió el 17 de octubre de 2026; véase [la validación](v
 
 ## Datos necesarios para continuar
 
-| Dato | Para qué se necesita |
-| --- | --- |
-| Servidor/proveedor y responsable de acceso | Elegir el proxy y la configuración real de despliegue |
-| Dominios del portal y de identidad | DNS, certificados, emisor, retornos y CSP |
-| Forma de emitir y renovar certificados | Evitar un ambiente cuyo TLS deje de funcionar |
-| SMTP: proveedor, host, puerto, remitente y método de autenticación | Verificación de correo y recuperación de contraseña |
-| Administradores personales y responsable de recuperación | Sustituir la cuenta temporal sin perder acceso |
+| Dato | Para qué se necesita | Al 18 de octubre de 2026 |
+| --- | --- | --- |
+| Servidor/proveedor y responsable de acceso | Elegir el proxy y la configuración real de despliegue | Resuelto: servidor compartido, con un borde propio detrás de una pasarela por nombre |
+| Dominios del portal y de identidad | DNS, certificados, emisor, retornos y CSP | Resuelto: `zenit.fastsolution.com.mx`, con la identidad en `/id` |
+| Forma de emitir y renovar certificados | Evitar un ambiente cuyo TLS deje de funcionar | Resuelto con lego y validación HTTP; la renovación es automática, pero la primera real toca a mediados de diciembre |
+| SMTP: proveedor, host, puerto, remitente y método de autenticación | Verificación de correo y recuperación de contraseña | Pendiente |
+| Administradores personales y responsable de recuperación | Sustituir la cuenta temporal sin perder acceso | Pendiente |
 
 Entregar credenciales SMTP mediante un almacén de secretos; no incluirlas en
 esta documentación, en el realm exportado ni en un commit.
@@ -49,11 +55,14 @@ cabeceras recibidas y restringir acceso directo al servicio. No publicar el
 puerto de administración de salud 9000. Resolver las URL públicas según la
 [configuración de hostname](https://www.keycloak.org/server/hostname).
 
-Pendientes concretos del proyecto: cerrar los puertos directos de backend e
-identidad al exterior, configurar el proxy seleccionado y comprobar acceso,
-redirecciones, cookies y rechazos de cabeceras falsificadas. La cuota por
-dirección todavía ve el proxy: resolver cómo se obtiene la dirección real
-antes de considerar verificada esa protección.
+Hecho el 18 de octubre de 2026: el backend y el portal no publican puertos;
+la identidad sólo publica su consola en la interfaz local del servidor y el
+puerto 9000 no sale. El borde sobrescribe las cabeceras `X-Forwarded-*` y la
+identidad sólo las acepta desde la red del borde (`proxy-headers=xforwarded`
+con `proxy-trusted-addresses`): con cabeceras falsificadas desde fuera, el
+emisor anunciado no cambia. Faltan las cookies y las redirecciones de una
+sesión real, y la cuota por dirección del backend, que todavía ve la
+dirección del portal y no la del visitante.
 
 ## Correo y cuentas personales
 
@@ -93,3 +102,9 @@ no sustituye ese paso.
 
 Sin esos resultados el ambiente continúa pendiente, aunque la configuración
 compile o Compose sea válido.
+
+Al 18 de octubre de 2026 se cumplen el dominio, los certificados, los
+servicios internos cerrados al exterior, el portal construido con sus URL
+definitivas, la consola fuera de la dirección pública y los secretos fuera
+del repositorio. Falta todo lo que necesita una sesión real, el correo y las
+cuentas personales.
