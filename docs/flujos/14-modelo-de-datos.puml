@@ -1,0 +1,80 @@
+@startuml
+!pragma layout smetana
+title Modelo por áreas — 28 tablas y relaciones principales (sin flyway_schema_history)
+skinparam shadowing false
+hide circle
+hide empty members
+package "Empresa y acceso" {
+  entity tenant
+  entity tenant_user
+  entity tenant_user_role
+  entity audit_log
+}
+package "Padrón y operación" {
+  entity site
+  entity employee
+  entity schedule
+  entity schedule_day
+  entity schedule_assignment
+  entity card
+  entity card_assignment
+  entity employee_import
+  entity integration_source
+  entity integration_checkpoint
+}
+package "Captura" {
+  entity device_enrollment
+  entity device
+  entity device_session
+  entity attendance_event
+  entity attendance_rejection
+  entity location_evidence
+}
+package "Jornada y evidencia" {
+  entity incident
+  entity adjustment
+  entity rule_set
+  entity week_closure
+  entity closure_acknowledgement
+  entity week_closure_run
+}
+package "Trabajo y salida" {
+  entity job
+  entity export
+}
+tenant ||--o{ tenant_user
+tenant_user ||--o{ tenant_user_role
+site |o--o{ employee
+employee ||--o{ schedule_assignment
+schedule ||--o{ schedule_assignment
+schedule ||--|{ schedule_day
+employee ||--o{ card_assignment
+card ||--o{ card_assignment
+integration_source ||--o| integration_checkpoint
+employee_import ..> integration_checkpoint : cursor CSV
+device_enrollment ..> device : activación; sin FK directa
+device ||--o{ device_session
+device_session ||--o{ attendance_event
+device ||--o{ attendance_rejection
+attendance_event ||--o| location_evidence
+attendance_event ||--o{ incident
+adjustment |o--o{ incident : resolución ajustada
+rule_set ||--o{ week_closure
+week_closure ||--o| closure_acknowledgement
+job ..> export : reference_id
+job ..> week_closure_run : reference_id
+tenant ..> audit_log : actor, acción, correlación
+legend bottom
+Líneas continuas: relaciones persistidas; punteadas: vínculo lógico o referencia.
+Se omiten FK entre áreas para legibilidad: no es un ER exhaustivo.
+tenant_user puede ligarse a un employee; week_closure pertenece a un employee.
+device y device_enrollment apuntan a employee (personal) o site (terminal).
+attendance_event referencia employee, card, device, device_session y site opcional.
+adjustment puede referenciar el evento; export referencia rule_set y autores.
+Toda información de empresa se filtra por tenant_id; sus FK lo incluyen.
+rule_set es global. job puede tener tenant_id nulo.
+Keycloak guarda cuentas, credenciales y OTP en otra base; no es tenant_user.
+Room del teléfono es otra base: no forma parte de estas 28 tablas.
+Las migraciones V004/V006 reemplazan tablas iniciales; no se cuentan dos veces.
+endlegend
+@enduml

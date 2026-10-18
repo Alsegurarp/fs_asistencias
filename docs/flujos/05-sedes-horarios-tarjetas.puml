@@ -1,0 +1,41 @@
+@startuml
+title Configuración operativa — sedes, horarios y tarjetas
+skinparam shadowing false
+start
+:Usuario con rol de empresa\nAPI aplica tenant_id desde CurrentPerson;
+switch (¿Qué configura?)
+case (Sede)
+  :Sólo admin_empresa crea o modifica;
+  :POST /sites\nnombre, zona, coordenadas y radio;
+  :INSERT site + auditoría;
+  :PATCH /sites/{siteId}: editar o desactivar;
+  :La geocerca se evalúa en captura; no borra históricos;
+case (Horario)
+  :Admin_empresa o RH;
+  :POST /schedules\nzona, vigencias, días, horas y descanso;
+  :INSERT schedule y schedule_day + auditoría;
+  :POST /employees/{employeeId}/schedule-assignments;
+  :Validar misma empresa, vigencia y fecha posterior\nal inicio de la última asignación;
+  :Cerrar asignación anterior el día previo si se cruza;\nINSERT schedule_assignment;
+  :GET empleado muestra horario vigente hoy;
+case (Tarjeta)
+  :Admin_empresa o RH;
+  :POST /cards: número impreso y huella únicos;
+  :INSERT card con status=inventory;
+  :POST /cards/{cardId}/assignments\npara empleado activo de su empresa;
+  :Sólo tarjeta inventory puede asignarse;
+  if (¿Empleado ya tiene una activa?) then (sí)
+    :Cerrar asignación anterior; tarjeta anterior replaced;
+  endif
+  :INSERT card_assignment; nueva tarjeta active;\noperación atómica y auditada;
+  :POST /cards/{cardId}/revocation\nreason=revoked, lost o damaged;
+  :Cerrar asignación y cambiar estado;\nno reasignar tarjeta que ya tuvo titular;
+endswitch
+stop
+legend bottom
+No hay DELETE de estos catálogos.
+El horario no se edita: se crea otro y se asigna con nueva vigencia.
+El cálculo aún no compara asistencia con horario: no genera retardos/faltas.
+La huella de tarjeta se guarda, pero no se devuelve ni se audita.
+endlegend
+@enduml

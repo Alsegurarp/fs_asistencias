@@ -1,0 +1,33 @@
+# Aplicar sobre compose.yaml raíz; secretos propios y base desechable en memoria.
+name: zenit-identity-check
+
+services:
+  db:
+    tmpfs: !override [/tmp, /var/run/postgresql, /var/lib/postgresql]
+    volumes: !override
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+
+  keycloak:
+    environment:
+      KC_HOSTNAME: http://localhost:38082
+    ports: !override ["127.0.0.1:38082:8082"]
+
+  secrets-init:
+    volumes: !override
+      - ${IDENTITY_TEST_SECRETOS:?Defina IDENTITY_TEST_SECRETOS}:/out
+
+secrets:
+  db_admin_password:
+    file: ${IDENTITY_TEST_SECRETOS}/db_admin_password
+  db_migrator_password:
+    file: ${IDENTITY_TEST_SECRETOS}/db_migrator_password
+  db_app_password:
+    file: ${IDENTITY_TEST_SECRETOS}/db_app_password
+  db_backup_password:
+    file: ${IDENTITY_TEST_SECRETOS}/db_backup_password
+  keycloak_db_password:
+    file: ${IDENTITY_TEST_SECRETOS}/keycloak_db_password
+  keycloak_conf:
+    file: ${IDENTITY_TEST_SECRETOS}/keycloak.conf
+  operator_emails:
+    file: ${IDENTITY_TEST_SECRETOS}/operator_emails

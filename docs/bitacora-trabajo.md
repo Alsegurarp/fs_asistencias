@@ -1,5 +1,142 @@
 # Bitácora de trabajo
 
+## 18 de octubre de 2026 — Flujos actuales antes de ampliar permisos
+
+Alexis pide revisar la lógica existente antes de continuar con altas y nuevos
+permisos. Se documentaron [17 flujos PlantUML](flujos/README.md), contrastados
+con servicios, contrato, migraciones, portal y Android. Se generó la
+[cobertura de las 60 operaciones](flujos/cobertura-api.md) y un modelo por áreas
+con las 28 tablas actuales del producto. Sintaxis, SVG y PNG se comprobaron
+con PlantUML 1.2026.8; los renderizados están en `build/flujos/`, ignorado por Git.
+
+Se distinguen empresa, empleado, usuario de acceso, dispositivo y evento;
+también API implementado, UI conectada y presentación móvil sin datos reales.
+El rol superadmin de producto con acceso transversal no existe. Alexis desea
+acceso futuro a ambas plataformas y datos reales, pero indica no implementarlo
+si no está definido. No se agregaron roles, selector de empresa, suplantación
+ni excepciones nuevas de autorización.
+
+Para la tarea 2 quedaron declarados Roberto Arregui, Gabriel Hidalgo y Alexis
+Segura como superadmins previstos de identidad. Los tres correos están ahora
+confirmados en `secrets/zenit-identity-plan.json`, protegido localmente y fuera
+de Git; no se crearon cuentas remotas. El único operador solicitado es
+`operation-zenit@fastsolution.com.mx`, identificador sin buzón. Se generó una
+contraseña temporal de 16 caracteres, comprobada y guardada en
+`secrets/zenit-operator-credential.json`, con acceso restringido al usuario local.
+No se publica la contraseña ni se aplicó a una cuenta todavía.
+
+SMTP continúa pendiente por tramitación del correo. Falta definir el encargado
+de OTP/recuperación del operador y resolver su autorización interna: el código
+actual reconoce operadores por correo verificado. Se propuso usar su identificador
+Keycloak, pero no se implementó al priorizar esta revisión. La tarea 1 conserva
+sus pendientes técnicos con Gabriel. No se accedió al servidor en esta entrega.
+
+## 18 de octubre de 2026 — Tarea 2: preparación de identidad operativa
+
+Alexis solicita continuar con la tarea 2 del orden por criticidad: cuentas
+personales, OTP, operador y SMTP. La tarea 1 mantiene su pendiente con Gabriel.
+
+Se encontró que el realm permitía reiniciar el OTP dentro de la recuperación
+y no exigía reautenticación al usuario local tras cambiar contraseña. Se
+desactivó el subflujo de reinicio OTP y se configuró `force-login=true` en el
+realm versionado. No se habilitaron correo, verificación ni recuperación sin
+SMTP funcional. Cambiar el archivo no modifica el realm ya publicado.
+
+Pasaron cuatro comprobaciones, incluida importación y consulta del flujo activo
+en Keycloak 26.8.0 con PostgreSQL aislado en memoria, puerto local 38082 y
+secretos de prueba separados. No se realizaron envíos, altas reales, acceso SSH
+ni cambios en el servidor. Las pruebas no acreditan el recorrido real de correo,
+contraseña y OTP en navegador.
+
+Se solicitaron personas/correos de administración técnica y operación, y
+confirmación del proveedor y remitente SMTP por canal seguro. Falta respuesta.
+Se preparó el [procedimiento para Gabriel](preparar-ambiente-compartido.md#correo-y-cuentas-personales),
+incluidos prueba de recuperación con OTP conservado, roles separados y retiro
+de `arranque` sólo después de comprobar accesos personales y recuperación.
+
+## 18 de octubre de 2026 — Tarea 1: definición técnica pendiente con Gabriel
+
+Alexis se identifica como el interlocutor de esta sesión e indica que las
+preguntas sobre la clave privada del respaldo y la continuación técnica deben
+dirigirse al desarrollador **Gabriel**, quien realiza las conexiones SSH con el
+servidor. No se interpreta esta indicación como designación automática de Gabriel
+como custodio de la clave.
+
+Pendiente consultar con Gabriel:
+
+- Quién custodiará la clave privada y dónde conservará su segunda copia separada.
+- Qué servidor recibirá los respaldos y cómo será la conexión y transferencia,
+  incluida la VPN si se utiliza.
+- Cómo instalar y comprobar la automatización mediante su acceso autorizado.
+
+Se mantienen la política aprobada por Alexis y la atención de fallos por el
+equipo de fastSolution. La tarea 1 sigue en curso; la generación de claves de
+operación y la configuración remota esperan estas definiciones. No se realizó
+contacto externo ni se accedió al servidor en esta actualización.
+
+## 18 de octubre de 2026 — Tarea 1: acceso y política de respaldo confirmados
+
+Por indicación del responsable del proyecto:
+
+- El acceso SSH al servidor de Zenit se realiza únicamente por el usuario
+  **Gabriel** del proyecto. Las intervenciones remotas de esta tarea deben
+  coordinarse con Gabriel; no se habilitan ni se suponen accesos adicionales.
+- El destino de los respaldos será **otro servidor**, probablemente conectado
+  mediante otra VPN. Faltan identificar ese servidor, su almacenamiento,
+  conectividad y mecanismo de transferencia; la VPN no define el destino por sí sola.
+- Política aprobada: **copia diaria**, **30 días de retención**, objetivo de
+  pérdida máxima de **24 horas** y objetivo de recuperación de **4 horas**.
+  Son objetivos aceptados, aún pendientes de automatización y comprobación.
+- El **equipo de fastSolution** atiende los fallos de respaldo y recuperación.
+
+La custodia de la clave privada age y su segunda copia siguen pendientes de
+definición. Se aclaró su función: descifrar respaldos, independiente de licencias,
+cuentas de clientes, claves SSH y claves de desarrollo. No se generó una clave
+de operación ni se programaron transferencias sin el destino definido.
+
+## 18 de octubre de 2026 — Tarea 1: recuperación local de bases y servicios
+
+**Estado: en curso; copia externa y decisiones operativas pendientes.** Se
+reutilizó `rehearse.sh` para agregar `BACKUP_MODE=recover`: conserva sólo una
+instancia verificada en un destino vacío, con contraseñas nuevas de base de
+datos y un marcador de éxito que exige la configuración separada de recuperación.
+El backup y la restauración de ensayo conservan sus modos anteriores.
+
+La autoprueba pasó con recuperación persistente, contraseña nueva y rechazo
+de la anterior, rol interno sin acceso, destino ocupado, filas eliminadas,
+contenido alterado, ciphertext alterado y clave equivocada. PostgreSQL exige
+conservar SUPERUSER en su rol bootstrap; `restaura` queda NOLOGIN sin contraseña.
+
+El recorrido de servicio pasó con las bases ficticias locales, con el origen
+apagado durante restauración y comprobación: 130 tablas y 1.867 filas idénticas,
+siete migraciones, backend UP, emisor de recuperación y autenticación de la
+cuenta Keycloak restaurada. Duró 66 segundos en local, incluida construcción
+con caché; no representa el tiempo de recuperación del ambiente público.
+El proyecto `recovery-check-20261018134300` quedó detenido y su volumen separado
+se conserva para revisión. Se eliminó la clave age de ensayo. El origen local
+quedó detenido como al comenzar y no se tocó el servidor publicado.
+
+Se solicitaron destino externo/acceso SSH, custodio y segunda copia de la clave,
+frecuencia, retención, objetivos y responsable de fallos. Sin respuesta todavía;
+no se genera clave de operación ni se activa una programación. Instrucciones,
+evidencia y pasos pendientes en [Recuperación del servicio](recuperacion-servicio.md).
+
+## 18 de octubre de 2026 — Revisión y prioridad de pendientes
+
+Se declaró [Tareas críticas primero](tareas-criticas-primero.md), con los bloqueos
+para datos reales, dependencias y criterios de cierre. Se conservan los números
+originales de pendientes para poder darles seguimiento.
+
+Comprobado hoy: 128 pruebas del portal tanto en el árbol local como en la imagen
+existente, compilación TypeScript/Vite y HTTP 200 del portal público, estado del
+API y descubrimiento de identidad. El entorno local no tenía servicios activos.
+
+La revisión encontró una discrepancia entre registros locales de enrolamiento
+Android y el runner versionado, la URL Android con `/api` en la guía, la cuota
+de activación usando la dirección del proxy y la retención móvil sin purga.
+Se declararon como pendientes; no se modificó la aplicación ni el servidor.
+No se repitieron backend, Android, respaldo, vulnerabilidades ni sesión real.
+
 ## 18 de octubre de 2026 — Publicación en el servidor compartido
 
 **Estado: Zenit publicado con datos ficticios; la landing espera su

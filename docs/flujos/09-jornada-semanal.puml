@@ -1,0 +1,33 @@
+@startuml
+title Jornada — cálculo vivo y snapshot cerrado
+skinparam shadowing false
+start
+:GET /employees/{employeeId}/attendance\npor admin/RH/supervisor/auditor;\no GET /me/attendance por trabajador/teléfono personal;
+:Determinar empleado autorizado y empresa;\nnormalizar semana con zona y weekStartsOn del tenant;
+if (¿Hay cierre vigente para esa persona/semana?) then (sí)
+  :Entregar snapshot guardado, reglas y huella del cierre;\nañadir referencias e incidencias abiertas actuales;
+  stop
+endif
+:Elegir rule_set vigente en el último día de semana;
+if (¿No hay reglas para la fecha?) then (sí)
+  :422 no_rules_for_date;
+  stop
+endif
+:Cargar eventos y ajustes con margen de un día\na cada lado de la semana;
+:WeekCalculator aplica add_event, exclude_event y retype_event;
+:Ordenar por hora de ocurrencia y volver a deducir\nla secuencia según política de descansos;
+:Construir tramos work y break;
+:Incluir los tramos cuyo inicio cae en la semana;\nagrupar minutos por el día de inicio del tramo;
+:Tramo abierto no suma minutos;\ndescanso no suma trabajo;
+:Calcular workedMinutes, breakMinutes,\nordinaryMinutes y overtimeMinutes;
+:Emitir alertas de tramo abierto y topes semanales/diarios;
+:Consultar incidencias abiertas y versión de ajustes;
+:Devolver semana calculada sin guardarla como cierre;
+stop
+legend bottom
+rule_set es de sólo lectura para la aplicación; se modifica por migraciones.
+La jornada actual no distingue diurna/nocturna/mixta ni compara con horario.
+Retardos, faltas, vacaciones e incapacidades no están implementados aquí.
+No se representa el cálculo como dictamen jurídico o nómina certificada.
+endlegend
+@enduml

@@ -40,6 +40,8 @@ y cómo se continúa:
 | Buscar un término, un código o una tabla | [Diccionario](docs/diccionario.md) |
 | Agregar algo al backend | [Continuar el backend](docs/continuar-el-backend.md) |
 | Saber qué falta | [Estado y pendientes](docs/estado-y-pendientes.md) |
+| Priorizar lo pendiente | [Tareas críticas primero](docs/tareas-criticas-primero.md) |
+| Entender los flujos implementados y dónde nacen los datos | [Flujos PlantUML](docs/flujos/README.md) |
 
 Este README resume las reglas de cada parte; el detalle está en esa carpeta, y
 la referencia exacta de cada ruta en `contracts/openapi.yaml`.
@@ -117,6 +119,10 @@ Cada conexión usa el rol con menos permisos que le sirve.
   `backend/src/main/resources/db/migration/`.
 
 ## Pruebas
+
+La configuración de identidad se comprueba con
+`node --test infra/keycloak/realm.test.mjs`. El ensayo de importación en una
+instancia aislada está en [Preparar el ambiente compartido](docs/preparar-ambiente-compartido.md#corrección-y-comprobación-local-del-18-de-octubre-de-2026).
 
 Las pruebas unitarias corren al construir la imagen del backend. Las de
 integración usan una base PostgreSQL desechable, inicializada igual que la real:

@@ -1,0 +1,51 @@
+@startuml
+title Cierre — directo, por corrida y programado
+skinparam shadowing false
+start
+switch (¿Quién inicia?)
+case (Admin/RH: cierre directo)
+  :POST /week-closures\nsemana, sede o lista de empleados;
+  :Validar semana terminada en zona del tenant;\nhasta 500 personas;
+  :Llamar WeekCloser.closeOne por persona\ndentro de la transacción del cierre directo;
+case (Admin/RH: corrida)
+  :POST /week-closure-runs\nsemana y sede opcional;
+  :Validar semana terminada y evitar otra corrida activa\npara el mismo alcance;
+  :INSERT week_closure_run queued\ny job type=week_closure; responder 202;
+  :JobWorker toma trabajo; corrida running;
+  :Empresa debe seguir activa; candidatos sin tope;
+  :Llamar WeekCloser.closeAlone por persona\nen transacciones independientes;
+case (Sistema: cierre programado)
+  :Mantenimiento del JobWorker revisa empresas activas\ncon autoCloseAfterHours configurado;
+  :Última semana terminada, plazo cumplido\ny reglas disponibles; una corrida por semana/empresa;
+  :INSERT corrida queued con origin=scheduled\ny job week_closure;
+  :Worker procesa por persona en su propia transacción;\nclosedBy=null y actor system;
+endswitch
+partition "Lógica compartida de cada empleado" {
+  :Bloquear empleado y buscar cierre vigente;
+  if (¿Ya cerrado?) then (sí)
+    :Devolver el mismo cierre;
+  else (no)
+    :Recalcular semana con eventos, ajustes y reglas;
+    if (¿Incidencias abiertas?) then (sí)
+      :Bloqueado: open_incidents;
+    else (no)
+      if (¿Tramo abierto?) then (sí)
+        :Abrir missing_pair si falta;\nbloqueado: open_segment;
+      else (no)
+        :INSERT week_closure versión siguiente\ncon snapshot, totales, reglas y SHA-256;
+        :Auditar week.closed;
+      endif
+    endif
+  endif
+}
+:Directo: devolver cierres y personas bloqueadas;\ncorrida: actualizar conteos, avance y estado done;
+stop
+legend bottom
+Una interrupción de corrida conserva cierres ya confirmados;
+el reintento vuelve a recorrer candidatos y reutiliza cierres vigentes.
+El progreso de corrida se guarda y la lease se renueva cada 25 personas.
+Hoy la corrida expone conteos/motivos, no el detalle de personas bloqueadas.
+El cierre programado no insiste en pendientes ni notifica.
+Sin marcas, un candidato puede cerrar en ceros: ausencias siguen pendientes.
+endlegend
+@enduml

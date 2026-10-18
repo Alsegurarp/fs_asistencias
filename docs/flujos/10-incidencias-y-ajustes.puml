@@ -1,0 +1,49 @@
+@startuml
+title Incidencia — nacimiento y atención humana
+skinparam shadowing false
+start
+if (¿Origen?) then (captura)
+  :Evento aceptado con anomalía\ncrea incident open ligado a empleado/evento;
+else (intento de cierre)
+  :Tramo abierto sin incidencia\ncrea missing_pair y bloquea el cierre;
+endif
+:Admin/RH/supervisor/auditor consulta\nGET /incidents y /incidents/{incidentId};
+:Admin/RH/supervisor atiende con PATCH /incidents/{incidentId};
+:Validar campos y bloquear incidencia de su empresa;
+if (¿Sigue abierta?) then (no)
+  :409 incident_already_resolved;
+  stop
+endif
+if (¿Incluye asignación?) then (sí)
+  :Asignar a usuario no deshabilitado de su empresa\no quitar asignación con null; auditar;
+endif
+if (¿Incluye resolución?) then (no)
+  :Conservar open;
+  stop
+endif
+:Exigir motivo de 10 a 500 caracteres;
+switch (Decisión)
+case (justified)
+  :Registrar justificación;
+case (confirmed)
+  :Registrar confirmación;
+case (adjusted)
+  :Exigir ajuste y validar misma persona/empresa;
+  if (¿Semana cerrada?) then (sí)
+    :409; reabrir primero por usuario admin_empresa;
+    stop
+  endif
+  :INSERT adjustment inmutable:\nadd_event con hora/tipo,\nexclude_event o retype_event;
+  :Subir versión del cálculo;\nno modificar attendance_event original;
+endswitch
+:Actualizar resolución, autor y hora;\nestado resuelto y auditoría;
+:La siguiente consulta recalcula la semana\ncon los ajustes, si está abierta;
+stop
+legend bottom
+Tipos actuales: duplicate, missing_pair, foreign_site,
+location_inconclusive, clock_anomaly y late_sync.
+outside_window está reservado; no se genera por horario todavía.
+Supervisor atiende toda su empresa; no hay alcance por sedes asignadas.
+Una incidencia no crea automáticamente una sanción.
+endlegend
+@enduml

@@ -1,0 +1,48 @@
+@startuml
+title Zenit — recorrido actual del negocio (18-10-2026)
+skinparam shadowing false
+start
+:Configurar identidad Keycloak y operador autorizado;
+:Operador llama POST /tenants por API;
+:Nacen tenant y primer tenant_user invitado\ncon rol admin_empresa, en una transacción;
+:Crear por separado la cuenta personal en Keycloak;
+:Primer acceso con correo verificado\nliga la invitación y habilita el portal de empresa;
+fork
+  :Crear sedes y geocercas;
+fork again
+  :Crear empleados manualmente o importar CSV;
+fork again
+  :Crear horarios y días;
+end fork
+:Asignar horarios y tarjetas a los empleados;
+:Admin/RH emite código de enrolamiento por API;
+:Android registra su clave pública y obtiene sesión;
+:Empleado acerca tarjeta NFC al teléfono;
+:Android firma el sobre y lo guarda cifrado localmente;
+:Sincronizar con aserción del dispositivo;
+:API valida firma, sesión, tarjeta e idempotencia;
+if (¿Marcaje aceptado?) then (sí)
+  :Nace attendance_event inmutable;
+  :Pueden nacer evidencia de ubicación e incidencias;
+else (no)
+  :Recibo rejected; rechazo persistido si hay clave interpretable;
+  stop
+endif
+:Consultar jornada: recalcular eventos y ajustes\no entregar snapshot del cierre vigente;
+:Resolver incidencias y completar tramos abiertos;
+:Cerrar semana terminada: directo o por trabajo;
+fork
+  :Trabajador puede acusar su propio cierre por API;
+fork again
+  :Admin/RH/auditor solicita exporte;
+  :Trabajo genera CSV y manifiesto;
+  :Descarga autenticada una vez antes de vencer;
+end fork
+stop
+legend bottom
+Todas las rutas de producto usan /api/v1.
+El diagrama incluye capacidades del API: no todas tienen pantalla conectada.
+La captura actual sólo admite tarjetas simuladas habilitadas expresamente.
+El móvil no integra todavía semana/acuse con datos reales.
+endlegend
+@enduml

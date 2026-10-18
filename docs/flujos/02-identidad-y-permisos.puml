@@ -1,0 +1,49 @@
+@startuml
+title Identidad — cómo se obtiene acceso al producto
+skinparam shadowing false
+start
+:Cuenta en Keycloak;
+if (¿Cuenta/token del realm master?) then (sí)
+  :Administra Keycloak según sus roles;
+  :No obtiene automáticamente acceso al API Zenit\nni un rol global en web o móvil;
+  stop
+endif
+:Portal inicia código OIDC con PKCE S256\ny OTP configurado para cuentas nuevas;
+:Token de zenit; vida de acceso 5 minutos;
+:Backend comprueba firma, emisor, audiencia,\nvigencia y sujeto;
+if (¿Token válido?) then (no)
+  :401;
+  stop
+endif
+if (¿Correo verificado en operator_emails?) then (sí)
+  :CurrentPerson: operador_saas, sin empresa;
+else (no)
+  :Buscar tenant_user por subject;
+  if (¿No ligado y hay correo verificado?) then (sí)
+    :Intentar ligar invitación por correo\ny auditar user.linked;
+  endif
+  if (¿Usuario activo y empresa activa?) then (sí)
+    :Obtener tenant_id, roles y employee_id\nde la base, nunca del cuerpo de petición;
+  else (no)
+    :Identidad válida sin empresa ni roles;
+  endif
+endif
+:GET /me informa permisos actuales;
+:Aplicar cuota por persona;
+if (¿Rol permite la operación?) then (sí)
+  :Consultar/modificar sólo datos de su tenant;
+  :Recurso de otro tenant: 404;
+else (no)
+  :403; cuota agotada: 429;
+endif
+stop
+legend bottom
+Roles de producto: operador_saas, admin_empresa, rh,
+supervisor, trabajador y auditor. No existe superadmin de producto.
+Un usuario ya ligado se resuelve por subject; el correo verificado
+es necesario para ligar una invitación nueva o reconocer al operador.
+La cuenta interna sin buzón aún no tiene una excepción implementada.
+SMTP sigue pendiente. El realm versionado conserva OTP y exige
+reautenticación al recuperar contraseña; no se aplicó al servidor.
+endlegend
+@enduml

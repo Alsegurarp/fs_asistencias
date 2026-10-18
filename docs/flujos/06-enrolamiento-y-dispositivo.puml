@@ -1,0 +1,48 @@
+@startuml
+title Dispositivo — activación, sesión y revocación
+skinparam shadowing false
+actor "Admin/RH" as rh
+participant "API / DeviceService" as api
+database "PostgreSQL" as db
+participant "Android operativo" as phone
+participant "Keystore" as keys
+rh -> api : POST /device-enrollments
+alt personal
+  api -> api : comprobar employeeId activo; sin siteId
+else terminal
+  api -> api : comprobar siteId activo; sin employeeId
+end
+api -> db : device_enrollment pending\nhuella de código, modo, destino, vence en 15 min
+api --> rh : código de un uso (se entrega una vez)
+rh -> phone : facilitar código por canal operativo
+phone -> keys : generar clave P-256 no exportable
+phone -> api : POST /device-activations, sin token\ncódigo, clave pública, prueba firmada,\nbloqueo de pantalla e información del teléfono
+api -> api : validar formato, firma y prueba de posesión
+api -> db : bloquear código y comprobar vigente/pending,\nempresa y destino activos, clave no registrada
+alt activación inválida
+  api --> phone : error; limita intentos fallidos por dirección
+else válida
+  opt personal: ya existe teléfono activo del empleado
+    api -> db : reemplazar anterior y cerrar sus sesiones
+  end
+  api -> db : INSERT device active; código used;\nINSERT device_session + auditoría
+  api --> phone : registro, modo, tenant y sesión\npolítica offline: 72 h / 1.000 eventos
+  phone -> phone : guardar registro y nextSequence=1
+end
+phone -> keys : firmar aserción ES256\naud=zenit-capture, vida máxima 120 s
+phone -> api : POST /device-sessions con aserción
+api -> db : cerrar sesión anterior, abrir nueva
+api --> phone : nueva política de sesión
+note over phone
+La app exige sincronizar pendientes antes de renovar sesión.
+Para reenrolar: sincronizar o conservarlos como previous_device,
+sin reenviarlos con la clave nueva.
+end note
+rh -> api : POST /devices/{deviceId}/revocation + motivo
+api -> db : device revoked; cerrar sesiones; auditar
+note over api,db
+La revocación invalida autenticación; conserva marcajes.
+Dispositivos usan claves propias, no cuentas de Keycloak.
+Administración de dispositivos en portal sigue pendiente.
+end note
+@enduml
