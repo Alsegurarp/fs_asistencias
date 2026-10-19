@@ -25,7 +25,7 @@ del 18, bloqueos para datos reales y tareas técnicas que pueden iniciarse.
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | Modos age y autoprueba aprobados. El 18 de octubre pasó recuperación local con origen apagado: 130 tablas/1.867 filas idénticas, contraseñas nuevas de base, backend e identidad funcionales. [Detalle](recuperacion-servicio.md). Copia externa de operación, custodia, programación y recuperación pública pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios. Compilación y 128 pruebas con dos procesos comprobadas el 17 de octubre de 2026; hubo fallos con paralelismo por omisión. El usuario comprobó acceso, catálogos, incidencias, cuatro cierres demo, descarga única y usuarios; faltan horarios/importación con sesión real y otros recorridos. Llama 39 operaciones distintas, todas presentes en el contrato con el mismo método y ruta; nginx y su proxy al backend fueron comprobados en local |
+| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, incidencias, cierres, exportes y usuarios. El 18 de octubre de 2026 se agregaron Dispositivos y, para quien opera el servicio, Empresas; pasaron la compilación y 138 pruebas en Docker. Compilación y 128 pruebas con dos procesos comprobadas el 17 de octubre de 2026; hubo fallos con paralelismo por omisión. El usuario comprobó acceso, catálogos, incidencias, cuatro cierres demo, descarga única y usuarios; faltan horarios/importación con sesión real y otros recorridos. Llama 39 operaciones distintas, todas presentes en el contrato con el mismo método y ruta; nginx y su proxy al backend fueron comprobados en local |
 | App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 17 de octubre de 2026 pasaron 9 pruebas unitarias, lint y APK debug en Docker. Release y autoensayo en teléfono con servidor HTTP de prueba tienen verificaciones anteriores; no repetidos en esta revisión. Sus 3 operaciones existen en el contrato |
 | Conector | No existe |
 
@@ -50,7 +50,7 @@ ficticios: [Despliegue en el servidor](despliegue-en-servidor.md).
 
 | Qué | Por qué importa |
 | --- | --- |
-| Completar el portal | Ya tiene acceso, padrón, horarios, importación, incidencias, cierres, exportes y usuarios. Faltan configuración de empresa, dispositivos y pantallas de operador y trabajador |
+| Completar el portal | Ya tiene acceso, padrón, horarios, importación, tarjetas, dispositivos, incidencias, cierres, exportes y usuarios. Quien opera el servicio ya lista y da de alta empresas. Faltan configuración de empresa, suspender y reactivar desde el portal y la pantalla del trabajador |
 | Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
@@ -96,7 +96,7 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Staging y TLS | Hecho el 18 de octubre de 2026: un ambiente publicado con HTTPS. Falta decidir si habrá un segundo ambiente separado para pruebas |
 | Guardar y restaurar una copia cifrada de operación | Consultar con Gabriel quién custodia la clave privada y dónde queda su copia aislada, por indicación de Alexis. El 18 se comprobó una copia local con claves de ensayo, eliminadas al terminar; no sustituye una copia recuperable de operación |
 | Destino externo y recuperación completa del servicio | Aprobados copia diaria, retención 30 días, pérdida máxima 24 h y recuperación 4 h; fallos a cargo de fastSolution. Destino en otro servidor por identificar, probablemente mediante VPN; SSH al origen exclusivamente por Gabriel. Faltan custodia, automatización y comprobación de recuperación pública |
-| Cuotas compartidas entre instancias y dirección real del cliente | El servidor ya está publicado: el borde conoce la dirección real, pero el backend recibe la del portal. Falta que el portal la reenvíe y que el backend confíe sólo en él |
+| Cuotas compartidas entre instancias | La dirección real del visitante ya llega al backend a través del borde y del portal, y el límite de activaciones fallidas cuenta a cada visitante por separado. Compartir las cuotas sólo hace falta con más de una instancia |
 
 ## Vulnerabilidades conocidas
 
@@ -173,8 +173,10 @@ defecto se pueda aprovechar aquí.
   español tiene que pedirlo en su consulta, con `COLLATE "es-x-icu"`.
 - **Invitar revela si un correo existe.** Un correo que ya pertenece a
   alguien responde un conflicto, sin decir en qué empresa.
-- **Las cuotas viven en memoria.** Valen para una sola instancia del backend,
-  y detrás de un proxy la dirección que se ve es la del proxy. La cuota por
+- **Las cuotas viven en memoria.** Valen para una sola instancia del backend.
+  Detrás del borde y del portal, el backend toma la dirección del visitante
+  de `X-Forwarded-For` sólo si la petición viene de una dirección interna;
+  el borde la sobrescribe, así que el visitante no la puede fijar. La cuota por
   persona se cuenta después de verificar la credencial: no protege a la
   verificación misma.
 - **El cierre programado pasa una vez por semana.** Si esa vez la empresa
@@ -245,7 +247,7 @@ acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 | 4 | Probar horarios e importación con sesión real en el portal | Guion preparado; requiere sesión de administración/RH y acceso al navegador. El control de Chrome fue detenido por no poder verificar su URL activa |
 | 7 | Probar enrolamiento, captura simulada, cola sin conexión, sincronización y renovación Android contra el backend local | Implementación existente; falta recorrido completo con datos ficticios |
 | 8 | Definir e implementar retención de sobres y recibos Android | Acordar qué se conserva y durante cuánto tiempo; proteger pendientes y evidencia |
-| 9 | Completar configuración de empresa y administración de dispositivos en el portal | Reutilizar operaciones existentes del backend y comprobar permisos |
+| 9 | Completar configuración de empresa en el portal | Reutilizar operaciones existentes del backend y comprobar permisos. La administración de dispositivos ya está: emitir código, listar y revocar |
 | 10 | Mostrar las personas que no pudieron cerrar y sus causas | Actualmente la corrida muestra conteos y motivos, sin identificar a cada persona |
 | 11 | Automatizar verificaciones en cada cambio | Elegir servicio de integración continua y ejecutar las comprobaciones existentes |
 | 12 | Completar semana y acuse del trabajador | Integrar datos reales, identidad y permisos; el texto y evidencia del acuse dependen también de la tarea 17 |
@@ -267,8 +269,8 @@ siguen abiertas donde se indican en **Sin verificar** y en la validación.
 
 | Quién | Primer paso sugerido |
 | --- | --- |
-| App | Verificar enrolamiento y marcajes con tarjeta simulada contra el backend local. Después, semana y acuse; la tarjeta real requiere su prueba externa |
-| Portal | Ejecutar el guion pendiente de horarios/importación con sesión real. Después, completar empresa, dispositivos, operador y trabajador |
+| App | Verificar enrolamiento y marcajes con tarjeta simulada contra el ambiente publicado, como dice [Conectar la app al ambiente publicado](guia-app-android.md#conectar-la-app-al-ambiente-publicado). Después, semana y acuse; la tarjeta real requiere su prueba externa |
+| Portal | Ejecutar el guion pendiente de horarios/importación con sesión real. Después, completar configuración de empresa, suspensión desde el portal y trabajador |
 | Backend | Lo que queda sin esperar a nadie es una mejora interna, las clases de jOOQ generadas, que se dejó para después. Lo demás espera una decisión o a un tercero |
 
 El portal ya no depende de la app para tener datos: el simulador deja

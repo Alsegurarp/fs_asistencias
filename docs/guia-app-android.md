@@ -380,6 +380,74 @@ Content-Type: application/json
 Una vez por versión de cierre: repetirlo responde 409
 `already_acknowledged`.
 
+## Conectar la app al ambiente publicado
+
+El ambiente publicado sólo tiene datos ficticios y acepta la tarjeta
+simulada. Sirve para recorrer la app contra el backend real por HTTPS, desde
+cualquier red, sin levantar nada en la máquina.
+
+| Dato | Valor |
+| --- | --- |
+| Dirección del servidor en la app | `https://zenit.fastsolution.com.mx`, sin ruta: la app agrega `/api/v1` |
+| Portal | <https://zenit.fastsolution.com.mx> |
+| Tarjeta | Esquema `uid_sha256`, la tarjeta simulada |
+
+### 1. Entrar al portal
+
+Quien opera el servicio crea una empresa de prueba y entrega una cuenta de
+administración con contraseña temporal. En el primer ingreso se cambia la
+contraseña y se configura el segundo factor con una aplicación de
+autenticación. No hay correo del sistema: si se pierde la contraseña, se pide
+a quien opera el servicio.
+
+### 2. Preparar la empresa
+
+En el portal, como administración:
+
+1. **Sedes:** una sede con las coordenadas del lugar donde se va a probar y un
+   radio razonable, por ejemplo 200 metros. Si se marca lejos de la sede, el
+   marcaje se acepta con una incidencia de ubicación.
+2. **Empleados:** la persona que va a marcar, con esa sede.
+3. **Tarjetas:** registrar la tarjeta con su huella (abajo) y asignarla a la
+   persona. Una tarjeta sin titular se rechaza con `card_unknown`.
+
+La huella de la tarjeta simulada es el SHA-256 de los bytes de su
+identificador, en hexadecimal y minúsculas: lo mismo que calcula
+`TagEvidenceHasher` con `Tag.getId()`. Lo más fiable es que la app de
+depuración la muestre al leer la tarjeta. Mientras no lo haga, se calcula a
+partir del número de serie que muestra una app de lectura NFC, quitando los
+dos puntos. Con la terminal que instala Git:
+
+```bash
+printf '%s' 04A1B2C3D4E5F6 | xxd -r -p | sha256sum
+```
+
+Sin verificar: que el orden de los bytes que muestra cada app de lectura NFC
+sea el mismo de `Tag.getId()`. Si la huella calculada así no reconoce la
+tarjeta, compararla con la que calcula la app.
+
+### 3. Activar el teléfono
+
+En el portal, **Dispositivos → Emitir código**: modalidad personal para un
+teléfono de una persona, o terminal para una sede. El código vale una sola
+vez y pocos minutos, y sólo se muestra al emitirlo. En la app, escribir la
+dirección del servidor y el código. Desde **Dispositivos** también se revoca
+un teléfono; para volver a usarlo hace falta un código nuevo.
+
+### 4. Marcar y revisar
+
+Acercar la tarjeta. El recibo dice si el servidor aceptó, aceptó con
+incidencia o rechazó, y por qué (sección 5). Lo marcado se ve en el portal,
+en Incidencias y Cierres, y en el teléfono personal con la semana y el acuse
+(sección 8).
+
+| Respuesta | Qué significa | Qué hacer |
+| --- | --- | --- |
+| 410 `enrollment_gone` al activar | El código ya se usó, venció o no existe | Emitir otro |
+| 429 `rate_limited` al activar | Diez activaciones fallidas en un minuto desde la misma dirección | Esperar un minuto |
+| `card_unknown` en el recibo | Tarjeta no registrada, sin titular o con otra huella | Revisar la huella y la asignación |
+| `card_not_owner` en el recibo | Teléfono personal con una tarjeta que no es de su titular | Usar la tarjeta de esa persona |
+
 ## Probar en local
 
 1. Levantar el entorno con la tarjeta simulada encendida:

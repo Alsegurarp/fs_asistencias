@@ -37,16 +37,16 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | 4 | P0 | Captura autenticada con tarjetas reales (16) | Requiere tarjetas, teléfonos y definición de autenticación/entrega de claves. Comprobar captura y rechazo de tarjetas no válidas. La tarjeta simulada sólo sirve para datos ficticios |
 | 5 | P0 | Resolver suspensión, baja, supervisor y tipo de marcaje (2) | Requiere elección del responsable del producto sobre las propuestas existentes. Implementar sólo cambios aprobados y probar permisos, históricos y captura. Hoy el supervisor abarca toda la empresa y la suspensión también detiene captura |
 | 6 | P0 | Acordar uso del servidor compartido para datos reales | Dependencia del responsable del servicio y del dueño del servidor, registrada en la guía de despliegue. Mantener sólo datos ficticios hasta contar con el acuerdo escrito |
-| 7 | P1 | Hacer reproducible Android contra backend y corregir la indicación de URL (7) | Ahora: versionar el autoensayo que realmente use el backend y alinear la guía con la URL base sin `/api`. Cierre: APK construido desde el mismo commit, activación personal/terminal, captura, cola sin conexión, sincronización, recibos y renovación contra backend; repetir por HTTPS en teléfono |
-| 8 | P1 | Dirección real y protocolo en la cadena de proxies (parte de 19) | Ahora: revisar borde → portal → backend. Confiar sólo en proxies previstos y conservar HTTPS. Probar que fallos de activación desde una IP no consuman la cuota de otra y que cabeceras externas falsas no eludan el límite |
+| 7 | P1 | Hacer reproducible Android contra backend y corregir la indicación de URL (7) | Ahora: versionar el autoensayo que realmente use el backend. La guía ya indica la URL base sin `/api` y cómo conectar la app al ambiente publicado. Cierre: APK construido desde el mismo commit, activación personal/terminal, captura, cola sin conexión, sincronización, recibos y renovación contra backend; repetir por HTTPS en teléfono |
+| 8 | P1 | Dirección real y protocolo en la cadena de proxies (parte de 19) | Resuelto en el código: el backend toma la dirección de `X-Forwarded-For` sólo desde direcciones internas y el portal conserva el esquema del borde. Una prueba de integración comprueba que los fallos de una dirección no cortan a otra y falla si se apaga la lectura de cabeceras. Falta comprobarlo por la dirección pública al desplegar |
 | 9 | P1 | Recorridos del portal con sesión real (4 y parte de 14) | Guion existente. Requiere navegador, cuentas y entorno activo con datos ficticios. Probar horarios, asignaciones e importación; en HTTPS comprobar acceso, renovación, cierre de sesión y permisos de cada rol |
 | 10 | P1 | Retención de sobres y recibos Android (8) | Requiere plazo y criterio de conservación. Después implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria; hoy crece sin purga |
 | 11 | P1 | Verificaciones automáticas por cambio (11) | Ahora puede prepararse con los comandos existentes; falta acordar dónde se ejecutará y habilitarlo. Cierre: pruebas, contrato, secretos y vulnerabilidades corriendo en cada cambio, con fallos visibles |
 | 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Ahora pueden repetirse los análisis; para cerrar hay que identificar y analizar las imágenes efectivamente desplegadas. El análisis de Zenit documentado es del 14; las seis altas de identidad tienen aceptación histórica, no una reevaluación de hoy |
-| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Ahora: reutilizar API existente, probar permisos y operaciones reales. No depende de cambiar reglas laborales |
+| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Dispositivos ya está: emitir código personal o de terminal, listar y revocar, con 7 pruebas. Falta configuración de empresa, reutilizando API existente y probando permisos. No depende de cambiar reglas laborales |
 | 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Ahora: ampliar contrato/backend y mostrar el detalle en portal, conservando aislamiento de empresa y pruebas de corrida parcial. Hoy sólo hay conteos y motivos |
 | 15 | P2 | Semana y acuse del trabajador (12) | La consulta con datos reales puede avanzar ahora; requiere identidad y permisos. El cierre del acuse depende también de la tarea 17. Las pantallas de presentación móvil no cuentan como integración |
-| 16 | P2 | Pantallas de operador del servicio (13) | Ahora: conectar administración de empresas con el rol existente y probar aislamiento. Hoy el portal informa que se implementará después |
+| 16 | P2 | Pantallas de operador del servicio (13) | Alta y lista de empresas ya están, con 3 pruebas. Faltan suspender y reactivar desde el portal y probar aislamiento con el rol real |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias (18) | Requiere criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar resultados |
 | 18 | P2 | Carga, continuidad y operación del despliegue (resto de 19) | Requiere volumen objetivo y número de instancias. Probar trabajos, cierres, exportes y cuotas; resolver actualización del DNS ante IP dinámica y comprobar renovación real de certificados. Cuotas compartidas sólo si habrá varias instancias |
 | 19 | P2 | Conector y formato de nómina (20) | Depende del sistema y formato del primer cliente. Cierre con sincronización y archivo aceptados por ese sistema |
@@ -67,13 +67,15 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
    [Despliegue](despliegue-en-servidor.md) indica la base Android con `/api`.
    `CaptureApi.validateBaseUrl` exige una URL sin ruta y `CaptureApi.post`
    agrega `/api/v1`. La base correspondiente al código actual es
-   `https://zenit.fastsolution.com.mx`. Falta alinear guía y flujo de activación.
+   `https://zenit.fastsolution.com.mx`. Resuelto en la guía de despliegue y en
+   la de la app.
 3. **Las cuotas de activación comparten la dirección del portal.**
    `Devices.kt` usa `http.remoteAddr` para limitar fallos de activación;
    no se encontró configuración de procesamiento de cabeceras reenviadas en
    backend. `web/nginx.conf` agrega `X-Forwarded-For`, pero no configura confianza
    en el borde, y reemplaza `X-Forwarded-Proto` con su conexión HTTP interna.
-   Falta la prueba de toda la cadena con dos direcciones y cabeceras falsas.
+   Resuelto en el código con prueba de dos direcciones; falta comprobar por
+   la dirección pública que una cabecera falsa no elude el límite.
 4. **La retención móvil sigue abierta en el código.**
    `PendingAttendanceDao.kt` conserva sobres y recibos sin purga; el límite
    de diez recibos visibles no limita las filas almacenadas.

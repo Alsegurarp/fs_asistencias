@@ -1,5 +1,36 @@
 # Bitácora de trabajo
 
+## 18 de octubre de 2026 — Backend listo para conectar la app
+
+Para que la app se conecte al ambiente publicado hacían falta cuatro cosas,
+y ésta es la parte que vive en el repositorio:
+
+- **Dirección real del visitante.** El backend no leía la dirección
+  reenviada y el nginx del portal reemplazaba `X-Forwarded-Proto` por `http`:
+  el límite de activaciones fallidas contaba a todo el público como una sola
+  dirección. Ahora Tomcat toma `X-Forwarded-For` y `X-Forwarded-Proto` sólo
+  desde direcciones internas, y el portal conserva el esquema que trae el
+  borde.
+- **Tarjeta simulada encendida** en `deploy/servidor/zenit/servidor.env`,
+  sólo mientras el ambiente tenga datos ficticios.
+- **Pantalla Dispositivos en el portal:** emitir el código de activación
+  personal o de terminal, listar dispositivos y revocarlos, con los permisos
+  del contrato.
+- **Pantalla Empresas para quien opera el servicio:** listar empresas y dar
+  de alta una con su primera administración. Antes el portal sólo le decía
+  que se implementaría después, y sin ella no había cómo crear la empresa de
+  prueba sin llamar al API a mano.
+- **Guía:** la dirección de la app es sin `/api`, y
+  [Conectar la app al ambiente publicado](guia-app-android.md#conectar-la-app-al-ambiente-publicado)
+  explica cuentas, empresa de prueba, huella de la tarjeta y activación.
+
+Verificado en Docker: 74 pruebas de integración del backend, incluida una
+nueva con dos visitantes detrás del proxy; con la lectura de cabeceras
+apagada, esa prueba falla. Portal: compilación y 138 pruebas, 7 nuevas de
+Dispositivos y 3 de Empresas. La receta de la huella se comparó con el cálculo sobre los bytes
+en un contenedor. Sin verificar todavía: el despliegue, las cuentas, la
+empresa de prueba y el recorrido con un teléfono real.
+
 ## 18 de octubre de 2026 — Flujos actuales antes de ampliar permisos
 
 Alexis pide revisar la lógica existente antes de continuar con altas y nuevos

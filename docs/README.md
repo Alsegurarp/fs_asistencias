@@ -57,9 +57,9 @@ contradice al contrato, manda el contrato.
 
 | Pieza | Carpeta | Estado |
 | --- | --- | --- |
-| Backend | `backend/` | Atiende las 60 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo |
+| Backend | `backend/` | Atiende las 60 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo. Detrás del borde toma la dirección real del visitante |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
-| Portal web | `web/` | PKCE, sedes, empleados, horarios, importación CSV, tarjetas, incidencias, cierres, exportes y usuarios; horarios/importación con sesión real pendientes |
+| Portal web | `web/` | PKCE, sedes, empleados, horarios, importación CSV, tarjetas, dispositivos, incidencias, cierres, exportes y usuarios; horarios/importación con sesión real pendientes |
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Verificada en un teléfono con servidor de prueba; falta el recorrido contra el backend y las tarjetas reales |
 | Conector | `connector/` | Vacío; es el futuro agente que sincronice el padrón desde la red de un cliente |
 | Infraestructura | `infra/` | Imagen y realm del proveedor de identidad, guiones de la base y ensayo de respaldo |

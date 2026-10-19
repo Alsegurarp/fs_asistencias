@@ -47,13 +47,18 @@ export type Page<T> = { items: T[]; nextCursor: string | null }
 export type Site = { id: string; name: string; timeZone: string; latitude: number; longitude: number; radiusMeters: number; status: string }
 export type Employee = { id: string; externalId: string; displayName: string; siteId: string | null; employmentStart: string; employmentEnd: string | null; status: string; activeCardId: string | null; currentScheduleId?: string | null }
 export type Card = { id: string; label: string; status: string; assignment: { employeeId: string } | null }
-export type TenantUser = { id: string; email: string; displayName: string; roles: string[]; status: 'invited' | 'active' | 'disabled'; createdAt: string; linkedAt: string | null; employeeId: string | null }
+export type Tenant = { id: string; name: string; slug: string; timeZone: string; weekStartsOn: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'; breakPolicy: 'not_considered' | 'marked'; status: string; createdAt: string; autoCloseAfterHours: number | null }
+export type Device ={ id: string; mode: 'personal' | 'terminal'; status: 'active' | 'revoked' | 'replaced'; employeeId: string | null; siteId: string | null; label: string | null; model: string; appVersion: string; enrolledAt: string; lastSeenAt: string | null; revokedAt: string | null }
+export type DeviceEnrollment = { id: string; mode: 'personal' | 'terminal'; employeeId: string | null; siteId: string | null; label: string | null; code: string; status: string; expiresAt: string; createdAt: string }
+export type TenantUser ={ id: string; email: string; displayName: string; roles: string[]; status: 'invited' | 'active' | 'disabled'; createdAt: string; linkedAt: string | null; employeeId: string | null }
 
 export function permissions(roles: string[]) {
   return {
     sites: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     employees: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     cards: roles.some(r => ['admin_empresa', 'rh', 'auditor'].includes(r)),
+    devices: roles.some(r => ['admin_empresa', 'rh', 'auditor'].includes(r)),
+    manageDevices: roles.some(r => ['admin_empresa', 'rh'].includes(r)),
     incidents: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     closures: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     exports: roles.some(r => ['admin_empresa', 'rh', 'auditor'].includes(r)),

@@ -61,8 +61,21 @@ abriendo <http://127.0.0.1:19082/admin/> en la estación: el realm `master`
 anuncia esa dirección, y la cuenta temporal de arranque es la única que
 existe.
 
-La app Android usa `https://zenit.fastsolution.com.mx/api` como dirección
-del API.
+En la app Android la dirección del servidor es
+`https://zenit.fastsolution.com.mx`, sin ruta: la app rechaza una dirección
+con ruta y agrega `/api/v1` por su cuenta. Cómo conectarla está en la
+[guía de la app](guia-app-android.md#conectar-la-app-al-ambiente-publicado).
+
+El ambiente acepta la tarjeta simulada (`CAPTURE_SIMULATED_CARDS=true` en
+`deploy/servidor/zenit/servidor.env`) mientras el servidor no verifica la
+tarjeta real. La tarjeta simulada no está autenticada: se apaga antes de
+cargar datos de personas reales.
+
+La dirección del visitante llega al backend a través del borde y del portal:
+el borde sobrescribe `X-Forwarded-For` y `X-Forwarded-Proto`, el nginx del
+portal los conserva y el backend sólo les cree si vienen de una dirección
+interna. Así el límite de activaciones fallidas cuenta a cada visitante por
+separado.
 
 ## Qué hay en el servidor
 
