@@ -9,7 +9,10 @@ commit `d5d2a00`. Se corrigieron dos fallos de arranque: una referencia de
 submódulo sin `.gitmodules` y la propiedad del directorio de secretos.
 Se retiró del índice la referencia a la landing, que se despliega desde su
 propio clon mediante `LANDING_REPO`. El runner crea los directorios antes del
-generador para conservar su propiedad y el modo 700.
+generador para conservar su propiedad y el modo 700. Integrado en `main` el
+19 de octubre mediante fast-forward desde `avanceLunes`, cuyo último commit
+también aprobó los cuatro trabajos en la
+[ejecución 39301664714](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39301664714).
 
 ## Qué ejecuta
 
@@ -36,9 +39,10 @@ imprime el motivo y guarda los informes bajo `build/security/`. Mantiene las
 excepciones ya aprobadas en `.grype.yaml`; no acepta automáticamente hallazgos
 nuevos. Las pruebas Android de CI no ejecutan un teléfono ni una tarjeta NFC.
 
-Para adoptar el workflow en `main` falta integrar la rama y, si se quiere
-exigir los trabajos antes de integrar cambios, configurar su obligatoriedad.
-No se ha cambiado esa protección.
+El workflow queda habilitado en `main`. Si se quiere exigir los trabajos antes
+de integrar cambios, falta configurar su obligatoriedad. No se ha cambiado esa
+protección. Los resultados por commit se consultan en
+[GitHub Actions](https://github.com/Alsegurarp/fs_asistencias/actions/workflows/verificaciones.yml).
 
 ## Repetir el análisis local
 

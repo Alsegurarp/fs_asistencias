@@ -1,5 +1,21 @@
 # Bitácora de trabajo
 
+## 19 de octubre de 2026 — Integración de avanceLunes en main
+
+El usuario autoriza integrar la rama. Se actualizó `main` por fast-forward
+desde `8dc2a75` hasta `4bde26f`, conservando los cuatro commits de avance y
+corrección, sin conflictos ni cambios adicionales de aplicación. La integración
+se preparó en una copia de trabajo separada para preservar los tres archivos
+generados previamente modificados y `portalError.md` en el espacio del usuario.
+
+El commit de origen tiene los cuatro trabajos aprobados en la
+[ejecución 39301664714](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39301664714).
+Se añade esta actualización documental para declarar la adopción del workflow
+en `main`. Su publicación dispara las mismas cuatro verificaciones; los
+resultados por commit se consultan en
+[GitHub Actions](https://github.com/Alsegurarp/fs_asistencias/actions/workflows/verificaciones.yml).
+No se cambiaron protecciones de rama ni se desplegaron servicios.
+
 ## 19 de octubre de 2026 — GitHub Actions aprobado
 
 La [ejecución 39300778600](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39300778600),
