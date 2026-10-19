@@ -1,5 +1,22 @@
 # Bitácora de trabajo
 
+## 19 de octubre de 2026 — GitHub Actions aprobado
+
+La [ejecución 39300778600](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39300778600),
+del commit `d5d2a007f898839e8a59d69ac4087c9817ef39ac` en `avanceLunes`,
+aprobó **los cuatro trabajos completos**: backend, portal, Android y
+contrato/seguridad. Backend incluyó preparación de secretos, integración,
+arranque de identidad, pruebas de realm/OTP/readiness y limpieza. Checkout y
+su limpieza final aprobaron en todos los trabajos. Evidencias locales:
+`build/actions-39300778600.json` y `build/actions-watch-latest.log`.
+
+Quedan comprobadas en GitHub las dos correcciones: retirada del gitlink
+huérfano (`0275823`) y creación de directorios por el runner antes del generador
+de secretos (`d5d2a00`). El push no fue rechazado; fallaron las verificaciones
+que se dispararon después. Para adoptar el workflow en `main` falta integrar
+la rama y decidir si sus trabajos serán obligatorios antes de integrar cambios.
+No se modificaron protecciones de rama ni se desplegaron servicios.
+
 ## 19 de octubre de 2026 — Permisos del runner y avance de Actions
 
 La corrección `0275823` superó checkout en los cuatro trabajos. En la

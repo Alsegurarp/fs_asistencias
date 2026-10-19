@@ -3,13 +3,13 @@
 Preparadas el 19 de octubre de 2026 en
 [`.github/workflows/verificaciones.yml`](../.github/workflows/verificaciones.yml).
 El repositorio está alojado en GitHub; se reutilizan las recetas Docker del
-proyecto. El workflow se publicó en `avanceLunes`. Su primera ejecución falló
-antes de las pruebas por una referencia de submódulo sin `.gitmodules`; se
-retiró del índice esa referencia a la landing, que se despliega desde su propio
-clon mediante `LANDING_REPO`. La segunda ejecución aprobó portal, Android y
-contrato/seguridad; backend falló por la propiedad del directorio de secretos.
-El runner ahora crea los directorios antes del generador para conservar su
-propiedad y el modo 700. Falta acreditar una ejecución completa aprobada.
+proyecto. El workflow se publicó en `avanceLunes` y los cuatro trabajos
+aprobaron en la [ejecución 39300778600](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39300778600),
+commit `d5d2a00`. Se corrigieron dos fallos de arranque: una referencia de
+submódulo sin `.gitmodules` y la propiedad del directorio de secretos.
+Se retiró del índice la referencia a la landing, que se despliega desde su
+propio clon mediante `LANDING_REPO`. El runner crea los directorios antes del
+generador para conservar su propiedad y el modo 700.
 
 ## Qué ejecuta
 
@@ -36,9 +36,9 @@ imprime el motivo y guarda los informes bajo `build/security/`. Mantiene las
 excepciones ya aprobadas en `.grype.yaml`; no acepta automáticamente hallazgos
 nuevos. Las pruebas Android de CI no ejecutan un teléfono ni una tarjeta NFC.
 
-Para cerrar la habilitación falta comprobar los cuatro
-trabajos en GitHub y, si se quiere exigirlos antes de integrar cambios,
-configurar su obligatoriedad en la rama. No se ha cambiado esa protección.
+Para adoptar el workflow en `main` falta integrar la rama y, si se quiere
+exigir los trabajos antes de integrar cambios, configurar su obligatoriedad.
+No se ha cambiado esa protección.
 
 ## Repetir el análisis local
 
