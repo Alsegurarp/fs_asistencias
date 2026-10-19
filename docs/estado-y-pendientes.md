@@ -76,7 +76,7 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Pendiente | Qué hay que decidir |
 | --- | --- |
 | Suspensión de una empresa | Hoy también corta la captura de marcajes. Antes del primer cliente hay que decidir si una empresa suspendida conserva la captura, porque el registro de asistencia es obligación suya |
-| Verificación automática en cada cambio | Workflow de GitHub Actions preparado y recetas comprobadas localmente. Falta subirlo, comprobar la primera ejecución y decidir si sus trabajos serán obligatorios antes de integrar cambios |
+| Verificación automática en cada cambio | Workflow de GitHub Actions publicado en `avanceLunes` y recetas comprobadas localmente. Fallo inicial de checkout por gitlink huérfano reproducido y corregido; falta una ejecución completa aprobada y decidir si sus trabajos serán obligatorios antes de integrar cambios |
 | Alcance del supervisor | Cómo se le asignan sus sedes. Hoy ve y atiende lo de toda su empresa |
 | Baja de una persona | Si además revoca su tarjeta y cierra su horario |
 | Comparar la jornada con el horario | Qué cuenta como retardo, falta y salida anticipada |
@@ -256,7 +256,7 @@ acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 | 8 | Definir e implementar retención de sobres y recibos Android | Acordar qué se conserva y durante cuánto tiempo; proteger pendientes y evidencia |
 | 9 | Completar configuración de empresa en el portal | Implementada: consulta para cuatro roles, edición sólo de administración, cambios parciales, cierre automático anulable y conservación ante errores/refrescos. 148 pruebas del portal y compilación aprobadas; falta despliegue y aceptación en navegador |
 | 10 | Mostrar las personas que no pudieron cerrar y sus causas | Actualmente la corrida muestra conteos y motivos, sin identificar a cada persona |
-| 11 | Automatizar verificaciones en cada cambio | Workflow de GitHub Actions preparado, cuatro trabajos y comandos comprobados localmente. Falta subirlo y acreditar su primera ejecución |
+| 11 | Automatizar verificaciones en cada cambio | Workflow de GitHub Actions publicado en `avanceLunes`, cuatro trabajos y comandos comprobados localmente. Se corrigió el fallo inicial de checkout; falta acreditar una ejecución completa aprobada |
 | 12 | Completar semana y acuse del trabajador | Integrar datos reales, identidad y permisos; el texto y evidencia del acuse dependen también de la tarea 17 |
 | 13 | Completar pantallas del operador del servicio | Alta y listado de empresas implementados; faltan suspender/reactivar y comprobar permisos y aislamiento con sesión real. La regla de suspensión depende de la decisión de negocio |
 | 14 | Publicar ambiente de pruebas con TLS, SMTP y cuentas personales | Publicado con TLS el 18 de octubre de 2026 ([Despliegue en el servidor](despliegue-en-servidor.md)). Faltan correo, cuentas personales, quién opera el servicio y el acceso con sesión por HTTPS; retirar la cuenta temporal sólo tras verificar las nuevas |

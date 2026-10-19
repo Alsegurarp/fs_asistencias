@@ -45,7 +45,7 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | 8 | P1 | Dirección real y protocolo en la cadena de proxies (parte de 19) | Prueba pública del 19 aprobada: redirección HTTPS, identidad resistente a cabeceras falsas y cuota no eludible rotando IP falsas (10 respuestas 410 y dos 429). Fase Android de proxy preparada. Falta demostrar aislamiento desde dos IP públicas reales en la misma ventana; se solicitó confirmar datos móviles |
 | 9 | P1 | Recorridos del portal con sesión real (4 y parte de 14) | Horarios, asignación futura e importación aprobados por API HTTPS el 19, con sesión de administración y limpieza. Sigue pendiente navegador: pantallas, cookies, renovación, cierre de sesión y permisos de otros roles. No hay navegador conectado al control UI |
 | 10 | P1 | Retención de sobres y recibos Android (8) | Requiere plazo y criterio de conservación. Después implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria; hoy crece sin purga |
-| 11 | P1 | Verificaciones automáticas por cambio (11) | Workflow incluido para publicación en GitHub Actions: cuatro trabajos, Docker existente, permisos de lectura y checkout fijado. Comandos comprobados localmente. Falta acreditar su primera ejecución; [procedimiento](verificaciones-automaticas.md) |
+| 11 | P1 | Verificaciones automáticas por cambio (11) | Workflow publicado en `avanceLunes`: cuatro trabajos y comandos comprobados localmente. Primer fallo de checkout por gitlink huérfano reproducido y corregido; falta acreditar una ejecución completa aprobada. [Procedimiento](verificaciones-automaticas.md) |
 | 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Cinco imágenes locales analizadas el 19 e IDs registrados. Corregidas altas de libexpat en backend/portal y libx11 en portal; ninguna grave nueva sin atender. Siguen seis excepciones de identidad. Faltan IDs del servidor mediante Gabriel, análisis de esas imágenes, despliegue de correcciones y comprobación pública |
 | 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación completada localmente. Configuración usa GET/PATCH /tenant y respeta permisos, cambios parciales y desactivación del cierre; nueve pruebas nuevas más navegación. Portal: 148 pruebas y compilación aprobadas. Falta despliegue y aceptación de pantallas con sesión real |
 | 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Ahora: ampliar contrato/backend y mostrar el detalle en portal, conservando aislamiento de empresa y pruebas de corrida parcial. Hoy sólo hay conteos y motivos |
@@ -87,8 +87,9 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 La tarea **7 está completada** en el alcance de ensayo con tarjeta simulada.
 Las comprobaciones públicas de cabeceras (8) y de horarios/importación por API
 (9) ya pasaron. Faltan otra IP real y un navegador conectado para sus recorridos
-restantes. Verificaciones automáticas (11) y Configuración (13) están preparadas
-y probadas localmente; falta publicarlas. El análisis local (12) pasó tras
+restantes. Verificaciones automáticas (11) están publicadas en la rama y
+esperan una ejecución completa aprobada. Configuración (13) está probada
+localmente y espera despliegue. El análisis local (12) pasó tras
 corregir tres altas; su cierre espera las imágenes del servidor mediante Gabriel.
 
 ### Declaración de la tarea 7

@@ -1,5 +1,27 @@
 # Bitácora de trabajo
 
+## 19 de octubre de 2026 — Corrección del checkout de GitHub Actions
+
+El push de `fdf8cc4` a `avanceLunes` se recibió correctamente. La
+[primera ejecución](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39280373595)
+falló en checkout en los cuatro trabajos, antes de compilar o probar.
+El usuario facilitó la salida en `portalError.md`; Git intentaba procesar
+`fastSolutionLanding/prototype_fastSolution`, registrado como gitlink sin
+`.gitmodules` ni URL de submódulo.
+
+Se retiró únicamente esa referencia del índice y se excluyó la carpeta local
+en `.gitignore`, conservando su contenido. Ningún código ni receta del
+monorepo usa esa ruta. El despliegue de la landing ya utiliza su propio clon
+mediante `LANDING_REPO` en `deploy/servidor/desplegar.sh`.
+
+Se reprodujo el mismo fallo en un clon Linux limpio, sin red y con el origen
+montado en sólo lectura. Tras retirar la referencia en ese clon, el recorrido
+recursivo que ejecuta checkout terminó con código cero, sin gitlinks huérfanos
+y conservando la carpeta. Evidencia: `build/checkout-regression.log`.
+Falta confirmar el resultado completo de Actions después de publicar la
+corrección. `portalError.md` y los tres archivos generados previos quedan fuera
+del commit. No se desplegaron servicios ni se modificó `main`.
+
 ## 19 de octubre de 2026 — Publicación autorizada de los avances
 
 El usuario autoriza crear el commit y hacer push de los cambios verificados.

@@ -5,6 +5,8 @@
 *.local
 secrets/
 backups/
+# La landing se despliega desde su propio clon mediante LANDING_REPO.
+/fastSolutionLanding/prototype_fastSolution/
 *.key
 *.pem
 

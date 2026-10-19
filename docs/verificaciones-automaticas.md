@@ -3,8 +3,10 @@
 Preparadas el 19 de octubre de 2026 en
 [`.github/workflows/verificaciones.yml`](../.github/workflows/verificaciones.yml).
 El repositorio está alojado en GitHub; se reutilizan las recetas Docker del
-proyecto. Esta rama incluye el workflow para su publicación; falta acreditar
-su primera ejecución en GitHub.
+proyecto. El workflow se publicó en `avanceLunes`. Su primera ejecución falló
+antes de las pruebas por una referencia de submódulo sin `.gitmodules`; se
+retiró del índice esa referencia a la landing, que se despliega desde su propio
+clon mediante `LANDING_REPO`. Falta acreditar una ejecución completa aprobada.
 
 ## Qué ejecuta
 
