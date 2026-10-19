@@ -6,7 +6,10 @@ El repositorio está alojado en GitHub; se reutilizan las recetas Docker del
 proyecto. El workflow se publicó en `avanceLunes`. Su primera ejecución falló
 antes de las pruebas por una referencia de submódulo sin `.gitmodules`; se
 retiró del índice esa referencia a la landing, que se despliega desde su propio
-clon mediante `LANDING_REPO`. Falta acreditar una ejecución completa aprobada.
+clon mediante `LANDING_REPO`. La segunda ejecución aprobó portal, Android y
+contrato/seguridad; backend falló por la propiedad del directorio de secretos.
+El runner ahora crea los directorios antes del generador para conservar su
+propiedad y el modo 700. Falta acreditar una ejecución completa aprobada.
 
 ## Qué ejecuta
 

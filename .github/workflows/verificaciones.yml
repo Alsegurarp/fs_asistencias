@@ -23,12 +23,13 @@ jobs:
         with:
           persist-credentials: false
       - name: Generar secretos exclusivos del runner
-        run: docker compose --profile setup run --rm secrets-init
+        run: |
+          mkdir -p "$IDENTITY_TEST_SECRETOS"
+          docker compose --profile setup run --rm secrets-init
       - name: Pruebas unitarias e integración PostgreSQL
         run: docker compose --profile test run --rm --build backend-it
       - name: Preparar identidad aislada
         run: |
-          mkdir -p "$IDENTITY_TEST_SECRETOS"
           docker compose -f compose.yaml -f infra/keycloak/compose.test.yaml --profile setup run --rm secrets-init
           docker compose -f compose.yaml -f infra/keycloak/compose.test.yaml up --wait keycloak
       - name: Probar realm importado y protección OTP

@@ -1,5 +1,28 @@
 # Bitácora de trabajo
 
+## 19 de octubre de 2026 — Permisos del runner y avance de Actions
+
+La corrección `0275823` superó checkout en los cuatro trabajos. En la
+[segunda ejecución](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39299707609)
+aprobaron **portal, Android y contrato/seguridad**, incluido el análisis de las
+cinco imágenes construido en GitHub. Backend aprobó compilación e integración,
+pero falló antes de identidad: `mkdir` no pudo entrar a `secrets/`, que Docker
+había creado con dueño `root` y modo 700. Evidencias locales descargadas:
+`build/actions-39299707609.json` y `build/actions-backend.log`.
+
+Se corrigió el orden del workflow: el runner crea primero la ruta de secretos
+de identidad y sus padres; después se ejecuta el generador existente. El dueño
+de los directorios sigue siendo el runner y el generador mantiene el modo 700.
+No se ampliaron permisos de secretos ni se cambió la receta de producción.
+
+Comprobación Linux sin red, con secretos ficticios en tmpfs: el directorio
+creado por root reprodujo `Permission denied`; el creado por el usuario del
+runner permitió crear la subcarpeta y leer los archivos necesarios después de
+ejecutar el mismo generador de Compose. YAML y orden de pasos también
+comprobados. Evidencias: `build/ci-secrets-root.log` y
+`build/ci-secrets-runner.log`. Falta acreditar el recorrido completo de backend
+e identidad en la siguiente ejecución de GitHub.
+
 ## 19 de octubre de 2026 — Corrección del checkout de GitHub Actions
 
 El push de `fdf8cc4` a `avanceLunes` se recibió correctamente. La
