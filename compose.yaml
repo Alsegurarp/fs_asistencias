@@ -117,7 +117,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\": \"UP\"' <&3"]
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && IFS= read -r respuesta <&3 && [[ $$respuesta == 'HTTP/1.1 200 '* ]]"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -489,9 +489,10 @@ services:
       - /tmp
     environment:
       GRYPE_CHECK_FOR_APP_UPDATE: "false"
-      GRYPE_DB_CACHE_DIR: /work/db
+      GRYPE_DB_CACHE_DIR: /var/cache/grype
     volumes:
       - ./build/security:/work
+      - grype-db:/var/cache/grype
       # Hallazgos aceptados, cada uno con su motivo. Aceptar es decisión de una persona.
       - ./.grype.yaml:/config/grype.yaml:ro
     command:
@@ -547,3 +548,4 @@ secrets:
 
 volumes:
   zenit-db:
+  grype-db:

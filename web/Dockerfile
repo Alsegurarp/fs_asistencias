@@ -12,7 +12,7 @@ FROM nginxinc/nginx-unprivileged:1.30.5-alpine3.24@sha256:15c994d10d6d78658721c3
 # Paquetes del sistema con una vulnerabilidad alta ya corregida, que la imagen
 # base todavía no trae. Se quita cuando la imagen base los incluya.
 USER root
-RUN apk add --no-cache "tiff>=4.7.2-r0" "zlib>=1.3.2-r1"
+RUN apk add --no-cache "tiff>=4.7.2-r0" "zlib>=1.3.2-r1" "libexpat>=2.9.0-r0" "libx11>=1.8.14-r0"
 ARG VITE_IDENTITY_URL=http://localhost:8082
 COPY nginx.conf /tmp/nginx.conf.template
 # La CSP y el cliente usan la misma dirección; se conservan las variables de nginx.

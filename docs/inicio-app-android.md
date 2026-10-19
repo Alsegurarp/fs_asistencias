@@ -75,15 +75,18 @@ Se verificaron pruebas unitarias, lint y ensamblado del APK dentro de Docker.
 Incluye pruebas de conversión de firmas DER a JOSE. La descarga de Gradle
 admite reintentos y un límite de 60 segundos. La clave de firma debug se
 conserva en una caché de Docker para permitir actualizaciones de la app.
-Todavía no se ha probado la activación contra un backend ni un marcaje real.
+El 19 de octubre de 2026 pasaron activación, cola, sincronización, recibos y
+renovación contra backend local y HTTPS publicado en teléfono, con tarjeta
+simulada. El [ensayo reproducible](guia-app-android.md#ensayo-reproducible-contra-el-backend)
+conserva también el fixture anterior; falta verificar NFC autenticado real.
 El APK debug se instaló por ADB inalámbrico y abrió correctamente en el
 teléfono. La interfaz compartida presenta el teléfono vinculado y recorridos
 de asistencia y Administrador/RH con históricos locales. El código de activación
-real queda pendiente de verificar e integrar a ese flujo.
+operativa ya se verificó; integrarla a la presentación sigue pendiente.
 
 Para el servidor local usa `http://localhost:8080` con la conexión USB descrita
-en la guía, o `http://10.0.2.2:8080` en un emulador. HTTP sólo se habilita
-para estas direcciones y `127.0.0.1` en la variante de depuración; release
+en la guía. Un emulador también puede usar `adb reverse` y `localhost`.
+La captura sólo permite HTTP de bucle local en la variante de depuración; release
 requiere HTTPS. La dirección debe ser la base del servidor, sin `/api/v1`.
 
 También se puede usar la conexión ADB inalámbrica emparejada. Preparar los

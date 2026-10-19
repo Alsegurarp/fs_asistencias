@@ -65,6 +65,8 @@ export function permissions(roles: string[]) {
     users: roles.includes('admin_empresa'),
     schedules: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     imports: roles.some(r => ['admin_empresa', 'rh'].includes(r)),
+    settings: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
+    editSettings: roles.includes('admin_empresa'),
     editSites: roles.includes('admin_empresa'),
     editDirectory: roles.some(r => ['admin_empresa', 'rh'].includes(r)),
     resolveIncidents: roles.some(r => ['admin_empresa', 'rh', 'supervisor'].includes(r)),

@@ -5,9 +5,9 @@ skinparam shadowing false
 component "Portal web: OIDC + PKCE\n/me y permisos del backend" as web
 component "Catálogos: sedes, empleados,\nhorarios, CSV, tarjetas y usuarios" as catalog #D9EAD3
 component "Incidencias, cierres, corridas\ny exportes" as operational #D9EAD3
-component "Operador: sólo aviso de futura UI\nEmpresas se administran hoy por API" as operator #FFF2CC
+component "Operador: alta y lista de empresas\nSuspensión/reactivación pendientes" as operator #FFF2CC
 component "Trabajador: sin pantallas conectadas\nSemana/acuse existen en el API" as employee #FFF2CC
-component "Empresa/dispositivos:\nconfiguración de portal pendiente" as missing #FFF2CC
+component "Configuración de empresa\ny administración de dispositivos" as settings #D9EAD3
 component "Android MainActivity\nactivación / NFC / ubicación / firma\ncola / sincronización / recibos" as mobile #D9EAD3
 component "Android PresentationActivity (debug)\nInicio, Mi semana, Actividad, Dispositivo\nAdministrador/RH y empleados ficticios" as demo #FFF2CC
 component "API autenticado\nroles por empresa o credencial de dispositivo" as api
@@ -17,9 +17,10 @@ web --> catalog : rol de empresa
 web --> operational : rol de empresa
 web --> operator : operador_saas, sin tenant
 web --> employee : trabajador sin sección disponible
-web ..> missing : por implementar
+web --> settings : permisos por rol
 catalog --> api
 operational --> api
+settings --> api
 mobile --> api : tres operaciones de dispositivo
 mobile ..> demo : se abre desde debug; estado aislado
 master ..> web : no concede permisos de empresa automáticamente

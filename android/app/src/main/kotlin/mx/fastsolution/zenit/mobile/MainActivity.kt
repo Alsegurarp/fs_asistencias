@@ -160,7 +160,7 @@ private fun ZenitApp(
                 if (state.registered) Text(state.deviceLabel, style = MaterialTheme.typography.titleMedium)
                 if (!state.registered || reenrolling) {
                     OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text("Servidor") }, singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("Código de RH") }, placeholder = { Text("XXXX-XXXX") }, singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("Código de RH") }, placeholder = { Text("XXXXX-XXXXX") }, singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
                     if (state.pendingCount > 0) {
                         Text("Cambiar de dispositivo impide enviar sus pendientes con la nueva clave. Puedes sincronizarlos primero o conservarlos para revisión.")
                         Checkbox(checked = preservePending, onCheckedChange = { preservePending = it }, enabled = !state.isCapturing,

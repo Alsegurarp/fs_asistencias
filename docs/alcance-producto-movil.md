@@ -47,8 +47,9 @@ Dispositivo muestra un teléfono personal vinculado y activo con información
 de presentación. No guarda esa vinculación en el repositorio de activaciones.
 Se retiraron por petición las etiquetas de prueba de la interfaz; el carácter
 de presentación permanece documentado aquí y en el código.
-La activación conserva su implementación de firma y almacenamiento seguro,
-pendiente de una prueba completa contra el backend. Las pantallas de
+La activación operativa con firma y almacenamiento seguro se comprobó el 19
+de octubre de 2026 contra backend local y HTTPS publicado en teléfono, con
+datos ficticios y tarjeta simulada. Las pantallas de
 presentación no realizan llamadas de sesión, marcaje, semana o acuse.
 Actividad no consulta una lista general de eventos: ese endpoint es para roles
 del portal, y un dispositivo recibe confirmaciones al enviar sus propios sobres.

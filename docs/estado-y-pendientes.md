@@ -6,27 +6,28 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
-Última revisión: 18 de octubre de 2026. La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
+Última revisión: 19 de octubre de 2026; incluye el ensayo Android local y por HTTPS.
+La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
 separa resultados comprobados de decisiones y pruebas manuales pendientes.
 
 La revisión actual y el orden de ejecución están en
 [Tareas críticas primero](tareas-criticas-primero.md): incluye comprobaciones
-del 18, bloqueos para datos reales y tareas técnicas que pueden iniciarse.
+del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que pueden iniciarse.
 
 ## Qué está hecho
 
 | Pieza | Estado |
 | --- | --- |
 | Contrato | Versión 0.11, con 60 operaciones. Completo para el recorrido del producto; todavía sin congelar |
-| Backend | Atiende las 60 operaciones. 47 pruebas unitarias y 73 de integración contra PostgreSQL real |
+| Backend | Atiende las 60 operaciones. Construcción, unitarias y 74 de integración contra PostgreSQL real aprobadas nuevamente el 19 |
 | Base | 28 tablas en 7 migraciones, con roles separados para migrar, para atender y para respaldar. Imagen propia sobre Alpine, sin root ni privilegios, que ordena los textos por código de carácter |
 | Identidad | Segundo factor obligatorio en `zenit`. El 18 se preparó el realm para conservar OTP y exigir reautenticación al recuperar contraseña, con cuatro comprobaciones locales incluida importación. SMTP y cuentas personales del servidor siguen pendientes; [procedimiento](preparar-ambiente-compartido.md) |
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | Modos age y autoprueba aprobados. El 18 de octubre pasó recuperación local con origen apagado: 130 tablas/1.867 filas idénticas, contraseñas nuevas de base, backend e identidad funcionales. [Detalle](recuperacion-servicio.md). Copia externa de operación, custodia, programación y recuperación pública pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, incidencias, cierres, exportes y usuarios. El 18 de octubre de 2026 se agregaron Dispositivos y, para quien opera el servicio, Empresas; pasaron la compilación y 138 pruebas en Docker. Compilación y 128 pruebas con dos procesos comprobadas el 17 de octubre de 2026; hubo fallos con paralelismo por omisión. El usuario comprobó acceso, catálogos, incidencias, cuatro cierres demo, descarga única y usuarios; faltan horarios/importación con sesión real y otros recorridos. Llama 39 operaciones distintas, todas presentes en el contrato con el mismo método y ruta; nginx y su proxy al backend fueron comprobados en local |
-| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 17 de octubre de 2026 pasaron 9 pruebas unitarias, lint y APK debug en Docker. Release y autoensayo en teléfono con servidor HTTP de prueba tienen verificaciones anteriores; no repetidos en esta revisión. Sus 3 operaciones existen en el contrato |
+| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, configuración de empresa, incidencias, cierres, exportes y usuarios; el operador tiene alta/listado de empresas. El 19 pasaron compilación y 148 pruebas. Horarios e importación también pasaron por API HTTPS con sesión real; sigue pendiente su recorrido de pantallas. Configuración está implementada y probada localmente, sin desplegar. Llama 41 operaciones distintas, todas presentes en el contrato; nginx y proxy comprobados localmente |
+| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 19 pasaron 9 pruebas unitarias, lint y APK debug/de instrumentación. Personal y terminal pasaron contra backend local y HTTPS publicado en Samsung SM-S928B (API 36), con cola entre procesos, reenvío sin duplicados y limpieza. El fixture anterior y el rechazo de argumentos incompletos también pasaron. Release no repetido. Sus 3 operaciones existen en el contrato |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -44,17 +45,18 @@ Lo que el backend ya hace, de punta a punta:
 
 Todo se ha probado con datos ficticios. Nada se ha probado con datos reales.
 Desde el 18 de octubre de 2026 hay un ambiente publicado, sólo con datos
-ficticios: [Despliegue en el servidor](despliegue-en-servidor.md).
+ficticios: [Despliegue en el servidor](despliegue-en-servidor.md). El 19 se usó
+una cuenta de administración de prueba para validar Android por HTTPS.
 
 ## Qué falta para tener el producto
 
 | Qué | Por qué importa |
 | --- | --- |
-| Completar el portal | Ya tiene acceso, padrón, horarios, importación, tarjetas, dispositivos, incidencias, cierres, exportes y usuarios. Quien opera el servicio ya lista y da de alta empresas. Faltan configuración de empresa, suspender y reactivar desde el portal y la pantalla del trabajador |
-| Completar y validar la app | Enrolamiento y sincronización están implementados. Faltan semana y acuse, el recorrido contra el backend real y la captura autenticada con tarjetas reales |
+| Completar el portal | Configuración de empresa ya está implementada y probada localmente. Faltan desplegarla, suspender/reactivar empresas y la pantalla del trabajador; los recorridos del navegador y permisos con sesiones de otros roles siguen abiertos |
+| Completar y validar la app | Enrolamiento y sincronización comprobados contra backend local y HTTPS publicado con datos ficticios. Faltan semana y acuse y la captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
-| Un ambiente publicado | Desde el 18 de octubre de 2026 Zenit está en <https://zenit.fastsolution.com.mx>, con certificados propios, sólo datos ficticios y sin cuentas de personas ([Despliegue en el servidor](despliegue-en-servidor.md)). Faltan SMTP, cuentas personales, quién opera el servicio, respaldo fuera del servidor y el recorrido con sesión por HTTPS |
+| Un ambiente publicado | Desde el 18 de octubre de 2026 Zenit está en <https://zenit.fastsolution.com.mx>, con certificados propios y sólo datos ficticios ([Despliegue en el servidor](despliegue-en-servidor.md)). El 19 pasaron Android y operaciones de administración por HTTPS usando una cuenta de prueba. Siguen SMTP, comprobar todas las cuentas personales, quién opera el servicio, respaldo externo y el recorrido completo del portal |
 
 ## Pendientes del backend
 
@@ -74,7 +76,7 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Pendiente | Qué hay que decidir |
 | --- | --- |
 | Suspensión de una empresa | Hoy también corta la captura de marcajes. Antes del primer cliente hay que decidir si una empresa suspendida conserva la captura, porque el registro de asistencia es obligación suya |
-| Verificación automática en cada cambio | Dónde corre. Hoy pruebas, contrato, búsqueda de secretos y vulnerabilidades se corren a mano |
+| Verificación automática en cada cambio | Workflow de GitHub Actions preparado y recetas comprobadas localmente. Falta subirlo, comprobar la primera ejecución y decidir si sus trabajos serán obligatorios antes de integrar cambios |
 | Alcance del supervisor | Cómo se le asignan sus sedes. Hoy ve y atiende lo de toda su empresa |
 | Baja de una persona | Si además revoca su tarjeta y cierra su horario |
 | Comparar la jornada con el horario | Qué cuenta como retardo, falta y salida anticipada |
@@ -82,7 +84,7 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Ausencias | Cómo tratar vacaciones e incapacidades, para no cerrar en ceros |
 | Otra plantilla de exporte | Según lo que pida la nómina del primer cliente |
 | Dónde vive el archivo de un exporte | Hoy en la base, unos minutos; la alternativa es un almacén de objetos |
-| Versión 1.0 del contrato | Cuándo deja de cambiar sin aviso. El portal y la app ya llaman 42 de las 60 operaciones, sin diferencias con el contrato; falta recorrerlos con sesión real contra el backend y confirmar las decisiones de esta tabla |
+| Versión 1.0 del contrato | Cuándo deja de cambiar sin aviso. El portal y la app llaman 44 de las 60 operaciones; falta completar recorridos reales y confirmar las decisiones de esta tabla |
 
 ### Dependen de algo externo
 
@@ -100,19 +102,22 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 
 ## Vulnerabilidades conocidas
 
-Último análisis: 14 de octubre de 2026, con la base de vulnerabilidades de ese
-día. Cómo se repite está en
-[Entorno local](entorno-local.md#revisar-vulnerabilidades).
+Último análisis local: 19 de octubre de 2026, con la base de ese día. Se detectaron
+y corrigieron altas nuevas en backend y portal. IDs y resultados en
+`build/security/summary.json`; cómo repetir está en
+[Verificaciones automáticas](verificaciones-automaticas.md). Falta identificar
+y analizar las imágenes efectivamente publicadas, mediante Gabriel.
 
 | Imagen | Al empezar | Ahora | Altas y críticas que quedan |
 | --- | --- | --- | --- |
 | Backend | 66, con 3 críticas y 18 altas | 15, todas medias | Ninguna |
-| Portal | 7, con 2 altas | 5, todas medias | Ninguna |
+| Portal | 7, con 2 altas | 4, todas medias | Ninguna |
 | Base | 466, con 11 críticas y 118 altas | 4, todas medias | Ninguna |
-| Herramientas de respaldo | 20, con 2 críticas y 10 altas | 5: 4 medias y 1 de gravedad desconocida | Ninguna alta o crítica |
-| Proveedor de identidad | 64, con 6 altas | Igual | 6 altas, aceptadas por escrito |
+| Herramientas de respaldo | 20, con 2 críticas y 10 altas | 6: 4 medias y 2 de gravedad desconocida | Ninguna alta o crítica |
+| Proveedor de identidad | 64, con 6 altas | 65: 30 medias, 29 bajas y 6 altas exceptuadas | 6 altas, aceptadas por escrito |
 
-El análisis de las cinco termina sin error.
+Las cinco entradas del resumen local están aprobadas. Las correcciones todavía
+no se han desplegado al servidor; su aceptación no queda cerrada por este ensayo.
 
 Qué se corrigió:
 
@@ -121,7 +126,8 @@ Qué se corrigió:
   versiones respecto de las que trae Spring Boot.
 - **Backend y portal, paquetes del sistema.** Se subieron los que ya tenían
   corrección en el repositorio de la distribución y la imagen base todavía no
-  traía.
+  traía. El 19 se actualizó `libexpat` a partir de 2.9.0-r0 en ambos, y
+  `libx11` a partir de 1.8.14-r0 en el portal; pasaron los nuevos análisis.
 - **Base.** Pasó de la imagen oficial sobre Debian a una propia, hecha de la
   oficial sobre Alpine (`infra/postgres`). Trae muchos menos paquetes; se
   subieron los dos que tenían corrección; y se retiró la herramienta con la
@@ -203,16 +209,16 @@ defecto se pueda aprovechar aquí.
 - El recorrido completo del portal contra Keycloak y el backend real: el usuario
   comprobó acceso, catálogos, incidencias, cierres, descarga y usuarios. Horarios
   e importación con sesión real siguen pendientes; se preparó su guion.
-  La app también implementa las llamadas de dispositivo y se verificó contra un
-  servidor de prueba en un Samsung SM-S928B (Android API 36), no contra el
-  backend real. Los clientes generados del contrato sólo se compilaron.
+  La app se verificó contra backend local y HTTPS publicado en un Samsung
+  SM-S928B (Android API 36), con datos ficticios. Los clientes generados del
+  contrato sólo se compilaron.
 - La app en un teléfono, con una tarjeta real.
 - Carga: una corrida de cierre se probó con 511 personas y un exporte con
   unas decenas de filas, no con más.
-- Una sesión real detrás del proxy con HTTPS. Desde el 18 de octubre de 2026
-  el portal, el estado del backend y la página de acceso responden por
-  HTTPS en el ambiente publicado, pero nadie ha iniciado sesión ahí: faltan
-  cookies, renovación y cierre de sesión.
+- El recorrido completo del navegador detrás del proxy HTTPS: cookies,
+  renovación y cierre de sesión. El 19 se usó un token de administración
+  preparado por el usuario para el ensayo Android y operaciones API públicas;
+  eso no acredita toda la sesión del portal.
 - Los trabajos y las cuotas con más de una instancia del backend, fuera de
   las pruebas.
 - Los guiones de secretos, de la base, del respaldo y del análisis de
@@ -237,21 +243,22 @@ defecto se pueda aprovechar aquí.
 Declaración al 17 de octubre de 2026. Se conserva la numeración de la evaluación
 original y el orden de menor a mayor complejidad; este orden no sustituye la
 prioridad de [Tareas críticas primero](tareas-criticas-primero.md), revisada el
-18 de octubre. Las tareas 1, 3, 5 y 6 están completadas
+19 de octubre. Para declarar trabajo se usa la columna Orden de ese documento;
+esta tabla conserva la numeración histórica. Las tareas 1, 3, 5 y 6 están completadas
 en el alcance de la [validación](validacion-tareas-1-a-6.md). La 5 no incluye
 acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 
 | N.º original | Tarea pendiente | Estado o dependencia para continuar |
 | --- | --- | --- |
 | 2 | Acordar suspensión de empresa, baja de empleado, alcance del supervisor y tipo de marcaje | Propuestas en [Decisiones de negocio](decisiones-de-negocio.md); falta elección del responsable del producto. No se han cambiado las reglas |
-| 4 | Probar horarios e importación con sesión real en el portal | Guion preparado; requiere sesión de administración/RH y acceso al navegador. El control de Chrome fue detenido por no poder verificar su URL activa |
-| 7 | Probar enrolamiento, captura simulada, cola sin conexión, sincronización y renovación Android contra el backend local | Implementación existente; falta recorrido completo con datos ficticios |
+| 4 | Probar horarios e importación con sesión real en el portal | API HTTPS aprobada el 19 con sesión de administración y limpieza. Siguen las pantallas, otros roles, renovación y cierre de sesión; no hay navegador conectado al control UI |
+| 7 | Probar enrolamiento, captura simulada, cola sin conexión, sincronización y renovación Android contra el backend local | Completada el 19 también por HTTPS en teléfono: personal y terminal, tres fases por modalidad y limpieza. Autoensayo y guion versionados; no acredita NFC real ni apagar físicamente las radios |
 | 8 | Definir e implementar retención de sobres y recibos Android | Acordar qué se conserva y durante cuánto tiempo; proteger pendientes y evidencia |
-| 9 | Completar configuración de empresa en el portal | Reutilizar operaciones existentes del backend y comprobar permisos. La administración de dispositivos ya está: emitir código, listar y revocar |
+| 9 | Completar configuración de empresa en el portal | Implementada: consulta para cuatro roles, edición sólo de administración, cambios parciales, cierre automático anulable y conservación ante errores/refrescos. 148 pruebas del portal y compilación aprobadas; falta despliegue y aceptación en navegador |
 | 10 | Mostrar las personas que no pudieron cerrar y sus causas | Actualmente la corrida muestra conteos y motivos, sin identificar a cada persona |
-| 11 | Automatizar verificaciones en cada cambio | Elegir servicio de integración continua y ejecutar las comprobaciones existentes |
+| 11 | Automatizar verificaciones en cada cambio | Workflow de GitHub Actions preparado, cuatro trabajos y comandos comprobados localmente. Falta subirlo y acreditar su primera ejecución |
 | 12 | Completar semana y acuse del trabajador | Integrar datos reales, identidad y permisos; el texto y evidencia del acuse dependen también de la tarea 17 |
-| 13 | Completar pantallas del operador del servicio | Administración de empresas desde el portal con permisos reales |
+| 13 | Completar pantallas del operador del servicio | Alta y listado de empresas implementados; faltan suspender/reactivar y comprobar permisos y aislamiento con sesión real. La regla de suspensión depende de la decisión de negocio |
 | 14 | Publicar ambiente de pruebas con TLS, SMTP y cuentas personales | Publicado con TLS el 18 de octubre de 2026 ([Despliegue en el servidor](despliegue-en-servidor.md)). Faltan correo, cuentas personales, quién opera el servicio y el acceso con sesión por HTTPS; retirar la cuenta temporal sólo tras verificar las nuevas |
 | 15 | Comprobar recuperación completa y automatizar respaldos externos | Recuperación local comprobada. Política diaria/30 días, objetivos 24 h/4 h y atención por fastSolution aprobados; SSH por Gabriel y destino en otro servidor. Faltan custodia, concretar destino, automatizar y comprobar recuperación pública; [detalle](recuperacion-servicio.md) |
 | 16 | Validar captura autenticada con tarjetas reales | Definir y probar autenticación y entrega de claves con tarjetas y teléfonos físicos |
@@ -270,8 +277,8 @@ siguen abiertas donde se indican en **Sin verificar** y en la validación.
 | Quién | Primer paso sugerido |
 | --- | --- |
 | App | Verificar enrolamiento y marcajes con tarjeta simulada contra el ambiente publicado, como dice [Conectar la app al ambiente publicado](guia-app-android.md#conectar-la-app-al-ambiente-publicado). Después, semana y acuse; la tarjeta real requiere su prueba externa |
-| Portal | Ejecutar el guion pendiente de horarios/importación con sesión real. Después, completar configuración de empresa, suspensión desde el portal y trabajador |
-| Backend | Lo que queda sin esperar a nadie es una mejora interna, las clases de jOOQ generadas, que se dejó para después. Lo demás espera una decisión o a un tercero |
+| Portal | Completar las pantallas de horarios/importación y Configuración con sesión real; su API y pruebas locales ya pasaron. Después, suspensión/reactivación y trabajador |
+| Backend | Puede ampliarse el detalle de personas que no pudieron cerrar, con contrato, pruebas y portal. jOOQ generado sigue diferido; las reglas de negocio esperan sus decisiones |
 
 El portal ya no depende de la app para tener datos: el simulador deja
 jornadas, incidencias de cuatro tipos y semanas que se pueden cerrar.

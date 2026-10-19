@@ -5,8 +5,8 @@ import { api, ApiError, type Me, type Page, type Tenant } from './api'
 import { ErrorNotice } from './Directory'
 import { showTime } from './incidentModel'
 
-const days = { monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles', thursday: 'Jueves', friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo' }
-const breaks = { not_considered: 'No se marca', marked: 'Se marca' }
+export const days = { monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles', thursday: 'Jueves', friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo' }
+export const breaks = { not_considered: 'No se marca', marked: 'Se marca' }
 const statuses: Record<string, string> = { active: 'Activa', suspended: 'Suspendida' }
 
 /** Pantalla de quien opera el servicio: da de alta empresas y deja invitada a quien las administra. */

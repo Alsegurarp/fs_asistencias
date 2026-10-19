@@ -1,0 +1,80 @@
+name: Verificaciones
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verificaciones-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      IDENTITY_TEST_SECRETOS: ${{ github.workspace }}/secrets/identity-check
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Generar secretos exclusivos del runner
+        run: docker compose --profile setup run --rm secrets-init
+      - name: Pruebas unitarias e integración PostgreSQL
+        run: docker compose --profile test run --rm --build backend-it
+      - name: Preparar identidad aislada
+        run: |
+          mkdir -p "$IDENTITY_TEST_SECRETOS"
+          docker compose -f compose.yaml -f infra/keycloak/compose.test.yaml --profile setup run --rm secrets-init
+          docker compose -f compose.yaml -f infra/keycloak/compose.test.yaml up --wait keycloak
+      - name: Probar realm importado y protección OTP
+        run: node --test infra/keycloak/health.test.mjs infra/keycloak/realm.test.mjs
+      - name: Limpiar contenedores de pruebas
+        if: always()
+        run: |
+          docker compose --profile test down --remove-orphans
+          docker compose -f compose.yaml -f infra/keycloak/compose.test.yaml down --remove-orphans
+
+  portal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compilar portal
+        run: docker build --target build --tag zenit-web-check web
+      - name: Pruebas del portal sin red
+        run: docker run --rm --network none zenit-web-check pnpm test
+
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Pruebas, lint y APK de app e instrumentación
+        run: docker build --file android/Dockerfile --tag zenit-android-check android
+
+  contrato-y-seguridad:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validar contrato y ejemplos
+        run: docker compose --profile tools run --rm contract-lint
+      - name: Buscar secretos en todo el historial
+        run: docker compose --profile tools run --rm secret-scan
+      - name: Construir imágenes del producto
+        run: docker compose build backend web db keycloak backup
+      - name: Inventario y vulnerabilidades de las cinco imágenes
+        shell: pwsh
+        run: ./infra/check-images.ps1

@@ -7,11 +7,13 @@ Plataforma de control de jornada desarrollada por fastSolution.
 Monorepo del producto. El backend atiende las 60 operaciones del contrato, con
 pruebas contra PostgreSQL real. El portal implementa inicio de sesión, sedes,
 empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias,
-cierres, exportes y usuarios. Hay recorridos locales comprobados por el usuario;
-horarios e importación con sesión real siguen pendientes. Android implementa
+cierres, exportes, usuarios y configuración de empresa. El 19 pasaron 148
+pruebas del portal y los ensayos de horarios/importación por API HTTPS con
+sesión real; sigue su recorrido completo en navegador. Android implementa
 enrolamiento, sobres firmados y
-sincronización con cola cifrada; se verificó en un teléfono con un servidor de
-prueba, todavía sin tarjetas ni backend reales. Cada aplicación mantiene
+sincronización con cola cifrada; el 19 de octubre se verificaron personal y
+terminal en teléfono contra backend local y HTTPS publicado, con tarjetas
+simuladas. La tarjeta autenticada real sigue pendiente. Cada aplicación mantiene
 toolchain, dependencias y build propios.
 
 Android debug también incluye una presentación independiente del producto,
@@ -20,9 +22,9 @@ con históricos y panel de Administrador/RH. Su alcance está en
 
 ## Documentación
 
-La [validación del 17 de octubre de 2026](docs/validacion-tareas-1-a-6.md)
-registra las comprobaciones actuales y los pendientes que requieren al usuario:
-decisiones de negocio y recorrido de horarios/importación con sesión real.
+La [bitácora](docs/bitacora-trabajo.md) registra las comprobaciones del 19 de
+octubre y sus límites. [Tareas críticas primero](docs/tareas-criticas-primero.md)
+declara el trabajo restante y las decisiones que requieren al usuario.
 
 La carpeta [`docs/`](docs/README.md) explica qué hace el sistema, cómo se usa
 y cómo se continúa:

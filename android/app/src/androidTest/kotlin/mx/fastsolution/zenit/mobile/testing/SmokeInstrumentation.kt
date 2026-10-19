@@ -36,13 +36,26 @@ import org.json.JSONObject
 
 /** Autoensayo en el teléfono; HTTP de prueba y almacenamiento separado de los datos de la app. */
 class SmokeInstrumentation : Instrumentation() {
-    override fun onCreate(arguments: Bundle?) { super.onCreate(arguments); start() }
+    private var arguments = Bundle()
+    override fun onCreate(arguments: Bundle?) {
+        this.arguments = arguments ?: Bundle()
+        super.onCreate(arguments)
+        start()
+    }
 
     override fun onStart() {
         val result = Bundle()
         try {
-            runBlocking { smoke() }
-            result.putString("stream", "OK: Keystore ES256, migración sin pérdida, activación, cola cifrada, reintento idéntico, recibos, captura concurrente y reenrolamiento sin borrado.\n")
+            val backend = listOf("baseUrl", "code", "mode", "phase", "tagHex").any(arguments::containsKey)
+            val message = runBlocking {
+                if (backend) backendSmoke(targetContext, arguments) { device ->
+                    sendStatus(0, Bundle().apply { putString("stream", "DEVICE: $device\n") })
+                } else {
+                    smoke()
+                    "FIXTURE: Keystore ES256, migración sin pérdida, activación, cola cifrada, reintento idéntico, recibos, captura concurrente y reenrolamiento sin borrado."
+                }
+            }
+            result.putString("stream", "OK: $message\n")
             finish(-1, result)
         } catch (error: Throwable) {
             result.putString("stream", "FAIL: ${error.javaClass.simpleName}: ${error.message}\n${error.stackTrace.take(6).joinToString("\n")}\n")

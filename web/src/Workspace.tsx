@@ -10,9 +10,10 @@ import { Schedules } from './Schedules'
 import { Imports } from './Imports'
 import { Devices } from './Devices'
 import { Tenants } from './Tenants'
+import { TenantSettings } from './TenantSettings'
 
-const sections = ['sites', 'employees', 'schedules', 'imports', 'cards', 'devices', 'incidents', 'closures', 'exports', 'users'] as const
-const labels = { sites: 'Sedes', employees: 'Empleados', schedules: 'Horarios', imports: 'Importar empleados', cards: 'Tarjetas', devices: 'Dispositivos', incidents: 'Incidencias', closures: 'Cierres', exports: 'Exportes', users: 'Usuarios' }
+const sections = ['sites', 'employees', 'schedules', 'imports', 'cards', 'devices', 'incidents', 'closures', 'exports', 'users', 'settings'] as const
+const labels = { sites: 'Sedes', employees: 'Empleados', schedules: 'Horarios', imports: 'Importar empleados', cards: 'Tarjetas', devices: 'Dispositivos', incidents: 'Incidencias', closures: 'Cierres', exports: 'Exportes', users: 'Usuarios', settings: 'Configuración' }
 
 export function Workspace({ me }: { me: Me }) {
   const [selected, setSelected] = useState<string>('sites')
@@ -32,7 +33,7 @@ export function Workspace({ me }: { me: Me }) {
       {active === 'sites' || active === 'employees' || active === 'cards'
         ? <Directory key={active} kind={active} me={me} />
         : active === 'incidents' ? <Incidents me={me} initial={incidentTarget} />
-        : active === 'closures' ? <Closures me={me} onIncidents={target => { setIncidentTarget(target); setSelected('incidents') }} /> : active === 'exports' ? <Exports me={me} /> : active === 'users' ? <Users me={me} /> : active === 'schedules' ? <Schedules me={me} /> : active === 'devices' ? <Devices me={me} /> : <Imports me={me} />}
+        : active === 'closures' ? <Closures me={me} onIncidents={target => { setIncidentTarget(target); setSelected('incidents') }} /> : active === 'exports' ? <Exports me={me} /> : active === 'users' ? <Users me={me} /> : active === 'schedules' ? <Schedules me={me} /> : active === 'devices' ? <Devices me={me} /> : active === 'settings' ? <TenantSettings me={me} /> : <Imports me={me} />}
     </Stack>
   </>
 }

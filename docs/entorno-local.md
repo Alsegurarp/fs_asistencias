@@ -399,11 +399,15 @@ docker compose --profile tools run --rm vuln-scan
 - `sbom` no usa la red. Deja el inventario en
   `build/security/backend.cdx.json`, en formato CycloneDX.
 - `vuln-scan` sale a Internet sólo para bajar su base de vulnerabilidades, que
-  guarda en `build/security/db/`. No manda nada del proyecto. Imprime la
+  guarda en el volumen Docker `grype-db`. No manda nada del proyecto. Imprime la
   lista, deja el detalle en `build/security/backend.vulns.json` y **termina
   con error si hay alguna vulnerabilidad alta o crítica**.
 
 `build/` no entra a Git ni a las imágenes.
+
+El [guion de verificaciones](verificaciones-automaticas.md#repetir-el-análisis-local)
+repite el inventario y análisis de las cinco imágenes, registra sus IDs y limpia
+las exportaciones temporales. Es el mismo que usa el workflow de GitHub Actions.
 
 Para otra imagen se cambia el nombre del archivo con `SCAN_TARGET`:
 

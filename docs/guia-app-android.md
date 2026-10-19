@@ -29,6 +29,16 @@ no sustituye las pruebas contra el backend, una lectura NFC física ni una
 muestra real de ubicación. La pantalla inicial también se abrió y revisó en
 el teléfono.
 
+El 19 de octubre de 2026 pasaron 9 pruebas unitarias, lint y ambos APK debug
+(app e instrumentación) con Gradle local. En el mismo Samsung pasaron personal
+y terminal contra backend local y `https://zenit.fastsolution.com.mx`, con tres
+procesos por modalidad: activación, cola y sincronización. En cada entorno
+quedaron exactamente dos marcajes por empleado, sin duplicados; se comprobaron
+rechazos, recibos y renovación. Se revocaron los dispositivos y tarjetas del
+ensayo y se desactivaron sus empleados y sede. El fixture original y el rechazo
+de argumentos incompletos también pasaron. Evidencia en
+[Bitácora](bitacora-trabajo.md#19-de-octubre-de-2026--android-reproducible-contra-backend-local-y-https).
+
 La captura `uid_sha256` se habilita sólo en debug. Release exige HTTPS y no
 permite marcar mientras la verificación de la tarjeta real siga pendiente.
 
@@ -80,7 +90,7 @@ librería JOSE que lo haga. Una firma en DER se rechaza como firma inválida.
 
 ## 2. Activar
 
-RH emite un código en el portal. Tiene la forma `K7M2-9QXD`, vale 15 minutos y
+RH emite un código en el portal. Tiene la forma `K7M2X-9QXDW`, vale 15 minutos y
 sirve una vez. La persona lo escribe en la app.
 
 ```http
@@ -90,7 +100,7 @@ Content-Type: application/json
 
 ```json
 {
-  "enrollmentCode": "K7M2-9QXD",
+  "enrollmentCode": "K7M2X-9QXDW",
   "publicKey": { "kty": "EC", "crv": "P-256", "x": "…", "y": "…" },
   "proof": "<JWS>",
   "device": { "manufacturer": "Ficticia", "model": "Modelo 1", "androidSdk": 34, "appVersion": "0.1.0" },
@@ -99,7 +109,7 @@ Content-Type: application/json
 ```
 
 - `proof` es un JWS firmado con la clave nueva, con cabecera
-  `{"alg":"ES256"}` y carga `{"enrollmentCode":"K7M2-9QXD"}`. Demuestra que
+  `{"alg":"ES256"}` y carga `{"enrollmentCode":"K7M2X-9QXDW"}`. Demuestra que
   la app posee la clave que registra.
 - `screenLock` dice si el teléfono tiene bloqueo de pantalla. Sin bloqueo no
   se activa.
@@ -495,6 +505,64 @@ if ($smokeResult -notmatch '^OK:') { throw 'Falló el autoensayo en el teléfono
 El teléfono debe estar autorizado por ADB y tener bloqueo de pantalla. Si hay
 más de un dispositivo conectado, agregar `-s <serial>` a cada orden de ADB.
 El autoensayo reinicia sólo su almacén de pruebas, separado del de la app.
+
+### Ensayo reproducible contra el backend
+
+Desde la raíz, usar [el guion versionado](../infra/test-android-backend.ps1).
+Requiere PowerShell 7, Java/SDK de Android, ADB autorizado, bloqueo de pantalla
+y una empresa con datos ficticios. El backend debe aceptar tarjetas simuladas.
+La sesión de `SIM_TOKEN` o del archivo `TokenPath` debe tener rol `admin_empresa`, porque el guion crea
+y desactiva una sede propia. Obtener un token reciente como se explica en
+[Entorno local](entorno-local.md#obtener-un-token-para-probar); no guardarlo
+en el guion ni en registros.
+
+```powershell
+$env:SIM_TOKEN = '<token vigente de administración de una empresa de prueba>'
+try {
+    .\infra\test-android-backend.ps1 -BaseUrl http://localhost:18080 -Serial <serial-adb> -FictitiousData
+} finally {
+    Remove-Item Env:SIM_TOKEN -ErrorAction SilentlyContinue
+}
+```
+
+El guion compila ambos APK desde las fuentes actuales, ejecuta pruebas y lint,
+instala con `adb install -r` y crea sede, dos empleados, tarjetas y códigos
+de un uso. No desinstala la app si hay una firma incompatible. Para HTTP usa
+un túnel ADB de puerto dinámico que elimina al terminar, sin reemplazar otros.
+
+Cada modalidad, personal y terminal, ejecuta tres procesos de instrumentación:
+activación, cola y sincronización. Verifica claves no exportables, persistencia,
+código consumido, dos marcajes aceptados y un rechazo de tarjeta desconocida,
+reenvío idéntico sin duplicar eventos y renovación. Espera 61 segundos entre
+entrada y salida para respetar la ventana de doble lectura del backend.
+La fase de cola interrumpe sólo su transporte hacia el servidor y restaura la
+URL al terminar: comprueba conservación ante error de red y entre procesos;
+no apaga las radios ni cambia las redes del teléfono. El ensayo usa bytes de
+tarjeta ficticios y no acredita una lectura NFC física ni ubicación real.
+
+El resultado debe decir `OK: BACKEND` para las seis fases. Sin argumentos,
+la instrumentación conserva el ensayo HTTP simulado y responde `OK: FIXTURE`.
+Argumentos de backend incompletos producen un fallo, sin recurrir al fixture.
+
+En `finally` se revocan sólo dispositivos con las etiquetas únicas de esa
+ejecución y tarjetas del ensayo; se desactivan sus empleados y sede. Se conservan
+marcajes y auditoría. Los códigos no consumidos vencen normalmente a los 15
+minutos. `build/android-<id>.log` registra commit, cambios locales, hashes de
+ambos APK, fases e identificadores de limpieza; excluye token, códigos y sobres.
+Un fallo de limpieza impide declarar éxito y deja los identificadores para
+completarla con una sesión vigente; el token del portal dura cinco minutos.
+
+Para repetir por HTTPS con un token en un archivo local ignorado por Git:
+
+```powershell
+.\infra\test-android-backend.ps1 -BaseUrl https://zenit.fastsolution.com.mx -Serial <serial-adb> -TokenPath secrets/android-development-token.txt -FictitiousData
+```
+
+El archivo admite el JWT solo o con el prefijo `Bearer `. Se vuelve a leer en
+cada petición, de modo que se puede reemplazar por uno renovado de la misma
+cuenta y empresa durante el ensayo. Se exigen cuatro minutos de vigencia antes
+de crear datos para dejar margen a ambos modos y su limpieza. No necesita
+túnel ADB. El recorrido publicado pasó el 19 de octubre de 2026.
 
 ## Lista de comprobación
 

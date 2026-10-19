@@ -37,7 +37,7 @@ class AttendanceRepository(private val context: Context) {
             check(dao.pendingCount() == 0 || preservePreviousPending) { "Sincroniza los pendientes o confirma que se conserven sin enviar antes de volver a enrolar." }
             val base = CaptureApi.validateBaseUrl(baseUrl)
             val code = enrollmentCode.trim().uppercase(java.util.Locale.ROOT)
-            require(Regex("[A-Z0-9]{4}-[A-Z0-9]{4}").matches(code)) { "Introduce el código de RH con formato XXXX-XXXX." }
+            require(code.length in 6..32) { "Revisa el código de activación que te dio RH." }
             val screenLock = ContextCompat.getSystemService(context, KeyguardManager::class.java)?.isDeviceSecure == true
             check(screenLock) { "Activa el bloqueo de pantalla del teléfono antes de enrolarlo." }
             val signer = DeviceSigner.create()

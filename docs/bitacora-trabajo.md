@@ -1,5 +1,191 @@
 # Bitácora de trabajo
 
+## 19 de octubre de 2026 — Publicación autorizada de los avances
+
+El usuario autoriza crear el commit y hacer push de los cambios verificados.
+Se utiliza la rama `avanceLunes`, sobre `8dc2a75`, sin modificar `main` ni
+desplegar servicios. El alcance incluye el ensayo Android reproducible,
+configuración de empresa, verificaciones automáticas, correcciones de seguridad
+y documentación. Se excluyen secretos, evidencias locales bajo `build/` y las
+tres modificaciones previas de archivos generados bajo `backend/bin/`.
+Se comprobó el remoto antes de preparar el commit. El resultado de la primera
+ejecución de GitHub Actions se debe verificar tras publicar.
+
+## 19 de octubre de 2026 — Proxy público, horarios e importación con sesión real
+
+El usuario solicita registrar las pruebas y continuar el trabajo restante,
+facilitando un token nuevo mediante `secrets/android-development-token.txt`.
+Se comprobó `/me` con rol `admin_empresa` y empresa asignada; no se copiaron
+el token ni credenciales a código o registros.
+
+**Orden 8 (P1): comprobación pública parcial aprobada.** El guion versionado
+[`infra/test-public-proxy.mjs`](../infra/test-public-proxy.mjs) verificó:
+
+- HTTP redirige al mismo dominio HTTPS.
+- `X-Forwarded-Proto`, `X-Forwarded-Host` y `Forwarded` falsos no cambian el
+  emisor ni los endpoints HTTPS publicados por identidad.
+- Diez activaciones con firma válida y un código imposible respondieron
+  `410/enrollment_gone`; las siguientes dos, `429/rate_limited`, aun cambiando
+  las cabeceras IP en cada petición. No se crearon dispositivos.
+- El estado público del servicio siguió respondiendo tras agotar esa cuota.
+
+Evidencia: `build/public-proxy-check.json`, 14:59:50–14:59:51 UTC. Falta
+comprobar desde una segunda IP pública real que otro visitante conserve su
+cuota durante la misma ventana. Se solicitó confirmar datos móviles en el
+teléfono para esa prueba; no se ha considerado cerrada la tarea completa.
+
+**Orden 9 (P1): horarios e importación aprobados por API HTTPS.** El guion
+[`infra/test-directory-api.mjs`](../infra/test-directory-api.mjs) comprobó:
+
+- Horario de lunes a viernes 09:00–17:00, descanso de 30 minutos y persistencia
+  al consultar; asignación vigente y otra futura que no cambia la actual.
+- Validación de CSV con una fila válida y otra con fecha inválida, sin modificar
+  empleados; aplicación de la aceptada y omisión de la rechazada.
+- Reenvío con la misma clave idempotente, repetición con otra clave sin duplicar,
+  actualización del empleado importado, sede inexistente y archivo vacío.
+- Limpieza confirmada: dos empleados y su sede quedaron inactivos. Los horarios
+  e importaciones se conservan como históricos de prueba.
+
+Evidencia: `build/qa-df119b67-ac8b-4c90-9-directory.json`, 14:59:48–14:59:51 UTC.
+La cuenta era de administración: no acredita permisos de otros roles, pantallas,
+cookies, renovación ni cierre de sesión del portal. Esos puntos siguen abiertos.
+
+**Orden 11 (P1): verificaciones automáticas preparadas y comprobadas localmente.**
+El workflow [verificaciones.yml](../.github/workflows/verificaciones.yml) reúne
+cuatro trabajos con las recetas Docker existentes, permisos de lectura y
+checkout fijado a SHA. Se validaron su YAML y las comprobaciones siguientes:
+
+- Backend: construcción, unitarias y **74 pruebas de integración PostgreSQL**.
+  Evidencia: `build/pending-backend-ci.log`; contenedores de prueba retirados.
+- Portal: **148 pruebas** y compilación aprobadas, incluidos nueve casos de
+  configuración de empresa y navegación por rol. Evidencia:
+  `build/pending-web-settings.log` y `build/pending-web-settings-build.log`.
+- Android: nueve unitarias, lint y construcción de app e instrumentación en
+  Docker (`build/pending-android-ci.log`). También se compiló con el SDK local y se ejecutó la fase `proxy` en
+  el Samsung conectado: devolvió `410/enrollment_gone` por HTTPS. Evidencia:
+  `build/pending-proxy-phone.log`. Este ensayo aislado no acredita dos IP reales.
+- Identidad: **seis pruebas aprobadas**, incluidas importación del realm, OTP y
+  readiness HTTP 200/503. Se corrigió el healthcheck compartido: aceptaba un
+  componente `UP` aunque la respuesta global fuera 503 durante el arranque;
+  ahora exige HTTP 200. Evidencia: `build/pending-identity-tests.log`.
+
+La primera ejecución en GitHub queda pendiente de subir el workflow. No se
+crearon commits, se publicó una rama ni se modificaron protecciones de GitHub.
+El contrato y sus ejemplos aprobaron (`build/pending-contract.log`); Gitleaks
+no detectó secretos en los 44 commits ni en las fuentes modificadas, excluyendo
+secretos locales y archivos generados (`build/pending-secret-scan.log` y
+`build/pending-source-secrets.log`). También aprobaron sintaxis de los guiones,
+configuración Compose, enlaces locales de los documentos y `git diff --check`.
+
+**Orden 12 (P1): cinco imágenes locales analizadas y correcciones verificadas.**
+El guion [check-images.ps1](../infra/check-images.ps1) genera inventarios,
+registra ID y fecha por imagen y falla ante altas/críticas sin aceptar. El
+análisis actualizado encontró altas de libexpat en backend/portal y libx11
+en portal; se actualizaron esos paquetes, reconstruyeron ambas imágenes y
+repitió su análisis. Las cinco entradas de `build/security/summary.json`
+aprobaron con cero altas/críticas sin atender. Keycloak conserva las seis
+excepciones previas; no se aceptaron hallazgos nuevos. La base de Grype se
+trasladó a un volumen Docker para evitar la lectura lenta de SQLite desde Windows.
+Se verificó que los cinco IDs actuales coincidieran con los del resumen y se
+retiraron las cachés temporales duplicadas; se conservaron los informes y el
+volumen de análisis activo. No quedaron contenedores de prueba ejecutándose.
+
+Estos resultados corresponden a los IDs registrados, no a las imágenes del
+servidor. Falta obtener su inventario mediante Gabriel, desplegar las
+correcciones y comprobar el servicio público; no se hizo SSH ni despliegue.
+El procedimiento está en [Verificaciones automáticas](verificaciones-automaticas.md).
+
+**Orden 13 (P2): configuración de empresa implementada localmente.**
+Consulta para administración, RH, supervisor y auditor; edición sólo para
+administración. Usa GET/PATCH `/tenant`, envía únicamente campos modificados,
+permite desactivar el cierre con `null`, conserva entradas tras errores y no
+pisa campos ajenos cuando se refresca la consulta durante una edición. Se
+reutilizaron API, permisos y componentes existentes. Las pruebas del portal
+pasaron; falta aceptación visual con sesión real y despliegue. No se cambió
+la configuración de ninguna empresa publicada.
+
+Se solicitó el criterio de retención Android antes de implementar purga y la
+disponibilidad de datos móviles para la segunda IP. No se eliminó evidencia
+de captura ni se modificaron radios del teléfono. Continúan los bloqueos P0
+y el resto de tareas declaradas en [Tareas críticas primero](tareas-criticas-primero.md).
+
+## 19 de octubre de 2026 — Android reproducible contra backend local y HTTPS
+
+**Orden crítico 7 (P1): completado para tarjeta simulada y datos ficticios.**
+Se agregó `BackendSmoke.kt` al runner existente, con fases `activate`, `queue`
+y `sync` en procesos separados, y el guion versionado
+[`infra/test-android-backend.ps1`](../infra/test-android-backend.ps1). El modo
+sin argumentos conserva el fixture y ahora informa `OK: FIXTURE`; el backend
+informa `OK: BACKEND` y los argumentos incompletos fallan sin recurrir al fixture.
+
+Se corrigió un bloqueo real: `AttendanceRepository` exigía grupos de cuatro
+caracteres y el backend emite cinco. La app acepta ahora el límite de 6–32
+caracteres del contrato, como el otro repositorio de activación existente,
+y la pantalla muestra el formato emitido por el servidor.
+
+Comprobado con Gradle local: 9 pruebas unitarias sin fallos, lint con cero
+errores (10 avisos), APK debug y de instrumentación construidos juntos e
+instalados con actualización en Samsung SM-S928B, Android API 36. Ambos modos,
+personal y terminal, pasaron contra `http://localhost:18080` mediante túnel ADB
+y después contra `https://zenit.fastsolution.com.mx` sin túnel:
+
+- Activación persistente, clave Keystore no exportable y código de un uso.
+- Captura cifrada con transporte interrumpido, reintento sin cambiar sobres,
+  bloqueo de renovación con pendientes y cola conservada entre procesos.
+- Dos recibos aceptados y uno rechazado por tarjeta desconocida en cada modo,
+  reenvío idempotente y renovación con sesión nueva/consecutivo reiniciado.
+- Exactamente dos marcajes en backend por empleado, sin duplicados.
+- Dispositivos y tarjetas revocados, empleados y sede desactivados; históricos
+  y auditoría conservados. La empresa local aislada quedó suspendida, la cuenta
+  técnica desactivada y su cliente de identidad eliminado; cero dispositivos
+  activos y cero sesiones abiertas en el ensayo local.
+
+Registros locales ignorados por Git: `build/android-af822ab61981496891c58d785b54f16d.log`
+(local) y `build/android-d2eb5507819b4e1498e0372519d824a4.log` (HTTPS). Cada uno
+incluye HEAD `8dc2a75`, la presencia de cambios locales, hashes de ambos APK,
+fases y limpieza; no contiene tokens ni códigos de activación. El usuario
+facilitó la sesión HTTPS mediante un archivo bajo `secrets/`; no se utilizó ni
+se guardó su contraseña. No había navegador conectado al control UI.
+
+El guion admite `SIM_TOKEN` o `TokenPath`, vuelve a leer este último en cada
+petición y exige cuatro minutos de vigencia antes de crear recursos. El fixture
+anterior y el fallo ante argumentos incompletos también se ejecutaron en el
+teléfono. La búsqueda de secretos de los 44 commits del historial no encontró
+hallazgos. Pasaron la revisión de enlaces y `git diff --check`.
+
+Límites: el corte de transporte se induce sólo en el almacén del ensayo, sin
+apagar redes del teléfono. No acredita NFC autenticado, ubicación física,
+release, ni cookies/renovación/cierre de sesión del portal. La prueba HTTPS no
+despliega el código modificado ni cierra la comprobación de cuotas y cabeceras
+falsas del orden 8. Los bloqueos P0 siguen abiertos.
+
+## 19 de octubre de 2026 — Verificación y declaración de tareas pendientes
+
+Se contrastaron estado, prioridades y decisiones con el commit `8dc2a75` y las
+fuentes de instrumentación Android, almacenamiento local, navegación del portal
+y configuración de proxies. Se conservan los 20 órdenes de
+[Tareas críticas primero](tareas-criticas-primero.md), con criterios de cierre
+y dependencias. Su columna Orden es la referencia para continuar; los números
+históricos de Estado y pendientes se mantienen como correspondencia.
+
+Se corrigieron notas desactualizadas: Dispositivos y alta/listado de empresas
+ya existen, los tres correos administrativos están confirmados y el cambio de
+proxies está implementado. La bitácora del 18 registra 74 pruebas de integración,
+138 de portal y recuperación local de 130 tablas/1.867 filas; son resultados
+anteriores, no comprobaciones ejecutadas hoy.
+
+Primera tarea técnica propuesta: orden 7, hacer reproducible el recorrido de
+Android contra backend. `SmokeInstrumentation` sigue usando `FixtureServer`
+sin atender argumentos de conexión. Se declararon alcance, aceptación,
+dependencias y evidencia de cierre. Los respaldos externos y la identidad
+operativa conservan sus definiciones pendientes; no se aprobaron reglas de
+negocio ni se inició implementación.
+
+Verificación de esta entrega: revisión de fuentes y documentos, enlaces
+relativos de los documentos modificados y `git diff --check`. No se ejecutaron
+pruebas ni se accedió al servidor o al teléfono. Se conservaron las tres
+modificaciones previas bajo `backend/bin/`.
+
 ## 18 de octubre de 2026 — Backend listo para conectar la app
 
 Para que la app se conecte al ambiente publicado hacían falta cuatro cosas,

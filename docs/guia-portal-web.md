@@ -10,10 +10,11 @@ Consulta `/me` y ofrece sedes (alta y edición), empleados (alta y edición) y
 tarjetas (registro, asignación y revocación), con permisos por rol y listas
 con cursor. Incluye estados de carga, errores de campos y referencia de
 correlación. También implementa horarios y asignaciones, importación CSV y
-usuarios. El 17 de octubre de 2026 pasaron compilación y 128 pruebas con dos
-procesos. El usuario ya comprobó acceso, catálogos, incidencias, cuatro cierres,
-descarga única y usuarios; falta validar horarios e importación con sesión real
-y completar los demás recorridos. Véase la [validación actual](validacion-tareas-1-a-6.md).
+usuarios y configuración de empresa. El 19 de octubre de 2026 pasaron
+compilación y 148 pruebas. El usuario ya comprobó acceso, catálogos,
+incidencias, cuatro cierres, descarga única y usuarios. Horarios e importación
+pasaron por API HTTPS con sesión real; siguen sus pantallas y los demás
+recorridos. Véase la [bitácora](bitacora-trabajo.md).
 
 La navegación de Incidencias, Cierres y Exportes respeta los roles de `/me`.
 Incidencias ya tiene listado, filtros, detalle, semana del empleado,
@@ -109,9 +110,10 @@ la pestaña. Si se perdió la respuesta, reintentar antes de cambiar el archivo.
 6. Repetir con una fila de fecha inválida: mostrar el error y exigir confirmar
    cuántas filas se aplican. No aplicar si sólo se quería probar la validación.
 
-Verificación automática: 128 pruebas del portal y compilación correctas.
-Las pruebas de UI usan API simulada; queda pendiente este recorrido con la
-sesión real. Se reutilizaron las rutas existentes, sin cambios en el backend.
+Verificación automática del 19: 148 pruebas del portal y compilación correctas.
+Las pruebas de UI usan API simulada; horarios e importación también pasaron
+por API HTTPS con sesión real. Queda pendiente este recorrido en navegador.
+Se reutilizaron las rutas existentes, sin cambios en el backend.
 
 El desarrollo se verifica dentro de Docker, conforme a las reglas del
 repositorio. Reconstruir con `docker compose up --build --detach web` y abrir
@@ -124,8 +126,9 @@ sesión y decide si hace falta pedir credenciales otra vez.
 `VITE_IDENTITY_URL` permite cambiar la dirección de identidad en desarrollo.
 En Docker, Compose pasa `IDENTITY_URL` a la construcción del portal y a
 `connect-src` de nginx; cambiarla exige reconstruir la imagen. El backend y
-Keycloak usan la misma dirección. La publicación, TLS y configuración del
-realm activo siguen pendientes; ver [Ambiente compartido](preparar-ambiente-compartido.md).
+Keycloak usan la misma dirección. Hay un ambiente compartido publicado con
+HTTPS; su recorrido completo de sesión del navegador sigue pendiente.
+Ver [Ambiente compartido](preparar-ambiente-compartido.md).
 
 Compilación: `docker compose build web`. Para las pruebas, construir
 `docker build --target build --tag zenit-web-check web` y ejecutar
@@ -473,7 +476,7 @@ no comprueba automáticamente la huella del archivo ni del manifiesto.
 No hay historial: el API no lista exportes y al abandonar la pestaña se
 pierde la referencia del pedido en pantalla. No se persisten tokens ni archivos.
 
-Verificación actual: 128 pruebas del portal y compilación correctas. El usuario
+Verificación del 19: 148 pruebas del portal y compilación correctas. El usuario
 comprobó la descarga única con sesión real. Para repetir en la demo, elegir
 `2026-10-05`, dejar todas las sedes y comprobar cuatro filas en el CSV.
 
@@ -534,6 +537,32 @@ continuo, no números de página: el API no da el total.
   con pausa creciente; no reintentar en ciclo cerrado. Una pantalla que
   consulta el avance de algo debe hacerlo cada varios segundos, no sin pausa.
 - En cualquier error, dejar a la vista el `correlationId`.
+
+## Configuración de empresa
+
+La pestaña Configuración consulta `GET /tenant`, sin pedir un identificador de
+empresa: el backend toma la empresa de la sesión. Administración, RH, supervisor
+y auditoría pueden verla; sólo administración puede editar mediante `PATCH /tenant`.
+Muestra nombre, identificador, zona horaria, inicio de semana, política de
+descansos y cierre programado.
+
+La edición conserva el identificador y envía sólo los campos modificados. El
+cierre programado admite de 1 a 168 horas después del fin de la semana; dejarlo
+vacío envía `null` y lo desactiva. Un rechazo conserva el formulario. Guardar
+actualiza también la cuenta y las consultas; un refresco mientras se edita no
+sobrescribe campos ajenos que la persona no haya cambiado.
+
+El 19 de octubre de 2026 pasaron 148 pruebas del portal y su compilación. Nueve
+pruebas de Configuración cubren permisos, cambios parciales, desactivación,
+formularios con error y refresco durante la edición. La navegación tiene una
+prueba adicional. La pantalla está implementada localmente; falta desplegarla
+y recorrerla con sesión real.
+
+Ese mismo día pasaron horarios, asignación futura e importación por API HTTPS
+con una sesión real de administración: validación sin escritura, aplicación
+parcial, repetición sin duplicados, actualización, sede inexistente y archivo
+vacío. El [guion](../infra/test-directory-api.mjs) exige datos ficticios y limpia
+sus empleados y sede; no sustituye la prueba de las pantallas ni de otros roles.
 
 ## Lista de comprobación
 

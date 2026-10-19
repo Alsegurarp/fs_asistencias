@@ -1,21 +1,25 @@
 # Tareas críticas primero
 
-Revisión: 18 de octubre de 2026, sobre el commit `5f36b5c`.
+Revisión documental y de código: 19 de octubre de 2026, sobre el commit `8dc2a75`.
 Orden por riesgo y bloqueo del producto; los números originales remiten a
 [Estado y pendientes](estado-y-pendientes.md#lista-consolidada-de-tareas-pendientes).
 Esta revisión declara trabajo pendiente; no aprueba decisiones de negocio ni
 modifica el sistema desplegado.
 
+Para declarar y ejecutar trabajo se usa la columna **Orden** de este documento.
+Los números entre paréntesis conservan la referencia a la lista histórica;
+por ejemplo, identidad es el orden 2 y las decisiones de negocio son el orden 5.
+
 ## Progreso verificado
 
 | Área | Evidencia y alcance |
 | --- | --- |
-| Backend y contrato | Contrato 0.11.0, 60 operaciones implementadas. Los registros del 17 de octubre muestran construcción e integración correctas; la validación documenta 47 pruebas unitarias y 73 de integración. No se repitieron hoy |
-| Portal | Hoy pasaron 128/128 pruebas en el árbol local y en la imagen existente `zenit-web-check`; `pnpm build` también pasó. Implementa padrón, horarios, importación, tarjetas, incidencias, cierres, exportes y usuarios |
-| Android | Implementa firma, activación, cola cifrada, sincronización y renovación. Construcción y pruebas del 17 registradas. Hay evidencia local adicional de activación contra backend, pero su reproducción con el código versionado tiene una discrepancia descrita abajo |
-| Despliegue | Hoy respondieron HTTP 200 el portal público, `/api/v1/system/status` y el descubrimiento de identidad en `zenit.fastsolution.com.mx`. El API anunció `status=ok`. Esto no comprueba una sesión autenticada |
-| Respaldo | Ensayo del 17: 130 tablas y 1.772 filas con contenido idéntico. La autoprueba está documentada; no demuestra copia externa operativa ni recuperación completa |
-| Entorno local | Docker disponible, sin servicios activos del proyecto al consultar `docker compose ps`. No se arrancaron aplicaciones ni se tocaron sus datos |
+| Backend y contrato | Contrato 0.11.0, 60 operaciones. El 19 pasaron construcción, unitarias y 74 pruebas de integración PostgreSQL, incluida separación de visitantes detrás del proxy. Se verificaron también seis pruebas de identidad/readiness con Keycloak importado |
+| Portal | El 19 pasaron compilación y 148 pruebas. Configuración de empresa implementada: consulta por cuatro roles y edición sólo de administración. Horarios/importación por API HTTPS aprobados con cuenta real de prueba. Siguen las pantallas, otras sesiones de rol y suspensión/reactivación |
+| Android | El 19 pasaron 9 unitarias, lint y APK debug/de instrumentación. En Samsung SM-S928B, API 36, pasaron personal y terminal contra backend local y HTTPS publicado: activación, cola entre procesos, recibos, reenvío sin duplicados y renovación. Fixture original y argumentos incompletos también comprobados |
+| Despliegue | El 19 se usó una sesión de administración facilitada por el usuario para `/me`, preparación y limpieza de datos ficticios por HTTPS. Ambos modos Android pasaron contra el servidor publicado. El recorrido completo del navegador sigue abierto; no se accedió por SSH ni se desplegaron cambios |
+| Respaldo | Recuperación local del 18: 130 tablas y 1.867 filas idénticas con el origen apagado y contraseñas nuevas de base. No demuestra copia externa operativa ni recuperación pública |
+| Entorno local | Se levantaron los servicios Docker para probar con empresa aislada e identidad técnica temporal. Dispositivos revocados, cero sesiones abiertas, cuenta desactivada y cliente temporal eliminado. Las tres modificaciones previas bajo `backend/bin/` se conservaron |
 
 El producto tiene una base funcional y un ambiente de demostración publicado.
 Continúa pendiente su aceptación para uso con personas y datos reales. No se
@@ -32,18 +36,18 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | Orden | Prioridad | Tarea | Posibilidad de resolver y criterio de cierre |
 | --- | --- | --- | --- |
 | 1 | P0 | Respaldo externo y recuperación completa (15) | En curso: recuperación local comprobada; [evidencia](recuperacion-servicio.md). Aprobados copia diaria, retención 30 días, pérdida máxima 24 h y recuperación 4 h; fallos a cargo de fastSolution. SSH exclusivamente mediante Gabriel; destino en otro servidor por concretar, probablemente mediante VPN. Faltan custodia, automatización y recuperación pública |
-| 2 | P0 | Identidad operativa: cuentas personales, OTP, operador y SMTP (14) | En curso: realm preparado para conservar OTP y exigir reautenticación tras recuperar contraseña; cuatro comprobaciones, incluida importación real, pasaron en local. [Procedimiento](preparar-ambiente-compartido.md#correo-y-cuentas-personales) preparado para Gabriel. Faltan identidades/correos, SMTP, ejecución remota y recorridos reales; retirar `arranque` sólo tras comprobar accesos personales |
+| 2 | P0 | Identidad operativa: cuentas personales, OTP, operador y SMTP (14) | En curso: realm preparado y cuatro comprobaciones locales aprobadas. Roberto Arregui, Gabriel Hidalgo y Alexis Segura tienen sus correos confirmados en el plan privado. Operador solicitado: `operation-zenit@fastsolution.com.mx`, sin buzón. Faltan SMTP, responsable de OTP/recuperación y autorización interna del operador, altas remotas y recorridos reales. [Procedimiento para Gabriel](preparar-ambiente-compartido.md#correo-y-cuentas-personales); retirar `arranque` sólo tras comprobar accesos personales |
 | 3 | P0 | Aprobar e implementar jornada y evidencia del acuse (17) | Requiere dictamen profesional y criterios de producto. Después implementar casos esperados, texto/evidencia versionados y conservación de cierres históricos; la revisión documental existente no cierra la tarea |
 | 4 | P0 | Captura autenticada con tarjetas reales (16) | Requiere tarjetas, teléfonos y definición de autenticación/entrega de claves. Comprobar captura y rechazo de tarjetas no válidas. La tarjeta simulada sólo sirve para datos ficticios |
 | 5 | P0 | Resolver suspensión, baja, supervisor y tipo de marcaje (2) | Requiere elección del responsable del producto sobre las propuestas existentes. Implementar sólo cambios aprobados y probar permisos, históricos y captura. Hoy el supervisor abarca toda la empresa y la suspensión también detiene captura |
 | 6 | P0 | Acordar uso del servidor compartido para datos reales | Dependencia del responsable del servicio y del dueño del servidor, registrada en la guía de despliegue. Mantener sólo datos ficticios hasta contar con el acuerdo escrito |
-| 7 | P1 | Hacer reproducible Android contra backend y corregir la indicación de URL (7) | Ahora: versionar el autoensayo que realmente use el backend. La guía ya indica la URL base sin `/api` y cómo conectar la app al ambiente publicado. Cierre: APK construido desde el mismo commit, activación personal/terminal, captura, cola sin conexión, sincronización, recibos y renovación contra backend; repetir por HTTPS en teléfono |
-| 8 | P1 | Dirección real y protocolo en la cadena de proxies (parte de 19) | Resuelto en el código: el backend toma la dirección de `X-Forwarded-For` sólo desde direcciones internas y el portal conserva el esquema del borde. Una prueba de integración comprueba que los fallos de una dirección no cortan a otra y falla si se apaga la lectura de cabeceras. Falta comprobarlo por la dirección pública al desplegar |
-| 9 | P1 | Recorridos del portal con sesión real (4 y parte de 14) | Guion existente. Requiere navegador, cuentas y entorno activo con datos ficticios. Probar horarios, asignaciones e importación; en HTTPS comprobar acceso, renovación, cierre de sesión y permisos de cada rol |
+| 7 | P1 | Hacer reproducible Android contra backend y corregir la indicación de URL (7) | Completada el 19: `BackendSmoke.kt` y `infra/test-android-backend.ps1`, APK construidos juntos y hashes registrados. Personal y terminal pasaron contra backend local y HTTPS publicado, con datos ficticios y limpieza. Se corrigió la validación Android que rechazaba los códigos de cinco caracteres por grupo. El fallo de transporte se induce sólo en el almacén del ensayo; no acredita apagar radios ni NFC autenticado |
+| 8 | P1 | Dirección real y protocolo en la cadena de proxies (parte de 19) | Prueba pública del 19 aprobada: redirección HTTPS, identidad resistente a cabeceras falsas y cuota no eludible rotando IP falsas (10 respuestas 410 y dos 429). Fase Android de proxy preparada. Falta demostrar aislamiento desde dos IP públicas reales en la misma ventana; se solicitó confirmar datos móviles |
+| 9 | P1 | Recorridos del portal con sesión real (4 y parte de 14) | Horarios, asignación futura e importación aprobados por API HTTPS el 19, con sesión de administración y limpieza. Sigue pendiente navegador: pantallas, cookies, renovación, cierre de sesión y permisos de otros roles. No hay navegador conectado al control UI |
 | 10 | P1 | Retención de sobres y recibos Android (8) | Requiere plazo y criterio de conservación. Después implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria; hoy crece sin purga |
-| 11 | P1 | Verificaciones automáticas por cambio (11) | Ahora puede prepararse con los comandos existentes; falta acordar dónde se ejecutará y habilitarlo. Cierre: pruebas, contrato, secretos y vulnerabilidades corriendo en cada cambio, con fallos visibles |
-| 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Ahora pueden repetirse los análisis; para cerrar hay que identificar y analizar las imágenes efectivamente desplegadas. El análisis de Zenit documentado es del 14; las seis altas de identidad tienen aceptación histórica, no una reevaluación de hoy |
-| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Dispositivos ya está: emitir código personal o de terminal, listar y revocar, con 7 pruebas. Falta configuración de empresa, reutilizando API existente y probando permisos. No depende de cambiar reglas laborales |
+| 11 | P1 | Verificaciones automáticas por cambio (11) | Workflow incluido para publicación en GitHub Actions: cuatro trabajos, Docker existente, permisos de lectura y checkout fijado. Comandos comprobados localmente. Falta acreditar su primera ejecución; [procedimiento](verificaciones-automaticas.md) |
+| 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Cinco imágenes locales analizadas el 19 e IDs registrados. Corregidas altas de libexpat en backend/portal y libx11 en portal; ninguna grave nueva sin atender. Siguen seis excepciones de identidad. Faltan IDs del servidor mediante Gabriel, análisis de esas imágenes, despliegue de correcciones y comprobación pública |
+| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación completada localmente. Configuración usa GET/PATCH /tenant y respeta permisos, cambios parciales y desactivación del cierre; nueve pruebas nuevas más navegación. Portal: 148 pruebas y compilación aprobadas. Falta despliegue y aceptación de pantallas con sesión real |
 | 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Ahora: ampliar contrato/backend y mostrar el detalle en portal, conservando aislamiento de empresa y pruebas de corrida parcial. Hoy sólo hay conteos y motivos |
 | 15 | P2 | Semana y acuse del trabajador (12) | La consulta con datos reales puede avanzar ahora; requiere identidad y permisos. El cierre del acuse depende también de la tarea 17. Las pantallas de presentación móvil no cuentan como integración |
 | 16 | P2 | Pantallas de operador del servicio (13) | Alta y lista de empresas ya están, con 3 pruebas. Faltan suspender y reactivar desde el portal y probar aislamiento con el rol real |
@@ -54,15 +58,13 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 
 ## Hallazgos que cambian la siguiente sesión de trabajo
 
-1. **La prueba Android contra backend no es reproducible con el runner actual.**
-   Los archivos locales `build/enrolamiento-telefono-personal.log` y
-   `build/enrolamiento-telefono-terminal.log`, del 17, reportan activación real,
-   persistencia, renovación y código de un uso; la limpieza registra ambos
-   dispositivos revocados y cero sesiones abiertas. Sin embargo, el guion local
-   `build/test-enrollment-phone.ps1` pasa `baseUrl`, `code` y `mode` a
-   `SmokeInstrumentation`, y el archivo versionado ignora esos argumentos y
-   ejecuta siempre su `FixtureServer`. No se da por cerrado el recorrido real
-   a partir de esos registros; falta conservar y ejecutar su implementación.
+1. **La prueba Android contra backend ya es reproducible.**
+   Resuelto el 19 con fases versionadas de activación, cola y sincronización,
+   ejecutadas en procesos separados. `SmokeInstrumentation` distingue resultados
+   `BACKEND` y `FIXTURE` y falla ante argumentos incompletos. El guion prepara
+   datos ficticios por API, verifica exactamente dos eventos por empleado y
+   limpia sólo sus recursos. Los ensayos local y HTTPS pasaron en el teléfono;
+   [evidencia](bitacora-trabajo.md#19-de-octubre-de-2026--android-reproducible-contra-backend-local-y-https).
 2. **La guía indica una URL incompatible con captura.**
    [Despliegue](despliegue-en-servidor.md) indica la base Android con `/api`.
    `CaptureApi.validateBaseUrl` exige una URL sin ruta y `CaptureApi.post`
@@ -74,26 +76,61 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
    no se encontró configuración de procesamiento de cabeceras reenviadas en
    backend. `web/nginx.conf` agrega `X-Forwarded-For`, pero no configura confianza
    en el borde, y reemplaza `X-Forwarded-Proto` con su conexión HTTP interna.
-   Resuelto en el código con prueba de dos direcciones; falta comprobar por
-   la dirección pública que una cabecera falsa no elude el límite.
+   Resuelto en el código con prueba de dos direcciones y comprobación pública
+   de cabeceras falsas el 19; falta aislamiento desde dos IP públicas reales.
 4. **La retención móvil sigue abierta en el código.**
    `PendingAttendanceDao.kt` conserva sobres y recibos sin purga; el límite
    de diez recibos visibles no limita las filas almacenadas.
 
 ## Trabajo técnico que podemos iniciar
 
-Secuencia recomendada: **7 → 8 → 9 → 11**. Primero hacer fiable y reproducible
-el recorrido Android, después corregir la cadena de proxies y comprobar sesiones
-reales; preparar las verificaciones automáticas con esos recorridos claros.
-Los puntos 13, 14 y 16 también pueden implementarse sin esperar tarjetas ni
-dictamen. Los P0 siguen siendo los bloqueos de lanzamiento aunque requieran
-respuestas externas.
+La tarea **7 está completada** en el alcance de ensayo con tarjeta simulada.
+Las comprobaciones públicas de cabeceras (8) y de horarios/importación por API
+(9) ya pasaron. Faltan otra IP real y un navegador conectado para sus recorridos
+restantes. Verificaciones automáticas (11) y Configuración (13) están preparadas
+y probadas localmente; falta publicarlas. El análisis local (12) pasó tras
+corregir tres altas; su cierre espera las imágenes del servidor mediante Gabriel.
+
+### Declaración de la tarea 7
+
+- **Resultado:** un autoensayo versionado que use el backend real y pueda
+  repetirse con datos ficticios desde el mismo commit que los APK.
+- **Alcance:** instrumentación Android, guion de ejecución y preparación/limpieza
+  de datos de ensayo, guía y registro de resultados. Reutilizar repositorios,
+  firma y almacenamiento existentes; conservar el ensayo con `FixtureServer`.
+- **Aceptación:** activar dispositivo personal y terminal, comprobar persistencia
+  y código de un uso, capturar con tarjeta simulada, conservar cola sin conexión,
+  sincronizar sin duplicados, revisar recibos y renovar sesión. Repetir en teléfono
+  por HTTPS para cerrar el recorrido publicado.
+- **Dependencias:** backend y datos ficticios preparados, códigos de activación
+  válidos y teléfono conectado para la ejecución instrumental.
+- **Evidencia de cierre:** commit, variante de APK, entorno y dispositivo,
+  resultados de cada caso y limpieza de dispositivos/sesiones de prueba;
+  excluir credenciales, códigos vigentes y datos personales de los registros.
+
+El punto 13 ya está implementado. El 14 (detalle de cierres fallidos)
+puede continuar desde el repositorio. El punto 16 puede avanzar
+con la UI de reactivación; la suspensión debe respetar la decisión pendiente
+del punto 5. Ninguna de estas tareas sustituye los bloqueos P0.
+
+### Definiciones necesarias para desbloquear tareas
+
+| Orden | Quién debe aportar la definición | Dato que falta |
+| --- | --- | --- |
+| 1 | Gabriel como interlocutor técnico y responsable que se designe | Servidor destino, transferencia, custodio y segunda copia de la clave; después automatizar y ensayar recuperación pública |
+| 2 | Responsable del servicio de identidad | SMTP y encargado de OTP/recuperación del operador; resolver su autorización sin asumir que dispone de buzón |
+| 3 | Responsable del producto y revisión jurídica profesional | Criterios de jornada y texto/evidencia del acuse con casos esperados |
+| 4 | Equipo que facilite tarjetas y teléfonos | Tecnología de tarjeta, autenticación y entrega de claves para probar captura real |
+| 5 | Responsable del producto | Elegir las reglas de suspensión, baja, supervisor y tipo de marcaje en las propuestas existentes |
+| 6 | Responsable del servicio y dueño del servidor | Acuerdo escrito para usar el servidor compartido con datos reales |
+| 10, 17, 18, 19 | Responsable del producto/servicio y primer cliente, según la tarea | Retención móvil, reglas de asistencia/ausencias, volumen/instancias y sistema/formato de nómina |
 
 Se mantienen diferidos jOOQ generado, notificaciones y almacenamiento externo
 de exportes. El aviso de Vite sobre un archivo de más de 500 kB no impidió la
 compilación y no se trata como bloqueo crítico sin una medición que lo justifique.
 
-No repetidos en esta revisión: backend, Android, restauración, escaneo de
-vulnerabilidades ni recorridos autenticados. No se accedió por SSH al servidor
-ni se verificó hardware. No se modificaron reglas, código de aplicación,
-secretos, datos ni servicios desplegados.
+El 19 se ejecutaron backend, portal, Android, identidad, ensayos API HTTPS,
+análisis de imágenes y búsqueda de secretos. No se repitieron release Android
+ni restauración. No se probó tarjeta física, apagado real de radios ni sesión
+completa del portal. Se crearon y desactivaron datos ficticios de ensayo;
+no se cambiaron reglas, credenciales humanas ni servicios desplegados.

@@ -30,6 +30,11 @@ it('sólo el administrador ve Usuarios', () => {
   for (const role of ['rh', 'supervisor', 'auditor', 'trabajador']) expect(render([role])).not.toContain('id="tab-users"')
 })
 
+it('muestra configuración a los cuatro roles de consulta de empresa', () => {
+  for (const role of ['admin_empresa', 'rh', 'supervisor', 'auditor']) expect(render([role])).toContain('id="tab-settings"')
+  expect(render(['trabajador'])).not.toContain('id="tab-settings"')
+})
+
 it('permite consultar horarios a los cuatro roles e importar sólo a administración y RH', () => {
   for (const role of ['admin_empresa', 'rh', 'supervisor', 'auditor']) {
     const html = render([role])
