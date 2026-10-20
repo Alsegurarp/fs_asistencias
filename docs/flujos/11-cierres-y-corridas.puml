@@ -13,7 +13,7 @@ case (Admin/RH: corrida)
   :INSERT week_closure_run queued\ny job type=week_closure; responder 202;
   :JobWorker toma trabajo; corrida running;
   :Empresa debe seguir activa; candidatos sin tope;
-  :Llamar WeekCloser.closeAlone por persona\nen transacciones independientes;
+  :Llamar ClosureRunService.closePerson por persona\nen transacciones independientes; guardar bloqueo e incidencias;
 case (Sistema: cierre programado)
   :Mantenimiento del JobWorker revisa empresas activas\ncon autoCloseAfterHours configurado;
   :Última semana terminada, plazo cumplido\ny reglas disponibles; una corrida por semana/empresa;
@@ -44,7 +44,8 @@ legend bottom
 Una interrupción de corrida conserva cierres ya confirmados;
 el reintento vuelve a recorrer candidatos y reutiliza cierres vigentes.
 El progreso de corrida se guarda y la lease se renueva cada 25 personas.
-Hoy la corrida expone conteos/motivos, no el detalle de personas bloqueadas.
+GET /week-closure-runs/{runId}/blocked pagina personas, motivos e incidencias.
+Los bloqueos de corridas terminadas se conservan; las antiguas sólo tienen conteos.
 El cierre programado no insiste en pendientes ni notifica.
 Sin marcas, un candidato puede cerrar en ceros: ausencias siguen pendientes.
 endlegend

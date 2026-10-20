@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.11.0
+  version: 0.12.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -2604,6 +2604,50 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /week-closure-runs/{runId}/blocked:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    get:
+      tags: [jornada]
+      operationId: listWeekClosureRunBlocked
+      summary: Lista las personas bloqueadas y sus causas en una corrida
+      description: |
+        Detalle registrado al intentar cerrar a cada persona, ordenado por
+        fecha de registro e identificador. Incluye resultados de corridas
+        parciales o fallidas. Un reintento de la misma corrida actualiza el
+        motivo y retira a quien ya pudo cerrar. Los conteos de avance se
+        actualizan por tandas, por lo que pueden retrasarse respecto al detalle.
+
+        Al terminar la corrida el detalle se conserva aunque después se
+        resuelvan sus incidencias o se cierre la semana en otra corrida.
+        Las corridas anteriores a esta función no tienen detalle registrado;
+        sus conteos se conservan y esta lista puede estar vacía.
+      x-roles: [admin_empresa, rh, supervisor, auditor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de personas bloqueadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockedClosureList"
+              example:
+                items:
+                  - employeeId: 6a8c0e2a-4c6e-4a8c-8e0a-2c4e6a8c0e2a
+                    reason: open_segment
+                    incidentIds: []
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
   /rule-sets:
     get:
       tags: [jornada]
@@ -4887,6 +4931,16 @@ components:
           items:
             type: string
             format: uuid
+    BlockedClosureList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BlockedClosure"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
     WeekClosureList:
       type: object
       required: [items, nextCursor]

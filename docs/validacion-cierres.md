@@ -2,7 +2,20 @@
 
 Validación ejecutada el 12 de octubre de 2026, con datos ficticios.
 
-## Resultado automático
+## Actualización del 19 de octubre: detalle de bloqueos por corrida
+
+Contrato 0.12 y migración V008: consulta paginada de personas, causas e
+incidencias, con detalle conservado ante interrupciones y actualizado por
+reintentos. Las corridas antiguas conservan sus conteos sin detalle nominal.
+
+Pasaron compilación y 151 pruebas del portal, construcción/unitarias del
+backend y 74 pruebas de integración PostgreSQL, incluido aislamiento de
+empresa y recuperación de una corrida parcial. Contrato, ejemplos y sintaxis
+de los diagramas validados. Evidencias: `build/task14-web-tests.log`,
+`build/task14-web-build.log`, `build/task14-backend-it.log` y
+`build/task14-contract.log`. Sin despliegue ni nueva aceptación en navegador.
+
+## Resultado automático del 12 de octubre
 
 | Comprobación | Resultado | Alcance |
 | --- | --- | --- |
@@ -60,7 +73,9 @@ factor ni se agregan credenciales al repositorio.
    y cerrar otra vez: aparece una versión nueva.
 6. Pedir una corrida de toda la empresa y otra por sede. Comprobar el estado,
    avance, conteos y parada del seguimiento al terminar. Navegar desde sus
-   bloqueos hacia las incidencias abiertas de la semana y sede correctas.
+   bloqueos hacia las incidencias individuales y las de la semana y sede correctas.
+   Cargar otra página de personas bloqueadas y comprobar cada causa. Las
+   corridas antiguas conservan sus conteos y explican la ausencia de detalle.
 7. Si una corrida falla, verificar que lo ya cerrado permanece y solicitar
    otra con el mismo alcance. Ante un error de cuota o red, el seguimiento
    se pausa y ofrece reintento.
@@ -72,7 +87,8 @@ factor ni se agregan credenciales al repositorio.
 
 ## Límites actuales
 
-- Las corridas devuelven conteos, no nombres de empleados bloqueados.
+- Las corridas anteriores a V008 no tienen detalle nominal registrado;
+  las nuevas lo ofrecen por páginas, también si se interrumpieron.
 - Un tramo abierto nacido de un ajuste puede carecer de incidencia ligada;
   requiere revisar ese ajuste y no se corrige automáticamente desde Cierres.
 - El detalle muestra el resumen congelado de la versión consultada. El API

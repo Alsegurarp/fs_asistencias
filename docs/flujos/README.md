@@ -40,11 +40,11 @@ para facilitar la lectura.
 | [11 Cierres y corridas](11-cierres-y-corridas.puml) | Cierre directo, trabajo por persona y programación | [Closures](../../backend/src/main/kotlin/mx/fastsolution/zenit/workday/Closures.kt), [ClosureRuns](../../backend/src/main/kotlin/mx/fastsolution/zenit/workday/ClosureRuns.kt) |
 | [12 Reapertura y acuse](12-reapertura-y-acuse.puml) | Versiones conservadas y manifestación del trabajador | [Closures](../../backend/src/main/kotlin/mx/fastsolution/zenit/workday/Closures.kt) |
 | [13 Exportes y trabajos](13-exportes-y-trabajos.puml) | Cola, reintentos, CSV, manifiesto y descarga única | [Exports](../../backend/src/main/kotlin/mx/fastsolution/zenit/export/Exports.kt), [Jobs](../../backend/src/main/kotlin/mx/fastsolution/zenit/jobs/Jobs.kt) |
-| [14 Modelo de datos](14-modelo-de-datos.puml) | Relaciones principales de las 28 tablas del producto | [Migraciones V001 a V007](../../backend/src/main/resources/db/migration/) |
+| [14 Modelo de datos](14-modelo-de-datos.puml) | Relaciones principales de las 29 tablas del producto | [Migraciones V001 a V008](../../backend/src/main/resources/db/migration/) |
 | [15 Canales y alcance UI](15-canales-y-alcance-ui.puml) | Qué se conecta y qué es presentación o interfaz pendiente | [Workspace](../../web/src/Workspace.tsx), [MainActivity](../../android/app/src/main/kotlin/mx/fastsolution/zenit/mobile/MainActivity.kt), [producto móvil](../alcance-producto-movil.md) |
 | [16 Operación, auditoría y respaldo](16-operacion-auditoria-y-respaldo.puml) | Roles de base, arranque y recuperación preparada | [SchemaConfig](../../backend/src/main/kotlin/mx/fastsolution/zenit/persistence/SchemaConfig.kt), [AuditLog](../../backend/src/main/kotlin/mx/fastsolution/zenit/audit/AuditLog.kt), [respaldo](../../infra/postgres/backup/rehearse.sh) |
 
-La [cobertura de las 60 operaciones](cobertura-api.md) relaciona cada método y
+La [cobertura de las 61 operaciones](cobertura-api.md) relaciona cada método y
 ruta del contrato con su diagrama y los roles declarados. La cobertura indica
 que la capacidad se documentó; no significa que tenga pantalla ni prueba manual.
 `GET /me` también admite una identidad válida aún sin roles y devuelve su falta

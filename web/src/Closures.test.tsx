@@ -7,7 +7,7 @@ vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }
 vi.mock('./api', async importOriginal => ({ ...await importOriginal<typeof import('./api')>(), api: vi.fn() }))
 import { api, ApiError, type Me } from './api'
 import { Closures } from './Closures'
-import { type Closure, type ClosureRun } from './closureModel'
+import { type BlockedClosure, type Closure, type ClosureRun } from './closureModel'
 import { button, choose, click, setInput, waitFor } from './testUi'
 
 const closureId = '11111111-1111-4111-8111-111111111111'
@@ -23,6 +23,9 @@ let closures: Closure[]
 let run: ClosureRun
 let failure: ApiError | null
 let runFailure: ApiError | null
+let blockedPeople: BlockedClosure[]
+let blockedFailure: ApiError | null
+let paginateBlocked: boolean
 let pollSequence: boolean
 let detailCalls: number
 let releasePost: (() => void) | undefined
@@ -38,6 +41,8 @@ beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 100, height: 30, x: 0, y: 0, top: 0, bottom: 30, left: 0, right: 100, toJSON: () => ({}) })
   closures = [structuredClone(initialClosure)]
   run = structuredClone(initialRun)
+  blockedPeople = [{ employeeId: otherEmployee, reason: 'open_incidents', incidentIds: [incidentId] }]
+  blockedFailure = null; paginateBlocked = false
   failure = null; runFailure = null; pollSequence = false; detailCalls = 0; releasePost = undefined; holdPost = false
   onIncidents.mockClear()
   mockedApi.mockReset()
@@ -61,6 +66,10 @@ beforeEach(() => {
       : { items: structuredClone(closures), nextCursor: 'next-closure' }
     if (url.pathname === `/week-closures/${closureId}`) return structuredClone(closures[0])
     if (url.pathname === '/week-closure-runs') return { items: [structuredClone(run)], nextCursor: null }
+    if (url.pathname === `/week-closure-runs/${runId}/blocked`) {
+      if (blockedFailure) throw blockedFailure
+      return { items: structuredClone(paginateBlocked ? blockedPeople.slice(url.searchParams.has('cursor') ? 1 : 0, url.searchParams.has('cursor') ? 2 : 1) : blockedPeople), nextCursor: paginateBlocked && !url.searchParams.has('cursor') ? 'next-blocked' : null }
+    }
     if (url.pathname === `/week-closure-runs/${runId}`) {
       detailCalls++
       if (runFailure) throw runFailure
@@ -198,12 +207,40 @@ it('pausa el seguimiento cuando recibe 429 y permite reintentarlo', async () => 
   runFailure = null
   await click('Reintentar avance'); await waitFor(() => detailCalls === 2)
 })
-it('muestra la limitación nominal y enlaza incidencias de la semana y sede', async () => {
+it('muestra personas y causas y enlaza la incidencia individual y el alcance', async () => {
   run.siteId = siteId
   await mount('auditor'); await click('Ver avance'); await waitFor(() => !!button('Revisar incidencias abiertas'))
-  expect(document.body.textContent).toContain('no su lista nominal')
+  await waitFor(() => document.querySelector('[aria-label="Personas bloqueadas"]')?.textContent?.includes('Empleado bloqueado') === true)
+  expect(document.querySelector('[aria-label="Personas bloqueadas"]')!.textContent).toContain('Empleado bloqueado')
+  expect(document.querySelector('[aria-label="Personas bloqueadas"]')!.textContent).toContain('Incidencias abiertas')
+  await click(`Ver incidencia ${incidentId}`)
+  expect(onIncidents).toHaveBeenCalledWith({ week: '2026-10-05', incidentId })
   await click('Revisar incidencias abiertas')
   expect(onIncidents).toHaveBeenCalledWith({ week: '2026-10-05', siteId })
+})
+it('pagina bloqueados de una corrida parcial y explica los tramos iniciados por ajustes', async () => {
+  paginateBlocked = true; run.status = 'failed'; run.failure = 'job_abandoned'
+  blockedPeople.push({ employeeId, reason: 'open_segment', incidentIds: [] })
+  await mount(); await click('Ver avance'); await waitFor(() => !!button('Cargar más bloqueados'))
+  expect(document.querySelector('[aria-label="Personas bloqueadas"]')!.querySelectorAll('tbody tr')).toHaveLength(1)
+  await click('Cargar más bloqueados')
+  await waitFor(() => document.querySelector('[aria-label="Personas bloqueadas"]')!.querySelectorAll('tbody tr').length === 2)
+  expect(document.body.textContent).toContain('Tramo sin salida')
+  expect(document.body.textContent).toContain('El tramo abierto proviene de un ajuste')
+})
+it('conserva los conteos antiguos cuando no hay detalle nominal registrado', async () => {
+  blockedPeople = []
+  await mount(); await click('Ver avance')
+  await waitFor(() => document.body.textContent?.includes('Las corridas anteriores a esta función sólo conservan conteos.') === true)
+  expect(document.body.textContent).toContain('Incidencias abiertas: 1')
+})
+it('permite recuperar el detalle de bloqueados tras un error sin perder los conteos', async () => {
+  blockedFailure = new ApiError(429, 'rate_limited', 'Demasiadas peticiones', 'ref-bloqueados')
+  await mount(); await click('Ver avance'); await waitFor(() => !!button('Reintentar bloqueados'))
+  expect(document.body.textContent).toContain('ref-bloqueados')
+  expect(document.body.textContent).toContain('Incidencias abiertas: 1')
+  blockedFailure = null
+  await click('Reintentar bloqueados'); await waitFor(() => !!button(`Ver incidencia ${incidentId}`))
 })
 it('una corrida fallida conserva los cierres y se solicita de nuevo con el mismo alcance', async () => {
   run = { ...run, status: 'failed', failure: 'job_abandoned', siteId }

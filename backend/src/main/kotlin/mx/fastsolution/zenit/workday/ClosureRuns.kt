@@ -13,6 +13,7 @@ import mx.fastsolution.zenit.jobs.JobRepository
 import mx.fastsolution.zenit.jobs.JobRow
 import mx.fastsolution.zenit.site.SiteRepository
 import mx.fastsolution.zenit.tenant.TenantRepository
+import mx.fastsolution.zenit.tenant.TenantRow
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -68,6 +69,8 @@ data class RunRow(
 
 data class BlockedCountView(val openIncidents: Int, val openSegment: Int)
 
+data class RunBlockedRow(val employeeId: UUID, val reason: String, val incidentIds: List<UUID>, val createdAt: OffsetDateTime)
+
 data class WeekClosureRunView(
     val id: String,
     val weekStart: String,
@@ -110,6 +113,35 @@ class WeekClosureRunRequest {
 @Repository
 class ClosureRunRepository(private val dsl: DSLContext) {
     fun find(tenantId: UUID, id: UUID): RunRow? = dsl.fetchOne("$SELECT where tenant_id = ? and id = ?", tenantId, id)?.let(::row)
+
+    fun recordBlocked(tenantId: UUID, runId: UUID, employeeId: UUID, outcome: CloseOutcome) {
+        if (outcome is CloseOutcome.Blocked) {
+            dsl.execute(
+                "insert into week_closure_run_blocked (tenant_id, run_id, employee_id, reason, incident_ids) " +
+                    "values (?, ?, ?, ?, cast(? as uuid[])) on conflict (tenant_id, run_id, employee_id) " +
+                    "do update set reason = excluded.reason, incident_ids = excluded.incident_ids",
+                tenantId, runId, employeeId, outcome.reason, "{${outcome.incidentIds.joinToString(",")}}",
+            )
+        } else {
+            dsl.execute("delete from week_closure_run_blocked where tenant_id = ? and run_id = ? and employee_id = ?", tenantId, runId, employeeId)
+        }
+    }
+
+    fun blocked(tenantId: UUID, runId: UUID, after: PageKey?, limit: Int): List<RunBlockedRow> {
+        val sql = StringBuilder("select employee_id, reason, incident_ids, created_at from week_closure_run_blocked where tenant_id = ? and run_id = ?")
+        val binds = mutableListOf<Any>(tenantId, runId)
+        if (after != null) {
+            sql.append(" and (created_at, employee_id) > (cast(? as timestamptz), cast(? as uuid))")
+            binds += after.at
+            binds += after.id
+        }
+        sql.append(" order by created_at, employee_id limit ?")
+        binds += limit
+        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map {
+            RunBlockedRow(it.get("employee_id", UUID::class.java), it.get("reason", String::class.java),
+                it.get("incident_ids", Array<UUID>::class.java).toList(), it.get("created_at", OffsetDateTime::class.java))
+        }
+    }
 
     /** La corrida que todavía no termina para esa semana y ese alcance, si la hay. */
     fun active(tenantId: UUID, weekStart: LocalDate, siteId: UUID?): RunRow? =
@@ -221,7 +253,23 @@ class ClosureRunService(
     private val sites: SiteRepository,
     private val rules: RuleRepository,
     private val audit: AuditLog,
+    private val closer: WeekCloser,
 ) {
+    /** El bloqueo y las incidencias que lo explican se guardan con el cierre de esa persona. */
+    @Transactional
+    fun closePerson(tenant: TenantRow, run: RunRow, employeeId: UUID, by: Closer): CloseOutcome {
+        val outcome = closer.closeOne(tenant, employeeId, run.weekStart, by)
+        runs.recordBlocked(tenant.id, run.id, employeeId, outcome)
+        return outcome
+    }
+
+    @Transactional(readOnly = true)
+    fun blocked(person: CurrentPerson, runId: UUID, after: PageKey?, limit: Int): List<RunBlockedRow> {
+        val tenantId = person.requireTenant()
+        if (runs.find(tenantId, runId) == null) throw Problems.notFound()
+        return runs.blocked(tenantId, runId, after, limit + 1)
+    }
+
     @Transactional
     fun request(person: CurrentPerson, request: WeekClosureRunRequest): RunRow {
         val tenantId = person.requireTenant()
@@ -312,7 +360,6 @@ class ClosureRunJob(
     private val runs: ClosureRunRepository,
     private val service: ClosureRunService,
     private val closures: ClosureRepository,
-    private val closer: WeekCloser,
     private val tenants: TenantRepository,
     private val rules: RuleRepository,
     private val jobs: JobRepository,
@@ -347,7 +394,7 @@ class ClosureRunJob(
         var openIncidents = 0
         var openSegment = 0
         people.forEachIndexed { index, employeeId ->
-            when (val outcome = closer.closeAlone(tenant, employeeId, run.weekStart, by)) {
+            when (val outcome = service.closePerson(tenant, run, employeeId, by)) {
                 is CloseOutcome.Closed -> closed++
                 is CloseOutcome.Blocked -> if (outcome.reason == "open_incidents") openIncidents++ else openSegment++
                 CloseOutcome.Unknown -> Unit
@@ -428,4 +475,18 @@ class ClosureRunController(private val service: ClosureRunService) {
     @GetMapping("/{runId}")
     fun get(@AuthenticationPrincipal person: CurrentPerson, @PathVariable runId: UUID): WeekClosureRunView =
         WeekClosureRunView.of(service.get(person, runId))
+
+    @GetMapping("/{runId}/blocked")
+    fun blocked(
+        @AuthenticationPrincipal person: CurrentPerson,
+        @PathVariable runId: UUID,
+        @RequestParam cursor: String?,
+        @RequestParam limit: String?,
+    ): Page<BlockedClosureView> {
+        val size = Paging.limit(limit)
+        val rows = service.blocked(person, runId, Paging.decode(cursor), size)
+        return Paging.page(rows, size, { PageKey(it.createdAt, it.employeeId) }) {
+            BlockedClosureView(it.employeeId.toString(), it.reason, it.incidentIds.map(UUID::toString))
+        }
+    }
 }

@@ -5,7 +5,8 @@ export type Closure = {
   ruleSet: { id: string; version: number }; totals: Week['totals']; hash: string; closedAt: string; closedBy: string | null;
   acknowledgement: { type: 'agreed' | 'objected'; note: string | null; at: string } | null;
 }
-export type ClosureResult = { weekStart: string; closed: Closure[]; blocked: { employeeId: string; reason: string; incidentIds: string[] }[] }
+export type BlockedClosure = { employeeId: string; reason: string; incidentIds: string[] }
+export type ClosureResult = { weekStart: string; closed: Closure[]; blocked: BlockedClosure[] }
 export type ClosureRun = {
   id: string; weekStart: string; siteId: string | null; origin: 'requested' | 'scheduled'; status: 'queued' | 'running' | 'done' | 'failed';
   total: number | null; closed: number; blocked: { openIncidents: number; openSegment: number }; requestedBy: string | null;

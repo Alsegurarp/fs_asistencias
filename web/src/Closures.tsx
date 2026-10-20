@@ -5,7 +5,7 @@ import { api, ApiError, permissions, type Employee, type Me, type Page } from '.
 import { EntitySelect, ErrorNotice } from './Directory'
 import { RecordName, type IncidentTarget } from './Incidents'
 import { dateInZone, showTime } from './incidentModel'
-import { closeBody, reopenBody, runBody, runPollInterval, type Closure, type ClosureResult, type ClosureRun } from './closureModel'
+import { closeBody, reopenBody, runBody, runPollInterval, type BlockedClosure, type Closure, type ClosureResult, type ClosureRun } from './closureModel'
 
 const statusLabels = { closed: 'Cerrada', reopened: 'Reabierta', queued: 'En cola', running: 'En curso', done: 'Terminada', failed: 'Fallida' }
 const blockedLabels: Record<string, string> = { open_incidents: 'Incidencias abiertas', open_segment: 'Tramo sin salida' }
@@ -181,17 +181,24 @@ function RunDetail({ id, me, onClose, onIncidents, onRun }: { id: string; me: Me
   const cache = useQueryClient()
   const detail = useQuery({ queryKey: ['closure-run', id], queryFn: () => api<ClosureRun>(`/week-closure-runs/${id}`), retry: false, refetchInterval: query => runPollInterval(query.state.data?.status, query.state.error) })
   const run = detail.data
+  const blocked = useInfiniteQuery({ queryKey: ['closure-run-blocked', id], initialPageParam: '',
+    queryFn: ({ pageParam }) => api<Page<BlockedClosure>>(`/week-closure-runs/${id}/blocked${pageParam ? `?cursor=${encodeURIComponent(pageParam)}` : ''}`),
+    getNextPageParam: page => page.nextCursor || undefined, enabled: !!run, retry: false,
+    refetchInterval: query => detail.error ? false : runPollInterval(run?.status, query.state.error),
+  })
+  const blockedRows = blocked.data?.pages.flatMap(page => page.items) || []
   const retry = useMutation({ mutationFn: () => api<ClosureRun>('/week-closure-runs', 'POST', runBody(run!.weekStart, run!.siteId || '')),
     onSuccess: data => { cache.setQueryData(['closure-run', data.id], data); void cache.invalidateQueries({ queryKey: ['closure-runs'] }); onRun(data.id) },
     onError: error => { if (error instanceof ApiError && error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) },
   })
   useEffect(() => {
     if (run?.status === 'done' || run?.status === 'failed') {
+      void cache.invalidateQueries({ queryKey: ['closure-run-blocked', id] })
       void cache.invalidateQueries({ queryKey: ['week-closures'] }); void cache.invalidateQueries({ queryKey: ['closure-runs'] })
       void cache.invalidateQueries({ queryKey: ['incidents'] }); void cache.invalidateQueries({ queryKey: ['attendance'] })
     }
-  }, [run?.status, cache])
-  useEffect(() => { if (detail.error instanceof ApiError && detail.error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) }, [detail.error, cache])
+  }, [run?.status, id, cache])
+  useEffect(() => { if ([detail.error, blocked.error].some(error => error instanceof ApiError && error.status === 403)) void cache.invalidateQueries({ queryKey: ['me'] }) }, [detail.error, blocked.error, cache])
   const processed = run ? run.closed + run.blocked.openIncidents + run.blocked.openSegment : 0
   return <Dialog open fullWidth maxWidth="md" onClose={() => { if (!retry.isPending) onClose() }} aria-labelledby="run-detail-title"><DialogTitle id="run-detail-title">Avance de corrida</DialogTitle><DialogContent><Stack spacing={2}>
     <ErrorNotice error={detail.error} />{detail.isError && <><Typography>El seguimiento está pausado. Lo ya cerrado se conserva.</Typography><Button onClick={() => void detail.refetch()}>Reintentar avance</Button></>}
@@ -205,7 +212,22 @@ function RunDetail({ id, me, onClose, onIncidents, onRun }: { id: string; me: Me
       {run.status === 'failed' && <Alert severity="error">{failureLabels[run.failure || ''] || 'La corrida no pudo terminar.'} Lo ya cerrado se conserva. Puedes solicitar otra corrida con la misma semana y alcance.</Alert>}
       <ErrorNotice error={retry.error} />
       {run.status === 'failed' && permissions(me.roles).closeWeeks && <Button disabled={retry.isPending} onClick={() => retry.mutate()}>{retry.isPending ? 'Solicitando…' : 'Solicitar otra corrida con el mismo alcance'}</Button>}
-      {(run.blocked.openIncidents > 0 || run.blocked.openSegment > 0) && <><Alert severity="warning">El API entrega conteos de bloqueados, no su lista nominal. Revisa las incidencias abiertas de la semana.</Alert><Button onClick={() => onIncidents({ week: run.weekStart, ...(run.siteId ? { siteId: run.siteId } : {}) })}>Revisar incidencias abiertas</Button></>}
+      <Typography variant="h6">Personas bloqueadas</Typography>
+      <ErrorNotice error={blocked.error} />{blocked.isError && <Button onClick={() => void blocked.refetch()}>Reintentar bloqueados</Button>}
+      {blocked.isPending && <Typography role="status">Consultando personas bloqueadas…</Typography>}
+      {blocked.isSuccess && !blockedRows.length && <Typography>{run.blocked.openIncidents + run.blocked.openSegment > 0
+        ? 'Esta corrida no tiene detalle nominal registrado. Las corridas anteriores a esta función sólo conservan conteos.'
+        : 'No hay personas bloqueadas registradas.'}</Typography>}
+      {!!blockedRows.length && <TableContainer><Table aria-label="Personas bloqueadas"><TableHead><TableRow><TableCell>Empleado</TableCell><TableCell>Causa</TableCell><TableCell>Incidencias</TableCell></TableRow></TableHead><TableBody>
+        {blockedRows.map(person => <TableRow key={person.employeeId}>
+          <TableCell><RecordName kind="employee" id={person.employeeId} me={me} /></TableCell>
+          <TableCell>{blockedLabels[person.reason] || person.reason}</TableCell>
+          <TableCell>{person.incidentIds.length ? person.incidentIds.map(incidentId => <Button key={incidentId} onClick={() => onIncidents({ week: run.weekStart, incidentId })}>Ver incidencia {incidentId}</Button>) : 'El tramo abierto proviene de un ajuste; requiere revisar ese ajuste.'}</TableCell>
+        </TableRow>)}
+      </TableBody></Table></TableContainer>}
+      {blocked.hasNextPage && <Button disabled={blocked.isFetchingNextPage} onClick={() => void blocked.fetchNextPage()}>Cargar más bloqueados</Button>}
+      {!!blockedRows.length && (run.status === 'running' || run.status === 'queued') && <Typography>Los bloqueos registrados pueden cambiar al reintentarse la corrida. Los conteos avanzan por tandas.</Typography>}
+      {(run.blocked.openIncidents > 0 || run.blocked.openSegment > 0) && <Button onClick={() => onIncidents({ week: run.weekStart, ...(run.siteId ? { siteId: run.siteId } : {}) })}>Revisar incidencias abiertas</Button>}
     </>}
   </Stack></DialogContent><DialogActions><Button disabled={retry.isPending} onClick={onClose}>Cerrar</Button></DialogActions></Dialog>
 }

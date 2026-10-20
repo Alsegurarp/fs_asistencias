@@ -390,8 +390,14 @@ conteos. El detalle sigue las pendientes cada cinco segundos y se detiene
 al terminar, fallar o recibir un error; un error permite reintentar el
 seguimiento. Al terminar se actualizan cierres, incidencias y jornadas.
 Una corrida fallida permite solicitar otra con la misma semana y sede.
-Los bloqueos enlazan las incidencias abiertas de ese alcance: el API entrega
-conteos, no una lista nominal de empleados bloqueados.
+El detalle muestra por páginas las personas bloqueadas, la causa y enlaces
+a sus incidencias. También permite revisar las incidencias de la semana y sede.
+El registro por persona sobrevive a una interrupción; un reintento de la misma
+corrida actualiza el motivo o retira a quien logra cerrar. Una corrida terminada
+conserva su detalle aunque otra cierre después a esas personas. Los conteos
+avanzan por tandas y pueden retrasarse respecto a la lista durante la ejecución.
+Las corridas antiguas sólo conservan conteos; la pantalla lo explica cuando
+no tienen detalle nominal registrado.
 
 La validación ejecutada y el guion de aceptación están en
 [Validación de cierres](validacion-cierres.md).

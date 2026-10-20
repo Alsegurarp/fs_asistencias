@@ -4,7 +4,7 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
-Monorepo del producto. El backend atiende las 60 operaciones del contrato, con
+Monorepo del producto. El backend atiende las 61 operaciones del contrato, con
 pruebas contra PostgreSQL real. El portal implementa inicio de sesión, sedes,
 empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias,
 cierres, exportes, usuarios y configuración de empresa. El 19 pasaron 148

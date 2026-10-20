@@ -276,11 +276,6 @@ class WeekCloser(
         )
         return CloseOutcome.Closed(closures.find(tenantId, id)!!)
     }
-
-    /** Lo mismo en su propia transacción: lo que pase con una persona no deshace lo de las demás. */
-    @Transactional
-    fun closeAlone(tenant: TenantRow, employeeId: UUID, weekStart: LocalDate, by: Closer): CloseOutcome =
-        closeOne(tenant, employeeId, weekStart, by)
 }
 
 /**

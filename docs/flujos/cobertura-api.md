@@ -1,6 +1,6 @@
 # Cobertura del API en los flujos
 
-Corte: 18 de octubre de 2026. Las 60 operaciones de contracts/openapi.yaml (versión 0.11.0).
+Corte: 19 de octubre de 2026. Las 61 operaciones de contracts/openapi.yaml (versión 0.12.0).
 Las rutas de esta tabla incluyen el prefijo /api/v1. Los roles se toman del contrato;
 la autorización efectiva también se aplica en SecurityConfig y los servicios.
 
@@ -59,6 +59,7 @@ la autorización efectiva también se aplica en SecurityConfig y los servicios.
 | GET /api/v1/week-closure-runs | listWeekClosureRuns | [11](11-cierres-y-corridas.puml) | admin_empresa, rh, supervisor, auditor |
 | POST /api/v1/week-closure-runs | requestWeekClosureRun | [11](11-cierres-y-corridas.puml) | admin_empresa, rh |
 | GET /api/v1/week-closure-runs/{runId} | getWeekClosureRun | [11](11-cierres-y-corridas.puml) | admin_empresa, rh, supervisor, auditor |
+| GET /api/v1/week-closure-runs/{runId}/blocked | listWeekClosureRunBlocked | [11](11-cierres-y-corridas.puml) | admin_empresa, rh, supervisor, auditor |
 | GET /api/v1/rule-sets | listRuleSets | [09](09-jornada-semanal.puml) | admin_empresa, rh, supervisor, auditor |
 | POST /api/v1/exports | createExport | [13](13-exportes-y-trabajos.puml) | admin_empresa, rh, auditor |
 | GET /api/v1/exports/{exportId} | getExport | [13](13-exportes-y-trabajos.puml) | admin_empresa, rh, auditor |

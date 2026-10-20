@@ -1,5 +1,104 @@
 # Bitácora de trabajo
 
+## 19 de octubre de 2026 — Publicación autorizada de la tarea 14 y pendientes
+
+El usuario autoriza hacer push de los avances del día. Se prepara en `main`,
+sobre `430ac29`, el detalle de personas bloqueadas por corrida, contrato 0.12,
+migración V008, portal, pruebas y documentación. Incluye el estado de las
+17 tareas abiertas y la entrega de la prueba con datos móviles a otro
+desarrollador. Se conservan fuera del commit secretos, registros locales,
+`portalError.md` y las tres modificaciones previas bajo `backend/bin/`.
+
+Las validaciones locales de esta implementación están en la entrada siguiente.
+El push dispara las verificaciones de GitHub Actions; su resultado corresponde
+al nuevo commit y debe consultarse por separado. No se despliegan servicios
+ni se cambian reglas de negocio o protecciones de rama.
+
+## 19 de octubre de 2026 — Tarea 14 implementada y validada localmente
+
+Las corridas guardan a cada persona bloqueada con causa e incidencias en
+V008 (`week_closure_run_blocked`), dentro de la misma transacción del intento
+de cierre. Un reintento actualiza el bloqueo o lo retira si consigue cerrar;
+una corrida terminada conserva su detalle aunque otra cierre después a esa
+persona. No se reconstruyen bloqueos de corridas anteriores a esta función.
+
+Contrato 0.12.0, 61 operaciones: se añade
+`GET /week-closure-runs/{runId}/blocked`, paginado, con los permisos de lectura
+actuales y filtro de empresa. El portal muestra nombres, causas, incidencias,
+páginas y reintento ante errores; las corridas antiguas conservan sus conteos.
+
+Comprobado:
+
+- Backend: construcción, unitarias y 74 pruebas de integración PostgreSQL.
+  Incluyen ambos motivos, incidencias, paginación y validación de parámetros,
+  permisos, aislamiento, interrupción y retirada del bloqueo al reintentar.
+  Evidencia: `build/task14-backend-it.log`.
+- Portal: compilación y 151 pruebas aprobadas. Evidencias:
+  `build/task14-web-build.log` y `build/task14-web-tests.log`.
+- Contrato y ejemplos válidos: `build/task14-contract.log`. Sintaxis de
+  diagramas de cierres y modelo de datos comprobada con PlantUML.
+
+Implementación completada localmente. No se publicó ni desplegó; falta
+aceptación de pantallas con sesión real. La migración V008 debe acompañar
+al backend y el portal nuevos. La tarea 8 con datos móviles sigue entregada
+a otro desarrollador, por indicación del usuario.
+
+## 19 de octubre de 2026 — Prueba móvil diferida y continuación de tarea 14
+
+El usuario indica dejar la prueba con datos móviles pendiente para otro
+desarrollador. Se registra su procedimiento y criterio de aceptación en
+[TareasPendientes.md](TareasPendientes.md#entrega-a-otro-desarrollador-prueba-con-datos-móviles-tarea-8).
+La tarea 8 sigue abierta; no se modificarán los ajustes de conexión del teléfono
+para ejecutarla en esta continuación. Se continúa con la tarea 14: detalle
+individual de personas bloqueadas en corridas de cierre.
+
+## 19 de octubre de 2026 — Dispositivo conectado y nueva comprobación HTTPS
+
+Tras volver a consultar ADB, el Samsung SM-S928B aparece autorizado. Se usó
+la instrumentación ya instalada, sin modificar ni reinstalar la aplicación:
+
+- Autoensayo local aprobado: Keystore ES256, migración sin pérdida, activación,
+  cola cifrada, reintento idéntico, recibos, captura concurrente y reenrolamiento
+  sin borrado. Evidencia: `build/device-recheck-fixture.log`.
+- Prueba pública desde la computadora aprobada nuevamente: HTTPS, cabeceras
+  falsas y cuota de activación (diez respuestas 410 y después 429). Evidencias:
+  `build/public-proxy-check.json` y `build/device-recheck-public-proxy.log`.
+  La evidencia anterior se conservó en `build/public-proxy-before-device-*.json`.
+- El ensayo del teléfono no obtuvo el resultado esperado mientras estaba
+  agotada esa cuota. Su mensaje no muestra el estado recibido, por lo que no
+  se atribuye un HTTP concreto a ese fallo. Registro:
+  `build/device-recheck-proxy-phone.log`.
+- Tras vencer la ventana, el teléfono recibió `410/enrollment_gone` por HTTPS
+  entre 23:53:30 y 23:53:31 UTC. Evidencias:
+  `build/device-recheck-proxy-baseline.log` y `.json`.
+
+El teléfono usa Wi-Fi y tiene los datos móviles desactivados. La tarea 8
+permanece abierta: falta comprobar otra salida pública con cuota independiente
+durante la misma ventana. Se consultó si dispone de datos móviles para ese
+ensayo; todavía no se cambiaron sus ajustes de conexión.
+
+No se crearon empleados, tarjetas ni dispositivos: se usó un código de
+activación imposible. No se desplegó ni se repitió el recorrido completo
+personal/terminal contra backend. La disponibilidad actual del teléfono
+corrige el bloqueo de ADB observado en la revisión anterior.
+
+## 19 de octubre de 2026 — Declaración de TareasPendientes.md
+
+A petición del usuario se crea [TareasPendientes.md](TareasPendientes.md),
+con el estado posterior a la integración en `main` (`430ac29`). Se declaran
+18 tareas abiertas total o parcialmente: seis P0, cuatro P1 y ocho P2,
+conservando la numeración de [Tareas críticas primero](tareas-criticas-primero.md).
+
+Las tareas 7 y 11 quedan identificadas como completadas en su alcance.
+Se incorpora la [ejecución aprobada de main](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39303294132),
+con los cuatro trabajos de GitHub Actions correctos. Se distingue implementación
+de despliegue y aceptación, y se declara la tarea 14 como el siguiente trabajo
+que puede iniciarse desde el repositorio. Se registran las dependencias de
+segunda IP pública, navegador, retención Android y coordinación SSH.
+
+Este registro sólo actualiza documentación: no inicia esas tareas, modifica
+reglas de negocio, elimina evidencia ni despliega servicios.
+
 ## 19 de octubre de 2026 — Integración de avanceLunes en main
 
 El usuario autoriza integrar la rama. Se actualizó `main` por fast-forward

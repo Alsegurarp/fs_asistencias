@@ -34,6 +34,9 @@ class ClosureRunsIT : WorkdayTestBase() {
 
     private fun run(c: Company, id: String, token: String? = c.adminToken): Reply = call("GET", "/api/v1/week-closure-runs/$id", token)
 
+    private fun blocked(c: Company, id: String, query: String = ""): Reply =
+        call("GET", "/api/v1/week-closure-runs/$id/blocked$query", c.adminToken)
+
     private fun counts(reply: Reply): List<Any?> =
         listOf(reply.at<Any?>("total"), reply.at<Int>("closed"), reply.at<Int>("blocked.openIncidents"), reply.at<Int>("blocked.openSegment"))
 
@@ -84,6 +87,7 @@ class ClosureRunsIT : WorkdayTestBase() {
             listOf<String>(asked.at("status"), asked.at("origin"), asked.at("weekStart"), asked.at("requestedBy")),
         )
         assertEquals(listOf(null, 0, 0, 0), counts(asked))
+        assertEquals(emptyList(), blocked(c, id).list("items[*].employeeId"))
         for (field in listOf("siteId", "failure", "startedAt", "finishedAt")) assertNull(asked.at<Any?>(field), field)
         // Mientras no termina, pedirla otra vez devuelve la misma, con cualquier fecha de esa semana.
         assertEquals(id, request(c, """{"weekStart":"$lastWeek"}""").at("id"))
@@ -110,6 +114,16 @@ class ClosureRunsIT : WorkdayTestBase() {
         val open = call("GET", "/api/v1/incidents?status=open&week=$yesterday", c.adminToken)
         assertEquals(setOf(pending.employeeId, unfinished.employeeId), open.list("items[*].employeeId").toSet())
         val forgotten = open.at<List<String>>("items[?(@.employeeId=='${unfinished.employeeId}')].id").single()
+        val details = blocked(c, id)
+        assertEquals(listOf(pending.employeeId, unfinished.employeeId), details.list("items[*].employeeId"))
+        assertEquals(listOf("open_incidents", "open_segment"), details.list("items[*].reason"))
+        assertEquals(listOf(incidentId), details.list("items[0].incidentIds[*]"))
+        assertEquals(listOf(forgotten), details.list("items[1].incidentIds[*]"))
+        val firstPage = blocked(c, id, "?limit=1")
+        val lastPage = blocked(c, id, "?limit=1&cursor=${firstPage.at<String>("nextCursor")}")
+        assertEquals(details.list("items[*].employeeId"), firstPage.list("items[*].employeeId") + lastPage.list("items[*].employeeId"))
+        assertNull(lastPage.at<Any?>("nextCursor"))
+        for (bad in listOf("?limit=0", "?limit=201", "?cursor=x")) assertProblem(422, "validation", blocked(c, id, bad))
 
         // Se resuelve lo pendiente y otra corrida cierra lo que faltó, sin tocar lo ya cerrado.
         val reason = "Lo confirma su supervisor; se corrige la jornada."
@@ -120,6 +134,8 @@ class ClosureRunsIT : WorkdayTestBase() {
         assertNotEquals(id, second.at<String>("id"))
         jobWorker.drain()
         assertEquals(listOf(3, 3, 0, 0), counts(run(c, second.at("id"))))
+        assertEquals(0, blocked(c, second.at("id")).at<Int>("items.length()"))
+        assertEquals(details.body, blocked(c, id).body)
         assertEquals(3, closures(c).at<Int>("items.length()"))
         assertEquals(1, closures(c).at<List<Any>>("items[?(@.id=='$firstClosure')]").size)
         assertEquals(3, count("select count(*) from week_closure where tenant_id = ?", tenant))
@@ -166,6 +182,9 @@ class ClosureRunsIT : WorkdayTestBase() {
     fun `a run interrupted halfway keeps what it closed, is retried and finishes, and one that cannot finish says so`() {
         val c = companyWithFinishedWeek()
         val tenant = UUID.fromString(c.id)
+        val pending = staffed(c, newSite(c))
+        val pendingIncident = marked(pending, before(40), location = here(latitude = 19.44)).at<String>("incident.id")
+        marked(pending, before(32))
         val people = List(3) { staffed(c) }
         people.forEach { shift(it, 40, 32) }
         val id = request(c).at<String>("id")
@@ -181,7 +200,9 @@ class ClosureRunsIT : WorkdayTestBase() {
             assertEquals(1, jobWorker.drain(1))
             // La primera quedó cerrada aunque la corrida se interrumpió, y el trabajo espera otro intento.
             assertEquals(listOf(people[0].employeeId), closures(c).list("items[*].employeeId"))
-            assertEquals(listOf("running", 3), listOf(run(c, id).at<String>("status"), run(c, id).at<Int>("total")))
+            assertEquals(listOf("running", 4), listOf(run(c, id).at<String>("status"), run(c, id).at<Int>("total")))
+            assertEquals(listOf(pending.employeeId), blocked(c, id).list("items[*].employeeId"))
+            assertEquals(listOf(pendingIncident), blocked(c, id).list("items[0].incidentIds[*]"))
             assertEquals(1, count("select count(*) from job where reference_id = ? and status = 'queued' and attempts = 1 and last_error is not null", runId))
             assertEquals(0, count("select count(*) from job where reference_id = ? and last_error like '%provocada%'", runId))
         } finally {
@@ -189,13 +210,15 @@ class ClosureRunsIT : WorkdayTestBase() {
             asOwner("drop function if exists it_fail_closure()")
         }
         val first = closures(c).at<String>("items[0].id")
+        assertEquals(200, patch(c, pendingIncident, resolution("justified", "El supervisor confirmó la ubicación de la persona.")).status)
         // Pasa la pausa y el siguiente intento retoma donde quedó.
         assertEquals(1, change("update job set next_run_at = now() where reference_id = ?", runId))
         jobWorker.drain()
         val done = run(c, id)
         assertEquals("done", done.at("status"))
-        assertEquals(listOf(3, 3, 0, 0), counts(done))
-        assertEquals(3, count("select count(*) from week_closure where tenant_id = ?", tenant))
+        assertEquals(listOf(4, 4, 0, 0), counts(done))
+        assertEquals(0, blocked(c, id).at<Int>("items.length()"))
+        assertEquals(4, count("select count(*) from week_closure where tenant_id = ?", tenant))
         assertEquals(1, closures(c).at<List<Any>>("items[?(@.id=='$first')]").size)
         assertEquals(1, count("select count(*) from job where reference_id = ? and status = 'done' and attempts = 2", runId))
 
@@ -331,6 +354,7 @@ class ClosureRunsIT : WorkdayTestBase() {
             Route("POST", "/api/v1/week-closure-runs", wholeWeek(), "admin_empresa", "rh"),
             Route("GET", "/api/v1/week-closure-runs", null, *staff),
             Route("GET", "/api/v1/week-closure-runs/$runOfA", null, *staff),
+            Route("GET", "/api/v1/week-closure-runs/$runOfA/blocked", null, *staff),
             // Lo que el contrato no abre sigue cerrado, también para quien administra.
             Route("DELETE", "/api/v1/week-closure-runs/$runOfA", null),
             Route("PATCH", "/api/v1/week-closure-runs/$runOfA", "{}"),
@@ -349,11 +373,14 @@ class ClosureRunsIT : WorkdayTestBase() {
         }
         // La credencial de un dispositivo no entra a las corridas.
         assertProblem(401, "unauthorized", call("GET", "/api/v1/week-closure-runs/$runOfA", assertion(mine.phone)))
+        assertProblem(401, "unauthorized", call("GET", "/api/v1/week-closure-runs/$runOfA/blocked", assertion(mine.phone)))
         assertProblem(401, "unauthorized", call("POST", "/api/v1/week-closure-runs", assertion(mine.phone), wholeWeek()))
         jobWorker.drain()
 
         // Para la otra empresa, la corrida no existe, y no puede limitar la suya a una sede ajena.
         assertProblem(404, "not_found", run(b, runOfA))
+        assertProblem(404, "not_found", blocked(b, runOfA))
+        assertProblem(404, "not_found", blocked(a, UUID.randomUUID().toString()))
         assertProblem(404, "not_found", run(a, UUID.randomUUID().toString()))
         assertProblem(404, "not_found", run(a, "no-es-un-identificador"))
         assertEquals(0, call("GET", "/api/v1/week-closure-runs", b.adminToken).at<Int>("items.length()"))

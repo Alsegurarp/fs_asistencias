@@ -6,7 +6,8 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
-Última revisión: 19 de octubre de 2026; incluye el ensayo Android local y por HTTPS.
+Última revisión: 19 de octubre de 2026; incluye Android local/HTTPS y el detalle
+de personas bloqueadas en corridas, implementado localmente sin desplegar.
 La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
 separa resultados comprobados de decisiones y pruebas manuales pendientes.
 
@@ -18,15 +19,15 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 
 | Pieza | Estado |
 | --- | --- |
-| Contrato | Versión 0.11, con 60 operaciones. Completo para el recorrido del producto; todavía sin congelar |
-| Backend | Atiende las 60 operaciones. Construcción, unitarias y 74 de integración contra PostgreSQL real aprobadas nuevamente el 19 |
-| Base | 28 tablas en 7 migraciones, con roles separados para migrar, para atender y para respaldar. Imagen propia sobre Alpine, sin root ni privilegios, que ordena los textos por código de carácter |
+| Contrato | Versión 0.12, con 61 operaciones. Incluye detalle paginado de bloqueos por corrida; todavía sin congelar |
+| Backend | Atiende las 61 operaciones. Construcción, unitarias y 74 de integración contra PostgreSQL real aprobadas nuevamente el 19, incluido el detalle de corridas interrumpidas y sus reintentos |
+| Base | 29 tablas en 8 migraciones, con roles separados para migrar, para atender y para respaldar. V008 conserva bloqueos por persona/corrida. Imagen propia sobre Alpine, sin root ni privilegios, que ordena los textos por código de carácter |
 | Identidad | Segundo factor obligatorio en `zenit`. El 18 se preparó el realm para conservar OTP y exigir reautenticación al recuperar contraseña, con cuatro comprobaciones locales incluida importación. SMTP y cuentas personales del servidor siguen pendientes; [procedimiento](preparar-ambiente-compartido.md) |
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | Modos age y autoprueba aprobados. El 18 de octubre pasó recuperación local con origen apagado: 130 tablas/1.867 filas idénticas, contraseñas nuevas de base, backend e identidad funcionales. [Detalle](recuperacion-servicio.md). Copia externa de operación, custodia, programación y recuperación pública pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, configuración de empresa, incidencias, cierres, exportes y usuarios; el operador tiene alta/listado de empresas. El 19 pasaron compilación y 148 pruebas. Horarios e importación también pasaron por API HTTPS con sesión real; sigue pendiente su recorrido de pantallas. Configuración está implementada y probada localmente, sin desplegar. Llama 41 operaciones distintas, todas presentes en el contrato; nginx y proxy comprobados localmente |
+| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, configuración de empresa, incidencias, cierres, exportes y usuarios; el operador tiene alta/listado de empresas. El 19 pasaron compilación y 151 pruebas. Incluye personas bloqueadas por corrida, causas, paginación y enlaces a incidencias. Horarios e importación también pasaron por API HTTPS con sesión real; sigue pendiente su recorrido de pantallas. Configuración y detalle de bloqueos están implementados y probados localmente, sin desplegar. Llama 42 operaciones distintas, todas presentes en el contrato; nginx y proxy comprobados localmente |
 | App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 19 pasaron 9 pruebas unitarias, lint y APK debug/de instrumentación. Personal y terminal pasaron contra backend local y HTTPS publicado en Samsung SM-S928B (API 36), con cola entre procesos, reenvío sin duplicados y limpieza. El fixture anterior y el rechazo de argumentos incompletos también pasaron. Release no repetido. Sus 3 operaciones existen en el contrato |
 | Conector | No existe |
 
@@ -65,7 +66,11 @@ una cuenta de administración de prueba para validar Android por HTTPS.
 | Pendiente | Qué es |
 | --- | --- |
 | Clases de jOOQ generadas | Hoy las consultas son SQL en texto. Cambia cada consulta y no cambia ningún comportamiento. Se decidió dejarlo para después y hacerlo solo, sin mezclarlo con otra cosa |
-| Detalle de quién quedó sin cerrar | Una corrida de cierre dice cuántas personas no cerró y por qué, no cuáles; se buscan por sus incidencias abiertas |
+
+El detalle de quién quedó sin cerrar ya está implementado y probado en backend
+y portal. Conserva causas e incidencias por corrida y pagina los resultados;
+faltan despliegue y aceptación en navegador real. Los históricos anteriores
+a V008 conservan sólo sus conteos.
 
 ### Esperan una decisión
 
@@ -84,7 +89,7 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Ausencias | Cómo tratar vacaciones e incapacidades, para no cerrar en ceros |
 | Otra plantilla de exporte | Según lo que pida la nómina del primer cliente |
 | Dónde vive el archivo de un exporte | Hoy en la base, unos minutos; la alternativa es un almacén de objetos |
-| Versión 1.0 del contrato | Cuándo deja de cambiar sin aviso. El portal y la app llaman 44 de las 60 operaciones; falta completar recorridos reales y confirmar las decisiones de esta tabla |
+| Versión 1.0 del contrato | Cuándo deja de cambiar sin aviso. El portal y la app llaman 45 de las 61 operaciones; falta completar recorridos reales y confirmar las decisiones de esta tabla |
 
 ### Dependen de algo externo
 
@@ -255,7 +260,7 @@ acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 | 7 | Probar enrolamiento, captura simulada, cola sin conexión, sincronización y renovación Android contra el backend local | Completada el 19 también por HTTPS en teléfono: personal y terminal, tres fases por modalidad y limpieza. Autoensayo y guion versionados; no acredita NFC real ni apagar físicamente las radios |
 | 8 | Definir e implementar retención de sobres y recibos Android | Acordar qué se conserva y durante cuánto tiempo; proteger pendientes y evidencia |
 | 9 | Completar configuración de empresa en el portal | Implementada: consulta para cuatro roles, edición sólo de administración, cambios parciales, cierre automático anulable y conservación ante errores/refrescos. 148 pruebas del portal y compilación aprobadas; falta despliegue y aceptación en navegador |
-| 10 | Mostrar las personas que no pudieron cerrar y sus causas | Actualmente la corrida muestra conteos y motivos, sin identificar a cada persona |
+| 10 | Mostrar las personas que no pudieron cerrar y sus causas | Implementada y validada localmente: causas e incidencias por persona, paginación, aislamiento y conservación en corridas parciales/reintentos. Sin desplegar ni aceptar en navegador real |
 | 11 | Automatizar verificaciones en cada cambio | Workflow integrado en `main` el 19; cuatro trabajos aprobados en `avanceLunes` (ejecución 39301664714). La obligatoriedad de trabajos requiere una decisión adicional |
 | 12 | Completar semana y acuse del trabajador | Integrar datos reales, identidad y permisos; el texto y evidencia del acuse dependen también de la tarea 17 |
 | 13 | Completar pantallas del operador del servicio | Alta y listado de empresas implementados; faltan suspender/reactivar y comprobar permisos y aislamiento con sesión real. La regla de suspensión depende de la decisión de negocio |
@@ -278,7 +283,7 @@ siguen abiertas donde se indican en **Sin verificar** y en la validación.
 | --- | --- |
 | App | Verificar enrolamiento y marcajes con tarjeta simulada contra el ambiente publicado, como dice [Conectar la app al ambiente publicado](guia-app-android.md#conectar-la-app-al-ambiente-publicado). Después, semana y acuse; la tarjeta real requiere su prueba externa |
 | Portal | Completar las pantallas de horarios/importación y Configuración con sesión real; su API y pruebas locales ya pasaron. Después, suspensión/reactivación y trabajador |
-| Backend | Puede ampliarse el detalle de personas que no pudieron cerrar, con contrato, pruebas y portal. jOOQ generado sigue diferido; las reglas de negocio esperan sus decisiones |
+| Backend | El detalle de bloqueos por corrida ya está implementado y probado junto con el portal; faltan despliegue y aceptación real. jOOQ generado sigue diferido; las reglas de negocio esperan sus decisiones |
 
 El portal ya no depende de la app para tener datos: el simulador deja
 jornadas, incidencias de cuatro tipos y semanas que se pueden cerrar.

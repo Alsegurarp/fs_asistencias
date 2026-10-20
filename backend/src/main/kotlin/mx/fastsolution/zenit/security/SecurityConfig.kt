@@ -133,7 +133,7 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.POST, "/api/v1/week-closures/{closureId}/reopen").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/week-closures/{closureId}/acknowledgements").hasAnyRole(worker, device)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/week-closure-runs").hasAnyRole(admin, rh)
-                it.requestMatchers(HttpMethod.GET, "/api/v1/week-closure-runs", "/api/v1/week-closure-runs/{runId}")
+                it.requestMatchers(HttpMethod.GET, "/api/v1/week-closure-runs", "/api/v1/week-closure-runs/{runId}", "/api/v1/week-closure-runs/{runId}/blocked")
                     .hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/rule-sets").hasAnyRole(admin, rh, supervisor, auditor)
                 // Exportes y fuentes del padrón.

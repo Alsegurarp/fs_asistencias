@@ -32,7 +32,7 @@ contradice al contrato, manda el contrato.
 | --- | --- |
 | [Casos de uso](casos-de-uso.md) | Quién hace qué, con qué rutas y qué puede salir mal |
 | [Lógica de negocio](logica-de-negocio.md) | Las reglas que el servidor aplica y cuáles son provisionales |
-| [Flujos PlantUML](flujos/README.md) | 17 diagramas del estado actual, nacimiento de datos y cobertura de las 60 operaciones |
+| [Flujos PlantUML](flujos/README.md) | 17 diagramas del estado actual, nacimiento de datos y cobertura de las 61 operaciones |
 | [Consumir el API](consumir-el-api.md) | Credenciales, errores, páginas, idempotencia y recomendaciones de uso |
 | [Guía de la app Android](guia-app-android.md) | Enrolar, firmar, marcar, trabajar sin conexión y mostrar la semana |
 | [Producto móvil](alcance-producto-movil.md) | Pantallas del producto, endpoints y qué funciones están conectadas |
@@ -42,6 +42,7 @@ contradice al contrato, manda el contrato.
 | [Recorrido completo](recorrido-completo.md) | De una empresa nueva a un exporte, petición por petición |
 | [Continuar el backend](continuar-el-backend.md) | Cómo está hecho el código y cómo se agrega una ruta, una tabla o un trabajo |
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |
+| [Tareas pendientes](TareasPendientes.md) | Resumen de las 17 tareas abiertas, prioridades, dependencias y trabajo disponible; incluye entrega de la prueba móvil a otro desarrollador |
 | [Tareas críticas primero](tareas-criticas-primero.md) | Declaración de las 20 tareas priorizadas, dependencias, criterios de cierre y primer trabajo técnico |
 | [Verificaciones automáticas](verificaciones-automaticas.md) | Workflow de GitHub Actions, pruebas por cambio, análisis de imágenes y comprobación del servidor |
 | [Validación de cierres](validacion-cierres.md) | Pruebas ejecutadas y guion de aceptación de cierres semanales |
@@ -59,7 +60,7 @@ contradice al contrato, manda el contrato.
 
 | Pieza | Carpeta | Estado |
 | --- | --- | --- |
-| Backend | `backend/` | Atiende las 60 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo. Detrás del borde toma la dirección real del visitante |
+| Backend | `backend/` | Atiende las 61 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo. Detrás del borde toma la dirección real del visitante |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
 | Portal web | `web/` | PKCE, catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, usuarios y configuración de empresa; horarios/CSV aprobados por API HTTPS, recorrido en navegador pendiente |
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Verificada en un teléfono con servidor de prueba; falta el recorrido contra el backend y las tarjetas reales |
