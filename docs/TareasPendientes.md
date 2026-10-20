@@ -1,6 +1,7 @@
 # Tareas pendientes
 
-Estado revisado el **20 de octubre de 2026**, con A1–A5 locales sobre `1984be3`.
+Estado revisado el **20 de octubre de 2026**, con A1–A5 sobre `1984be3`
+e integración de `origin/main`/`ef23c20` para la PR.
 Las [entregas y verificaciones](entregas-a1-a5.md) actualizan el avance técnico;
 el [guion de QA](qa-a1-a5.md) conserva la aceptación manual pendiente.
 Incluye los avances Android de semana/acuse, bienvenida, administración
@@ -33,12 +34,12 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 
 | Orden | Prioridad | Tarea pendiente | Qué falta para completarla |
 | --- | --- | --- | --- |
-| 1 | P0 | Respaldo externo y recuperación completa | Definido: datos operativos en infraestructura del cliente y sistema en VPS de fastSolution; perfiles de 50/300 empleados, cuatro marcajes diarios y un año consultable. [Evaluación de S3/GCS y alternativas](evaluacion-respaldo-anual.md) disponible. Faltan elegir destino, custodia, adaptar bases separadas, automatizar y ensayar recuperación |
+| 1 | P0 | Respaldo externo y recuperación completa | Modelo SaaS aprobado: backend/PostgreSQL compartidos con aislamiento lógico por empresa y respaldo externo de Zenit, cifrado y fuera del dominio de falla de producción. Perfiles de 50/300 empleados, cuatro marcajes diarios y un año consultable. Faltan destino, custodia, automatización y ensayo de recuperación; bases dedicadas sólo en modalidad Enterprise |
 | 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | A4 implementa y prueba el cambio obligatorio para cuentas activas vinculadas; cliente técnico preparado sólo en local. Falta provisión/aceptación pública, recuperación de acceso olvidado, cuentas personales, SMTP y recuperación del operador |
 | 3 | P0 | Jornada y evidencia del acuse | Obtener dictamen profesional y criterios aprobados; implementar reglas, casos esperados y evidencia versionada conservando históricos |
 | 4 | P0 | Captura autenticada con tarjetas reales | Android ya incluye lectura, carga y borrado de credenciales MF1K de ejemplo. Falta validación física y autenticación integrada de asistencia: el backend sólo verifica el esquema simulado; definir tecnología y custodia de claves |
 | 5 | P0 | Suspensión, baja, supervisor y tipo de marcaje | Elegir las reglas propuestas y después implementar sus efectos sobre permisos, captura e históricos |
-| 6 | P0 | Uso del servidor compartido con datos reales | Formalizar el acuerdo entre el responsable del servicio y el dueño del servidor |
+| 6 | P0 | Producción administrada para datos reales | El modelo está aprobado: producción exclusiva de Zenit bajo control de fastSolution y aislamiento lógico por empresa. Faltan proveedor, región, cuenta, contratos, respaldo externo, restauración y pruebas. El servidor compartido conserva sólo datos ficticios |
 | 8 | P1 | Dirección real y protocolo entre proxies | Comprobar que dos IP públicas reales conservan cuotas independientes en la misma ventana. Las pruebas públicas de HTTPS y cabeceras falsas ya pasaron |
 | 9 | P1 | Recorridos del portal con sesión real | Completar pantallas, roles, cookies, renovación y cierre de sesión en navegador. Horarios e importación ya pasaron por API HTTPS |
 | 10 | P1 | Retención de sobres y recibos Android | Definir plazo y conservación; implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria |
@@ -53,13 +54,12 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 
 ## Definiciones recibidas para P0-01 y P0-02
 
-**P0-01 — respaldo.** El usuario indica respaldo por ambas partes, con
-responsabilidad principal de fastSolution sobre la información de sus clientes.
-El tercero no tiene la información del cliente. El usuario precisa que la
-infraestructura del cliente aloja únicamente sus datos operativos y el sistema
-vive en un VPS de fastSolution. El destino externo sigue en evaluación.
-Quedan por precisar obligaciones, conectividad, adaptación de bases separadas,
-destinos, transferencia y custodia de claves.
+**P0-01 — respaldo.** La [decisión de alojamiento del 19](decisiones-de-negocio.md#modelo-de-alojamiento-aprobado)
+sustituye la propuesta previa de bases en infraestructura de cada cliente:
+fastSolution administra el SaaS de Zenit con aislamiento lógico por empresa.
+El respaldo externo corresponde al producto y no requiere un bucket por
+cliente. Faltan destino, transferencia, custodia de claves, responsables,
+automatización y restauración. Las instalaciones del cliente son otra oferta.
 La política diaria/30 días y los objetivos 24 h/4 h registrados para el
 servicio no sustituyen concretar ese modelo ni ensayar su recuperación.
 

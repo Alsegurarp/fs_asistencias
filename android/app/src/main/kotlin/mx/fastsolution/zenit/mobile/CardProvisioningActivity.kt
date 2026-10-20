@@ -189,7 +189,7 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
             runOnUiThread {
                 uid = ""; existing = ""; replaceable = false
                 message = if (writing) "No se confirmó la operación; puede haber quedado parcial. Mantén la tarjeta cerca, vuelve a consultar y repite la carga o el borrado. "
-                    else when { 
+                    else when {
                         failure.message?.contains("asignada") == true -> "Esta tarjeta está asignada a otro empleado. Borra sus datos antes de reutilizarla."
                         failure.message?.contains("coincide") == true -> "La tarjeta no es la que confirmaste. Acerca la tarjeta correcta."
                         failure.message?.contains("contiene otros datos") == true -> "La tarjeta contiene otros datos. Consúltala y borra sus datos antes de cargar al empleado."

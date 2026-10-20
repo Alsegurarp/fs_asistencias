@@ -3,6 +3,14 @@
 Fecha: 19 de octubre de 2026. Evaluación técnica y de costos; no constituye
 contratación, despliegue ni aprobación de nuevas políticas de borrado.
 
+Antecedente: esta evaluación usó la propuesta previa de bases por cliente.
+La [decisión de alojamiento aprobada](decisiones-de-negocio.md#modelo-de-alojamiento-aprobado)
+la sustituye para la oferta estándar: backend/PostgreSQL compartidos con
+aislamiento lógico y respaldo externo de Zenit, sin bucket por cliente.
+Los volúmenes por perfil sirven de referencia; el dimensionamiento y los
+costos totales deben recalcularse para el SaaS antes de contratar. Las
+bases dedicadas corresponden a Enterprise o a una oferta distinta.
+
 ## Arquitectura y perfiles definidos por el usuario
 
 - La infraestructura del cliente aloja únicamente sus datos operativos.

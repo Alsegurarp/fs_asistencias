@@ -6,7 +6,8 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
-Última revisión: 20 de octubre de 2026; A1–A5 locales sobre `1984be3`.
+Última revisión: 20 de octubre de 2026; A1–A5 sobre `1984be3`
+e integración de `origin/main`/`ef23c20` para la PR.
 [Resultado actual](entregas-a1-a5.md): contrato 0.13, reactivación, consulta
 personal, recuperación de acuses y cambio obligatorio de contraseña. El
 [guion QA](qa-a1-a5.md) conserva la aceptación manual pendiente.
@@ -16,6 +17,21 @@ queda en ejecución con V008 aplicada. Incluye semana/acuse y herramientas
 MF1K Android. El despliegue público y la aceptación con sesión real siguen abiertos.
 La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
 separa resultados comprobados de decisiones y pruebas manuales pendientes.
+
+## Modelo de alojamiento aprobado
+
+Gabriel, Roberto Arregui y Alex Segura aprobaron el 19 de octubre de 2026 que
+Zenit opere como SaaS administrado por fastSolution: producción exclusiva del
+producto, separada de pruebas, y empresas aisladas lógicamente en el backend y
+PostgreSQL. No hay VPS, base ni bucket por cliente por defecto. La modalidad
+dedicada se cotiza como Enterprise o se activa por contrato, sector,
+residencia, volumen o riesgo.
+
+El servidor compartido publicado sigue sólo con datos ficticios. Antes del
+primer dato real faltan proveedor, región y cuenta bajo control de
+fastSolution, documentos de privacidad y tratamiento, subprocesadores,
+respaldo externo, custodia, restauración y revisión jurídica. La aprobación de
+la topología no equivale a autorización de producción.
 
 La revisión actual y el orden de ejecución están en
 [Tareas críticas primero](tareas-criticas-primero.md): incluye comprobaciones
@@ -108,7 +124,7 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
 | Staging y TLS | Hecho el 18 de octubre de 2026: un ambiente publicado con HTTPS. Falta decidir si habrá un segundo ambiente separado para pruebas |
 | Guardar y restaurar una copia cifrada de operación | Consultar con Gabriel quién custodia la clave privada y dónde queda su copia aislada, por indicación de Alexis. El 18 se comprobó una copia local con claves de ensayo, eliminadas al terminar; no sustituye una copia recuperable de operación |
-| Destino externo y recuperación completa del servicio | Datos operativos en infraestructura del cliente y sistema en VPS de fastSolution; responsabilidad principal de respaldo a cargo de fastSolution. Perfiles de 50/300 empleados y un año consultable. [S3/GCS y alternativas evaluados](evaluacion-respaldo-anual.md). Se conservan copia diaria/30 días y objetivos 24 h/4 h del servicio. Faltan destino, implementación de bases separadas, custodia, automatización y recuperación pública; SSH mediante Gabriel |
+| Destino externo y recuperación completa del servicio | SaaS bajo control de fastSolution con aislamiento lógico por empresa; respaldo externo cifrado de Zenit fuera del dominio de falla de producción. Perfiles de 50/300 empleados y un año consultable. Se conservan copia diaria/30 días y objetivos 24 h/4 h. Faltan destino, custodia, automatización y recuperación pública; SSH mediante Gabriel |
 | Cuotas compartidas entre instancias | La dirección real del visitante ya llega al backend a través del borde y del portal, y el límite de activaciones fallidas cuenta a cada visitante por separado. Compartir las cuotas sólo hace falta con más de una instancia |
 
 ## Vulnerabilidades conocidas

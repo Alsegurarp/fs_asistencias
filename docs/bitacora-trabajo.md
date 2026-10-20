@@ -1,5 +1,16 @@
 # Bitácora de trabajo
 
+## 20 de octubre de 2026 — Preparación de PR e integración remota
+
+El usuario solicita la PR de A1–A5 y comprobar compatibilidad con el remoto.
+Se incorporan `df020b3` y `ef23c20`, sin conflictos de Git, conservando el
+modelo SaaS aprobado y el ajuste de formato Android. Se corrigen referencias
+anteriores a bases por cliente en el estado y las preguntas Q01/Q05; las
+evaluaciones de respaldo conservan su alcance histórico explícito.
+La rama excluye secretos, registros locales y `backend/bin/`. La PR ejecuta
+los cuatro trabajos de CI sobre la integración propuesta. No se integra
+la PR a `main` ni se despliega el servidor público en esta sesión.
+
 ## 20 de octubre de 2026 — Implementación y validación local A1–A5
 
 El usuario autoriza las cinco entregas. Se implementaron reactivación desde
@@ -107,6 +118,23 @@ Se separa la entrega por cambio: `fix(build)` para caché Docker;
 `feat(android)` para semana/acuse y presentación; `feat(nfc)` para credenciales;
 `feat(android)` para bienvenida/administración; `docs(android)` para alcance,
 verificación y pendientes. [Guía actualizada](guia-app-android.md).
+
+## 19 de octubre de 2026 — Modelo de alojamiento aprobado
+
+Gabriel, Roberto Arregui y Alex Segura aprueban que Zenit opere por defecto
+como SaaS administrado por fastSolution. Producción será exclusiva de Zenit,
+separada de los ambientes de prueba y compartida lógicamente entre empresas;
+no se asigna una VPS, base ni bucket por cliente. Una base o un stack dedicados
+se cotizan como modalidad Enterprise cuando los exijan contrato, sector,
+residencia, volumen o riesgo. Una instalación en infraestructura del cliente es
+una oferta distinta.
+
+El servidor compartido actual queda sólo para datos ficticios y se abandona
+antes del primer dato real. La decisión no selecciona proveedor ni región y no
+autoriza producción: siguen pendientes contratos de tratamiento y
+subprocesadores, privacidad y retención, revisión jurídica, respaldo externo,
+custodia y restauración. No se cambió código, no se desplegó y no se cargaron
+datos reales en esta entrega documental.
 
 ## 19 de octubre de 2026 — Corte de evidencia y espera de QA
 
