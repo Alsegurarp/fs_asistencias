@@ -10,7 +10,7 @@
 
     <uses-feature
         android:name="android.hardware.nfc"
-        android:required="true"
+        android:required="false"
         tools:ignore="UnnecessaryRequiredFeature" />
 
     <application
@@ -24,7 +24,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Zenit">
         <activity
-            android:name=".MainActivity"
+            android:name=".WelcomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,6 +32,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".NfcDiagnosticActivity" android:exported="false" />
+        <activity android:name=".AdministrationActivity" android:exported="false" />
+        <activity android:name=".CardProvisioningActivity" android:exported="false" />
     </application>
 
 </manifest>
