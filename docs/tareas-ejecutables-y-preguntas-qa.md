@@ -12,6 +12,54 @@ corte previo de `1984be3`; no describe el código local posterior. Las 22
 preguntas conservan sus IDs para las tareas globales y el entorno público.
 Al preparar la PR se incorporó `origin/main`/`ef23c20`: Q01 y Q05 se ajustan
 al modelo SaaS aprobado el 19; ya no se consulta de nuevo esa decisión.
+La [PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10) ya está
+integrada en `main`/`e4d7683`, con sus cuatro trabajos de CI aprobados.
+El siguiente paso está en [Tareas críticas primero](tareas-criticas-primero.md#trabajo-técnico-que-podemos-iniciar).
+Al integrar la PR no se habían recibido respuestas adicionales ni el acta
+de los 33 casos. La disponibilidad del teléfono se actualiza a continuación.
+
+## Posibilidad de cierre con la evidencia disponible
+
+Corte posterior a la PR #10, 20 de octubre de 2026. El usuario confirma un
+teléfono conectado y `adb devices -l` muestra un Samsung SM-S928B autorizado,
+API 36. La falta de teléfono ya no bloquea la instrumentación. El resultado
+de su ejecución se registra en la bitácora; disponer de ADB no acredita una
+tarjeta física, una segunda IP pública ni el login/OTP del navegador.
+La instrumentación `FIXTURE` ya aprobó, incluidos semana/acuse y recuperación
+desde servidor HTTP simulado; 13 unitarias y lint sin errores. No se repitió
+ese recorrido contra el backend real ni se probó una tarjeta física.
+
+**Ninguna de las 17 tareas puede declararse cerrada por leer las bitácoras.**
+Las tareas 9 y 13 pueden avanzar a aceptación sin elegir nuevas reglas de
+producto, pero necesitan ejecutar y registrar sus recorridos y comprobar el
+entorno publicado. La 15 ya tiene aprobado el ensayo instrumental con HTTP
+simulado; conserva recorrido real, expediente y criterios de jornada/evidencia. No se
+vuelve a implementar A1–A5 ni se repiten decisiones ya aprobadas del SaaS.
+
+| Orden | Trabajo que puede avanzarse ahora | Duda o recurso para el cierre completo |
+| --- | --- | --- |
+| 1 | Reutilizar el respaldo/restauración local comprobados | Q01/Q02: proveedor, región/cuenta, destino externo, responsables y custodia; después automatizar y ensayar allí |
+| 2 | Aceptar cambio obligatorio de A4 con cuentas ficticias y OTP | Q03/Q04: recuperación de contraseña/OTP perdidos, SMTP/remitente, cuentas operativas y provisión pública |
+| 3 | Conservar pruebas del cálculo y de versiones históricas | Q06/Q07: dictamen, resultados esperados aprobados y documento exacto/versionado del acuse |
+| 4 | Usar el teléfono para instrumentación; ensayar MF1K cuando haya tarjeta | Q08/Q09: tecnología de asistencia, tarjetas compatibles, custodia/provisión de claves y reproducción del fallo físico; Q16 si se exige alternativa |
+| 5 | Mantener los comportamientos vigentes y sus pruebas | Q10–Q13: suspensión total o captura permitida; revocación/horarios al dar baja; alcance del supervisor; tipo de marcaje del MVP |
+| 6 | Usar la topología SaaS ya aprobada para preparar producción | Q01/Q05: proveedor, región/cuenta, responsables, contratos, privacidad y aceptación operativa antes del primer dato real |
+| 8 | Reutilizar el procedimiento público ya preparado | Q18: dos conexiones con IP públicas distintas y responsable/fecha. La prueba móvil sigue diferida a otro desarrollador por indicación previa |
+| 9 | Ejecutar guion A5 en navegador con cuentas ficticias por rol | Q17: entorno/commit, acceso de ensayo, pantallas/roles ya probados y acta de cookies, renovación, salida y aislamiento |
+| 10 | Revisar almacenamiento y proteger los pendientes | Q14: días por tipo de sobre/recibo/acuse, evidencia que conserva servidor y condiciones de purga |
+| 12 | Conservar CI e inventario local como antecedentes | Q17: Gabriel debe aportar commit, migraciones e IDs del servidor; analizar, corregir/desplegar y comprobar esas imágenes |
+| 13 | Aceptar configuración y dispositivos con permisos actuales | Q17: confirmar versión desplegada y resultados por rol de las pantallas, incluida edición, cancelación y errores |
+| 15 | Aceptar semana/acuse contra backend real; instrumentación FIXTURE ya aprobada | Q07/Q09/Q17: recorrido contra backend, expediente completo, texto/evidencia aprobados y entorno publicado; las reglas conservan Q06 |
+| 16 | Aceptar alta/listado y reactivación ya implementados | Q10/Q17: política de suspensión aprobada y aceptación del portal con operador y roles ajenos |
+| 17 | Usar horarios/asignaciones ya existentes sin inventar tolerancias | Q15/Q06: tolerancias/redondeos, solicitud y aprobación de ausencias, evidencia y efecto en semana/nómina |
+| 18 | Medir línea base local con datos ficticios | Q19: empresas/dispositivos concurrentes, instancias, latencia/error aceptables y responsables de DNS/certificados; después probar destino |
+| 19 | Conservar exportes actuales como base | Q20: sistema/versión de nómina, formato de ejemplo ficticio, identificadores, correcciones/reintentos y responsable de aceptación |
+| 20 | Mantener contrato 0.13 y sus verificaciones | Q21: consumidores, alcance obligatorio de 1.0 y política de compatibilidad; cerrar dependencias anteriores |
+
+Prioridad para respuestas: Q17 permite continuar la aceptación de 9/13 y
+precisar el despliegue de 12; Q10–Q13 desbloquean reglas y suspensión;
+Q14 permite implementar retención. Q06/Q07 requieren aprobación profesional.
+Q22 es adicional: no reabre la tarea 11 ni forma parte de las 17 abiertas.
 
 ## Avance comprobado
 
@@ -103,9 +151,10 @@ claves privadas en las respuestas.
    MF1K; el contrato también contempla DESFire EV3 AES y el backend sólo
    verifica el esquema simulado. ¿Qué tecnología se aprueba para captura
    autenticada y cómo se provisionan, custodian y revocan sus claves?
-9. **Q09 — Pruebas físicas Android (4, 15).** ¿Quién facilitará teléfono y
-   tarjetas compatibles para instrumentación, login/OTP integrado y
-   semana/acuse? Sobre el fallo de sobrescritura: ¿qué APK, modelo de
+9. **Q09 — Pruebas físicas Android (4, 15).** El teléfono ya está disponible
+   por ADB (Samsung SM-S928B, API 36). ¿Qué tarjetas compatibles se facilitarán
+   para la prueba física? Login/OTP y semana/acuse requieren sus recorridos.
+   Sobre el fallo de sobrescritura: ¿qué APK, modelo de
    tarjeta, pasos y mensaje exacto lo reproducen? Confirmar lectura posterior
    a carga y borrado sin atribuir una causa todavía no comprobada.
 10. **Q10 — Suspensión de empresas (5, 16).** ¿Se aprueba conservar captura y

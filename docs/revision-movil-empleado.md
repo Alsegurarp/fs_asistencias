@@ -60,6 +60,25 @@ Referencias del proyecto: [revisión documental](revision-juridica-jornada-acuse
 
 ## Verificación
 
+Actualización del 20 de octubre, después de PR #10: Samsung SM-S928B
+disponible por ADB, API 36. Se repiten construcción de ambos APK, 13
+unitarias y lint (0 errores/13 advertencias). Instalados con firma debug
+local compatible y `adb install -r`, conservando los datos operativos.
+La instrumentación aprueba `OK: FIXTURE` e `INSTRUMENTATION_CODE: -1`,
+incluidos consulta, objeción, recuperación sin copia local, reapertura,
+nulo explícito, conflicto 409 y rechazo en terminal. El servidor es HTTP
+simulado en el propio teléfono; el almacén de ensayo está separado del de la
+app. No acredita aceptación visual, backend publicado, login/OTP ni NFC real.
+Evidencia: `build/reanudacion-android-fixture.log` y
+`build/reanudacion-android-evidence.json`. Ejecución sobre `e4d7683`, del
+20 de octubre de 2026, 22:25:42–22:25:51 UTC. SHA-256 de los APK actualizados
+con la firma debug local compatible:
+
+- App: `F1024E351D455C3D06C998BD3E41E7B68CA4E8025FE76C157FAC0CA2C3B5F9B0`.
+- Instrumentación: `CBA472CE2123395DAE7E336044843553C928B4210829822938ACEE3934C5C1F2`.
+
+El texto siguiente es el corte histórico del 19, anterior a esta ejecución.
+
 El autoensayo Android incorpora consulta GET con aserción real, formato de
 hora de la empresa, tramo abierto, envío de objeción, recuperación cifrada del
 acuse tras recrear el repositorio, conflicto 409 y rechazo local en terminal.

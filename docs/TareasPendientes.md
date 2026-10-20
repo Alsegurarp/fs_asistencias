@@ -1,7 +1,8 @@
 # Tareas pendientes
 
-Estado revisado el **20 de octubre de 2026**, con A1–A5 sobre `1984be3`
-e integración de `origin/main`/`ef23c20` para la PR.
+Estado revisado el **20 de octubre de 2026**, sobre `main`/`e4d7683`:
+A1–A5 integradas mediante la [PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10),
+con los cuatro trabajos de [CI aprobados](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988).
 Las [entregas y verificaciones](entregas-a1-a5.md) actualizan el avance técnico;
 el [guion de QA](qa-a1-a5.md) conserva la aceptación manual pendiente.
 Incluye los avances Android de semana/acuse, bienvenida, administración
@@ -14,7 +15,7 @@ La [declaración de trabajo ejecutable y preguntas para QA](tareas-ejecutables-y
 revisada sobre `1984be3` identifica cinco entregas locales y las 22 preguntas
 que desbloquean decisiones, recursos y aceptación. Los cuatro trabajos de
 [Actions para ese commit](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39472918113)
-aprobaron. Las entregas locales no equivalen al cierre completo de sus tareas.
+aprobaron. Las entregas integradas no equivalen al cierre completo de sus tareas.
 La numeración corresponde a la columna **Orden** de
 [Tareas críticas primero](tareas-criticas-primero.md), que conserva los criterios
 detallados de aceptación y las dependencias.
@@ -100,8 +101,9 @@ las dependencias jurídicas y operativas de las tareas globales.
 Para desbloquear las P1 restantes:
 
 - **8:** el Samsung SM-S928B pasó el autoensayo y la comprobación HTTPS el 19,
-  bajo Wi-Fi. El 20 `adb devices -l` no muestra dispositivos; hace falta
-  reconectar y autorizar el teléfono. **La prueba con datos móviles queda pendiente para otro
+  bajo Wi-Fi. El teléfono vuelve a estar autorizado por ADB y la nueva
+  instrumentación con HTTP simulado aprobó el 20. Esto no demuestra dos IP
+  públicas distintas. **La prueba con datos móviles queda pendiente para otro
   desarrollador, por indicación del usuario.** Ver el procedimiento siguiente.
 - **9:** disponer de un navegador accesible para completar el recorrido real.
 - **10:** definir cuántos días conservar sobres y recibos procesados y si habrá
