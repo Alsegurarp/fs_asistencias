@@ -358,6 +358,18 @@ class CaptureIT : CaptureTestBase() {
     }
 
     @Test
+    fun `behind the proxy each visitor is cut off apart`() {
+        // Las pruebas llaman desde 127.0.0.1, una dirección interna: como el portal en el servidor.
+        val first = "203.0.113.10"
+        val replies = (1..11).map { activation("ZZZZZ-${40000 + it}", newKey(), forwardedFor = "$first, 172.30.88.2").status }
+
+        assertEquals(410, replies.first())
+        assertEquals(429, replies.last())
+        // Otro visitante detrás del mismo proxy todavía puede activar.
+        assertProblem(410, "enrollment_gone", activation("ZZZZZ-49999", newKey(), forwardedFor = "203.0.113.20"))
+    }
+
+    @Test
     @Order(Int.MAX_VALUE)
     fun `guessing enrollment codes is cut off`() {
         val replies = (1..12).map { activation("ZZZZZ-${it.toString().padStart(5, '2')}", newKey()).status }

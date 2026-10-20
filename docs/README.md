@@ -48,8 +48,10 @@ contradice al contrato, manda el contrato.
 | [Validación de cierres](validacion-cierres.md) | Pruebas ejecutadas y guion de aceptación de cierres semanales |
 | [Revisión jurídica de jornada y acuse](revision-juridica-jornada-acuse.md) | Fuentes oficiales, brechas del código y decisiones para el dictamen |
 | [Respaldos cifrados](respaldos-cifrados.md) | Claves age, copia persistente y restauración sin acceso al origen |
+| [Respaldo anual por cliente](evaluacion-respaldo-anual.md) | Arquitectura definida, perfiles de 50/300 empleados, volumen anual y comparación de costos S3/GCS y alternativas |
 | [Recuperación del servicio](recuperacion-servicio.md) | Instancia verificada en un volumen separado, contraseñas nuevas y arranque de backend e identidad |
 | [Bitácora de trabajo](bitacora-trabajo.md) | Avances, tareas abiertas y requisitos para retomarlas |
+| [Evidencia del 19 de octubre](evidencia-avance-2026-10-19.md) | Corte previo a QA: commit, CI, pruebas, decisiones y pendientes para retomar |
 | [Preparar el ambiente compartido](preparar-ambiente-compartido.md) | Requisitos del ambiente publicado: TLS, proxy, SMTP y cuentas personales; qué se cumple y qué falta |
 | [Despliegue en el servidor](despliegue-en-servidor.md) | Cómo está publicado Zenit, cómo se despliega una versión, certificados, verificación y lo que falta |
 | [Instructivo de despliegue](instructivo-de-despliegue.md) | El guion de despliegue de Zenit y la landing: configuración, uso, avance, registros y errores |

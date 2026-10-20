@@ -1,5 +1,66 @@
 # Bitácora de trabajo
 
+## 19 de octubre de 2026 — Corte de evidencia y espera de QA
+
+El usuario pide guardar el avance y continuar después de su QA prevista
+para hoy. Se consolida [la evidencia del corte](evidencia-avance-2026-10-19.md):
+commit `8a86916` publicado en `main`, los cuatro trabajos de la ejecución
+39365266093 aprobados, resultados locales, huellas de registros y decisiones
+posteriores de arquitectura, perfiles y contraseñas.
+
+Se distingue el código publicado de las definiciones y evaluación que siguen
+guardadas localmente, y de la versión desplegada, todavía no confirmada para
+esa QA. Permanecen 17 tareas abiertas y no se acredita ninguna QA nueva.
+Se espera recibir sus resultados antes de continuar con implementación.
+No se realiza otro push, despliegue ni cambio de cuentas o respaldos.
+
+## 19 de octubre de 2026 — Alojamiento definido y evaluación del respaldo anual
+
+El usuario precisa que la infraestructura del cliente aloja sólo sus datos
+operativos y el sistema vive en un VPS de fastSolution. El destino de los
+respaldos sigue en evaluación. Declara perfiles típicos de 50 empleados
+(mediano) y 300 (grande), con entrada, salida e inicio/fin de descanso.
+Con un descanso diario y cinco días por 52 semanas, representan 52,000 y
+312,000 marcajes al año; se requiere un año consultable.
+
+Se entrega [evaluación de respaldo anual](evaluacion-respaldo-anual.md), con
+tarifas oficiales de S3, GCS, R2 y B2, supuestos de tamaño y costo de varias
+copias. Propone conservar el año en PostgreSQL del cliente y usar objetos
+externos para recuperación; S3 Standard inicialmente o GCS Standard si ya
+se opera en Google Cloud. Las doce copias mensuales adicionales son una
+propuesta, sin aprobar ni habilitar. No se presupone compresión medida.
+
+La revisión confirma que el backend usa una sola fuente de datos: el modelo
+distribuido exige adaptación y pruebas. P0-01 continúa abierta. No se crean
+buckets, contratan servicios, transfieren datos ni cambian conexiones o
+políticas de borrado. Las tarifas consultadas y sus condiciones se enlazan
+en la evaluación; costos de VPS, operación, solicitudes y red van aparte.
+
+## 19 de octubre de 2026 — Respuestas sobre respaldo y contraseña
+
+El usuario aporta definiciones para P0-01 y P0-02:
+
+- Respaldo por ambas partes, con responsabilidad principal de fastSolution
+  sobre la información de sus clientes. El tercero no tiene la información
+  del cliente y el cliente debe contar con infraestructura propia; el modelo
+  sigue por definir. Se registra el alcance y lo pendiente en
+  [Recuperación](recuperacion-servicio.md#definición-recibida-para-el-modelo-de-respaldo).
+- Recuperación administrada desde el portal web: visualizar empleados y
+  declarar para la cuenta seleccionada el cambio de contraseña al próximo
+  login. Se registra como requisito aún sin implementar en
+  [Identidad](preparar-ambiente-compartido.md#recuperación-administrada-desde-el-portal).
+
+La revisión de `Users.tsx` y `UserService.kt` confirmó que el portal no ofrece
+esa acción y que la contraseña reside en el proveedor de identidad. Los
+respaldos existentes contienen las bases completas de una instalación, no
+una copia individual preparada para cada cliente.
+
+Se solicitaron dos precisiones: si la infraestructura del cliente alojará
+sólo su respaldo o también el sistema, y cómo obtiene acceso quien olvidó
+su contraseña antes de establecer la nueva. No se eligieron mecanismos por
+omisión. Ambas P0 permanecen abiertas. Sólo se actualiza documentación;
+no se modifican cuentas, contraseñas, reglas OTP, respaldos ni despliegues.
+
 ## 19 de octubre de 2026 — Publicación autorizada de la tarea 14 y pendientes
 
 El usuario autoriza hacer push de los avances del día. Se prepara en `main`,

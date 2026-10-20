@@ -98,11 +98,11 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Tarjeta real y entrega de su clave al dispositivo | Prueba con tarjetas y teléfonos reales |
 | Cálculo por tipo de jornada | Revisión jurídica |
 | Conector para sincronizar el padrón | El sistema del primer cliente |
-| Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática del correo ni recuperación de contraseña |
+| Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática ni recuperación por enlace de correo. El usuario definió además cambio obligatorio al próximo login administrado desde el portal; falta implementar esa acción y resolver el acceso de quien olvidó su contraseña |
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
 | Staging y TLS | Hecho el 18 de octubre de 2026: un ambiente publicado con HTTPS. Falta decidir si habrá un segundo ambiente separado para pruebas |
 | Guardar y restaurar una copia cifrada de operación | Consultar con Gabriel quién custodia la clave privada y dónde queda su copia aislada, por indicación de Alexis. El 18 se comprobó una copia local con claves de ensayo, eliminadas al terminar; no sustituye una copia recuperable de operación |
-| Destino externo y recuperación completa del servicio | Aprobados copia diaria, retención 30 días, pérdida máxima 24 h y recuperación 4 h; fallos a cargo de fastSolution. Destino en otro servidor por identificar, probablemente mediante VPN; SSH al origen exclusivamente por Gabriel. Faltan custodia, automatización y comprobación de recuperación pública |
+| Destino externo y recuperación completa del servicio | Datos operativos en infraestructura del cliente y sistema en VPS de fastSolution; responsabilidad principal de respaldo a cargo de fastSolution. Perfiles de 50/300 empleados y un año consultable. [S3/GCS y alternativas evaluados](evaluacion-respaldo-anual.md). Se conservan copia diaria/30 días y objetivos 24 h/4 h del servicio. Faltan destino, implementación de bases separadas, custodia, automatización y recuperación pública; SSH mediante Gabriel |
 | Cuotas compartidas entre instancias | La dirección real del visitante ya llega al backend a través del borde y del portal, y el límite de activaciones fallidas cuenta a cada visitante por separado. Compartir las cuotas sólo hace falta con más de una instancia |
 
 ## Vulnerabilidades conocidas
