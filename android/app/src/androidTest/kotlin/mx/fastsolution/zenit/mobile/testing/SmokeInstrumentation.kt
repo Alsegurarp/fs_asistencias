@@ -89,6 +89,21 @@ class SmokeInstrumentation : Instrumentation() {
             val keys = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
             check(keys.getKey(registered.getString("keyAlias"), null).encoded == null) { "La clave privada no debe ser exportable" }
             check(AttendanceRepository(isolated).store.registration()?.getString("keyAlias") == registered.getString("keyAlias"))
+            val week = repository.personalWeek("2026-10-05")
+            check(week.getJSONObject("closure").getString("id") == server.closureId)
+            val report = mx.fastsolution.zenit.mobile.personalWeekReport(week, null)
+            check(report.contains("2026-10-05 07:00:00 -06:00") && report.contains("Sin salida registrada"))
+            val ack = repository.acknowledgeWeek(server.closureId, "objected", "Falta mi salida")
+            check(ack.getString("type") == "objected")
+            val refreshed = AttendanceRepository(isolated).personalWeek("2026-10-05")
+            check(refreshed.getJSONObject("_localAcknowledgement").getString("id") == ack.getString("id"))
+            check(!refreshed.toString().contains("keyAlias"))
+            check(runCatching { repository.acknowledgeWeek(server.closureId, "agreed", "") }.exceptionOrNull().let { it is CaptureApiException && it.status == 409 })
+            val terminal = JSONObject(registered.toString()).put("mode", "terminal")
+            repository.store.saveRegistration(terminal)
+            check(runCatching { repository.personalWeek("2026-10-05") }.exceptionOrNull() is IllegalStateException)
+            check(runCatching { repository.acknowledgeWeek(server.closureId, "agreed", "") }.exceptionOrNull() is IllegalStateException)
+            repository.store.saveRegistration(registered)
             repository.capture(byteArrayOf(1, 2, 3, 4), null, Instant.now(), SystemClock.elapsedRealtime())
             repository.capture(byteArrayOf(5, 6, 7, 8), "clock_out", Instant.now(), SystemClock.elapsedRealtime())
             val dao = AttendanceDatabase.get(isolated).pendingAttendanceDao()
@@ -139,6 +154,8 @@ private class FixtureServer : AutoCloseable {
     private val server = ServerSocket(0, 10, InetAddress.getByName("127.0.0.1"))
     val port: Int get() = server.localPort
     val deviceId = UUID.randomUUID().toString()
+    val closureId = UUID.randomUUID().toString()
+    private var acknowledged = false
     private var sessionId = UUID.randomUUID().toString()
     private lateinit var publicKey: java.security.PublicKey
     @Volatile var failNext = false
@@ -161,12 +178,30 @@ private class FixtureServer : AutoCloseable {
                         if (line.isEmpty()) break
                         headers[line.substringBefore(':').lowercase()] = line.substringAfter(':').trim()
                     }
-                    val chars = CharArray(headers.getValue("content-length").toInt())
+                    val chars = CharArray(headers["content-length"]?.toInt() ?: 0)
                     var count = 0
                     while (count < chars.size) { val read = reader.read(chars, count, chars.size - count); check(read > 0); count += read }
-                    val body = JSONObject(String(chars))
+                    val body = if (chars.isEmpty()) JSONObject() else JSONObject(String(chars))
                     var status = 200
                     val reply = when (request[1]) {
+                        "/api/v1/me/attendance?week=2026-10-05" -> {
+                            check(request[0] == "GET")
+                            verifyAssertion(headers.getValue("authorization"))
+                            JSONObject().put("weekStart", "2026-10-05").put("timeZone", "America/Mexico_City")
+                                .put("closure", JSONObject().put("id", closureId).put("version", 2).put("status", "closed"))
+                                .put("totals", JSONObject().put("workedMinutes", 0).put("breakMinutes", 0).put("ordinaryMinutes", 0).put("overtimeMinutes", 0))
+                                .put("segments", JSONArray().put(JSONObject().put("kind", "work").put("startAt", "2026-10-05T13:00:00Z").put("endAt", JSONObject.NULL).put("minutes", 0)))
+                                .put("alerts", JSONArray()).put("openIncidentIds", JSONArray())
+                        }
+                        "/api/v1/week-closures/$closureId/acknowledgements" -> {
+                            verifyAssertion(headers.getValue("authorization"))
+                            if (acknowledged) { status = 409; JSONObject().put("code", "already_acknowledged") }
+                            else {
+                                acknowledged = true
+                                JSONObject().put("id", UUID.randomUUID().toString()).put("closureId", closureId).put("type", body.getString("type"))
+                                    .put("note", body.optString("note")).put("at", Instant.now().toString()).put("evidenceHash", "fixture-hash")
+                            }
+                        }
                         "/api/v1/device-activations" -> {
                             val jwk = body.getJSONObject("publicKey")
                             check(!jwk.has("d") && jwk.getString("crv") == "P-256")

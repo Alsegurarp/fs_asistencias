@@ -31,6 +31,40 @@ class AttendanceRepository(private val context: Context) {
     val legacyCount: Flow<Int> = dao.observeLegacyCount()
     val receipts = dao.observeReceipts()
 
+    suspend fun personalWeek(date: String): JSONObject = withContext(Dispatchers.IO) {
+        lock.withLock {
+            val registration = requireRegistration()
+            check(registration.getString("mode") == "personal") { "La terminal no consulta semanas personales." }
+            val day = java.time.LocalDate.parse(date)
+            val week = CaptureApi(registration.getString("baseUrl")).get("/me/attendance?week=$day", signer(registration).assertion(registration))
+            week.optJSONObject("closure")?.let { closure ->
+                store.acknowledgement(registration.getString("deviceId"), closure.getString("id"))?.let {
+                    week.put("_localAcknowledgement", it)
+                }
+            }
+            week
+        }
+    }
+
+    suspend fun acknowledgeWeek(closureId: String, type: String, note: String): JSONObject = withContext(Dispatchers.IO) {
+        lock.withLock {
+            val registration = requireRegistration()
+            check(registration.getString("mode") == "personal") { "La terminal no puede enviar un acuse personal." }
+            val id = UUID.fromString(closureId)
+            require(type in setOf("agreed", "objected") && note.length <= 500)
+            check(type != "agreed" || dao.pendingCount() == 0) { "Sincroniza los marcajes pendientes antes de expresar conformidad." }
+            val body = JSONObject().put("type", type)
+            if (note.isNotBlank()) body.put("note", note.trim())
+            val receipt = CaptureApi(registration.getString("baseUrl")).post("/week-closures/$id/acknowledgements", body, signer(registration).assertion(registration))
+            check(receipt.getString("closureId") == id.toString() && receipt.getString("type") == type) { "El acuse no corresponde al cierre enviado." }
+            UUID.fromString(receipt.getString("id"))
+            Instant.parse(receipt.getString("at"))
+            check(receipt.getString("evidenceHash").isNotBlank()) { "El acuse no contiene su referencia de evidencia." }
+            store.saveAcknowledgement(registration.getString("deviceId"), id.toString(), receipt)
+            receipt
+        }
+    }
+
     suspend fun activate(baseUrl: String, enrollmentCode: String, preservePreviousPending: Boolean = false) = withContext(Dispatchers.IO) {
         lock.withLock {
             check(!syncLock.isLocked) { "Espera a que termine la sincronización antes de volver a enrolar." }

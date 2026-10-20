@@ -27,11 +27,12 @@ data class CaptureUiState(
     val isCapturing: Boolean = false,
     val registered: Boolean = false,
     val deviceLabel: String = "",
-    val serverUrl: String = if (BuildConfig.DEBUG) "http://localhost:8080" else "",
+    val serverUrl: String = "https://zenit.fastsolution.com.mx",
     val breakPolicy: String = "not_considered",
     val sessionUsable: Boolean = false,
     val legacyCount: Int = 0,
     val receipts: List<String> = emptyList(),
+    val personal: Boolean = false,
 )
 
 class AttendanceViewModel(application: Application) : AndroidViewModel(application) {
@@ -45,6 +46,7 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
             pendingCount = pendingCount,
             legacyCount = legacyCount,
             registered = device != null,
+            personal = device?.optString("mode") == "personal",
             serverUrl = device?.getString("baseUrl") ?: current.serverUrl,
             deviceLabel = device?.let {
                 val label = it.optJSONObject("employee")?.optString("displayName") ?: it.optJSONObject("site")?.optString("name").orEmpty()
@@ -65,8 +67,42 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
 
     init { AttendanceSyncWorker.schedule(application) }
 
+    val weekState = MutableStateFlow(PersonalWeekState())
+
+    fun loadWeek(date: String) = viewModelScope.launch {
+        if (weekState.value.busy || captureState.value.isCapturing) return@launch
+        weekState.value = PersonalWeekState(busy = true)
+        try {
+            val week = repository.personalWeek(date)
+            val receipt = week.optJSONObject("_localAcknowledgement")
+            personalWeekReport(week, receipt) // Validar la respuesta antes de mostrarla en Compose.
+            weekState.value = PersonalWeekState(week = week, acknowledgement = receipt)
+        } catch (error: CancellationException) { throw error
+        } catch (error: Exception) {
+            weekState.value = PersonalWeekState(message = if (error is CaptureApiException) error.message.orEmpty() else "No se pudo consultar la semana. Revisa la conexión y vuelve a intentar.")
+        }
+    }
+
+    fun acknowledgeWeek(id: String, type: String, note: String) = viewModelScope.launch {
+        val current = weekState.value
+        if (current.busy || captureState.value.isCapturing || !current.allowAcknowledgement || current.acknowledgement != null || current.week?.optJSONObject("closure")?.optString("id") != id) return@launch
+        weekState.value = current.copy(busy = true, message = "")
+        try {
+            val receipt = repository.acknowledgeWeek(id, type, note)
+            weekState.value = current.copy(acknowledgement = receipt, message = "Respuesta confirmada por el servidor.")
+        } catch (error: CancellationException) { throw error
+        } catch (error: Exception) {
+            // Una respuesta perdida puede haberse guardado: no se reintenta automáticamente.
+            weekState.value = current.copy(allowAcknowledgement = false, message = if (error is CaptureApiException && error.status == 409)
+                "Este cierre ya tiene acuse o cambió de estado. Solicita a RH confirmar el registro antes de responder otra vez."
+                else "No se pudo confirmar la respuesta. Puede haberse guardado; consulta a RH antes de reenviarla.")
+        }
+    }
+
     fun activate(baseUrl: String, code: String, preservePreviousPending: Boolean) = perform {
+        check(!weekState.value.busy) { "Espera a que termine la consulta o el acuse antes de cambiar de vinculación." }
         repository.activate(baseUrl, code, preservePreviousPending)
+        weekState.value = PersonalWeekState()
         AttendanceSyncWorker.schedule(getApplication())
     }
 
