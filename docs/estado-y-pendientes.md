@@ -11,6 +11,21 @@ de personas bloqueadas en corridas, implementado localmente sin desplegar.
 La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
 separa resultados comprobados de decisiones y pruebas manuales pendientes.
 
+## Modelo de alojamiento aprobado
+
+Gabriel, Roberto Arregui y Alex Segura aprobaron el 19 de octubre de 2026 que
+Zenit opere como SaaS administrado por fastSolution: producción exclusiva del
+producto, separada de pruebas, y empresas aisladas lógicamente en el backend y
+PostgreSQL. No hay VPS, base ni bucket por cliente por defecto. La modalidad
+dedicada se cotiza como Enterprise o se activa por contrato, sector,
+residencia, volumen o riesgo.
+
+El servidor compartido publicado sigue sólo con datos ficticios. Antes del
+primer dato real faltan proveedor, región y cuenta bajo control de
+fastSolution, documentos de privacidad y tratamiento, subprocesadores,
+respaldo externo, custodia, restauración y revisión jurídica. La aprobación de
+la topología no equivale a autorización de producción.
+
 La revisión actual y el orden de ejecución están en
 [Tareas críticas primero](tareas-criticas-primero.md): incluye comprobaciones
 del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que pueden iniciarse.
@@ -22,7 +37,7 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 | Contrato | Versión 0.12, con 61 operaciones. Incluye detalle paginado de bloqueos por corrida; todavía sin congelar |
 | Backend | Atiende las 61 operaciones. Construcción, unitarias y 74 de integración contra PostgreSQL real aprobadas nuevamente el 19, incluido el detalle de corridas interrumpidas y sus reintentos |
 | Base | 29 tablas en 8 migraciones, con roles separados para migrar, para atender y para respaldar. V008 conserva bloqueos por persona/corrida. Imagen propia sobre Alpine, sin root ni privilegios, que ordena los textos por código de carácter |
-| Identidad | Segundo factor obligatorio en `zenit`. El 18 se preparó el realm para conservar OTP y exigir reautenticación al recuperar contraseña, con cuatro comprobaciones locales incluida importación. SMTP y cuentas personales del servidor siguen pendientes; [procedimiento](preparar-ambiente-compartido.md) |
+| Identidad | Segundo factor obligatorio en `zenit`. El 18 se preparó el realm para conservar OTP y exigir reautenticación al recuperar contraseña. El servidor tiene un operador y dos cuentas personales con cambio de contraseña y segundo factor pendientes del primer ingreso; faltan SMTP, recuperación y retirar la cuenta temporal después de comprobarlas |
 | Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | Modos age y autoprueba aprobados. El 18 de octubre pasó recuperación local con origen apagado: 130 tablas/1.867 filas idénticas, contraseñas nuevas de base, backend e identidad funcionales. [Detalle](recuperacion-servicio.md). Copia externa de operación, custodia, programación y recuperación pública pendientes |

@@ -1,5 +1,22 @@
 # Bitácora de trabajo
 
+## 19 de octubre de 2026 — Modelo de alojamiento aprobado
+
+Gabriel, Roberto Arregui y Alex Segura aprueban que Zenit opere por defecto
+como SaaS administrado por fastSolution. Producción será exclusiva de Zenit,
+separada de los ambientes de prueba y compartida lógicamente entre empresas;
+no se asigna una VPS, base ni bucket por cliente. Una base o un stack dedicados
+se cotizan como modalidad Enterprise cuando los exijan contrato, sector,
+residencia, volumen o riesgo. Una instalación en infraestructura del cliente es
+una oferta distinta.
+
+El servidor compartido actual queda sólo para datos ficticios y se abandona
+antes del primer dato real. La decisión no selecciona proveedor ni región y no
+autoriza producción: siguen pendientes contratos de tratamiento y
+subprocesadores, privacidad y retención, revisión jurídica, respaldo externo,
+custodia y restauración. No se cambió código, no se desplegó y no se cargaron
+datos reales en esta entrega documental.
+
 ## 19 de octubre de 2026 — Publicación autorizada de la tarea 14 y pendientes
 
 El usuario autoriza hacer push de los avances del día. Se prepara en `main`,

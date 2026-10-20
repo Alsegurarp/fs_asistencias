@@ -1,9 +1,38 @@
-# Decisiones de negocio pendientes
+# Decisiones de negocio
 
-Estado al 17 de octubre de 2026: propuestas preparadas, pendientes de respuesta
-del responsable del producto. No se modificaron reglas, permisos ni datos.
-Solicitar las tareas 1 a 6 autoriza preparar este registro; no demuestra que
-se haya elegido una de las alternativas siguientes.
+Estado al 19 de octubre de 2026: el modelo de alojamiento está aprobado. Las
+reglas de suspensión, baja, supervisor y tipo de marcaje siguen pendientes.
+
+## Modelo de alojamiento aprobado
+
+Aprobado el 19 de octubre de 2026 por **Gabriel, Roberto Arregui y Alex
+Segura**:
+
+1. Zenit se ofrece por defecto como un SaaS administrado por fastSolution.
+2. Producción es exclusiva de Zenit, está separada de desarrollo y pruebas y
+   queda en una cuenta y bajo un contrato controlados por fastSolution.
+3. Las empresas comparten backend y PostgreSQL con aislamiento lógico por
+   empresa. No se crea por defecto una VPS, base ni bucket por cliente.
+4. Un almacén de objetos se incorpora cuando lo requieran los respaldos o los
+   exportes. El respaldo externo es de Zenit como producto, cifrado y fuera del
+   dominio de falla de producción; no necesita un bucket por cliente.
+5. Una base o un stack dedicados se venden y cotizan como modalidad
+   Enterprise cuando lo exijan contrato, sector, residencia, volumen o riesgo.
+6. Una instalación administrada por el cliente es una oferta distinta, con
+   responsabilidades de soporte, versiones, acceso y recuperación pactadas.
+7. El servidor compartido publicado conserva únicamente datos ficticios. Se
+   abandona antes del primer dato real y no se convierte en producción por
+   obtener otro acuerdo con su dueño.
+
+Esta aprobación define la topología comercial y operativa; no autoriza datos
+reales. Antes hacen falta proveedor, región y cuenta, contrato de tratamiento y
+subprocesadores, aviso de privacidad, retención, derechos ARCO, respuesta a
+incidentes, respaldo externo con custodia y restauración, y revisión jurídica.
+
+## Decisiones todavía pendientes
+
+Solicitar las tareas 1 a 6 autorizó preparar las propuestas siguientes; no
+demuestra que se haya elegido una de ellas.
 
 ## Criterios para aprobación
 

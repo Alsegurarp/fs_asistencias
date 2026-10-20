@@ -1,7 +1,7 @@
 # Tareas pendientes
 
 Estado actualizado el **19 de octubre de 2026**, sobre `main`, commit
-`430ac29`, con la tarea 14 implementada y validada localmente, sin desplegar.
+`8a86916`, con la tarea 14 implementada y validada localmente, sin desplegar.
 Hay **17 tareas abiertas total o parcialmente**.
 La numeración corresponde a la columna **Orden** de
 [Tareas críticas primero](tareas-criticas-primero.md), que conserva los criterios
@@ -27,7 +27,7 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | 3 | P0 | Jornada y evidencia del acuse | Obtener dictamen profesional y criterios aprobados; implementar reglas, casos esperados y evidencia versionada conservando históricos |
 | 4 | P0 | Captura autenticada con tarjetas reales | Definir tecnología, autenticación y entrega de claves; probar captura y rechazo con tarjetas y teléfonos físicos |
 | 5 | P0 | Suspensión, baja, supervisor y tipo de marcaje | Elegir las reglas propuestas y después implementar sus efectos sobre permisos, captura e históricos |
-| 6 | P0 | Uso del servidor compartido con datos reales | Formalizar el acuerdo entre el responsable del servicio y el dueño del servidor |
+| 6 | P0 | Producción administrada para datos reales | El modelo está aprobado: producción exclusiva de Zenit bajo control de fastSolution y aislamiento lógico por empresa. Faltan proveedor, región, cuenta, contratos, respaldo externo, restauración y pruebas. El servidor compartido conserva sólo datos ficticios |
 | 8 | P1 | Dirección real y protocolo entre proxies | Comprobar que dos IP públicas reales conservan cuotas independientes en la misma ventana. Las pruebas públicas de HTTPS y cabeceras falsas ya pasaron |
 | 9 | P1 | Recorridos del portal con sesión real | Completar pantallas, roles, cookies, renovación y cierre de sesión en navegador. Horarios e importación ya pasaron por API HTTPS |
 | 10 | P1 | Retención de sobres y recibos Android | Definir plazo y conservación; implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria |

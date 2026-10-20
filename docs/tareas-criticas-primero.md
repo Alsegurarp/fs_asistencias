@@ -1,10 +1,11 @@
 # Tareas críticas primero
 
-Revisión documental y de código: 19 de octubre de 2026, sobre el commit `8dc2a75`.
+Revisión documental y de código: 19 de octubre de 2026, sobre el commit `8a86916`.
 Orden por riesgo y bloqueo del producto; los números originales remiten a
 [Estado y pendientes](estado-y-pendientes.md#lista-consolidada-de-tareas-pendientes).
-Esta revisión declara trabajo pendiente; no aprueba decisiones de negocio ni
-modifica el sistema desplegado.
+Esta revisión declara trabajo pendiente y no modifica el sistema desplegado.
+El modelo de alojamiento sí quedó aprobado el 19 de octubre de 2026, sin
+autorizar todavía datos reales.
 
 Para declarar y ejecutar trabajo se usa la columna **Orden** de este documento.
 Los números entre paréntesis conservan la referencia a la lista histórica;
@@ -14,8 +15,8 @@ por ejemplo, identidad es el orden 2 y las decisiones de negocio son el orden 5.
 
 | Área | Evidencia y alcance |
 | --- | --- |
-| Backend y contrato | Contrato 0.11.0, 60 operaciones. El 19 pasaron construcción, unitarias y 74 pruebas de integración PostgreSQL, incluida separación de visitantes detrás del proxy. Se verificaron también seis pruebas de identidad/readiness con Keycloak importado |
-| Portal | El 19 pasaron compilación y 148 pruebas. Configuración de empresa implementada: consulta por cuatro roles y edición sólo de administración. Horarios/importación por API HTTPS aprobados con cuenta real de prueba. Siguen las pantallas, otras sesiones de rol y suspensión/reactivación |
+| Backend y contrato | Contrato 0.12.0, 61 operaciones. El 19 pasaron construcción, unitarias y 74 pruebas de integración PostgreSQL, incluida separación de visitantes detrás del proxy y detalle de cierres bloqueados |
+| Portal | El 19 pasaron compilación y 151 pruebas. Configuración de empresa y detalle de cierres bloqueados implementados. Horarios/importación por API HTTPS aprobados con cuenta real de prueba. Siguen otras sesiones de rol y suspensión/reactivación |
 | Android | El 19 pasaron 9 unitarias, lint y APK debug/de instrumentación. En Samsung SM-S928B, API 36, pasaron personal y terminal contra backend local y HTTPS publicado: activación, cola entre procesos, recibos, reenvío sin duplicados y renovación. Fixture original y argumentos incompletos también comprobados |
 | Despliegue | El 19 se usó una sesión de administración facilitada por el usuario para `/me`, preparación y limpieza de datos ficticios por HTTPS. Ambos modos Android pasaron contra el servidor publicado. El recorrido completo del navegador sigue abierto; no se accedió por SSH ni se desplegaron cambios |
 | Respaldo | Recuperación local del 18: 130 tablas y 1.867 filas idénticas con el origen apagado y contraseñas nuevas de base. No demuestra copia externa operativa ni recuperación pública |
@@ -40,14 +41,14 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | 3 | P0 | Aprobar e implementar jornada y evidencia del acuse (17) | Requiere dictamen profesional y criterios de producto. Después implementar casos esperados, texto/evidencia versionados y conservación de cierres históricos; la revisión documental existente no cierra la tarea |
 | 4 | P0 | Captura autenticada con tarjetas reales (16) | Requiere tarjetas, teléfonos y definición de autenticación/entrega de claves. Comprobar captura y rechazo de tarjetas no válidas. La tarjeta simulada sólo sirve para datos ficticios |
 | 5 | P0 | Resolver suspensión, baja, supervisor y tipo de marcaje (2) | Requiere elección del responsable del producto sobre las propuestas existentes. Implementar sólo cambios aprobados y probar permisos, históricos y captura. Hoy el supervisor abarca toda la empresa y la suspensión también detiene captura |
-| 6 | P0 | Acordar uso del servidor compartido para datos reales | Dependencia del responsable del servicio y del dueño del servidor, registrada en la guía de despliegue. Mantener sólo datos ficticios hasta contar con el acuerdo escrito |
+| 6 | P0 | Aprovisionar producción administrada para datos reales | Modelo aprobado por Gabriel, Roberto Arregui y Alex Segura: producción exclusiva de Zenit, separada de pruebas y bajo control de fastSolution; aislamiento lógico por empresa. Faltan proveedor, región, cuenta, contratos, respaldo externo, restauración y pruebas. El servidor compartido conserva sólo datos ficticios |
 | 7 | P1 | Hacer reproducible Android contra backend y corregir la indicación de URL (7) | Completada el 19: `BackendSmoke.kt` y `infra/test-android-backend.ps1`, APK construidos juntos y hashes registrados. Personal y terminal pasaron contra backend local y HTTPS publicado, con datos ficticios y limpieza. Se corrigió la validación Android que rechazaba los códigos de cinco caracteres por grupo. El fallo de transporte se induce sólo en el almacén del ensayo; no acredita apagar radios ni NFC autenticado |
 | 8 | P1 | Dirección real y protocolo en la cadena de proxies (parte de 19) | Prueba pública del 19 aprobada: redirección HTTPS, identidad resistente a cabeceras falsas y cuota no eludible rotando IP falsas (10 respuestas 410 y dos 429). Teléfono comprobado por HTTPS bajo Wi-Fi. Por indicación del usuario, la prueba con datos móviles y dos IP públicas queda pendiente para otro desarrollador; [entrega](TareasPendientes.md#entrega-a-otro-desarrollador-prueba-con-datos-móviles-tarea-8) |
 | 9 | P1 | Recorridos del portal con sesión real (4 y parte de 14) | Horarios, asignación futura e importación aprobados por API HTTPS el 19, con sesión de administración y limpieza. Sigue pendiente navegador: pantallas, cookies, renovación, cierre de sesión y permisos de otros roles. No hay navegador conectado al control UI |
 | 10 | P1 | Retención de sobres y recibos Android (8) | Requiere plazo y criterio de conservación. Después implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria; hoy crece sin purga |
-| 11 | P1 | Verificaciones automáticas por cambio (11) | Integrada en `main` el 19. Los cuatro trabajos aprobaron en GitHub para `avanceLunes`, incluido su último commit `4bde26f` (ejecución 39301664714). Corregidos checkout y propiedad de secretos del runner Linux. La obligatoriedad de trabajos requiere una decisión adicional. [Procedimiento y resultados](verificaciones-automaticas.md) |
+| 11 | P1 | Verificaciones automáticas por cambio (11) | Integrada en `main` el 19. Los cuatro trabajos aprobaron en GitHub para `8a86916` (ejecución 39303294132). La obligatoriedad de trabajos requiere una decisión adicional. [Procedimiento y resultados](verificaciones-automaticas.md) |
 | 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Cinco imágenes locales analizadas el 19 e IDs registrados. Corregidas altas de libexpat en backend/portal y libx11 en portal; ninguna grave nueva sin atender. Siguen seis excepciones de identidad. Faltan IDs del servidor mediante Gabriel, análisis de esas imágenes, despliegue de correcciones y comprobación pública |
-| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación completada localmente. Configuración usa GET/PATCH /tenant y respeta permisos, cambios parciales y desactivación del cierre; nueve pruebas nuevas más navegación. Portal: 148 pruebas y compilación aprobadas. Falta despliegue y aceptación de pantallas con sesión real |
+| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación completada localmente. Configuración usa GET/PATCH /tenant y respeta permisos, cambios parciales y desactivación del cierre. Portal: 151 pruebas y compilación aprobadas. Falta despliegue y aceptación de pantallas con sesión real |
 | 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Completada localmente el 19: contrato 0.12, V008, registro transaccional por persona, consulta paginada y detalle en portal. 74 pruebas de integración y 151 del portal aprobadas, incluidos aislamiento, corrida parcial y reintentos. Sin desplegar ni aceptar en navegador real; los históricos anteriores conservan conteos |
 | 15 | P2 | Semana y acuse del trabajador (12) | La consulta con datos reales puede avanzar ahora; requiere identidad y permisos. El cierre del acuse depende también de la tarea 17. Las pantallas de presentación móvil no cuentan como integración |
 | 16 | P2 | Pantallas de operador del servicio (13) | Alta y lista de empresas ya están, con 3 pruebas. Faltan suspender y reactivar desde el portal y probar aislamiento con el rol real |
@@ -123,7 +124,7 @@ del punto 5. Ninguna de estas tareas sustituye los bloqueos P0.
 | 3 | Responsable del producto y revisión jurídica profesional | Criterios de jornada y texto/evidencia del acuse con casos esperados |
 | 4 | Equipo que facilite tarjetas y teléfonos | Tecnología de tarjeta, autenticación y entrega de claves para probar captura real |
 | 5 | Responsable del producto | Elegir las reglas de suspensión, baja, supervisor y tipo de marcaje en las propuestas existentes |
-| 6 | Responsable del servicio y dueño del servidor | Acuerdo escrito para usar el servidor compartido con datos reales |
+| 6 | fastSolution, operación y revisión jurídica | Proveedor, región, cuenta, contrato de tratamiento y subprocesadores; respaldo externo, custodia y restauración antes del primer dato real |
 | 10, 17, 18, 19 | Responsable del producto/servicio y primer cliente, según la tarea | Retención móvil, reglas de asistencia/ausencias, volumen/instancias y sistema/formato de nómina |
 
 Se mantienen diferidos jOOQ generado, notificaciones y almacenamiento externo
