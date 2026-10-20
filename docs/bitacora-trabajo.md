@@ -1,5 +1,48 @@
 # Bitácora de trabajo
 
+## 20 de octubre de 2026 — Actions antes de publicar avances
+
+El usuario autoriza ejecutar GitHub Actions y después hacer push. Se comprobó
+que `HEAD` y `origin/main` coinciden en `565dbdd`, y se ejecutó manualmente
+`Verificaciones` sobre esa versión. Backend, portal, Android y
+contrato/seguridad aprobaron en la
+[ejecución 39472077601](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39472077601).
+
+Se prepara la publicación de siete documentos: informe local, estado,
+pendientes, prioridades, verificaciones, índice y esta bitácora. Se excluyen
+los cambios preexistentes de `backend/bin/`, secretos y archivos de `build/`.
+El push dispara otra ejecución para el commit documental; no despliega
+servicios ni cierra las tareas de aceptación manual.
+
+## 20 de octubre de 2026 — Verificación actualizada del ambiente local
+
+Por solicitud del usuario se repitió la verificación sobre `main`/`565dbdd`.
+Docker y los cinco servicios estaban detenidos. Se inició Docker, se
+reconstruyó el ambiente conservando volúmenes y secretos y se aplicó V008
+sobre la base local, que seguía en V007. Backend, portal, base e identidad
+quedan en ejecución; el migrador terminó con código 0.
+
+Aprobaron construcción/unitarias y 74 integraciones del backend, compilación
+y 151 pruebas del portal, 13 unitarias Android, lint sin errores y ambos APK,
+6 comprobaciones de identidad aislada, contrato/ejemplos, secretos en 57
+commits y análisis de las cinco imágenes. Se conservan las seis excepciones
+de identidad; no hay altas o críticas nuevas sin atender. Los IDs de las
+cuatro imágenes en ejecución coinciden con los analizados.
+
+HTTP local comprobó backend `UP`, portal/JavaScript, identidad/emisor y 401
+sin sesión directo y por proxy; CSP correcta. Después de V008, el ensayo
+restauró 131 tablas y 1,970 filas con contenido idéntico. No sustituye la
+recuperación completa del 18 ni guarda una copia operativa.
+
+ADB no mostró teléfonos: no se ejecutó instrumentación ni tarjeta física,
+login/OTP integrado o semana/acuse real. Tampoco se probó sesión completa del
+navegador, release, carga o servidor público. Las 17 tareas conservan sus
+dependencias. Se retiraron sólo los contenedores desechables de identidad e
+integración; se conservaron los cambios preexistentes de `backend/bin/`.
+No se hizo commit, push ni despliegue público.
+
+[Informe, advertencias, huellas y archivos de evidencia](verificacion-local-2026-10-20.md).
+
 ## 20 de octubre de 2026 — Accesos Android, semana y tarjetas MF1K
 
 Se integraron los cambios locales de Android conservando semana/acuse y el

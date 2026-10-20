@@ -39,6 +39,7 @@ contradice al contrato, manda el contrato.
 | [Guía del portal web](guia-portal-web.md) | Inicio de sesión, pantallas contra rutas, roles y exportes |
 | [Diccionario](diccionario.md) | Glosario, catálogos de valores y diccionario de datos |
 | [Entorno local](entorno-local.md) | Levantar, crear cuentas, obtener un token, simular dispositivos, ensayar el respaldo, revisar vulnerabilidades y resolver problemas frecuentes |
+| [Verificación local del 20 de octubre](verificacion-local-2026-10-20.md) | Código comprobado, pruebas repetidas, servicios locales y límites de la aceptación |
 | [Recorrido completo](recorrido-completo.md) | De una empresa nueva a un exporte, petición por petición |
 | [Continuar el backend](continuar-el-backend.md) | Cómo está hecho el código y cómo se agrega una ruta, una tabla o un trabajo |
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |

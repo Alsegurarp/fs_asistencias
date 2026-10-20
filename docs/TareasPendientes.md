@@ -1,9 +1,11 @@
 # Tareas pendientes
 
-Estado actualizado el **19 de octubre de 2026**, con el código de la tarea 14
-publicado en `main`, commit `8a86916`, validado sin desplegar. Definiciones
-posteriores guardadas localmente. **Continuación en espera de la QA del usuario
-prevista para hoy**; [evidencia del corte](evidencia-avance-2026-10-19.md).
+Estado revisado el **20 de octubre de 2026**, sobre `main`, commit `565dbdd`.
+Incluye los avances Android de semana/acuse, bienvenida, administración
+integrada y herramientas MF1K. La [verificación local del 20](verificacion-local-2026-10-20.md)
+actualiza la evidencia técnica; la QA funcional del usuario y la aceptación
+del ambiente publicado conservan sus pendientes. El [corte del 19](evidencia-avance-2026-10-19.md)
+se conserva como antecedente.
 Hay **17 tareas abiertas total o parcialmente**.
 La numeración corresponde a la columna **Orden** de
 [Tareas críticas primero](tareas-criticas-primero.md), que conserva los criterios
@@ -27,7 +29,7 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | 1 | P0 | Respaldo externo y recuperación completa | Definido: datos operativos en infraestructura del cliente y sistema en VPS de fastSolution; perfiles de 50/300 empleados, cuatro marcajes diarios y un año consultable. [Evaluación de S3/GCS y alternativas](evaluacion-respaldo-anual.md) disponible. Faltan elegir destino, custodia, adaptar bases separadas, automatizar y ensayar recuperación |
 | 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | Definido: recuperación administrada desde el portal, seleccionando al empleado para exigir contraseña nueva al próximo login. Falta implementar y probar la acción, precisar acceso cuando se olvidó la contraseña y completar cuentas personales, OTP, SMTP y recuperación del operador |
 | 3 | P0 | Jornada y evidencia del acuse | Obtener dictamen profesional y criterios aprobados; implementar reglas, casos esperados y evidencia versionada conservando históricos |
-| 4 | P0 | Captura autenticada con tarjetas reales | Definir tecnología, autenticación y entrega de claves; probar captura y rechazo con tarjetas y teléfonos físicos |
+| 4 | P0 | Captura autenticada con tarjetas reales | Android ya incluye lectura, carga y borrado de credenciales MF1K de ejemplo. Falta validación física y autenticación integrada de asistencia: el backend sólo verifica el esquema simulado; definir tecnología y custodia de claves |
 | 5 | P0 | Suspensión, baja, supervisor y tipo de marcaje | Elegir las reglas propuestas y después implementar sus efectos sobre permisos, captura e históricos |
 | 6 | P0 | Uso del servidor compartido con datos reales | Formalizar el acuerdo entre el responsable del servicio y el dueño del servidor |
 | 8 | P1 | Dirección real y protocolo entre proxies | Comprobar que dos IP públicas reales conservan cuotas independientes en la misma ventana. Las pruebas públicas de HTTPS y cabeceras falsas ya pasaron |
@@ -35,7 +37,7 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | 10 | P1 | Retención de sobres y recibos Android | Definir plazo y conservación; implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria |
 | 12 | P1 | Imágenes y correcciones del servidor | Obtener IDs y versión desplegada mediante el interlocutor SSH, analizar esas imágenes, desplegar correcciones y verificar públicamente. El análisis local y el de CI ya aprobaron |
 | 13 | P2 | Configuración de empresa y dispositivos en portal | Desplegar la implementación y aceptar pantallas y permisos con sesión real. Configuración ya está implementada y probada |
-| 15 | P2 | Semana y acuse del trabajador | Integrar datos reales, identidad y permisos. El cierre del acuse depende también de las definiciones de jornada y evidencia del orden 3 |
+| 15 | P2 | Semana y acuse del trabajador | Android personal ya consulta semana y envía acuse con recibo cifrado local. Faltan recorrido real, historial y recuperación de acuses desde backend; completar alcance web. Evidencia y reglas dependen del orden 3 |
 | 16 | P2 | Pantallas del operador del servicio | Completar suspensión/reactivación y comprobar permisos y aislamiento con sesión real. La suspensión depende de la decisión del orden 5 |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias | Aprobar criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar |
 | 18 | P2 | Carga, continuidad y operación | Definir volumen e instancias; probar trabajos, cierres, exportes y cuotas, actualización de DNS y renovación real de certificados |
@@ -83,14 +85,15 @@ implementación ni una recuperación comprobadas.
 La implementación local de la **tarea 14** está completada y validada.
 La **tarea 16** puede avanzar con la reactivación de empresas desde el portal,
 reutilizando el endpoint existente. La suspensión espera la decisión de la
-tarea 5. La consulta semanal del trabajador (15) también puede avanzar;
-el cierre del acuse conserva sus dependencias jurídicas y de producto.
+tarea 5. Semana y acuse Android (15) ya tienen implementación; ahora requieren
+recorrido real y completar historial/recuperación desde backend. El cierre
+del acuse conserva sus dependencias jurídicas y de producto.
 
 Para desbloquear las P1 restantes:
 
-- **8:** el Samsung SM-S928B ya aparece autorizado por ADB; pasaron su
-  autoensayo y la comprobación HTTPS con código imposible. Usa Wi-Fi con datos
-  móviles desactivados. **La prueba con datos móviles queda pendiente para otro
+- **8:** el Samsung SM-S928B pasó el autoensayo y la comprobación HTTPS el 19,
+  bajo Wi-Fi. El 20 `adb devices -l` no muestra dispositivos; hace falta
+  reconectar y autorizar el teléfono. **La prueba con datos móviles queda pendiente para otro
   desarrollador, por indicación del usuario.** Ver el procedimiento siguiente.
 - **9:** disponer de un navegador accesible para completar el recorrido real.
 - **10:** definir cuántos días conservar sobres y recibos procesados y si habrá

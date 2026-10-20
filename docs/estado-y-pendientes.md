@@ -6,8 +6,11 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
-Última revisión: 20 de octubre de 2026; incluye la interfaz Android y tarjetas MF1K locales, además de Android local/HTTPS y el detalle
-de personas bloqueadas en corridas, implementado localmente sin desplegar.
+Última revisión: 20 de octubre de 2026, sobre `565dbdd`.
+La [verificación local](verificacion-local-2026-10-20.md) repitió backend,
+portal, Android, identidad, contrato, seguridad y restauración; el ambiente
+queda en ejecución con V008 aplicada. Incluye semana/acuse y herramientas
+MF1K Android. El despliegue público y la aceptación con sesión real siguen abiertos.
 La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
 separa resultados comprobados de decisiones y pruebas manuales pendientes.
 
@@ -20,14 +23,14 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 | Pieza | Estado |
 | --- | --- |
 | Contrato | Versión 0.12, con 61 operaciones. Incluye detalle paginado de bloqueos por corrida; todavía sin congelar |
-| Backend | Atiende las 61 operaciones. Construcción, unitarias y 74 de integración contra PostgreSQL real aprobadas nuevamente el 19, incluido el detalle de corridas interrumpidas y sus reintentos |
+| Backend | Atiende las 61 operaciones. Construcción, unitarias y 74 de integración contra PostgreSQL real aprobadas nuevamente el 20, incluido el detalle de corridas interrumpidas y sus reintentos |
 | Base | 29 tablas en 8 migraciones, con roles separados para migrar, para atender y para respaldar. V008 conserva bloqueos por persona/corrida. Imagen propia sobre Alpine, sin root ni privilegios, que ordena los textos por código de carácter |
-| Identidad | Segundo factor obligatorio en `zenit`. El 18 se preparó el realm para conservar OTP y exigir reautenticación al recuperar contraseña, con cuatro comprobaciones locales incluida importación. SMTP y cuentas personales del servidor siguen pendientes; [procedimiento](preparar-ambiente-compartido.md) |
-| Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
+| Identidad | Segundo factor obligatorio en `zenit`. El 20 aprobaron las seis comprobaciones de importación, OTP, PKCE, recuperación y readiness en identidad aislada. SMTP y cuentas personales del servidor siguen pendientes; [procedimiento](preparar-ambiente-compartido.md) |
+| Entorno local | Reconstruido y en ejecución el 20: backend en 18080, portal en 8081 e identidad en 8082. V008 aplicada; HTTP, CSP y rechazo de API sin sesión comprobados. Tarjetas simuladas habilitadas sólo para pruebas ficticias |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
-| Respaldo | Modos age y autoprueba aprobados. El 18 de octubre pasó recuperación local con origen apagado: 130 tablas/1.867 filas idénticas, contraseñas nuevas de base, backend e identidad funcionales. [Detalle](recuperacion-servicio.md). Copia externa de operación, custodia, programación y recuperación pública pendientes |
+| Respaldo | El 20, tras V008, el ensayo restauró 131 tablas/1,970 filas idénticas. La recuperación completa con origen apagado y secretos nuevos sigue siendo la del 18: 130 tablas/1.867 filas. [Detalle](recuperacion-servicio.md). Copia externa, custodia, programación y recuperación pública pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, configuración de empresa, incidencias, cierres, exportes y usuarios; el operador tiene alta/listado de empresas. El 19 pasaron compilación y 151 pruebas. Incluye personas bloqueadas por corrida, causas, paginación y enlaces a incidencias. Horarios e importación también pasaron por API HTTPS con sesión real; sigue pendiente su recorrido de pantallas. Configuración y detalle de bloqueos están implementados y probados localmente, sin desplegar. Llama 42 operaciones distintas, todas presentes en el contrato; nginx y proxy comprobados localmente |
+| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, configuración de empresa, incidencias, cierres, exportes y usuarios; el operador tiene alta/listado de empresas. El 20 pasaron compilación y 151 pruebas. Incluye personas bloqueadas por corrida, causas, paginación y enlaces a incidencias. Horarios e importación también pasaron por API HTTPS con sesión real; sigue pendiente su recorrido de pantallas. Configuración y detalle de bloqueos están implementados y probados localmente, sin desplegar. Llama 42 operaciones distintas, todas presentes en el contrato; nginx y proxy comprobados localmente |
 | App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 19 pasaron 9 pruebas unitarias, lint y APK debug/de instrumentación. Personal y terminal pasaron contra backend local y HTTPS publicado en Samsung SM-S928B (API 36), con cola entre procesos, reenvío sin duplicados y limpieza. El fixture anterior y el rechazo de argumentos incompletos también pasaron. Release no repetido. Semana y acuse añadidos localmente, pendientes de recorrido real. El 20 se añadieron bienvenida, administración integrada y lectura/carga/borrado MF1K con ejemplos. Debug e instrumentación compilados, lint y 13 unitarias aprobados; APK instalado por Wi-Fi. Tarjetas físicas y login integrado pendientes; [guía](guia-app-android.md#administración-integrada-y-tarjetas-mf1k) |
 | Conector | No existe |
 
@@ -107,8 +110,9 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 
 ## Vulnerabilidades conocidas
 
-Último análisis local: 19 de octubre de 2026, con la base de ese día. Se detectaron
-y corrigieron altas nuevas en backend y portal. IDs y resultados en
+Último análisis local: 20 de octubre de 2026, sobre las cinco imágenes
+reconstruidas. Todas aprobaron; se conservan las seis excepciones de identidad.
+Los IDs de las cuatro imágenes en ejecución coinciden con los analizados. Resultados en
 `build/security/summary.json`; cómo repetir está en
 [Verificaciones automáticas](verificaciones-automaticas.md). Falta identificar
 y analizar las imágenes efectivamente publicadas, mediante Gabriel.
