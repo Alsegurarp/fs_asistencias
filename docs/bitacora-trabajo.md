@@ -1,5 +1,29 @@
 # Bitácora de trabajo
 
+## 20 de octubre de 2026 — Accesos Android, semana y tarjetas MF1K
+
+Se integraron los cambios locales de Android conservando semana/acuse y el
+formato actualizado del código de vinculación. La app añade bienvenida,
+Administración dentro de la app mediante el portal HTTPS, presentación
+separada y preparación física de credenciales con dos empleados de ejemplo.
+
+La vista del cliente muestra empleados listos para cargar; no aprueba
+solicitudes. Carga y borrado requieren confirmación y verifican por relectura.
+Se añadió consulta del contenido y se ocultaron los detalles técnicos. El
+borrado libera la asignación local para reutilizar la tarjeta; no cambia
+asignaciones del servidor ni acredita autenticidad para asistencia.
+
+Validación: debug, instrumentación compilada, lint y 13 pruebas unitarias.
+APK final instalado por Wi-Fi sin borrar datos. No se ejecutó instrumentación
+ni release; siguen login/OTP integrado, tarjetas físicas y semana/acuse
+contra backend publicado. Se conserva el reporte del usuario de que no pudo
+sobrescribir, sin afirmar una causa física ni éxito de borrado no observado.
+
+Se separa la entrega por cambio: `fix(build)` para caché Docker;
+`feat(android)` para semana/acuse y presentación; `feat(nfc)` para credenciales;
+`feat(android)` para bienvenida/administración; `docs(android)` para alcance,
+verificación y pendientes. [Guía actualizada](guia-app-android.md).
+
 ## 19 de octubre de 2026 — Corte de evidencia y espera de QA
 
 El usuario pide guardar el avance y continuar después de su QA prevista

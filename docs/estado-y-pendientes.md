@@ -6,7 +6,7 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
-Última revisión: 19 de octubre de 2026; incluye Android local/HTTPS y el detalle
+Última revisión: 20 de octubre de 2026; incluye la interfaz Android y tarjetas MF1K locales, además de Android local/HTTPS y el detalle
 de personas bloqueadas en corridas, implementado localmente sin desplegar.
 La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
 separa resultados comprobados de decisiones y pruebas manuales pendientes.
@@ -28,7 +28,7 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 | Respaldo | Modos age y autoprueba aprobados. El 18 de octubre pasó recuperación local con origen apagado: 130 tablas/1.867 filas idénticas, contraseñas nuevas de base, backend e identidad funcionales. [Detalle](recuperacion-servicio.md). Copia externa de operación, custodia, programación y recuperación pública pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
 | Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, configuración de empresa, incidencias, cierres, exportes y usuarios; el operador tiene alta/listado de empresas. El 19 pasaron compilación y 151 pruebas. Incluye personas bloqueadas por corrida, causas, paginación y enlaces a incidencias. Horarios e importación también pasaron por API HTTPS con sesión real; sigue pendiente su recorrido de pantallas. Configuración y detalle de bloqueos están implementados y probados localmente, sin desplegar. Llama 42 operaciones distintas, todas presentes en el contrato; nginx y proxy comprobados localmente |
-| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 19 pasaron 9 pruebas unitarias, lint y APK debug/de instrumentación. Personal y terminal pasaron contra backend local y HTTPS publicado en Samsung SM-S928B (API 36), con cola entre procesos, reenvío sin duplicados y limpieza. El fixture anterior y el rechazo de argumentos incompletos también pasaron. Release no repetido. Sus 3 operaciones existen en el contrato |
+| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 19 pasaron 9 pruebas unitarias, lint y APK debug/de instrumentación. Personal y terminal pasaron contra backend local y HTTPS publicado en Samsung SM-S928B (API 36), con cola entre procesos, reenvío sin duplicados y limpieza. El fixture anterior y el rechazo de argumentos incompletos también pasaron. Release no repetido. Semana y acuse añadidos localmente, pendientes de recorrido real. El 20 se añadieron bienvenida, administración integrada y lectura/carga/borrado MF1K con ejemplos. Debug e instrumentación compilados, lint y 13 unitarias aprobados; APK instalado por Wi-Fi. Tarjetas físicas y login integrado pendientes; [guía](guia-app-android.md#administración-integrada-y-tarjetas-mf1k) |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -54,7 +54,7 @@ una cuenta de administración de prueba para validar Android por HTTPS.
 | Qué | Por qué importa |
 | --- | --- |
 | Completar el portal | Configuración de empresa ya está implementada y probada localmente. Faltan desplegarla, suspender/reactivar empresas y la pantalla del trabajador; los recorridos del navegador y permisos con sesiones de otros roles siguen abiertos |
-| Completar y validar la app | Enrolamiento y sincronización comprobados contra backend local y HTTPS publicado con datos ficticios. Faltan semana y acuse y la captura autenticada con tarjetas reales |
+| Completar y validar la app | Enrolamiento y sincronización comprobados contra backend local y HTTPS publicado con datos ficticios. El 19 de octubre se agregó consulta semanal y acuse personal con recibo cifrado; [alcance y validación](revision-movil-empleado.md). Faltan recorrido real de semana/acuse, historial completo desde backend y captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
 | Un ambiente publicado | Desde el 18 de octubre de 2026 Zenit está en <https://zenit.fastsolution.com.mx>, con certificados propios y sólo datos ficticios ([Despliegue en el servidor](despliegue-en-servidor.md)). El 19 pasaron Android y operaciones de administración por HTTPS usando una cuenta de prueba. Siguen SMTP, comprobar todas las cuentas personales, quién opera el servicio, respaldo externo y el recorrido completo del portal |
