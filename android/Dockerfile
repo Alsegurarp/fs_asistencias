@@ -4,8 +4,8 @@ WORKDIR /workspace
 
 COPY . .
 
-RUN --mount=type=cache,target=/root/.gradle \
-    --mount=type=cache,target=/root/.android \
+RUN --mount=type=cache,target=/root/.gradle,sharing=locked \
+    --mount=type=cache,target=/root/.android,sharing=locked \
     chmod +x gradlew \
     && (./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest \
         || { cat app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt; exit 1; })

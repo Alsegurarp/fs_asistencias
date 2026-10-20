@@ -72,6 +72,15 @@ management:
 
 server:
   shutdown: graceful
+  # Detrás del borde y del portal, la dirección del visitante y el esquema
+  # llegan en X-Forwarded-For y X-Forwarded-Proto. Tomcat sólo les cree si la
+  # petición viene de una dirección interna, como las redes de Docker; el
+  # borde las sobrescribe siempre, así que el visitante no las puede fijar.
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
   error:
     include-message: never
     include-binding-errors: never

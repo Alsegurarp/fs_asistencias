@@ -11,7 +11,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
 private enum class AttendanceCategory(val label: String, val ink: Color, val background: Color) {
@@ -40,8 +39,9 @@ private data class DemoEmployee(
 @Composable
 internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
     var signedIn by rememberSaveable { mutableStateOf(false) }
+    var destination by rememberSaveable { mutableStateOf("Resumen") }
+    var showCards by rememberSaveable { mutableStateOf(false) }
     var email by rememberSaveable { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
     var selectedNumber by rememberSaveable { mutableStateOf<String?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -56,24 +56,87 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
     ) }
     val selected = employees.firstOrNull { it.number == selectedNumber }
     BackHandler {
-        if (selectedNumber != null) selectedNumber = null else onClose()
+        when {
+            showCards -> { showCards = false; destination = "Empleados" }
+            selectedNumber != null -> selectedNumber = null
+            signedIn && destination != "Resumen" -> destination = "Resumen"
+            else -> onClose()
+        }
     }
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+    Scaffold(containerColor = MaterialTheme.colorScheme.background, bottomBar = {
+        if (signedIn) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+            listOf("Resumen", "Empleados", "Tarjetas", "Cuenta").forEach { target ->
+                NavigationBarItem(selected = destination == target,
+                    onClick = { destination = target; selectedNumber = null; showCards = false },
+                    icon = { NavigationGlyph(target) }, label = { Text(target) })
+            }
+        }
+    }) { padding ->
+    if (signedIn && (showCards || destination == "Tarjetas")) {
+        CardToolsDemo(modifier.padding(padding), employees.map { it.number to it.name }, selectedNumber,
+            onClose = { showCards = false; destination = "Empleados" })
+        return@Scaffold
+    }
+    Column(modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("ZENIT · ADMINISTRACIÓN", style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         if (!signedIn) {
             Text("Control de tu equipo", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("Empleados y asistencia mensual, en un solo lugar.")
-            OutlinedTextField(email, { email = it }, label = { Text("Correo") },
-                singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(password, { password = it }, label = { Text("Contraseña") },
-                visualTransformation = PasswordVisualTransformation(), singleLine = true, modifier = Modifier.fillMaxWidth())
-            Button(onClick = { signedIn = true; password = "" }, modifier = Modifier.fillMaxWidth()) { Text("Entrar como Administrador") }
+            Text("Acceso de demostración · Administrador / RH", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary)
+            Text("Explora las pantallas con datos de ejemplo. Para gestionar tu empresa, abre Administración desde la pantalla de acceso.")
+            Button(onClick = { signedIn = true }, modifier = Modifier.fillMaxWidth()) { Text("Explorar administración") }
             TextButton(onClick = onClose) { Text("Volver a mi asistencia") }
+        } else if (destination == "Cuenta") {
+            Text("Tu espacio de trabajo", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+            AdminPanel("Administrador / RH") {
+                Text(email.ifBlank { "Cuenta de demostración" }, style = MaterialTheme.typography.titleMedium)
+                Text("Zenit · Sede Centro")
+                Text("Gestión de empleados, asistencia y tarjetas NFC")
+            }
+            AdminPanel("Cambiar de perfil") {
+                Text("Consulta tu asistencia personal desde el espacio de empleado.")
+                Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text("Ir a mi perfil de empleado") }
+            }
+            OutlinedButton(onClick = { signedIn = false; email = ""; destination = "Resumen" },
+                modifier = Modifier.fillMaxWidth()) { Text("Cerrar sesión de demostración") }
+        } else if (destination == "Resumen") {
+            Text("Tu equipo, al día", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+            Text("Sede Centro · $presentationMonthLabel")
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)) {
+                Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("ASISTENCIA DEL EQUIPO", style = MaterialTheme.typography.labelLarge)
+                    Text("${employees.sumOf { it.entries }} entradas", style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold)
+                    Text("${employees.size} empleados · ${employees.sumOf { it.days }} jornadas programadas")
+                    LinearProgressIndicator(progress = {
+                        employees.sumOf { it.entries }.toFloat() / employees.sumOf { it.days }.coerceAtLeast(1)
+                    }, modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.tertiaryContainer,
+                        trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                AdminStat("Puntuales", employees.sumOf { it.punctual }, Modifier.weight(1f))
+                AdminStat("Retardos", employees.sumOf { it.late }, Modifier.weight(1f))
+                AdminStat("Faltas", employees.sumOf { it.absent }, Modifier.weight(1f))
+            }
+            AdminPanel("Accesos rápidos") {
+                Button(onClick = { destination = "Empleados" }, modifier = Modifier.fillMaxWidth()) { Text("Ver empleados") }
+                OutlinedButton(onClick = { destination = "Tarjetas" }, modifier = Modifier.fillMaxWidth()) { Text("Gestionar tarjetas NFC") }
+            }
+            AdminPanel("Pendientes de revisión") {
+                Text("${employees.sumOf { it.late }} retardos y ${employees.sumOf { it.absent }} faltas en el periodo")
+                Text("Abre el detalle de cada empleado para consultar su historial.", style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = { destination = "Empleados" }) { Text("Revisar equipo →") }
+            }
+            Text("Datos de demostración", style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else if (selected != null) {
             TextButton(onClick = { selectedNumber = null }) { Text("Volver a empleados") }
             Text(selected.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            OutlinedButton(onClick = { showCards = true; destination = "Tarjetas" }, modifier = Modifier.fillMaxWidth()) { Text("Administrar tarjeta NFC") }
             Text("${selected.number} · ${selected.department}")
             Text("$presentationMonthLabel · ${selected.entries}/${selected.days} entradas")
             Text("Puntual: entrada hasta 10 minutos después del horario asignado. A partir del minuto 11: retardo.",
@@ -125,9 +188,8 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
                 }
             }
             if (filtered.isEmpty()) Text("No hay empleados que coincidan con tu búsqueda.")
-            TextButton(onClick = { signedIn = false; email = ""; query = "" }) { Text("Cerrar sesión") }
-            TextButton(onClick = onClose) { Text("Volver a mi asistencia") }
         }
+    }
     }
     if (adding) {
         val duplicate = employees.any { it.number.equals(employeeNumber.trim(), true) }
@@ -148,5 +210,26 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
                 }) { Text("Agregar") } },
             dismissButton = { TextButton(onClick = { adding = false }) { Text("Cancelar") } },
         )
+    }
+}
+
+@Composable
+private fun AdminPanel(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            content()
+        }
+    }
+}
+
+@Composable
+private fun AdminStat(label: String, value: Int, modifier: Modifier) {
+    Card(modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(value.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary)
+            Text(label, style = MaterialTheme.typography.labelMedium)
+        }
     }
 }

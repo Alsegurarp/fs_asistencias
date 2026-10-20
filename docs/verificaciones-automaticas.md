@@ -1,5 +1,15 @@
 # Verificaciones automáticas
 
+Última repetición local: **20 de octubre de 2026**, sobre `main`/`565dbdd`.
+Backend (74 de integración), portal (151), Android (13 unitarias y lint),
+identidad aislada (6), contrato, secretos y las cinco imágenes aprobaron.
+También se verificaron el arranque con V008, HTTP y restauración local.
+[Evidencia y límites](verificacion-local-2026-10-20.md). Después se ejecutó
+GitHub Actions manualmente para ese mismo commit, antes del push de los
+documentos: los cuatro trabajos aprobaron en la
+[ejecución 39472077601](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39472077601).
+El push de documentación dispara una ejecución adicional para el nuevo commit.
+
 Preparadas el 19 de octubre de 2026 en
 [`.github/workflows/verificaciones.yml`](../.github/workflows/verificaciones.yml).
 El repositorio está alojado en GitHub; se reutilizan las recetas Docker del

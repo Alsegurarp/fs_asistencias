@@ -9,13 +9,30 @@ clave P-256 en Android Keystore, aserciones y sobres ES256, captura NFC con
 ubicación puntual, cola cifrada y sincronización por lotes con WorkManager.
 Guarda los recibos cifrados y muestra el tipo decidido por el servidor; un
 rechazo con recibo sale de pendientes y queda disponible para revisión.
-Puede renovar la sesión y volver a enrolarse. Semana y acuse todavía no están
-implementados.
+Puede renovar la sesión y volver a enrolarse. En modalidad personal permite
+consultar una semana del servidor y responder al cierre con conformidad u
+objeción. Véase la sección 8 y [Revisión móvil del empleado](revision-movil-empleado.md).
 
-La variante debug añade el botón «Ver presentación del producto». Abre una
+La variante debug ofrece «Explorar presentación · datos de ejemplo». Abre una
 actividad separada con el diseño, los históricos y el panel de Administrador/RH
 descritos en [Producto móvil](alcance-producto-movil.md). Sus datos son locales
 y no sustituyen la captura, los recibos ni la vinculación del flujo operativo.
+
+En la presentación, entrar a Administración y elegir «Tarjetas NFC · Leer,
+escribir y borrar», o abrir un empleado y «Administrar tarjeta NFC». El diseño
+permite consultar una tarjeta de ejemplo, seleccionar al empleado, preparar
+número y contenido, confirmar su reemplazo y simular el borrado. Cada acción
+indica que es una demostración: no lee ni escribe tarjetas físicas ni llama al
+backend. Los cambios viven sólo mientras está abierta esa pantalla; el borrado
+no representa una revocación. El modelo, capacidad, protocolo de grabación y
+conexión con el backend están pendientes de confirmar con el equipo.
+
+La presentación separa los espacios: el empleado navega por Inicio, Mi semana,
+Actividad y Dispositivo. Administración / RH tiene su propia barra con Resumen,
+Empleados, Tarjetas y Cuenta; el acceso de demostración no muestra barra inferior.
+Resumen reúne las cifras del equipo y accesos rápidos. Cuenta permite regresar
+al perfil personal o cerrar la sesión de demostración. Estos perfiles y sus
+permisos son visuales; no representan autenticación ni autorización del backend.
 
 El 17 de octubre de 2026 pasaron 9 pruebas unitarias, lint y compilación debug
 dentro de Docker. Release tiene una compilación anterior comprobada, no repetida
@@ -47,6 +64,24 @@ Ese dispositivo simulado se puede leer y correr: está en
 aserción y el sobre firmado de cada marcaje. Sirve de referencia mientras la
 app no lo haga. Cómo se corre está en
 [Entorno local](entorno-local.md#llenar-el-entorno-con-el-simulador-de-dispositivo).
+
+## Acceso y consulta de tarjetas
+
+La bienvenida aparece una vez por instalación o al borrar los datos. Después
+se elige Administración o Empleado. Administración integra el portal HTTPS
+publicado dentro de la app y conserva su autenticación y permisos; Empleado
+abre vinculación mediante código de RH. La dirección publicada viene
+preseleccionada. No se incluyen cuentas ni contraseñas personales en el código.
+
+«Consultar tarjeta» muestra nombre, puesto, horario e ID leídos físicamente
+de la credencial Zenit, sin registrar asistencia ni modificarla. No muestra
+UID, huellas, tecnologías, memoria, sectores o claves. Requiere tarjeta MF1K
+compatible, soporte MIFARE Classic del teléfono y la configuración de acceso
+de fábrica usada actualmente. No implementa autenticación DESFire.
+
+La presentación visual sigue disponible en debug con datos de ejemplo y sin
+pedir credenciales. La captura de asistencia por UID conserva su restricción
+a debug y datos ficticios; la verificación autenticada sigue pendiente.
 
 ## El recorrido
 
@@ -364,6 +399,28 @@ aceptar un marcaje real.
 
 ## 8. Semana y acuse, en modalidad personal
 
+Implementado en la pantalla operativa «Mi semana · registros del servidor»:
+fecha de consulta, tramos en la zona horaria de la empresa, totales informativos,
+alertas, número de incidencias abiertas y cierre con versión. No usa datos de
+la presentación. Requiere conexión y no necesita NFC ni permiso de ubicación
+para consultar o responder. Los pendientes locales se avisan por separado y
+bloquean conformidad hasta sincronizar; no bloquean reportar una diferencia.
+
+Antes de enviar, el empleado confirma haber revisado el resumen y confirma
+tipo, comentario y versión en un diálogo. No se preselecciona conformidad.
+El texto aclara que no renuncia a derechos ni confirma pago de salarios.
+El recibo confirmado se guarda cifrado, separado por dispositivo y cierre,
+y se recupera al consultar esa versión. Un fallo de envío no se reintenta
+automáticamente: se avisa que puede haberse guardado y se pide verificar con RH.
+El servidor resuelve conflictos por cierre reabierto o ya acusado (409).
+
+«Compartir copia del resumen» abre el selector Android por acción expresa;
+no manda información automáticamente a RH ni al gobierno. La copia incluye
+lo mostrado y el acuse local si existe; no es el expediente probatorio completo.
+La consulta personal actual no devuelve acuses de otras instalaciones, ajustes
+detallados ni respuestas de RH. No se presenta la ausencia de acuse local como
+ausencia de acuse en el servidor. La semana consultada no se conserva sin conexión.
+
 Un teléfono personal puede mostrar a su titular su semana y dejarlo acusar su
 cierre, con la misma aserción con que marca. Una terminal recibe 403.
 
@@ -577,3 +634,86 @@ túnel ADB. El recorrido publicado pasó el 19 de octubre de 2026.
 - [ ] Un 401 con la hora bien lleva a volver a enrolar; con la hora mal, a
       corregirla.
 - [ ] Ni la aserción ni el sobre aparecen en los registros de la app.
+
+## Administración integrada y tarjetas MF1K
+
+Administración integra el portal publicado mediante WebView, con navegación
+limitada al host HTTPS de Zenit, sin interfaz JavaScript nativa, acceso a
+archivos ni contenido mixto. El login, OTP y los recorridos administrativos
+en esta vista siguen pendientes de validación manual.
+
+«Preparar tarjetas» muestra dos empleados de ejemplo locales, listos para cargar:
+
+| ID | Nombre completo | Puesto | Horario |
+| --- | --- | --- | --- |
+| EJ-001 | Mariana Torres Hernández | Coordinadora de operaciones | Lunes a viernes, 08:00–16:00 |
+| EJ-002 | Diego Ramírez López | Auxiliar de almacén | Lunes a viernes, 09:00–17:00 |
+
+El cliente no aprueba solicitudes en esta pantalla. El flujo acordado es:
+cliente solicita, equipo operador aprueba y cliente recibe empleados listos
+para cargar. Los ejemplos no crean empleados, horarios ni aprobaciones en el
+servidor. Ese circuito requiere contrato, permisos y persistencia backend.
+
+### Cargar y consultar
+
+Selecciona un empleado, pulsa «Cargar tarjeta», revisa sus datos y confirma.
+Acerca la tarjeta y mantenla inmóvil. Si ya se consultó una tarjeta en esa
+vista, se exige el mismo UID internamente. La pantalla muestra espera,
+detección/lectura, escritura y verificación, con indicador de actividad.
+Después de 20 segundos sin detección se cancela la confirmación y se informa
+que no se detectó tarjeta; hay que confirmar de nuevo. Salir cancela la espera.
+
+La escritura física sólo se confirma tras releer y comparar todos los bytes.
+La lista distingue «Listo para cargar» de una carga verificada en este teléfono.
+«Leer tarjeta y validar datos» abre una consulta física posterior, independiente
+de los datos de la lista. Muestra sólo los datos del empleado y estados de
+operación: área vacía, carga incompleta o imposibilidad de lectura. No presenta
+identificadores técnicos ni respuestas JSON sin interpretar.
+
+### Borrar para reutilizar
+
+Primero acerca la tarjeta a la pantalla de empleados para identificarla.
+Pulsa «Borrar datos Zenit», revisa la advertencia, confirma y acerca la misma
+tarjeta. El borrado elimina el área reservada, incluso datos ajenos cuando
+se confirma expresamente. Sólo después de verificar que quedó vacía se
+elimina la asignación local y se permite cargar otro empleado. No da de baja
+al empleado ni revoca o elimina asignaciones del servidor.
+
+La carga ordinaria rechaza datos desconocidos y tarjetas asignadas localmente
+a otro empleado; informa que se necesita borrado explícito para reutilizarlas.
+Un fallo de clave, permisos o compatibilidad no se resuelve borrando: la
+operación se detiene y se muestra un mensaje sencillo para solicitar ayuda.
+
+### Alcance técnico y límites
+
+La implementación usa `MifareClassic` con la clave A de fábrica, gestionada
+internamente. Otra clave requiere configuración técnica posterior; no se
+buscan ni recuperan claves. Se autentican y leen todos los bloques previstos
+antes de modificar datos. Se requiere Classic de 1 KB y soporte del teléfono.
+
+Formato privado, no NDEF: 24 bloques de datos de los sectores 1 a 8, 384 bytes,
+cabecera versionada de 16 bytes con longitud y CRC32, JSON UTF-8 y relleno cero.
+Nunca se escriben sector 0, trailers, claves ni permisos. La sobrescritura
+reemplaza esa área sin borrar antes. El borrado escribe ceros sólo en esa área,
+no en todo el chip. Una cabecera provisional permite reconocer una operación
+incompleta; la escritura de múltiples bloques no es atómica. Si se retira la
+tarjeta, no se informa éxito y hay que volver a consultar/reintentar.
+
+El contenido puede copiarse: CRC32 detecta daños, no acredita autenticidad, y
+la clave de fábrica no protege datos personales. No hay asociación de estas
+credenciales con empleados del servidor ni captura autenticada de asistencia.
+El bloqueo local de reasignación no sustituye autorización backend.
+
+### Verificación del 20 de octubre de 2026
+
+APK debug y APK de instrumentación compilados; lint aprobado y 13 pruebas
+unitarias sin fallos. Cuatro pruebas del formato cubren UTF-8, capacidad en
+bytes, relleno, exclusión de sector 0/trailers y detección de daños o escritura
+incompleta. La versión final se instaló por Wi-Fi en Samsung SM-S928B sin borrar
+datos. No se ejecutó instrumentación en esta revisión ni se repitió release.
+
+El usuario reportó que no pudo sobrescribir una tarjeta; se añadió borrado
+explícito y se aclaró el bloqueo de reasignación local. No se da por determinada
+la causa física ni por validado el borrado. Siguen pendientes login/OTP dentro
+de WebView, lectura/escritura/borrado con tarjetas y semana/acuse contra backend
+publicado. La instalación y las pruebas unitarias no cierran esos recorridos.

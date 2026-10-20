@@ -59,8 +59,19 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
         locationGranted = hasLocationPermission()
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
+            val weekState by viewModel.weekState.collectAsStateWithLifecycle()
             ZenitApp(
                 state = state,
+                weekState = weekState,
+                onLoadWeek = viewModel::loadWeek,
+                onAcknowledgeWeek = viewModel::acknowledgeWeek,
+                onShareWeek = { report ->
+                    startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, "Mi registro semanal de asistencia")
+                        putExtra(Intent.EXTRA_TEXT, report)
+                    }, "Compartir mi resumen"))
+                },
                 onOpenPresentation = { startActivity(Intent(this, PresentationActivity::class.java)) },
                 nfcAvailable = nfcReady,
                 locationGranted = locationGranted,
@@ -121,6 +132,10 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 @Composable
 private fun ZenitApp(
     state: CaptureUiState,
+    weekState: PersonalWeekState,
+    onLoadWeek: (String) -> Unit,
+    onAcknowledgeWeek: (String, String, String) -> Unit,
+    onShareWeek: (String) -> Unit,
     nfcAvailable: Boolean,
     locationGranted: Boolean,
     onRequestLocation: () -> Unit,
@@ -155,34 +170,37 @@ private fun ZenitApp(
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
-                if (BuildConfig.DEBUG) Button(onClick = onOpenPresentation) { Text("Ver presentación del producto") }
-                if (BuildConfig.DEBUG) Text("Modo de pruebas: tarjetas simuladas. Sólo datos ficticios.", color = MaterialTheme.colorScheme.error)
+                Text("Mi asistencia", style = MaterialTheme.typography.titleLarge)
+                Text("Vincula tu teléfono y acerca tu tarjeta para registrar tu jornada.")
+                if (BuildConfig.DEBUG) Button(onClick = onOpenPresentation) { Text("Explorar presentación · datos de ejemplo") }
+                if (BuildConfig.DEBUG) Text("Captura en validación · Identificación por UID, sólo para datos ficticios.", color = MaterialTheme.colorScheme.error)
                 if (state.registered) Text(state.deviceLabel, style = MaterialTheme.typography.titleMedium)
                 if (!state.registered || reenrolling) {
                     OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text("Servidor") }, singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("Código de RH") }, placeholder = { Text("XXXXX-XXXXX") }, singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("Código de vinculación") }, placeholder = { Text("XXXXX-XXXXX") }, singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
                     if (state.pendingCount > 0) {
                         Text("Cambiar de dispositivo impide enviar sus pendientes con la nueva clave. Puedes sincronizarlos primero o conservarlos para revisión.")
                         Checkbox(checked = preservePending, onCheckedChange = { preservePending = it }, enabled = !state.isCapturing,
                             modifier = Modifier.semantics { contentDescription = "Conservar los pendientes anteriores sin enviarlos" })
                         Text("Conservar los pendientes anteriores sin enviarlos")
                     }
-                    Button(enabled = !state.isCapturing && code.isNotBlank() && (state.pendingCount == 0 || preservePending), onClick = { onActivate(baseUrl, code, preservePending); reenrolling = false; preservePending = false }) { Text("Activar dispositivo") }
+                    Button(enabled = !state.isCapturing && code.isNotBlank() && (state.pendingCount == 0 || preservePending), onClick = { onActivate(baseUrl, code, preservePending); reenrolling = false; preservePending = false }) { Text("Vincular teléfono") }
                     if (state.registered) Button(onClick = { reenrolling = false; preservePending = false }) { Text("Cancelar") }
                 }
                 StatusCard(
                     title = "Lector NFC",
                     value = if (nfcAvailable) "Listo" else "No disponible",
                 )
+                if (!nfcAvailable) Text("Puedes consultar tu semana y responder al cierre sin NFC. Para registrar asistencia, pide a RH el método alternativo autorizado.")
                 Spacer(modifier = Modifier.height(12.dp))
                 StatusCard(
-                    title = "Ubicacion puntual",
+                    title = "Ubicación",
                     value = if (locationGranted) "Permitida" else "Sin permiso",
                 )
                 if (!locationGranted) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(onClick = onRequestLocation) {
-                        Text("Permitir ubicacion")
+                        Text("Permitir ubicación")
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
@@ -199,7 +217,7 @@ private fun ZenitApp(
                 if (state.registered) {
                     if (!state.sessionUsable) Text("La sesión requiere renovación antes de seguir marcando.", color = MaterialTheme.colorScheme.error)
                     Text("Tipo de marcaje", style = MaterialTheme.typography.titleSmall)
-                    val types = linkedMapOf<String?, String>(null to "Automático", "clock_in" to "Entrada", "clock_out" to "Salida")
+                    val types = linkedMapOf<String?, String>(null to "Deducir tipo al leer tarjeta", "clock_in" to "Entrada", "clock_out" to "Salida")
                     if (state.breakPolicy == "marked") { types["break_start"] = "Inicio de descanso"; types["break_end"] = "Fin de descanso" }
                     types.forEach { (value, label) ->
                         FilterChip(selected = selectedType == value, enabled = !state.isCapturing, onClick = { selectedType = value; onSelectType(value) }, label = { Text(label) })
@@ -211,6 +229,9 @@ private fun ZenitApp(
                 if (state.receipts.isNotEmpty()) {
                     Text("Últimos recibos", style = MaterialTheme.typography.titleMedium)
                     state.receipts.forEach { receipt -> StatusCard("Resultado del servidor", receipt) }
+                }
+                if (state.registered && state.personal && !reenrolling) {
+                    PersonalWeekScreen(weekState, state.pendingCount, onLoadWeek, onAcknowledgeWeek, onShareWeek)
                 }
             }
         }

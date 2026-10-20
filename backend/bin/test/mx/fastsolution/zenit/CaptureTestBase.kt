@@ -74,10 +74,12 @@ abstract class CaptureTestBase : ApiTestBase() {
         screenLock: Boolean = true,
         sdk: Int = 34,
         jwk: String = key.toPublicJWK().toJSONString(),
+        forwardedFor: String? = null,
     ): Reply = call(
         "POST", "/api/v1/device-activations", null,
         """{"enrollmentCode":"$code","publicKey":$jwk,"proof":"$proof","device":{"manufacturer":"Ficticia",""" +
             """"model":"Modelo 1","androidSdk":$sdk,"appVersion":"0.1.0"},"screenLock":$screenLock}""",
+        forwardedFor?.let { mapOf("X-Forwarded-For" to it) } ?: emptyMap(),
     )
 
     /** Dispositivo ya activado, con su primera sesión abierta. */

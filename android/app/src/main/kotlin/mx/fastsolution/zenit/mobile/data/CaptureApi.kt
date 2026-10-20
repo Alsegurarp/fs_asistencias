@@ -13,18 +13,27 @@ class CaptureApiException(val status: Int, val code: String, message: String) : 
 
 class CaptureApi(private val baseUrl: String) {
     fun post(path: String, body: JSONObject, assertion: String? = null): JSONObject {
+        return request("POST", path, body, assertion)
+    }
+
+    fun get(path: String, assertion: String): JSONObject = request("GET", path, null, assertion)
+
+    private fun request(method: String, path: String, body: JSONObject?, assertion: String?): JSONObject {
         val connection = URI("$baseUrl/api/v1$path").toURL().openConnection() as HttpURLConnection
         try {
-            connection.requestMethod = "POST"
+            connection.requestMethod = method
             connection.connectTimeout = 10_000
             connection.readTimeout = 30_000
             connection.instanceFollowRedirects = false
             connection.setRequestProperty("Content-Type", "application/json")
             if (assertion != null) connection.setRequestProperty("Authorization", "Bearer $assertion")
-            connection.doOutput = true
-            val request = body.toString().toByteArray(Charsets.UTF_8)
-            connection.setFixedLengthStreamingMode(request.size)
-            connection.outputStream.use { it.write(request) }
+            connection.setRequestProperty("Cache-Control", "no-store")
+            if (body != null) {
+                connection.doOutput = true
+                val request = body.toString().toByteArray(Charsets.UTF_8)
+                connection.setFixedLengthStreamingMode(request.size)
+                connection.outputStream.use { it.write(request) }
+            }
             val status = connection.responseCode
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
             val text = stream?.use { input ->

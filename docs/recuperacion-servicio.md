@@ -105,6 +105,35 @@ válidos, backend saludable, acceso autenticado y datos comprobados; entonces
 reactivar trabajos, comprobar copia externa y registrar tiempos y antigüedad
 del respaldo. No mantener dos instalaciones atendiendo los mismos dispositivos.
 
+## Definición recibida para el modelo de respaldo
+
+El 19 de octubre el usuario indica:
+
+- El respaldo externo debe hacerse por ambas partes; fastSolution debe
+  respaldar principalmente la información de sus clientes.
+- El tercero no tiene la información del cliente.
+- La infraestructura del cliente aloja únicamente sus datos operativos; el
+  sistema vive en un VPS de fastSolution.
+- El destino externo está en evaluación, inicialmente S3 o GCS. Se requiere
+  un año consultable para perfiles de 50 y 300 empleados, con entrada,
+  salida e inicio/fin de un descanso: 52,000 y 312,000 marcajes/año bajo el
+  supuesto de cinco días por 52 semanas.
+
+Está definida la separación de alojamiento. Faltan el reparto operativo entre
+las partes, la implementación de bases separadas, conectividad, destino de
+las copias, custodia, transferencia, responsables y ensayo de recuperación.
+La [evaluación de respaldo anual](evaluacion-respaldo-anual.md) compara
+proveedores y propone conservar doce meses consultables en PostgreSQL,
+con respaldos cifrados externos separados. Es una propuesta, sin proveedor
+contratado ni nueva retención de copias aprobada.
+
+El paquete actual respalda las bases completas de una instalación, incluida
+identidad. En una instalación compartida no debe entregarse a un cliente
+como si contuviera únicamente su información. El ensayo local existente no
+acredita un respaldo separado por cliente ni que su infraestructura exista.
+La política diaria/30 días y los objetivos 24 h/4 h previamente aprobados
+para el servicio se conservan; el modelo operativo continúa pendiente.
+
 ## Estado de la tarea 1
 
 Comprobado el 18 de octubre de 2026, con datos ficticios locales y el origen

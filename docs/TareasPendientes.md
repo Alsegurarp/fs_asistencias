@@ -1,7 +1,11 @@
 # Tareas pendientes
 
-Estado actualizado el **19 de octubre de 2026**, sobre `main`, commit
-`8a86916`, con la tarea 14 implementada y validada localmente, sin desplegar.
+Estado revisado el **20 de octubre de 2026**, sobre `main`, commit `565dbdd`.
+Incluye los avances Android de semana/acuse, bienvenida, administración
+integrada y herramientas MF1K. La [verificación local del 20](verificacion-local-2026-10-20.md)
+actualiza la evidencia técnica; la QA funcional del usuario y la aceptación
+del ambiente publicado conservan sus pendientes. El [corte del 19](evidencia-avance-2026-10-19.md)
+se conserva como antecedente.
 Hay **17 tareas abiertas total o parcialmente**.
 La numeración corresponde a la columna **Orden** de
 [Tareas críticas primero](tareas-criticas-primero.md), que conserva los criterios
@@ -12,8 +16,8 @@ detallados de aceptación y las dependencias.
 | Orden | Tarea | Evidencia y alcance |
 | --- | --- | --- |
 | 7 | Android reproducible contra backend | Personal y terminal comprobados en teléfono contra backend local y HTTPS, con tarjeta simulada, cola, sincronización, recibos y renovación. No acredita tarjeta física autenticada ni apagado real de radios |
-| 11 | Verificaciones automáticas por cambio | Workflow integrado en `main`. Backend, portal, Android y contrato/seguridad aprobaron en la [ejecución 39303294132](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39303294132). Configurar los trabajos como obligatorios antes de integrar cambios sigue siendo una decisión adicional |
-| 14 | Personas que no pudieron cerrar y sus causas | Contrato 0.12, migración V008, registro transaccional por persona, consulta paginada y portal con nombres, causas y enlaces a incidencias. 74 pruebas de integración y 151 del portal aprobadas. Implementación local, sin despliegue ni aceptación con navegador real; las corridas antiguas conservan sólo sus conteos |
+| 11 | Verificaciones automáticas por cambio | Workflow integrado en `main`. Backend, portal, Android y contrato/seguridad aprobaron para `8a86916` en la [ejecución 39365266093](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39365266093). Configurar los trabajos como obligatorios antes de integrar cambios sigue siendo una decisión adicional |
+| 14 | Personas que no pudieron cerrar y sus causas | Contrato 0.12, migración V008, registro transaccional por persona, consulta paginada y portal con nombres, causas y enlaces a incidencias. 74 pruebas de integración y 151 del portal aprobadas; CI aprobado para `8a86916`. Implementación publicada, sin despliegue ni aceptación con navegador real; las corridas antiguas conservan sólo sus conteos |
 
 ## Tareas abiertas
 
@@ -22,10 +26,10 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 
 | Orden | Prioridad | Tarea pendiente | Qué falta para completarla |
 | --- | --- | --- | --- |
-| 1 | P0 | Respaldo externo y recuperación completa | Concretar destino externo, custodia de claves y responsables; automatizar copias y comprobar recuperación pública. La restauración local ya pasó |
-| 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | Completar correo, recuperación del operador, altas y recorridos reales; retirar el acceso temporal después de comprobar los personales |
+| 1 | P0 | Respaldo externo y recuperación completa | Definido: datos operativos en infraestructura del cliente y sistema en VPS de fastSolution; perfiles de 50/300 empleados, cuatro marcajes diarios y un año consultable. [Evaluación de S3/GCS y alternativas](evaluacion-respaldo-anual.md) disponible. Faltan elegir destino, custodia, adaptar bases separadas, automatizar y ensayar recuperación |
+| 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | Definido: recuperación administrada desde el portal, seleccionando al empleado para exigir contraseña nueva al próximo login. Falta implementar y probar la acción, precisar acceso cuando se olvidó la contraseña y completar cuentas personales, OTP, SMTP y recuperación del operador |
 | 3 | P0 | Jornada y evidencia del acuse | Obtener dictamen profesional y criterios aprobados; implementar reglas, casos esperados y evidencia versionada conservando históricos |
-| 4 | P0 | Captura autenticada con tarjetas reales | Definir tecnología, autenticación y entrega de claves; probar captura y rechazo con tarjetas y teléfonos físicos |
+| 4 | P0 | Captura autenticada con tarjetas reales | Android ya incluye lectura, carga y borrado de credenciales MF1K de ejemplo. Falta validación física y autenticación integrada de asistencia: el backend sólo verifica el esquema simulado; definir tecnología y custodia de claves |
 | 5 | P0 | Suspensión, baja, supervisor y tipo de marcaje | Elegir las reglas propuestas y después implementar sus efectos sobre permisos, captura e históricos |
 | 6 | P0 | Producción administrada para datos reales | El modelo está aprobado: producción exclusiva de Zenit bajo control de fastSolution y aislamiento lógico por empresa. Faltan proveedor, región, cuenta, contratos, respaldo externo, restauración y pruebas. El servidor compartido conserva sólo datos ficticios |
 | 8 | P1 | Dirección real y protocolo entre proxies | Comprobar que dos IP públicas reales conservan cuotas independientes en la misma ventana. Las pruebas públicas de HTTPS y cabeceras falsas ya pasaron |
@@ -33,26 +37,63 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | 10 | P1 | Retención de sobres y recibos Android | Definir plazo y conservación; implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria |
 | 12 | P1 | Imágenes y correcciones del servidor | Obtener IDs y versión desplegada mediante el interlocutor SSH, analizar esas imágenes, desplegar correcciones y verificar públicamente. El análisis local y el de CI ya aprobaron |
 | 13 | P2 | Configuración de empresa y dispositivos en portal | Desplegar la implementación y aceptar pantallas y permisos con sesión real. Configuración ya está implementada y probada |
-| 15 | P2 | Semana y acuse del trabajador | Integrar datos reales, identidad y permisos. El cierre del acuse depende también de las definiciones de jornada y evidencia del orden 3 |
+| 15 | P2 | Semana y acuse del trabajador | Android personal ya consulta semana y envía acuse con recibo cifrado local. Faltan recorrido real, historial y recuperación de acuses desde backend; completar alcance web. Evidencia y reglas dependen del orden 3 |
 | 16 | P2 | Pantallas del operador del servicio | Completar suspensión/reactivación y comprobar permisos y aislamiento con sesión real. La suspensión depende de la decisión del orden 5 |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias | Aprobar criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar |
 | 18 | P2 | Carga, continuidad y operación | Definir volumen e instancias; probar trabajos, cierres, exportes y cuotas, actualización de DNS y renovación real de certificados |
 | 19 | P2 | Conector y formato de nómina | Identificar sistema y formato del primer cliente; implementar sincronización y obtener aceptación del archivo exportado |
 | 20 | P2 | Congelar contrato 1.0 | Completar recorridos reales y decisiones pendientes; acordar compatibilidad y publicación de cambios con los consumidores |
 
+## Definiciones recibidas para P0-01 y P0-02
+
+**P0-01 — respaldo.** El usuario indica respaldo por ambas partes, con
+responsabilidad principal de fastSolution sobre la información de sus clientes.
+El tercero no tiene la información del cliente. El usuario precisa que la
+infraestructura del cliente aloja únicamente sus datos operativos y el sistema
+vive en un VPS de fastSolution. El destino externo sigue en evaluación.
+Quedan por precisar obligaciones, conectividad, adaptación de bases separadas,
+destinos, transferencia y custodia de claves.
+La política diaria/30 días y los objetivos 24 h/4 h registrados para el
+servicio no sustituyen concretar ese modelo ni ensayar su recuperación.
+
+El respaldo actual contiene todas las empresas y la identidad de una
+instalación. No es una copia individual que pueda entregarse a cualquier
+cliente. Perfiles declarados: 50 empleados para mediano y 300 para grande;
+entrada, inicio/fin de un descanso y salida, cinco días por 52 semanas:
+52,000 y 312,000 marcajes/año. Se requiere un año de datos consultables.
+La [evaluación de costos](evaluacion-respaldo-anual.md) propone conservarlo en
+PostgreSQL y separar las copias de recuperación. Proveedor y copias mensuales
+adicionales no están elegidos. Ver [Recuperación](recuperacion-servicio.md#definición-recibida-para-el-modelo-de-respaldo).
+
+**P0-02 — contraseña.** El usuario define un flujo administrado en el portal
+web: visualizar empleados, seleccionar su cuenta y declarar que al próximo
+login debe establecer una contraseña nueva. Esta acción todavía no existe
+en el contrato, backend ni portal; requiere integración con el proveedor de
+identidad, permisos dentro de la empresa y pruebas.
+
+Marcar cambio obligatorio no resuelve por sí solo el acceso de quien ya
+olvidó su contraseña. Falta definir cómo se autentica para establecer la
+nueva. No se ha elegido contraseña temporal ni enlace por correo. SMTP,
+cuentas personales, OTP y recuperación del operador siguen pendientes en sus
+propios alcances. Ver [Identidad](preparar-ambiente-compartido.md#recuperación-administrada-desde-el-portal).
+
+Ambas tareas siguen abiertas; estas respuestas definen requisitos, no una
+implementación ni una recuperación comprobadas.
+
 ## Siguiente trabajo que puede iniciarse
 
 La implementación local de la **tarea 14** está completada y validada.
 La **tarea 16** puede avanzar con la reactivación de empresas desde el portal,
 reutilizando el endpoint existente. La suspensión espera la decisión de la
-tarea 5. La consulta semanal del trabajador (15) también puede avanzar;
-el cierre del acuse conserva sus dependencias jurídicas y de producto.
+tarea 5. Semana y acuse Android (15) ya tienen implementación; ahora requieren
+recorrido real y completar historial/recuperación desde backend. El cierre
+del acuse conserva sus dependencias jurídicas y de producto.
 
 Para desbloquear las P1 restantes:
 
-- **8:** el Samsung SM-S928B ya aparece autorizado por ADB; pasaron su
-  autoensayo y la comprobación HTTPS con código imposible. Usa Wi-Fi con datos
-  móviles desactivados. **La prueba con datos móviles queda pendiente para otro
+- **8:** el Samsung SM-S928B pasó el autoensayo y la comprobación HTTPS el 19,
+  bajo Wi-Fi. El 20 `adb devices -l` no muestra dispositivos; hace falta
+  reconectar y autorizar el teléfono. **La prueba con datos móviles queda pendiente para otro
   desarrollador, por indicación del usuario.** Ver el procedimiento siguiente.
 - **9:** disponer de un navegador accesible para completar el recorrido real.
 - **10:** definir cuántos días conservar sobres y recibos procesados y si habrá

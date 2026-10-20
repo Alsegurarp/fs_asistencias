@@ -16,6 +16,8 @@ class DeviceStore(context: Context) {
     fun saveRegistration(value: JSONObject) = write("registration", value.toString())
     fun notice(): String = read("notice") ?: "Acerca una tarjeta NFC"
     fun saveNotice(value: String) = write("notice", value)
+    fun acknowledgement(deviceId: String, closureId: String): JSONObject? = read("ack:$deviceId:$closureId")?.let(::JSONObject)
+    fun saveAcknowledgement(deviceId: String, closureId: String, value: JSONObject) = write("ack:$deviceId:$closureId", value.toString())
 
     val changes = callbackFlow {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> trySend(Unit) }

@@ -6,8 +6,11 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
-Última revisión: 19 de octubre de 2026; incluye Android local/HTTPS y el detalle
-de personas bloqueadas en corridas, implementado localmente sin desplegar.
+Última revisión: 20 de octubre de 2026, sobre `565dbdd`.
+La [verificación local](verificacion-local-2026-10-20.md) repitió backend,
+portal, Android, identidad, contrato, seguridad y restauración; el ambiente
+queda en ejecución con V008 aplicada. Incluye semana/acuse y herramientas
+MF1K Android. El despliegue público y la aceptación con sesión real siguen abiertos.
 La [validación de tareas 1 a 6](validacion-tareas-1-a-6.md)
 separa resultados comprobados de decisiones y pruebas manuales pendientes.
 
@@ -35,15 +38,15 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 | Pieza | Estado |
 | --- | --- |
 | Contrato | Versión 0.12, con 61 operaciones. Incluye detalle paginado de bloqueos por corrida; todavía sin congelar |
-| Backend | Atiende las 61 operaciones. Construcción, unitarias y 74 de integración contra PostgreSQL real aprobadas nuevamente el 19, incluido el detalle de corridas interrumpidas y sus reintentos |
+| Backend | Atiende las 61 operaciones. Construcción, unitarias y 74 de integración contra PostgreSQL real aprobadas nuevamente el 20, incluido el detalle de corridas interrumpidas y sus reintentos |
 | Base | 29 tablas en 8 migraciones, con roles separados para migrar, para atender y para respaldar. V008 conserva bloqueos por persona/corrida. Imagen propia sobre Alpine, sin root ni privilegios, que ordena los textos por código de carácter |
-| Identidad | Segundo factor obligatorio en `zenit`. El 18 se preparó el realm para conservar OTP y exigir reautenticación al recuperar contraseña. El servidor tiene un operador y dos cuentas personales con cambio de contraseña y segundo factor pendientes del primer ingreso; faltan SMTP, recuperación y retirar la cuenta temporal después de comprobarlas |
-| Entorno local | Se levanta con dos comandos, sin credenciales por omisión |
+| Identidad | Segundo factor obligatorio en `zenit`. El 20 aprobaron las seis comprobaciones de importación, OTP, PKCE, recuperación y readiness en identidad aislada. SMTP y cuentas personales del servidor siguen pendientes; [procedimiento](preparar-ambiente-compartido.md) |
+| Entorno local | Reconstruido y en ejecución el 20: backend en 18080, portal en 8081 e identidad en 8082. V008 aplicada; HTTP, CSP y rechazo de API sin sesión comprobados. Tarjetas simuladas habilitadas sólo para pruebas ficticias |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
-| Respaldo | Modos age y autoprueba aprobados. El 18 de octubre pasó recuperación local con origen apagado: 130 tablas/1.867 filas idénticas, contraseñas nuevas de base, backend e identidad funcionales. [Detalle](recuperacion-servicio.md). Copia externa de operación, custodia, programación y recuperación pública pendientes |
+| Respaldo | El 20, tras V008, el ensayo restauró 131 tablas/1,970 filas idénticas. La recuperación completa con origen apagado y secretos nuevos sigue siendo la del 18: 130 tablas/1.867 filas. [Detalle](recuperacion-servicio.md). Copia externa, custodia, programación y recuperación pública pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, configuración de empresa, incidencias, cierres, exportes y usuarios; el operador tiene alta/listado de empresas. El 19 pasaron compilación y 151 pruebas. Incluye personas bloqueadas por corrida, causas, paginación y enlaces a incidencias. Horarios e importación también pasaron por API HTTPS con sesión real; sigue pendiente su recorrido de pantallas. Configuración y detalle de bloqueos están implementados y probados localmente, sin desplegar. Llama 42 operaciones distintas, todas presentes en el contrato; nginx y proxy comprobados localmente |
-| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 19 pasaron 9 pruebas unitarias, lint y APK debug/de instrumentación. Personal y terminal pasaron contra backend local y HTTPS publicado en Samsung SM-S928B (API 36), con cola entre procesos, reenvío sin duplicados y limpieza. El fixture anterior y el rechazo de argumentos incompletos también pasaron. Release no repetido. Sus 3 operaciones existen en el contrato |
+| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, configuración de empresa, incidencias, cierres, exportes y usuarios; el operador tiene alta/listado de empresas. El 20 pasaron compilación y 151 pruebas. Incluye personas bloqueadas por corrida, causas, paginación y enlaces a incidencias. Horarios e importación también pasaron por API HTTPS con sesión real; sigue pendiente su recorrido de pantallas. Configuración y detalle de bloqueos están implementados y probados localmente, sin desplegar. Llama 42 operaciones distintas, todas presentes en el contrato; nginx y proxy comprobados localmente |
+| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 19 pasaron 9 pruebas unitarias, lint y APK debug/de instrumentación. Personal y terminal pasaron contra backend local y HTTPS publicado en Samsung SM-S928B (API 36), con cola entre procesos, reenvío sin duplicados y limpieza. El fixture anterior y el rechazo de argumentos incompletos también pasaron. Release no repetido. Semana y acuse añadidos localmente, pendientes de recorrido real. El 20 se añadieron bienvenida, administración integrada y lectura/carga/borrado MF1K con ejemplos. Debug e instrumentación compilados, lint y 13 unitarias aprobados; APK instalado por Wi-Fi. Tarjetas físicas y login integrado pendientes; [guía](guia-app-android.md#administración-integrada-y-tarjetas-mf1k) |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -69,7 +72,7 @@ una cuenta de administración de prueba para validar Android por HTTPS.
 | Qué | Por qué importa |
 | --- | --- |
 | Completar el portal | Configuración de empresa ya está implementada y probada localmente. Faltan desplegarla, suspender/reactivar empresas y la pantalla del trabajador; los recorridos del navegador y permisos con sesiones de otros roles siguen abiertos |
-| Completar y validar la app | Enrolamiento y sincronización comprobados contra backend local y HTTPS publicado con datos ficticios. Faltan semana y acuse y la captura autenticada con tarjetas reales |
+| Completar y validar la app | Enrolamiento y sincronización comprobados contra backend local y HTTPS publicado con datos ficticios. El 19 de octubre se agregó consulta semanal y acuse personal con recibo cifrado; [alcance y validación](revision-movil-empleado.md). Faltan recorrido real de semana/acuse, historial completo desde backend y captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
 | Un ambiente publicado | Desde el 18 de octubre de 2026 Zenit está en <https://zenit.fastsolution.com.mx>, con certificados propios y sólo datos ficticios ([Despliegue en el servidor](despliegue-en-servidor.md)). El 19 pasaron Android y operaciones de administración por HTTPS usando una cuenta de prueba. Siguen SMTP, comprobar todas las cuentas personales, quién opera el servicio, respaldo externo y el recorrido completo del portal |
@@ -113,17 +116,18 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Tarjeta real y entrega de su clave al dispositivo | Prueba con tarjetas y teléfonos reales |
 | Cálculo por tipo de jornada | Revisión jurídica |
 | Conector para sincronizar el padrón | El sistema del primer cliente |
-| Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática del correo ni recuperación de contraseña |
+| Servicio de correo en la identidad | Un dominio de envío. Sin él no hay verificación automática ni recuperación por enlace de correo. El usuario definió además cambio obligatorio al próximo login administrado desde el portal; falta implementar esa acción y resolver el acceso de quien olvidó su contraseña |
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
 | Staging y TLS | Hecho el 18 de octubre de 2026: un ambiente publicado con HTTPS. Falta decidir si habrá un segundo ambiente separado para pruebas |
 | Guardar y restaurar una copia cifrada de operación | Consultar con Gabriel quién custodia la clave privada y dónde queda su copia aislada, por indicación de Alexis. El 18 se comprobó una copia local con claves de ensayo, eliminadas al terminar; no sustituye una copia recuperable de operación |
-| Destino externo y recuperación completa del servicio | Aprobados copia diaria, retención 30 días, pérdida máxima 24 h y recuperación 4 h; fallos a cargo de fastSolution. Destino en otro servidor por identificar, probablemente mediante VPN; SSH al origen exclusivamente por Gabriel. Faltan custodia, automatización y comprobación de recuperación pública |
+| Destino externo y recuperación completa del servicio | Datos operativos en infraestructura del cliente y sistema en VPS de fastSolution; responsabilidad principal de respaldo a cargo de fastSolution. Perfiles de 50/300 empleados y un año consultable. [S3/GCS y alternativas evaluados](evaluacion-respaldo-anual.md). Se conservan copia diaria/30 días y objetivos 24 h/4 h del servicio. Faltan destino, implementación de bases separadas, custodia, automatización y recuperación pública; SSH mediante Gabriel |
 | Cuotas compartidas entre instancias | La dirección real del visitante ya llega al backend a través del borde y del portal, y el límite de activaciones fallidas cuenta a cada visitante por separado. Compartir las cuotas sólo hace falta con más de una instancia |
 
 ## Vulnerabilidades conocidas
 
-Último análisis local: 19 de octubre de 2026, con la base de ese día. Se detectaron
-y corrigieron altas nuevas en backend y portal. IDs y resultados en
+Último análisis local: 20 de octubre de 2026, sobre las cinco imágenes
+reconstruidas. Todas aprobaron; se conservan las seis excepciones de identidad.
+Los IDs de las cuatro imágenes en ejecución coinciden con los analizados. Resultados en
 `build/security/summary.json`; cómo repetir está en
 [Verificaciones automáticas](verificaciones-automaticas.md). Falta identificar
 y analizar las imágenes efectivamente publicadas, mediante Gabriel.

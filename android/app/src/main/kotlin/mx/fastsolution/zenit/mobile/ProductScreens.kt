@@ -31,6 +31,10 @@ internal fun ProductApp(
         else listOf("Inicio", "Mi semana", "Actividad", "Dispositivo")
     val selectedPage = if (page in pages) page else "Inicio"
     MaterialTheme(colorScheme = ZenitColors) {
+        if (showAdmin) {
+            AdminDemo(onClose = { showAdmin = false })
+            return@MaterialTheme
+        }
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
@@ -38,9 +42,7 @@ internal fun ProductApp(
                     pages.forEach { destination ->
                         NavigationBarItem(
                             selected = selectedPage == destination, onClick = { page = destination; showMock = false; showAdmin = false },
-                            icon = { Text(when (destination) {
-                                "Inicio" -> "⌂"; "Mi semana" -> "▤"; "Actividad" -> "↻"; else -> "⚙"
-                            }, style = MaterialTheme.typography.titleLarge) },
+                            icon = { NavigationGlyph(destination) },
                             label = { Text(destination) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
@@ -54,10 +56,6 @@ internal fun ProductApp(
                 }
             },
         ) { padding ->
-            if (showAdmin) {
-                AdminDemo(Modifier.padding(padding), onClose = { showAdmin = false })
-                return@Scaffold
-            }
             if (showMock) {
                 MockShift(Modifier.padding(padding), onClose = { showMock = false })
                 return@Scaffold
@@ -71,11 +69,11 @@ internal fun ProductApp(
                     Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                    Text("ZENIT", style = MaterialTheme.typography.labelLarge,
+                    Text("ZENIT / PERSONAL · DATOS DE EJEMPLO", style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     when (selectedPage) {
                         "Inicio" -> {
-                            Heading("Control de asistencia",
+                            Heading("Hola, Roberto",
                                 LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale.forLanguageTag("es-MX"))))
                             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -87,10 +85,16 @@ internal fun ProductApp(
                                     }
                                 }
                             }
-                            Panel("Administración") {
-                                Text("Empleados y asistencia del mes.")
+                            Panel("Tu jornada de hoy") {
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Metric("Entrada", "08:00"); Metric("Salida", "16:00"); Metric("Sede", "Centro")
+                                }
+                                Text("Turno de 8 horas · Tarjeta asignada", style = MaterialTheme.typography.bodySmall)
+                            }
+                            Panel("Espacio de trabajo") {
+                                Text("Estás en tu perfil de empleado.")
                                 OutlinedButton(onClick = { showAdmin = true }, modifier = Modifier.fillMaxWidth()) {
-                                    Text("Entrar como Administrador")
+                                    Text("Cambiar a Administración / RH")
                                 }
                             }
                             Text("Roberto AR · Dispositivo vinculado", style = MaterialTheme.typography.labelSmall,
