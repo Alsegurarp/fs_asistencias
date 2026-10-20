@@ -1,5 +1,11 @@
 # Verificaciones automáticas
 
+A1–A4 locales: 75 integraciones de backend, 162 pruebas del portal y 7 de
+identidad; el workflow ahora incluye `infra/keycloak/password-change.test.mjs`
+contra Keycloak aislado. [Evidencia local](entregas-a1-a5.md). Estos cambios
+aún no tienen una ejecución de Actions propia; las ejecuciones enlazadas
+abajo corresponden al código previo.
+
 Última repetición local: **20 de octubre de 2026**, sobre `main`/`565dbdd`.
 Backend (74 de integración), portal (151), Android (13 unitarias y lint),
 identidad aislada (6), contrato, secretos y las cinco imágenes aprobaron.

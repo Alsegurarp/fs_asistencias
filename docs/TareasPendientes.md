@@ -1,12 +1,19 @@
 # Tareas pendientes
 
-Estado revisado el **20 de octubre de 2026**, sobre `main`, commit `565dbdd`.
+Estado revisado el **20 de octubre de 2026**, con A1–A5 locales sobre `1984be3`.
+Las [entregas y verificaciones](entregas-a1-a5.md) actualizan el avance técnico;
+el [guion de QA](qa-a1-a5.md) conserva la aceptación manual pendiente.
 Incluye los avances Android de semana/acuse, bienvenida, administración
 integrada y herramientas MF1K. La [verificación local del 20](verificacion-local-2026-10-20.md)
 actualiza la evidencia técnica; la QA funcional del usuario y la aceptación
 del ambiente publicado conservan sus pendientes. El [corte del 19](evidencia-avance-2026-10-19.md)
 se conserva como antecedente.
 Hay **17 tareas abiertas total o parcialmente**.
+La [declaración de trabajo ejecutable y preguntas para QA](tareas-ejecutables-y-preguntas-qa.md)
+revisada sobre `1984be3` identifica cinco entregas locales y las 22 preguntas
+que desbloquean decisiones, recursos y aceptación. Los cuatro trabajos de
+[Actions para ese commit](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39472918113)
+aprobaron. Las entregas locales no equivalen al cierre completo de sus tareas.
 La numeración corresponde a la columna **Orden** de
 [Tareas críticas primero](tareas-criticas-primero.md), que conserva los criterios
 detallados de aceptación y las dependencias.
@@ -27,7 +34,7 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | Orden | Prioridad | Tarea pendiente | Qué falta para completarla |
 | --- | --- | --- | --- |
 | 1 | P0 | Respaldo externo y recuperación completa | Definido: datos operativos en infraestructura del cliente y sistema en VPS de fastSolution; perfiles de 50/300 empleados, cuatro marcajes diarios y un año consultable. [Evaluación de S3/GCS y alternativas](evaluacion-respaldo-anual.md) disponible. Faltan elegir destino, custodia, adaptar bases separadas, automatizar y ensayar recuperación |
-| 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | Definido: recuperación administrada desde el portal, seleccionando al empleado para exigir contraseña nueva al próximo login. Falta implementar y probar la acción, precisar acceso cuando se olvidó la contraseña y completar cuentas personales, OTP, SMTP y recuperación del operador |
+| 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | A4 implementa y prueba el cambio obligatorio para cuentas activas vinculadas; cliente técnico preparado sólo en local. Falta provisión/aceptación pública, recuperación de acceso olvidado, cuentas personales, SMTP y recuperación del operador |
 | 3 | P0 | Jornada y evidencia del acuse | Obtener dictamen profesional y criterios aprobados; implementar reglas, casos esperados y evidencia versionada conservando históricos |
 | 4 | P0 | Captura autenticada con tarjetas reales | Android ya incluye lectura, carga y borrado de credenciales MF1K de ejemplo. Falta validación física y autenticación integrada de asistencia: el backend sólo verifica el esquema simulado; definir tecnología y custodia de claves |
 | 5 | P0 | Suspensión, baja, supervisor y tipo de marcaje | Elegir las reglas propuestas y después implementar sus efectos sobre permisos, captura e históricos |
@@ -37,8 +44,8 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | 10 | P1 | Retención de sobres y recibos Android | Definir plazo y conservación; implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria |
 | 12 | P1 | Imágenes y correcciones del servidor | Obtener IDs y versión desplegada mediante el interlocutor SSH, analizar esas imágenes, desplegar correcciones y verificar públicamente. El análisis local y el de CI ya aprobaron |
 | 13 | P2 | Configuración de empresa y dispositivos en portal | Desplegar la implementación y aceptar pantallas y permisos con sesión real. Configuración ya está implementada y probada |
-| 15 | P2 | Semana y acuse del trabajador | Android personal ya consulta semana y envía acuse con recibo cifrado local. Faltan recorrido real, historial y recuperación de acuses desde backend; completar alcance web. Evidencia y reglas dependen del orden 3 |
-| 16 | P2 | Pantallas del operador del servicio | Completar suspensión/reactivación y comprobar permisos y aislamiento con sesión real. La suspensión depende de la decisión del orden 5 |
+| 15 | P2 | Semana y acuse del trabajador | A2 añade consulta web y A3 recupera el acuse desde servidor en web/Android, con pruebas. Faltan aceptación real y expediente completo; evidencia y reglas dependen del orden 3 |
+| 16 | P2 | Pantallas del operador del servicio | A1 implementa y prueba reactivación con motivo desde portal. Faltan aceptación con sesión real y suspensión, que depende de la decisión del orden 5 |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias | Aprobar criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar |
 | 18 | P2 | Carga, continuidad y operación | Definir volumen e instancias; probar trabajos, cierres, exportes y cuotas, actualización de DNS y renovación real de certificados |
 | 19 | P2 | Conector y formato de nómina | Identificar sistema y formato del primer cliente; implementar sincronización y obtener aceptación del archivo exportado |
@@ -67,9 +74,10 @@ adicionales no están elegidos. Ver [Recuperación](recuperacion-servicio.md#def
 
 **P0-02 — contraseña.** El usuario define un flujo administrado en el portal
 web: visualizar empleados, seleccionar su cuenta y declarar que al próximo
-login debe establecer una contraseña nueva. Esta acción todavía no existe
-en el contrato, backend ni portal; requiere integración con el proveedor de
-identidad, permisos dentro de la empresa y pruebas.
+login debe establecer una contraseña nueva. A4 ya implementa esa acción para
+cuentas activas vinculadas, en contrato, backend y portal, con pruebas de
+permisos, aislamiento y conservación OTP. La integración se habilitó sólo
+en local; el servidor público conserva Q04 y su aceptación pendiente.
 
 Marcar cambio obligatorio no resuelve por sí solo el acceso de quien ya
 olvidó su contraseña. Falta definir cómo se autentica para establecer la
@@ -83,11 +91,11 @@ implementación ni una recuperación comprobadas.
 ## Siguiente trabajo que puede iniciarse
 
 La implementación local de la **tarea 14** está completada y validada.
-La **tarea 16** puede avanzar con la reactivación de empresas desde el portal,
-reutilizando el endpoint existente. La suspensión espera la decisión de la
-tarea 5. Semana y acuse Android (15) ya tienen implementación; ahora requieren
-recorrido real y completar historial/recuperación desde backend. El cierre
-del acuse conserva sus dependencias jurídicas y de producto.
+A1 ya completa la reactivación local de la **tarea 16**; la suspensión espera
+la decisión de la tarea 5. A2/A3 añaden consulta personal web y recuperación
+de acuse desde servidor. A4 entrega el cambio obligatorio local y A5 el
+guion de aceptación. Faltan los recorridos reales, el expediente completo y
+las dependencias jurídicas y operativas de las tareas globales.
 
 Para desbloquear las P1 restantes:
 

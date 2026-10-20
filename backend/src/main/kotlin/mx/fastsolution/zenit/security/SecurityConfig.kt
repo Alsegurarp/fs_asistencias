@@ -91,7 +91,7 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.GET, "/api/v1/users", "/api/v1/users/{userId}").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole(admin)
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/users/{userId}").hasRole(admin)
-                it.requestMatchers(HttpMethod.POST, "/api/v1/users/{userId}/unlink").hasRole(admin)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/users/{userId}/unlink", "/api/v1/users/{userId}/password-change").hasRole(admin)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/audit-log").hasAnyRole(admin, auditor)
                 // Sedes y horarios.
                 it.requestMatchers(HttpMethod.GET, "/api/v1/sites", "/api/v1/sites/{siteId}").hasAnyRole(admin, rh, supervisor, auditor)

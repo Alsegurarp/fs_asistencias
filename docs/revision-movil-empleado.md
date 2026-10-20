@@ -41,9 +41,10 @@ y acceso a evidencia cuando termina o se suspende el servicio.
 
 ### Backend y producto
 
-- Devolver el acuse vigente al consultar la semana personal. Actualmente sólo
-  se recupera el recibo que este dispositivo conservó; reinstalar o cambiar
-  dispositivo no recupera acuses anteriores desde el API personal.
+- Resuelto localmente en A3: la consulta semanal devuelve el acuse vigente
+  desde servidor y Android lo recupera sin depender de su copia local.
+  Reapertura y nueva versión no heredan el acuse anterior. Falta aceptar el
+  recorrido real con teléfono; [guion](qa-a1-a5.md).
 - Exponer marcajes originales, ajustes y sus motivos, historial y seguimiento
   de objeciones para que el trabajador pueda revisar el expediente completo.
 - Definir evidencia del acuerdo de ambas partes, texto versionado, copia del

@@ -38,8 +38,13 @@ class AttendanceRepository(private val context: Context) {
             val day = java.time.LocalDate.parse(date)
             val week = CaptureApi(registration.getString("baseUrl")).get("/me/attendance?week=$day", signer(registration).assertion(registration))
             week.optJSONObject("closure")?.let { closure ->
-                store.acknowledgement(registration.getString("deviceId"), closure.getString("id"))?.let {
-                    week.put("_localAcknowledgement", it)
+                if (closure.getString("status") == "closed") {
+                    val receipt = if (week.has("acknowledgement")) week.optJSONObject("acknowledgement")
+                        else store.acknowledgement(registration.getString("deviceId"), closure.getString("id"))
+                    receipt?.let {
+                        check(it.getString("closureId") == closure.getString("id")) { "El acuse no corresponde a esta versión del cierre." }
+                        week.put("_localAcknowledgement", it)
+                    }
                 }
             }
             week

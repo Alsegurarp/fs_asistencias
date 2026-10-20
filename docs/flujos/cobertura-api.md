@@ -1,6 +1,6 @@
 # Cobertura del API en los flujos
 
-Corte: 19 de octubre de 2026. Las 61 operaciones de contracts/openapi.yaml (versión 0.12.0).
+Corte: 20 de octubre de 2026. Las 62 operaciones de contracts/openapi.yaml (versión 0.13.0).
 Las rutas de esta tabla incluyen el prefijo /api/v1. Los roles se toman del contrato;
 la autorización efectiva también se aplica en SecurityConfig y los servicios.
 
@@ -20,6 +20,7 @@ la autorización efectiva también se aplica en SecurityConfig y los servicios.
 | GET /api/v1/users/{userId} | getUser | [03](03-empresa-y-usuarios.puml) | admin_empresa |
 | PATCH /api/v1/users/{userId} | updateUser | [03](03-empresa-y-usuarios.puml) | admin_empresa |
 | POST /api/v1/users/{userId}/unlink | unlinkUser | [03](03-empresa-y-usuarios.puml) | admin_empresa |
+| POST /api/v1/users/{userId}/password-change | requireUserPasswordChange | [03](03-empresa-y-usuarios.puml) | admin_empresa |
 | GET /api/v1/sites | listSites | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh, supervisor, auditor |
 | POST /api/v1/sites | createSite | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa |
 | GET /api/v1/sites/{siteId} | getSite | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh, supervisor, auditor |

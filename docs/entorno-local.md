@@ -122,6 +122,10 @@ arranca y su registro dice `Permission denied`.
 
 ## Crear las primeras cuentas
 
+Para habilitar el cambio obligatorio de contraseña de cuentas ya vinculadas,
+seguir [la preparación del cliente técnico local](qa-a1-a5.md#preparar-el-cambio-obligatorio-en-local).
+Es independiente de crear cuentas y de recuperar una contraseña olvidada.
+
 El backend no crea cuentas: viven en el proveedor de identidad. En local se
 crean a mano.
 

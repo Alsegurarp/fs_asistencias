@@ -544,6 +544,13 @@ class WorkdayIT : WorkdayTestBase() {
         assertEquals(listOf(myClosure, "objected", note), listOf<String>(objection.at("closureId"), objection.at("type"), objection.at("note")))
         assertTrue(sha256.matches(objection.at("evidenceHash")))
         Instant.parse(objection.at("at"))
+        for (credential in listOf(worker.token, assertion(mine.phone))) {
+            val personal = call("GET", "/api/v1/me/attendance?week=$yesterday&employeeId=${colleague.employeeId}", credential)
+            assertEquals(200, personal.status, personal.toString())
+            assertEquals(mine.employeeId, personal.at("employeeId"))
+            assertEquals(objection.whole(), personal.at<Map<String, Any?>>("acknowledgement"))
+        }
+        assertNull(call("GET", "/api/v1/me/attendance?week=$yesterday", assertion(colleague.phone)).at<Any?>("acknowledgement"))
         // Una vez por cierre, venga de donde venga.
         assertProblem(409, "already_acknowledged", acknowledge(myClosure, worker.token))
         assertProblem(409, "already_acknowledged", acknowledge(myClosure, assertion(mine.phone)))
@@ -568,6 +575,12 @@ class WorkdayIT : WorkdayTestBase() {
         val audit = call("GET", "/api/v1/audit-log?limit=200", c.adminToken)
         assertEquals(2, audit.at<List<Any>>("items[?(@.action=='week.acknowledged')]").size)
         assertFalse(note in audit.body)
+        assertEquals(200, reopen(myClosure, c.adminToken).status)
+        assertNull(call("GET", "/api/v1/me/attendance?week=$yesterday", worker.token).at<Any?>("acknowledgement"))
+        val replacement = closureOf(close(c), mine.employeeId)
+        assertEquals(2, replacement["version"])
+        assertNull(call("GET", "/api/v1/me/attendance?week=$yesterday", worker.token).at<Any?>("acknowledgement"))
+        assertEquals(objection.whole(), closure(myClosure, worker.token).at<Map<String, Any?>>("acknowledgement"))
     }
 
     @Test

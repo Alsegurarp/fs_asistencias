@@ -417,9 +417,11 @@ El servidor resuelve conflictos por cierre reabierto o ya acusado (409).
 «Compartir copia del resumen» abre el selector Android por acción expresa;
 no manda información automáticamente a RH ni al gobierno. La copia incluye
 lo mostrado y el acuse local si existe; no es el expediente probatorio completo.
-La consulta personal actual no devuelve acuses de otras instalaciones, ajustes
-detallados ni respuestas de RH. No se presenta la ausencia de acuse local como
-ausencia de acuse en el servidor. La semana consultada no se conserva sin conexión.
+Desde el contrato 0.13 la consulta devuelve el acuse guardado por el servidor,
+incluso desde otra instalación. Si el campo existe, prevalece sobre la copia
+local; un cierre reabierto no muestra un recibo como vigente. Un servidor
+anterior sin ese campo conserva la recuperación local. No se incluyen ajustes
+detallados ni respuestas de RH. La semana consultada no se conserva sin conexión.
 
 Un teléfono personal puede mostrar a su titular su semana y dejarlo acusar su
 cierre, con la misma aserción con que marca. Una terminal recibe 403.

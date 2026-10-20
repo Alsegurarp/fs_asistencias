@@ -98,3 +98,26 @@ it('actualiza me después de modificar el propio acceso', async () => {
   await waitFor(() => cache.getQueryState(['me'])?.isInvalidated === true)
   expect(writes()[0][2]).toEqual({ displayName: 'Mi nuevo nombre' })
 })
+
+it('exige confirmación para el cambio obligatorio y no solicita contraseñas', async () => {
+  await mount(); await click(`Exigir cambio de contraseña a ${user.email}`)
+  expect(button('Confirmar cambio obligatorio')?.disabled).toBe(true)
+  expect(document.querySelector('input[type="password"]')).toBeNull()
+  await check('[name="confirmPasswordChange"]'); await click('Confirmar cambio obligatorio')
+  await waitFor(() => !!document.body.textContent?.includes('Cambio obligatorio confirmado'))
+  expect(writes()).toEqual([[`/users/${id}/password-change`, 'POST']])
+})
+it('no ofrece cambio obligatorio a cuentas sin vínculo o deshabilitadas', async () => {
+  user.linkedAt = null; await mount()
+  expect(button(`Exigir cambio de contraseña a ${user.email}`)).toBeUndefined()
+  user.linkedAt = '2026-10-02T12:00:00Z'; user.status = 'disabled'
+  await act(async () => { await cache.invalidateQueries({ queryKey: ['users'] }) })
+  expect(button(`Exigir cambio de contraseña a ${user.email}`)).toBeUndefined()
+})
+it('no anuncia éxito cuando la identidad no confirma el cambio obligatorio', async () => {
+  failure = new ApiError(503, 'identity_unavailable', 'No se pudo confirmar el cambio obligatorio.')
+  await mount(); await click(`Exigir cambio de contraseña a ${user.email}`); await check('[name="confirmPasswordChange"]'); await click('Confirmar cambio obligatorio')
+  await waitFor(() => !!document.body.textContent?.includes('No se pudo confirmar el cambio obligatorio.'))
+  expect(document.body.textContent).not.toContain('Cambio obligatorio confirmado.')
+  expect(writes()).toHaveLength(1)
+})

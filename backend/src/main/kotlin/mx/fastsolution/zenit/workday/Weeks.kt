@@ -80,6 +80,7 @@ data class WeekAttendanceView(
     @get:JsonRawValue val alerts: String,
     val openIncidentIds: List<String>,
     val closure: ClosureRef?,
+    val acknowledgement: AcknowledgementView? = null,
 )
 
 data class ComputedWeek(val core: WeekCore, val rules: RuleSetRow, val openIncidentIds: List<UUID>, val hasOpenSegment: Boolean)
@@ -179,6 +180,7 @@ class WeekService(
     private val tenants: TenantRepository,
     private val capture: CaptureProperties,
     private val json: JsonMapper,
+    private val closures: ClosureRepository,
 ) {
     @Transactional(readOnly = true)
     fun ruleSets(effectiveOn: String?): List<RuleSetRow> {
@@ -203,7 +205,7 @@ class WeekService(
             )
             return WeekAttendanceView(
                 employeeId.toString(), weekStart.toString(), tenant.timeZone, closure.ruleSet, closure.segments, closure.totals,
-                closure.alerts, open.map { it.toString() }, reference,
+                closure.alerts, open.map { it.toString() }, reference, closures.find(tenantId, closure.id)?.acknowledgement,
             )
         }
         val computed = compute(tenant, employeeId, weekStart)

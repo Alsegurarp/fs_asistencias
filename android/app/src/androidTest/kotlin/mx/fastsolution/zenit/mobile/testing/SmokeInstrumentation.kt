@@ -97,6 +97,15 @@ class SmokeInstrumentation : Instrumentation() {
             check(ack.getString("type") == "objected")
             val refreshed = AttendanceRepository(isolated).personalWeek("2026-10-05")
             check(refreshed.getJSONObject("_localAcknowledgement").getString("id") == ack.getString("id"))
+            check(isolated.getSharedPreferences("capture_device", 0).edit().remove("ack:${server.deviceId}:${server.closureId}").commit())
+            check(AttendanceRepository(isolated).personalWeek("2026-10-05").getJSONObject("_localAcknowledgement").getString("id") == ack.getString("id"))
+            repository.store.saveAcknowledgement(server.deviceId, server.closureId, ack)
+            server.closureReopened = true
+            check(!repository.personalWeek("2026-10-05").has("_localAcknowledgement"))
+            server.closureReopened = false
+            server.weekAcknowledgement = null
+            check(!repository.personalWeek("2026-10-05").has("_localAcknowledgement"))
+            server.weekAcknowledgement = ack
             check(!refreshed.toString().contains("keyAlias"))
             check(runCatching { repository.acknowledgeWeek(server.closureId, "agreed", "") }.exceptionOrNull().let { it is CaptureApiException && it.status == 409 })
             val terminal = JSONObject(registered.toString()).put("mode", "terminal")
@@ -156,6 +165,8 @@ private class FixtureServer : AutoCloseable {
     val deviceId = UUID.randomUUID().toString()
     val closureId = UUID.randomUUID().toString()
     private var acknowledged = false
+    @Volatile var weekAcknowledgement: JSONObject? = null
+    @Volatile var closureReopened = false
     private var sessionId = UUID.randomUUID().toString()
     private lateinit var publicKey: java.security.PublicKey
     @Volatile var failNext = false
@@ -188,7 +199,8 @@ private class FixtureServer : AutoCloseable {
                             check(request[0] == "GET")
                             verifyAssertion(headers.getValue("authorization"))
                             JSONObject().put("weekStart", "2026-10-05").put("timeZone", "America/Mexico_City")
-                                .put("closure", JSONObject().put("id", closureId).put("version", 2).put("status", "closed"))
+                                .put("closure", JSONObject().put("id", closureId).put("version", 2).put("status", if (closureReopened) "reopened" else "closed"))
+                                .put("acknowledgement", weekAcknowledgement ?: JSONObject.NULL)
                                 .put("totals", JSONObject().put("workedMinutes", 0).put("breakMinutes", 0).put("ordinaryMinutes", 0).put("overtimeMinutes", 0))
                                 .put("segments", JSONArray().put(JSONObject().put("kind", "work").put("startAt", "2026-10-05T13:00:00Z").put("endAt", JSONObject.NULL).put("minutes", 0)))
                                 .put("alerts", JSONArray()).put("openIncidentIds", JSONArray())
@@ -199,7 +211,7 @@ private class FixtureServer : AutoCloseable {
                             else {
                                 acknowledged = true
                                 JSONObject().put("id", UUID.randomUUID().toString()).put("closureId", closureId).put("type", body.getString("type"))
-                                    .put("note", body.optString("note")).put("at", Instant.now().toString()).put("evidenceHash", "fixture-hash")
+                                    .put("note", body.optString("note")).put("at", Instant.now().toString()).put("evidenceHash", "fixture-hash").also { weekAcknowledgement = it }
                             }
                         }
                         "/api/v1/device-activations" -> {

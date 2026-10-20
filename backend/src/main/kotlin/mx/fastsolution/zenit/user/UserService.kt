@@ -9,6 +9,7 @@ import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.OperatorProperties
 import mx.fastsolution.zenit.identity.Role
+import mx.fastsolution.zenit.identity.IdentityAdministration
 import mx.fastsolution.zenit.tenant.TenantRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -50,6 +51,7 @@ class UserService(
     private val operators: OperatorProperties,
     private val employees: EmployeeRepository,
     private val audit: AuditLog,
+    private val identity: IdentityAdministration,
 ) {
     @Transactional
     fun invite(admin: CurrentPerson, request: UserCreateRequest): UserRow {
@@ -165,6 +167,18 @@ class UserService(
         if (!users.unlink(tenantId, id)) throw Problems.conflict("user_not_linked", "Esa persona no está ligada a ninguna cuenta.")
         audit.record(tenantId, admin, "user.unlinked", "user", id)
         return users.find(tenantId, id)!!
+    }
+
+    @Transactional
+    fun requirePasswordChange(admin: CurrentPerson, id: UUID) {
+        if (Role.ADMIN_EMPRESA !in admin.roles) throw Problems.forbidden()
+        val tenantId = admin.requireTenant()
+        tenants.lock(tenantId)
+        val user = users.find(tenantId, id) ?: throw Problems.notFound()
+        val subject = user.subject ?: throw Problems.conflict("user_not_linked", "La persona debe haber vinculado su cuenta antes de exigir el cambio.")
+        if (user.status != "active") throw Problems.conflict("user_not_active", "La cuenta debe tener acceso activo a la empresa.")
+        identity.requirePasswordChange(subject, user.email)
+        audit.record(tenantId, admin, "user.password_change_required", "user", id)
     }
 
     private fun parseRoles(checks: Checks, raw: List<String>?, required: Boolean): Set<String>? {

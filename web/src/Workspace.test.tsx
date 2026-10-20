@@ -43,8 +43,14 @@ it('permite consultar horarios a los cuatro roles e importar sólo a administrac
   }
 })
 
-it.each(['trabajador', 'operador_saas', 'desconocido'])('no muestra navegación de empresa a %s', role => {
+it.each(['operador_saas', 'desconocido'])('no muestra navegación de empresa a %s', role => {
   expect(render([role])).not.toContain('role="tab"')
+})
+it('el trabajador tiene sólo su consulta personal y el rol combinado conserva catálogos', () => {
+  const html = render(['trabajador'])
+  expect(html).toContain('id="tab-personal"'); expect(html).not.toContain('id="tab-employees"')
+  expect(render(['admin_empresa', 'trabajador'])).toContain('id="tab-personal"')
+  expect(render(['admin_empresa', 'trabajador'])).toContain('id="tab-employees"')
 })
 
 it('no muestra secciones sin empresa aunque se reciban roles de empresa', () => {

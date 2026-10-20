@@ -20,5 +20,5 @@ class OperatorProperties(emails: String?) {
 }
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(OperatorProperties::class)
+@EnableConfigurationProperties(OperatorProperties::class, IdentityAdminProperties::class)
 class IdentityConfig

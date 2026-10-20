@@ -1,5 +1,46 @@
 # Bitácora de trabajo
 
+## 20 de octubre de 2026 — Implementación y validación local A1–A5
+
+El usuario autoriza las cinco entregas. Se implementaron reactivación desde
+portal, Mi asistencia web, recuperación del acuse desde servidor y cambio
+obligatorio de contraseña para cuentas activas vinculadas. Contrato 0.13,
+62 operaciones, sin dependencias ni migraciones nuevas. A5 entrega el
+[guion con datos ficticios y 33 casos](qa-a1-a5.md).
+
+Aprobaron construcción/unitarias y 75 integraciones PostgreSQL, 162 pruebas
+y compilación del portal, 13 unitarias Android, lint y ambos APK, contrato
+y 7 comprobaciones de identidad aislada. El cliente técnico conservó la
+credencial OTP y otras acciones, con alcance explícito al rol manage-users.
+Backend y portal reconstruidos y analizados sin altas/críticas sin atender.
+Arranque y HTTP locales comprobados.
+
+Se preparó el cliente técnico sólo en Keycloak local, con secreto ignorado
+por Git y montado únicamente en backend; no se modificaron cuentas humanas.
+Se mantuvieron volúmenes e históricos. Los cambios anteriores de backend/bin
+se conservaron; el entorno también refleja allí copias de fuentes modificadas.
+No se hizo commit/push ni despliegue público. Instrumentación, navegador,
+recuperación de acceso perdido y decisiones globales conservan sus pendientes.
+[Detalle y evidencia](entregas-a1-a5.md).
+
+## 20 de octubre de 2026 — Trabajo ejecutable y preguntas para QA
+
+Se revisaron código y documentación sobre `1984be3`, junto con la evidencia
+final de Actions 39472918113: cuatro trabajos aprobados. Se consultaron de
+nuevo backend (`UP`), portal (HTTP 200) y ADB (sin teléfonos). No se repitió
+la batería completa ni se comprobó el servidor público.
+
+Se declararon cinco entregas locales posibles: reactivación de empresas,
+semana personal web, recuperación del acuse desde servidor, cambio obligatorio
+de contraseña para cuentas vinculadas y guion de QA por rol. Cada una conserva
+las dependencias de operación y aceptación de su tarea de origen.
+
+Se prepararon [22 preguntas con IDs estables](tareas-ejecutables-y-preguntas-qa.md)
+para los desarrolladores y los responsables de producto/operación, con mapa
+a las 17 tareas abiertas. Las respuestas pendientes no se interpretan como
+decisiones aprobadas. No se implementaron funciones, cambiaron reglas ni
+publicaron estos documentos en esta revisión.
+
 ## 20 de octubre de 2026 — Actions antes de publicar avances
 
 El usuario autoriza ejecutar GitHub Actions y después hacer push. Se comprobó
