@@ -11,9 +11,10 @@ import { Imports } from './Imports'
 import { Devices } from './Devices'
 import { Tenants } from './Tenants'
 import { TenantSettings } from './TenantSettings'
+import { PersonalAttendance } from './PersonalAttendance'
 
-const sections = ['sites', 'employees', 'schedules', 'imports', 'cards', 'devices', 'incidents', 'closures', 'exports', 'users', 'settings'] as const
-const labels = { sites: 'Sedes', employees: 'Empleados', schedules: 'Horarios', imports: 'Importar empleados', cards: 'Tarjetas', devices: 'Dispositivos', incidents: 'Incidencias', closures: 'Cierres', exports: 'Exportes', users: 'Usuarios', settings: 'Configuración' }
+const sections = ['personal', 'sites', 'employees', 'schedules', 'imports', 'cards', 'devices', 'incidents', 'closures', 'exports', 'users', 'settings'] as const
+const labels = { personal: 'Mi asistencia', sites: 'Sedes', employees: 'Empleados', schedules: 'Horarios', imports: 'Importar empleados', cards: 'Tarjetas', devices: 'Dispositivos', incidents: 'Incidencias', closures: 'Cierres', exports: 'Exportes', users: 'Usuarios', settings: 'Configuración' }
 
 export function Workspace({ me }: { me: Me }) {
   const [selected, setSelected] = useState<string>('sites')
@@ -30,7 +31,7 @@ export function Workspace({ me }: { me: Me }) {
       {tabs.map(key => <Tab key={key} value={key} label={labels[key]} id={`tab-${key}`} aria-controls={`panel-${key}`} />)}
     </Tabs>
     <Stack role="tabpanel" id={`panel-${active}`} aria-labelledby={`tab-${active}`} spacing={2}>
-      {active === 'sites' || active === 'employees' || active === 'cards'
+      {active === 'personal' ? <PersonalAttendance me={me} /> : active === 'sites' || active === 'employees' || active === 'cards'
         ? <Directory key={active} kind={active} me={me} />
         : active === 'incidents' ? <Incidents me={me} initial={incidentTarget} />
         : active === 'closures' ? <Closures me={me} onIncidents={target => { setIncidentTarget(target); setSelected('incidents') }} /> : active === 'exports' ? <Exports me={me} /> : active === 'users' ? <Users me={me} /> : active === 'schedules' ? <Schedules me={me} /> : active === 'devices' ? <Devices me={me} /> : active === 'settings' ? <TenantSettings me={me} /> : <Imports me={me} />}

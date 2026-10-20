@@ -22,6 +22,7 @@ contradice al contrato, manda el contrato.
 | Entender un término, un estado o una tabla | [Diccionario](diccionario.md) |
 | Saber qué falta | [Estado y pendientes](estado-y-pendientes.md) |
 | Elegir qué resolver primero | [Tareas críticas primero](tareas-criticas-primero.md) |
+| Preparar la sesión de QA y decidir el siguiente desarrollo | [Trabajo ejecutable y preguntas para QA](tareas-ejecutables-y-preguntas-qa.md) |
 | Revisar la lógica actual en diagramas | [Flujos PlantUML](flujos/README.md) |
 | Desplegar una versión en el servidor | [Instructivo de despliegue](instructivo-de-despliegue.md) |
 | Entender cómo está publicado | [Despliegue en el servidor](despliegue-en-servidor.md) |
@@ -32,7 +33,7 @@ contradice al contrato, manda el contrato.
 | --- | --- |
 | [Casos de uso](casos-de-uso.md) | Quién hace qué, con qué rutas y qué puede salir mal |
 | [Lógica de negocio](logica-de-negocio.md) | Las reglas que el servidor aplica y cuáles son provisionales |
-| [Flujos PlantUML](flujos/README.md) | 17 diagramas del estado actual, nacimiento de datos y cobertura de las 61 operaciones |
+| [Flujos PlantUML](flujos/README.md) | 17 diagramas del estado actual, nacimiento de datos y cobertura de las 62 operaciones |
 | [Consumir el API](consumir-el-api.md) | Credenciales, errores, páginas, idempotencia y recomendaciones de uso |
 | [Guía de la app Android](guia-app-android.md) | Enrolar, firmar, marcar, trabajar sin conexión y mostrar la semana |
 | [Producto móvil](alcance-producto-movil.md) | Pantallas del producto, endpoints y qué funciones están conectadas |
@@ -40,6 +41,8 @@ contradice al contrato, manda el contrato.
 | [Diccionario](diccionario.md) | Glosario, catálogos de valores y diccionario de datos |
 | [Entorno local](entorno-local.md) | Levantar, crear cuentas, obtener un token, simular dispositivos, ensayar el respaldo, revisar vulnerabilidades y resolver problemas frecuentes |
 | [Verificación local del 20 de octubre](verificacion-local-2026-10-20.md) | Código comprobado, pruebas repetidas, servicios locales y límites de la aceptación |
+| [Entregas A1–A5](entregas-a1-a5.md) | Reactivación, semana personal, recuperación de acuse, cambio obligatorio de contraseña y verificación |
+| [QA A1–A5](qa-a1-a5.md) | Datos ficticios, matriz de roles y casos con resultados esperados para aceptación manual |
 | [Recorrido completo](recorrido-completo.md) | De una empresa nueva a un exporte, petición por petición |
 | [Continuar el backend](continuar-el-backend.md) | Cómo está hecho el código y cómo se agrega una ruta, una tabla o un trabajo |
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |
@@ -63,7 +66,7 @@ contradice al contrato, manda el contrato.
 
 | Pieza | Carpeta | Estado |
 | --- | --- | --- |
-| Backend | `backend/` | Atiende las 61 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo. Detrás del borde toma la dirección real del visitante |
+| Backend | `backend/` | Atiende las 62 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo. Detrás del borde toma la dirección real del visitante |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
 | Portal web | `web/` | PKCE, catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, usuarios y configuración de empresa; horarios/CSV aprobados por API HTTPS, recorrido en navegador pendiente |
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Verificada en un teléfono con servidor de prueba; falta el recorrido contra el backend y las tarjetas reales |

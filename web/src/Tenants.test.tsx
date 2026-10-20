@@ -7,7 +7,7 @@ vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }
 vi.mock('./api', async original => ({ ...await original<typeof import('./api')>(), api: vi.fn() }))
 import { api, ApiError, type Tenant } from './api'
 import { Tenants } from './Tenants'
-import { choose, click, setInput, waitFor } from './testUi'
+import { button, choose, click, setInput, waitFor } from './testUi'
 
 let tenant: Tenant
 let root: Root
@@ -21,7 +21,7 @@ beforeEach(() => {
   tenant = { id: '11111111-1111-4111-8111-111111111111', name: 'Empresa demo', slug: 'empresa-demo', timeZone: 'America/Mexico_City', weekStartsOn: 'monday', breakPolicy: 'not_considered', status: 'active', createdAt: '2026-10-01T12:00:00Z', autoCloseAfterHours: null }
   failure = null
   mocked.mockReset().mockImplementation(async (path, method = 'GET', body) => {
-    if (method !== 'GET') { if (failure) throw failure; return { ...tenant, ...(body as object) } }
+    if (method !== 'GET') { if (failure) throw failure; if (path.endsWith('/reactivation')) tenant.status = 'active'; return { ...tenant, ...(body as object) } }
     if (path === '/tenants') return { items: [{ ...tenant }], nextCursor: null }
     throw new Error(`Ruta inesperada: ${path}`)
   })
@@ -56,4 +56,24 @@ it('muestra el conflicto del servidor sin cerrar el formulario', async () => {
   await mount(); await fill(); await click('Guardar empresa')
   await waitFor(() => !!document.body.textContent?.includes('El identificador ya existe.'))
   expect(document.querySelector('[name="name"]')).not.toBeNull()
+})
+
+it('reactiva sólo empresas suspendidas con confirmación y motivo válido', async () => {
+  tenant.status = 'suspended'; await mount(); await click('Reactivar Empresa demo')
+  expect(button('Confirmar reactivación')?.disabled).toBe(true)
+  await setInput('reason', ' Servicio restablecido '); expect(writes()).toHaveLength(0)
+  await click('Confirmar reactivación')
+  await waitFor(() => !button('Reactivar Empresa demo'))
+  expect(writes()).toEqual([[`/tenants/${tenant.id}/reactivation`, 'POST', { reason: 'Servicio restablecido' }]])
+})
+it('conserva el motivo ante conflicto y permite cancelar sin escribir', async () => {
+  tenant.status = 'suspended'; failure = new ApiError(409, 'tenant_not_suspended', 'Esa empresa no está suspendida.')
+  await mount(); await click('Reactivar Empresa demo'); await setInput('reason', 'Revisado por operación'); await click('Confirmar reactivación')
+  await waitFor(() => !!document.body.textContent?.includes('Esa empresa no está suspendida.'))
+  expect((document.querySelector('[name="reason"]') as HTMLInputElement).value).toBe('Revisado por operación')
+  await click('Cancelar'); expect(writes()).toHaveLength(1)
+})
+it('no consulta empresas con un rol ajeno al operador', async () => {
+  await act(async () => root.render(<QueryClientProvider client={cache}><Tenants me={{ userId: 'self', displayName: 'RH', roles: ['rh'], tenant: null }} /></QueryClientProvider>))
+  expect(mocked).not.toHaveBeenCalled(); expect(button('Dar de alta empresa')).toBeUndefined()
 })

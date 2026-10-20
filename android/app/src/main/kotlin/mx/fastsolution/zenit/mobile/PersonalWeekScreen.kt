@@ -60,7 +60,7 @@ fun PersonalWeekScreen(state: PersonalWeekState, pending: Int, onLoad: (String) 
                     Text("He revisado los registros de esta versión")
                     Button(onClick = { confirmation = "agreed" }, enabled = reviewed && !state.busy && pending == 0) { Text("Estoy conforme") }
                     Button(onClick = { confirmation = "objected" }, enabled = reviewed && !state.busy) { Text("Reportar diferencia") }
-                    Text("Si ya respondiste desde otro dispositivo o sesión, el servidor rechazará una segunda respuesta. La consulta actual no incluye acuses previos ni el detalle de ajustes; RH puede ayudarte a revisarlos.")
+                    Text("El servidor impide responder dos veces al mismo cierre. La consulta no incluye el expediente completo de ajustes; RH puede ayudarte a revisarlo.")
                 } else if (closure == null || closure.optString("status") != "closed") Text("La semana todavía no tiene un cierre vigente para responder.")
                 confirmation?.let { type ->
                     AlertDialog(onDismissRequest = { confirmation = null }, title = { Text("Confirmar respuesta") },

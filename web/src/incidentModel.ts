@@ -18,6 +18,7 @@ export type Week = {
   totals: { workedMinutes: number; breakMinutes: number; ordinaryMinutes: number; overtimeMinutes: number };
   alerts: { code: string; severity: string; message: string }[]; openIncidentIds: string[];
   closure: { id: string; version: number; status: string } | null;
+  acknowledgement?: { id: string; closureId: string; type: 'agreed' | 'objected'; note: string | null; at: string; evidenceHash: string } | null;
 }
 
 function localParts(instant: number, timeZone: string): string {

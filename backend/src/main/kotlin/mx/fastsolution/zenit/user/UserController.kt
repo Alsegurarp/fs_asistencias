@@ -74,4 +74,9 @@ class UserController(private val service: UserService) {
     @PostMapping("/{userId}/unlink")
     fun unlink(@AuthenticationPrincipal admin: CurrentPerson, @PathVariable userId: UUID): UserView =
         UserView.of(service.unlink(admin, userId))
+
+    @PostMapping("/{userId}/password-change")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun requirePasswordChange(@AuthenticationPrincipal admin: CurrentPerson, @PathVariable userId: UUID) =
+        service.requirePasswordChange(admin, userId)
 }

@@ -1,5 +1,11 @@
 # Guía del portal web
 
+Actualización A1–A4 del 20 de octubre: el operador puede reactivar empresas
+con motivo, el trabajador consulta su semana y el acuse del servidor en
+Mi asistencia y administración puede exigir contraseña nueva a cuentas
+activas vinculadas. Se aprobaron 162 pruebas y compilación. Los recorridos
+manuales conservan sus pendientes; [guion de aceptación](qa-a1-a5.md).
+
 Qué tiene que hacer el portal: iniciar sesión, saber qué mostrar a cada rol y
 contra qué ruta va cada pantalla. Antes conviene leer
 [Consumir el API](consumir-el-api.md) y [Casos de uso](casos-de-uso.md).
@@ -172,7 +178,7 @@ Lo primero es `GET /api/v1/me`:
 | Respuesta | Qué mostrar |
 | --- | --- |
 | `tenant` nulo y sin roles | La cuenta existe pero nadie la ha invitado: una pantalla que lo explique |
-| Rol `operador_saas` | Alta y lista de empresas; nada de los datos de una empresa |
+| Rol `operador_saas` | Alta, lista y reactivación de empresas; sin datos internos |
 | Roles de empresa | El menú que corresponde a sus roles, con el nombre de la empresa |
 
 Una persona puede tener varios roles: el menú es la unión de lo que cada uno

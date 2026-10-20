@@ -6,7 +6,11 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
-Última revisión: 20 de octubre de 2026, sobre `565dbdd`.
+Última revisión: 20 de octubre de 2026; A1–A5 sobre `1984be3`
+e integración de `origin/main`/`ef23c20` para la PR.
+[Resultado actual](entregas-a1-a5.md): contrato 0.13, reactivación, consulta
+personal, recuperación de acuses y cambio obligatorio de contraseña. El
+[guion QA](qa-a1-a5.md) conserva la aceptación manual pendiente.
 La [verificación local](verificacion-local-2026-10-20.md) repitió backend,
 portal, Android, identidad, contrato, seguridad y restauración; el ambiente
 queda en ejecución con V008 aplicada. Incluye semana/acuse y herramientas
@@ -37,16 +41,16 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 
 | Pieza | Estado |
 | --- | --- |
-| Contrato | Versión 0.12, con 61 operaciones. Incluye detalle paginado de bloqueos por corrida; todavía sin congelar |
-| Backend | Atiende las 61 operaciones. Construcción, unitarias y 74 de integración contra PostgreSQL real aprobadas nuevamente el 20, incluido el detalle de corridas interrumpidas y sus reintentos |
+| Contrato | Versión 0.13, con 62 operaciones. Acuse semanal desde servidor y cambio obligatorio de contraseña; todavía sin congelar |
+| Backend | Atiende 62 operaciones; construcción, unitarias y 75 integraciones PostgreSQL aprobadas para A1–A4. Aislamiento, cuenta activa/vinculada y fallos del proveedor comprobados |
 | Base | 29 tablas en 8 migraciones, con roles separados para migrar, para atender y para respaldar. V008 conserva bloqueos por persona/corrida. Imagen propia sobre Alpine, sin root ni privilegios, que ordena los textos por código de carácter |
-| Identidad | Segundo factor obligatorio en `zenit`. El 20 aprobaron las seis comprobaciones de importación, OTP, PKCE, recuperación y readiness en identidad aislada. SMTP y cuentas personales del servidor siguen pendientes; [procedimiento](preparar-ambiente-compartido.md) |
+| Identidad | OTP obligatorio; 7 comprobaciones aisladas aprobadas, incluida conservación de credencial OTP y otras acciones al exigir UPDATE_PASSWORD. Cliente técnico preparado sólo en local; SMTP, recuperación y aceptación pública pendientes |
 | Entorno local | Reconstruido y en ejecución el 20: backend en 18080, portal en 8081 e identidad en 8082. V008 aplicada; HTTP, CSP y rechazo de API sin sesión comprobados. Tarjetas simuladas habilitadas sólo para pruebas ficticias |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | El 20, tras V008, el ensayo restauró 131 tablas/1,970 filas idénticas. La recuperación completa con origen apagado y secretos nuevos sigue siendo la del 18: 130 tablas/1.867 filas. [Detalle](recuperacion-servicio.md). Copia externa, custodia, programación y recuperación pública pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
-| Portal | PKCE, `/me`, sedes, empleados, horarios/asignaciones, importación CSV, tarjetas, dispositivos, configuración de empresa, incidencias, cierres, exportes y usuarios; el operador tiene alta/listado de empresas. El 20 pasaron compilación y 151 pruebas. Incluye personas bloqueadas por corrida, causas, paginación y enlaces a incidencias. Horarios e importación también pasaron por API HTTPS con sesión real; sigue pendiente su recorrido de pantallas. Configuración y detalle de bloqueos están implementados y probados localmente, sin desplegar. Llama 42 operaciones distintas, todas presentes en el contrato; nginx y proxy comprobados localmente |
-| App Android | Enrolamiento, firma ES256 con Keystore, cola cifrada, sincronización, recibos y renovación. El 19 pasaron 9 pruebas unitarias, lint y APK debug/de instrumentación. Personal y terminal pasaron contra backend local y HTTPS publicado en Samsung SM-S928B (API 36), con cola entre procesos, reenvío sin duplicados y limpieza. El fixture anterior y el rechazo de argumentos incompletos también pasaron. Release no repetido. Semana y acuse añadidos localmente, pendientes de recorrido real. El 20 se añadieron bienvenida, administración integrada y lectura/carga/borrado MF1K con ejemplos. Debug e instrumentación compilados, lint y 13 unitarias aprobados; APK instalado por Wi-Fi. Tarjetas físicas y login integrado pendientes; [guía](guia-app-android.md#administración-integrada-y-tarjetas-mf1k) |
+| Portal | Catálogos y operación existentes, más reactivación de empresas, Mi asistencia y cambio obligatorio para cuentas activas vinculadas. 162 pruebas y compilación aprobadas. Actualizado en local; aceptación de navegador y despliegue público pendientes |
+| App Android | Captura/cola/sincronización existentes. A3 recupera el acuse del servidor y descarta su vigencia al reabrir; compatibilidad con servidor anterior sin campo. 13 unitarias, lint y ambos APK compilados. Instrumentación ampliada, sin ejecutar por falta de teléfono. La captura local/HTTPS del 19 conserva su evidencia |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -71,7 +75,7 @@ una cuenta de administración de prueba para validar Android por HTTPS.
 
 | Qué | Por qué importa |
 | --- | --- |
-| Completar el portal | Configuración de empresa ya está implementada y probada localmente. Faltan desplegarla, suspender/reactivar empresas y la pantalla del trabajador; los recorridos del navegador y permisos con sesiones de otros roles siguen abiertos |
+| Completar el portal | Reactivación, consulta personal y cambio obligatorio implementados localmente. Faltan aceptación con sesiones reales, despliegue público, suspensión y expediente completo según decisiones pendientes |
 | Completar y validar la app | Enrolamiento y sincronización comprobados contra backend local y HTTPS publicado con datos ficticios. El 19 de octubre se agregó consulta semanal y acuse personal con recibo cifrado; [alcance y validación](revision-movil-empleado.md). Faltan recorrido real de semana/acuse, historial completo desde backend y captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
@@ -107,7 +111,7 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Ausencias | Cómo tratar vacaciones e incapacidades, para no cerrar en ceros |
 | Otra plantilla de exporte | Según lo que pida la nómina del primer cliente |
 | Dónde vive el archivo de un exporte | Hoy en la base, unos minutos; la alternativa es un almacén de objetos |
-| Versión 1.0 del contrato | Cuándo deja de cambiar sin aviso. El portal y la app llaman 45 de las 61 operaciones; falta completar recorridos reales y confirmar las decisiones de esta tabla |
+| Versión 1.0 del contrato | Completar recorridos reales y decisiones de producto/operación; acordar compatibilidad con los consumidores del contrato 0.13 |
 
 ### Dependen de algo externo
 
@@ -120,7 +124,7 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 | Cuentas personales en la consola de identidad | Antes de cualquier ambiente compartido: hoy hay una cuenta temporal |
 | Staging y TLS | Hecho el 18 de octubre de 2026: un ambiente publicado con HTTPS. Falta decidir si habrá un segundo ambiente separado para pruebas |
 | Guardar y restaurar una copia cifrada de operación | Consultar con Gabriel quién custodia la clave privada y dónde queda su copia aislada, por indicación de Alexis. El 18 se comprobó una copia local con claves de ensayo, eliminadas al terminar; no sustituye una copia recuperable de operación |
-| Destino externo y recuperación completa del servicio | Datos operativos en infraestructura del cliente y sistema en VPS de fastSolution; responsabilidad principal de respaldo a cargo de fastSolution. Perfiles de 50/300 empleados y un año consultable. [S3/GCS y alternativas evaluados](evaluacion-respaldo-anual.md). Se conservan copia diaria/30 días y objetivos 24 h/4 h del servicio. Faltan destino, implementación de bases separadas, custodia, automatización y recuperación pública; SSH mediante Gabriel |
+| Destino externo y recuperación completa del servicio | SaaS bajo control de fastSolution con aislamiento lógico por empresa; respaldo externo cifrado de Zenit fuera del dominio de falla de producción. Perfiles de 50/300 empleados y un año consultable. Se conservan copia diaria/30 días y objetivos 24 h/4 h. Faltan destino, custodia, automatización y recuperación pública; SSH mediante Gabriel |
 | Cuotas compartidas entre instancias | La dirección real del visitante ya llega al backend a través del borde y del portal, y el límite de activaciones fallidas cuenta a cada visitante por separado. Compartir las cuotas sólo hace falta con más de una instancia |
 
 ## Vulnerabilidades conocidas
@@ -282,7 +286,7 @@ acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 | 10 | Mostrar las personas que no pudieron cerrar y sus causas | Implementada y validada localmente: causas e incidencias por persona, paginación, aislamiento y conservación en corridas parciales/reintentos. Sin desplegar ni aceptar en navegador real |
 | 11 | Automatizar verificaciones en cada cambio | Workflow integrado en `main` el 19; cuatro trabajos aprobados en `avanceLunes` (ejecución 39301664714). La obligatoriedad de trabajos requiere una decisión adicional |
 | 12 | Completar semana y acuse del trabajador | Integrar datos reales, identidad y permisos; el texto y evidencia del acuse dependen también de la tarea 17 |
-| 13 | Completar pantallas del operador del servicio | Alta y listado de empresas implementados; faltan suspender/reactivar y comprobar permisos y aislamiento con sesión real. La regla de suspensión depende de la decisión de negocio |
+| 13 | Completar pantallas del operador del servicio | Alta, listado y reactivación implementados y probados localmente. Faltan suspensión y aceptación de permisos/aislamiento con sesión real |
 | 14 | Publicar ambiente de pruebas con TLS, SMTP y cuentas personales | Publicado con TLS el 18 de octubre de 2026 ([Despliegue en el servidor](despliegue-en-servidor.md)). Faltan correo, cuentas personales, quién opera el servicio y el acceso con sesión por HTTPS; retirar la cuenta temporal sólo tras verificar las nuevas |
 | 15 | Comprobar recuperación completa y automatizar respaldos externos | Recuperación local comprobada. Política diaria/30 días, objetivos 24 h/4 h y atención por fastSolution aprobados; SSH por Gabriel y destino en otro servidor. Faltan custodia, concretar destino, automatizar y comprobar recuperación pública; [detalle](recuperacion-servicio.md) |
 | 16 | Validar captura autenticada con tarjetas reales | Definir y probar autenticación y entrega de claves con tarjetas y teléfonos físicos |

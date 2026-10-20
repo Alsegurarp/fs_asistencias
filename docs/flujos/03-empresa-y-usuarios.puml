@@ -17,8 +17,8 @@ group Transacción de alta
 end
 api --> op : 201 empresa creada
 note over op,api
-La empresa nace aquí. No existe todavía pantalla de operador:
-el portal sólo muestra un aviso al rol operador_saas.
+La empresa nace aquí. El portal del operador permite alta,
+listado y reactivación con motivo; suspensión espera su regla aprobada.
 El alta no crea empleado, contraseña ni cuenta Keycloak.
 end note
 identityAdmin -> kc : crear por consola la cuenta personal correspondiente
@@ -35,6 +35,12 @@ Invitar no envía correo ni crea automáticamente una cuenta Keycloak.
 end note
 admin -> api : PATCH /users/{userId}\nroles, disabled o vínculo employeeId
 api -> api : no dejar a la empresa sin su último administrador
+admin -> api : POST /users/{userId}/password-change
+api -> db : comprobar empresa, cuenta activa y subject vinculado
+api -> kc : cliente técnico: leer usuario por subject\ncomprobar correo y añadir UPDATE_PASSWORD
+kc --> api : requisito confirmado, sin cambiar OTP ni otras acciones
+api -> db : INSERT auditoría user.password_change_required
+api --> admin : 204; sin integración o resultado incierto: 503
 admin -> api : POST /users/{userId}/unlink
 api -> db : quitar subject; conservar roles e históricos
 op -> api : POST /tenants/{tenantId}/administrators/unlink\nemail + motivo, para recuperación

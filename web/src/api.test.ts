@@ -9,8 +9,12 @@ describe('Permisos del contrato', () => {
     expect(permissions(['auditor']).editDirectory).toBe(false)
     expect(permissions(['rh']).editSites).toBe(false)
     expect(permissions(['rh']).editDirectory).toBe(true)
-    expect(Object.values(permissions(['trabajador', 'operador_saas']))).not.toContain(true)
-    expect(Object.values(permissions(['admin_empresa']))).not.toContain(false)
+    const { personal, ...administrative } = permissions(['trabajador', 'operador_saas'])
+    expect(personal).toBe(true)
+    expect(Object.values(administrative)).not.toContain(true)
+    const { personal: adminPersonal, ...adminPermissions } = permissions(['admin_empresa'])
+    expect(adminPersonal).toBe(false)
+    expect(Object.values(adminPermissions)).not.toContain(false)
   })
 
   it.each([

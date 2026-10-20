@@ -24,7 +24,7 @@ export function RecordName({ kind, id, me }: { kind: 'employee' | 'site' | 'user
   return <>{'name' in record.data ? record.data.name : record.data.displayName}</>
 }
 
-function WeekSummary({ week }: { week: Week }) {
+export function WeekSummary({ week }: { week: Week }) {
   return <Stack spacing={1}>
     <Alert severity="info">El cálculo es una referencia; los topes de jornada requieren revisión jurídica.</Alert>
     <Typography>Inicio de semana: {week.weekStart} · Zona: {week.timeZone}</Typography>

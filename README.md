@@ -4,12 +4,14 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
-Monorepo del producto. El backend atiende las 61 operaciones del contrato, con
-pruebas contra PostgreSQL real. El portal implementa inicio de sesión, sedes,
+Monorepo del producto. El backend atiende las 62 operaciones del contrato 0.13,
+con 75 pruebas de integración PostgreSQL. El portal implementa inicio de sesión, sedes,
 empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias,
-cierres, exportes, usuarios y configuración de empresa. El 19 pasaron 148
-pruebas del portal y los ensayos de horarios/importación por API HTTPS con
-sesión real; sigue su recorrido completo en navegador. Android implementa
+cierres, exportes, usuarios y configuración de empresa. A1–A4 añaden reactivación,
+consulta semanal personal, recuperación de acuses y cambio obligatorio de
+contraseña. Pasaron 162 pruebas del portal y su compilación; los ensayos de
+horarios/importación por API HTTPS del 19 conservan su evidencia. Sigue el
+recorrido completo en navegador; [entregas y QA](docs/entregas-a1-a5.md). Android implementa
 enrolamiento, sobres firmados y
 sincronización con cola cifrada; el 19 de octubre se verificaron personal y
 terminal en teléfono contra backend local y HTTPS publicado, con tarjetas

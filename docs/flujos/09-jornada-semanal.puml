@@ -5,7 +5,7 @@ start
 :GET /employees/{employeeId}/attendance\npor admin/RH/supervisor/auditor;\no GET /me/attendance por trabajador/teléfono personal;
 :Determinar empleado autorizado y empresa;\nnormalizar semana con zona y weekStartsOn del tenant;
 if (¿Hay cierre vigente para esa persona/semana?) then (sí)
-  :Entregar snapshot guardado, reglas y huella del cierre;\nañadir referencias e incidencias abiertas actuales;
+  :Entregar snapshot guardado, reglas y huella del cierre;\nañadir referencias, incidencias abiertas actuales\ny acuse guardado de esa versión, si existe;
   stop
 endif
 :Elegir rule_set vigente en el último día de semana;
@@ -22,7 +22,7 @@ endif
 :Calcular workedMinutes, breakMinutes,\nordinaryMinutes y overtimeMinutes;
 :Emitir alertas de tramo abierto y topes semanales/diarios;
 :Consultar incidencias abiertas y versión de ajustes;
-:Devolver semana calculada sin guardarla como cierre;
+:Devolver semana calculada sin guardarla como cierre;\nacuse nulo si no hay cierre vigente;
 stop
 legend bottom
 rule_set es de sólo lectura para la aplicación; se modifica por migraciones.

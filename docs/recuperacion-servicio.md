@@ -107,6 +107,14 @@ del respaldo. No mantener dos instalaciones atendiendo los mismos dispositivos.
 
 ## Definición recibida para el modelo de respaldo
 
+La propuesta de bases por cliente que sigue queda como antecedente. La
+[decisión de alojamiento aprobada](decisiones-de-negocio.md#modelo-de-alojamiento-aprobado)
+define el SaaS estándar con backend/PostgreSQL compartidos, aislamiento
+lógico y respaldo externo de Zenit bajo control de fastSolution. No requiere
+bases ni buckets por cliente; las modalidades dedicadas se cotizan aparte.
+Siguen pendientes destino, custodia, automatización y restauración en
+producción, conservando la política y los objetivos registrados.
+
 El 19 de octubre el usuario indica:
 
 - El respaldo externo debe hacerse por ambas partes; fastSolution debe

@@ -13,9 +13,12 @@ const statuses: Record<string, string> = { active: 'Activa', suspended: 'Suspend
 export function Tenants({ me }: { me: Me }) {
   const cache = useQueryClient()
   const [creating, setCreating] = useState(false)
-  const list = useInfiniteQuery({ queryKey: ['tenants'], initialPageParam: '',
+  const [reactivating, setReactivating] = useState<Tenant | null>(null)
+  const allowed = me.roles.includes('operador_saas')
+  const list = useInfiniteQuery({ queryKey: ['tenants'], initialPageParam: '', enabled: allowed,
     queryFn: ({ pageParam }) => api<Page<Tenant>>(`/tenants${pageParam ? `?cursor=${encodeURIComponent(pageParam)}` : ''}`), getNextPageParam: page => page.nextCursor || undefined, retry: false })
   useEffect(() => { if (list.error instanceof ApiError && list.error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) }, [list.error, cache])
+  if (!allowed) return <Alert severity="info">Sólo quien opera el servicio puede gestionar empresas.</Alert>
   const rows = list.data?.pages.flatMap(page => page.items) || []
   return <Stack spacing={2}>
     <Typography variant="h5">Empresas</Typography>
@@ -24,16 +27,37 @@ export function Tenants({ me }: { me: Me }) {
     <ErrorNotice error={list.error} />{list.isError && <Button onClick={() => void list.refetch()}>Reintentar empresas</Button>}
     {list.isPending && <Typography role="status">Cargando empresas…</Typography>}
     {list.isSuccess && !rows.length && <Alert severity="info">Todavía no hay empresas.</Alert>}
-    {!!rows.length && <TableContainer><Table aria-label="Empresas del servicio"><TableHead><TableRow>{['Empresa', 'Zona horaria', 'Semana', 'Descanso', 'Estado', 'Alta'].map(label => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>
+    {!!rows.length && <TableContainer><Table aria-label="Empresas del servicio"><TableHead><TableRow>{['Empresa', 'Zona horaria', 'Semana', 'Descanso', 'Estado', 'Alta', 'Acciones'].map(label => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>
       {rows.map(tenant => <TableRow key={tenant.id}>
         <TableCell>{tenant.name}<br />{tenant.slug}</TableCell><TableCell>{tenant.timeZone}</TableCell>
         <TableCell>Empieza en {days[tenant.weekStartsOn].toLowerCase()}</TableCell><TableCell>{breaks[tenant.breakPolicy]}</TableCell>
         <TableCell>{statuses[tenant.status] || tenant.status}</TableCell><TableCell>{showTime(tenant.createdAt, tenant.timeZone)}</TableCell>
+        <TableCell>{tenant.status === 'suspended' && <Button onClick={() => setReactivating(tenant)}>Reactivar {tenant.name}</Button>}</TableCell>
       </TableRow>)}
     </TableBody></Table></TableContainer>}
     {list.hasNextPage && <Button disabled={list.isFetchingNextPage} onClick={() => void list.fetchNextPage()}>Cargar más empresas</Button>}
     {creating && <TenantForm me={me} onClose={() => setCreating(false)} />}
+    {reactivating && <ReactivationForm tenant={reactivating} me={me} onClose={() => setReactivating(null)} />}
   </Stack>
+}
+
+function ReactivationForm({ tenant, me, onClose }: { tenant: Tenant; me: Me; onClose: () => void }) {
+  const cache = useQueryClient()
+  const [reason, setReason] = useState('')
+  const save = useMutation({ mutationFn: () => api<Tenant>(`/tenants/${tenant.id}/reactivation`, 'POST', { reason: reason.trim() }),
+    onSuccess: async () => { await cache.invalidateQueries({ queryKey: ['tenants'] }); onClose() },
+    onError: error => { if (error instanceof ApiError && error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) } })
+  return <Dialog open fullWidth maxWidth="sm" onClose={() => { if (!save.isPending) onClose() }} aria-labelledby="reactivation-title">
+    <form onSubmit={event => { event.preventDefault(); if (!save.isPending && me.roles.includes('operador_saas') && reason.trim().length >= 10 && reason.trim().length <= 500) save.mutate() }}>
+      <DialogTitle id="reactivation-title">Reactivar empresa</DialogTitle>
+      <DialogContent><Stack spacing={2}>
+        <Typography>Confirma la reactivación de {tenant.name}. Se restablecerá su acceso al servicio y el motivo quedará en la bitácora.</Typography>
+        <TextField name="reason" label="Motivo de reactivación" value={reason} onChange={event => setReason(event.target.value)} required disabled={save.isPending} helperText="Entre 10 y 500 caracteres." slotProps={{ htmlInput: { maxLength: 500 } }} />
+        <ErrorNotice error={save.error} />
+      </Stack></DialogContent>
+      <DialogActions><Button disabled={save.isPending} onClick={onClose}>Cancelar</Button><Button type="submit" variant="contained" disabled={save.isPending || reason.trim().length < 10 || reason.trim().length > 500}>{save.isPending ? 'Reactivando…' : 'Confirmar reactivación'}</Button></DialogActions>
+    </form>
+  </Dialog>
 }
 
 function TenantForm({ me, onClose }: { me: Me; onClose: () => void }) {

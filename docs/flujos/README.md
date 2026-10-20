@@ -1,5 +1,10 @@
 # Flujos actuales de Zenit
 
+Actualización A1–A4 del 20: los flujos 03 y 09 incorporan cambio obligatorio
+de contraseña y acuse semanal desde servidor. La cobertura refleja las 62
+operaciones del contrato 0.13. El corte siguiente corresponde a los demás
+diagramas y conserva su evidencia histórica.
+
 Corte: **18 de octubre de 2026**, fuentes del commit `5f36b5c` más los cambios
 locales de esta sesión. Los diagramas describen la implementación existente;
 no conceden permisos nuevos ni equivalen a una validación de producción.

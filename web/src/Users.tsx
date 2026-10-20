@@ -8,7 +8,7 @@ import { showTime } from './incidentModel'
 
 const roles: Record<string, string> = { admin_empresa: 'Administración', rh: 'RH', supervisor: 'Supervisión', trabajador: 'Trabajador', auditor: 'Auditoría' }
 const statuses = { invited: 'Invitado', active: 'Activo', disabled: 'Deshabilitado' }
-type Action = { kind: 'invite' } | { kind: 'edit' | 'unlink'; user: TenantUser }
+type Action = { kind: 'invite' } | { kind: 'edit' | 'unlink'; user: TenantUser } | { kind: 'password'; user: TenantUser }
 
 export function Users({ me }: { me: Me }) {
   const cache = useQueryClient()
@@ -31,15 +31,34 @@ export function Users({ me }: { me: Me }) {
         <TableCell>{user.displayName || user.email}{user.id === me.userId && ' (Tu cuenta)'}<br />{user.email}</TableCell>
         <TableCell>{user.roles.map(role => roles[role] || role).join(', ')}</TableCell><TableCell>{statuses[user.status]}</TableCell>
         <TableCell>{user.employeeId ? <RecordName kind="employee" id={user.employeeId} me={me} /> : 'Sin vínculo'}</TableCell>
-        <TableCell><Button onClick={() => setAction({ kind: 'edit', user })}>Editar {user.email}</Button>{user.linkedAt && <Button onClick={() => setAction({ kind: 'unlink', user })}>Desvincular {user.email}</Button>}</TableCell>
+        <TableCell><Button onClick={() => setAction({ kind: 'edit', user })}>Editar {user.email}</Button>{user.linkedAt && <Button onClick={() => setAction({ kind: 'unlink', user })}>Desvincular {user.email}</Button>}{user.linkedAt && user.status === 'active' && <Button onClick={() => setAction({ kind: 'password', user })}>Exigir cambio de contraseña a {user.email}</Button>}</TableCell>
       </TableRow>)}
     </TableBody></Table></TableContainer>}
     {list.hasNextPage && <Button disabled={list.isFetchingNextPage} onClick={() => void list.fetchNextPage()}>Cargar más usuarios</Button>}
-    {action && <UserForm key={action.kind + ('user' in action ? action.user.id : '')} action={action} me={me} onClose={() => setAction(null)} />}
+    {action?.kind === 'password' ? <PasswordChangeDialog user={action.user} me={me} onClose={() => setAction(null)} /> : action && <UserForm key={action.kind + ('user' in action ? action.user.id : '')} action={action} me={me} onClose={() => setAction(null)} />}
   </Stack>
 }
 
-function UserForm({ action, me, onClose }: { action: Action; me: Me; onClose: () => void }) {
+function PasswordChangeDialog({ user, me, onClose }: { user: TenantUser; me: Me; onClose: () => void }) {
+  const cache = useQueryClient()
+  const [confirmed, setConfirmed] = useState(false)
+  const save = useMutation({ mutationFn: () => api<void>(`/users/${user.id}/password-change`, 'POST'),
+    onError: error => { if (error instanceof ApiError && error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) } })
+  return <Dialog open fullWidth maxWidth="sm" onClose={() => { if (!save.isPending) onClose() }} aria-labelledby="password-change-title">
+    <DialogTitle id="password-change-title">Exigir cambio de contraseña</DialogTitle>
+    <DialogContent><Stack spacing={2}>
+      <Typography>{user.displayName || user.email} · {user.email}</Typography>
+      {save.isSuccess ? <Alert severity="success">Cambio obligatorio confirmado. La cuenta deberá establecer una contraseña nueva en su próximo ingreso.</Alert> : <>
+        <Alert severity="info">La persona necesita autenticarse con su acceso actual y OTP. Esta acción no recupera una contraseña olvidada, no envía correo y no cierra sesiones existentes.</Alert>
+        <FormControlLabel label="Confirmo exigir una contraseña nueva en el próximo ingreso" control={<Checkbox name="confirmPasswordChange" checked={confirmed} disabled={save.isPending} onChange={(_, value) => setConfirmed(value)} />} />
+        <ErrorNotice error={save.error} />
+      </>}
+    </Stack></DialogContent>
+    <DialogActions><Button disabled={save.isPending} onClick={onClose}>{save.isSuccess ? 'Listo' : 'Cancelar'}</Button>{!save.isSuccess && <Button variant="contained" disabled={!confirmed || save.isPending} onClick={() => { if (confirmed && !save.isPending && permissions(me.roles).users) save.mutate() }}>{save.isPending ? 'Confirmando…' : 'Confirmar cambio obligatorio'}</Button>}</DialogActions>
+  </Dialog>
+}
+
+function UserForm({ action, me, onClose }: { action: Exclude<Action, { kind: 'password' }>; me: Me; onClose: () => void }) {
   const cache = useQueryClient()
   const user = 'user' in action ? action.user : undefined
   const [selected, setSelected] = useState(user?.roles || [])

@@ -2,6 +2,8 @@
 
 Revisión documental y verificación local: 20 de octubre de 2026, sobre `565dbdd`.
 [Pruebas repetidas y ambiente actual](verificacion-local-2026-10-20.md).
+Actualización posterior: [A1–A5 locales sobre 1984be3](entregas-a1-a5.md),
+con nuevas pantallas, contrato 0.13 y [guion de QA](qa-a1-a5.md).
 Orden por riesgo y bloqueo del producto; los números originales remiten a
 [Estado y pendientes](estado-y-pendientes.md#lista-consolidada-de-tareas-pendientes).
 Esta revisión declara trabajo pendiente y no modifica el sistema desplegado.
@@ -16,8 +18,8 @@ por ejemplo, identidad es el orden 2 y las decisiones de negocio son el orden 5.
 
 | Área | Evidencia y alcance |
 | --- | --- |
-| Backend y contrato | Contrato 0.12.0, 61 operaciones. El 20 pasaron construcción, unitarias y 74 pruebas de integración PostgreSQL. También seis comprobaciones de identidad/readiness con Keycloak importado |
-| Portal | El 20 pasaron compilación y 151 pruebas. Configuración y personas bloqueadas por corrida disponibles en el ambiente local reconstruido. Horarios/importación por API HTTPS aprobados el 19; siguen pantallas, otras sesiones de rol y suspensión/reactivación |
+| Backend y contrato | Contrato 0.13, 62 operaciones. A1–A4: construcción, unitarias y 75 integraciones PostgreSQL; 7 comprobaciones de identidad aislada aprobadas |
+| Portal | 162 pruebas y compilación aprobadas; reactivación, consulta personal y cambio obligatorio implementados y levantados localmente. Sesiones reales y despliegue público pendientes |
 | Android | El 20 pasaron 13 unitarias, lint (0 errores, 13 advertencias) y APK debug/de instrumentación. Incluye semana/acuse y herramientas MF1K. ADB sin teléfonos; no se repitió instrumentación. Personal/terminal contra backend local y HTTPS conservan la evidencia del 19 |
 | Despliegue | El 19 se usó una sesión de administración facilitada por el usuario para `/me`, preparación y limpieza de datos ficticios por HTTPS. Ambos modos Android pasaron contra el servidor publicado. El recorrido completo del navegador sigue abierto; no se accedió por SSH ni se desplegaron cambios |
 | Respaldo | Ensayo del 20 tras V008: 131 tablas/1,970 filas idénticas. Recuperación completa con origen apagado y secretos nuevos: evidencia del 18. Copia externa operativa y recuperación pública pendientes |
@@ -37,8 +39,8 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 
 | Orden | Prioridad | Tarea | Posibilidad de resolver y criterio de cierre |
 | --- | --- | --- | --- |
-| 1 | P0 | Respaldo externo y recuperación completa (15) | Datos operativos en infraestructura del cliente; sistema en VPS de fastSolution. Mediano: 50 empleados; grande: 300, cuatro marcajes/día, un año consultable. [S3/GCS y alternativas evaluados](evaluacion-respaldo-anual.md). Se conservan copia diaria/30 días y objetivos 24 h/4 h del servicio. Faltan elegir destino, adaptar bases separadas, custodia, automatización y recuperación pública. SSH mediante Gabriel |
-| 2 | P0 | Identidad operativa: cuentas personales, OTP, operador y SMTP (14) | El usuario define seleccionar al empleado en el portal y exigir contraseña nueva al próximo login; [flujo aún sin implementar](preparar-ambiente-compartido.md#recuperación-administrada-desde-el-portal). Falta precisar acceso de quien olvidó su contraseña. Siguen cuentas personales, SMTP, responsable de OTP/recuperación y autorización del operador, altas y recorridos reales. Retirar `arranque` sólo tras comprobar accesos personales |
+| 1 | P0 | Respaldo externo y recuperación completa (15) | SaaS administrado por fastSolution con aislamiento lógico por empresa. Mediano: 50 empleados; grande: 300, cuatro marcajes/día, un año consultable. Respaldo externo cifrado de Zenit, fuera del dominio de falla de producción. Se conservan copia diaria/30 días y objetivos 24 h/4 h. Faltan destino, custodia, automatización y recuperación pública; bases dedicadas sólo Enterprise. SSH mediante Gabriel |
+| 2 | P0 | Identidad operativa: cuentas personales, OTP, operador y SMTP (14) | A4 entrega cambio obligatorio para cuentas activas vinculadas y cliente técnico local, sin alterar OTP. Faltan Q03/Q04: recuperación, SMTP, cuentas personales y provisión/aceptación pública |
 | 3 | P0 | Aprobar e implementar jornada y evidencia del acuse (17) | Requiere dictamen profesional y criterios de producto. Después implementar casos esperados, texto/evidencia versionados y conservación de cierres históricos; la revisión documental existente no cierra la tarea |
 | 4 | P0 | Captura autenticada con tarjetas reales (16) | Herramientas Android MF1K implementadas para ejemplos; pendientes de prueba física. Falta autenticación integrada y custodia de claves: el backend sólo verifica captura simulada. Comprobar captura y rechazo con tarjetas/teléfonos reales |
 | 5 | P0 | Resolver suspensión, baja, supervisor y tipo de marcaje (2) | Requiere elección del responsable del producto sobre las propuestas existentes. Implementar sólo cambios aprobados y probar permisos, históricos y captura. Hoy el supervisor abarca toda la empresa y la suspensión también detiene captura |
@@ -51,8 +53,8 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Cinco imágenes locales reconstruidas y analizadas el 20, con IDs registrados. Corregidas altas de libexpat en backend/portal y libx11 en portal; ninguna grave nueva sin atender. Siguen seis excepciones de identidad. Faltan IDs del servidor mediante Gabriel, análisis de esas imágenes, despliegue de correcciones y comprobación pública |
 | 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación completada localmente. Configuración usa GET/PATCH /tenant y respeta permisos, cambios parciales y desactivación del cierre; nueve pruebas nuevas más navegación. Portal: 151 pruebas y compilación repetidas y aprobadas el 20. Falta despliegue y aceptación de pantallas con sesión real |
 | 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Completada localmente el 19: contrato 0.12, V008, registro transaccional por persona, consulta paginada y detalle en portal. 74 pruebas de integración y 151 del portal aprobadas, incluidos aislamiento, corrida parcial y reintentos. Sin desplegar ni aceptar en navegador real; los históricos anteriores conservan conteos |
-| 15 | P2 | Semana y acuse del trabajador (12) | Android ya consulta semana y envía acuse con recibo cifrado local. Falta recorrido real, historial y recuperación desde backend, y completar alcance web. Reglas/evidencia dependen del orden 3 (17 histórico) |
-| 16 | P2 | Pantallas de operador del servicio (13) | Alta y lista de empresas ya están, con 3 pruebas. Faltan suspender y reactivar desde el portal y probar aislamiento con el rol real |
+| 15 | P2 | Semana y acuse del trabajador (12) | A2 entrega consulta personal web; A3 recupera acuse desde servidor en web/Android. Faltan aceptación real, expediente completo y definiciones jurídicas/evidencia del orden 3 |
+| 16 | P2 | Pantallas de operador del servicio (13) | A1 entrega reactivación con motivo y pruebas. Faltan suspensión según orden 5 y aceptación de permisos/aislamiento con sesión real |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias (18) | Requiere criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar resultados |
 | 18 | P2 | Carga, continuidad y operación del despliegue (resto de 19) | Requiere volumen objetivo y número de instancias. Probar trabajos, cierres, exportes y cuotas; resolver actualización del DNS ante IP dinámica y comprobar renovación real de certificados. Cuotas compartidas sólo si habrá varias instancias |
 | 19 | P2 | Conector y formato de nómina (20) | Depende del sistema y formato del primer cliente. Cierre con sincronización y archivo aceptados por ese sistema |
@@ -120,7 +122,7 @@ del punto 5. Ninguna de estas tareas sustituye los bloqueos P0.
 
 | Orden | Quién debe aportar la definición | Dato que falta |
 | --- | --- | --- |
-| 1 | Gabriel como interlocutor técnico y responsable que se designe | Destino de objetos en evaluación, acceso a datos operativos del cliente desde VPS de fastSolution, custodia y segunda copia de clave; adaptar bases separadas, automatizar y ensayar recuperación |
+| 1 | Gabriel como interlocutor técnico y responsable que se designe | Destino externo de Zenit fuera del dominio de falla de producción, custodia y segunda copia de clave; automatizar y ensayar recuperación del SaaS aprobado |
 | 2 | Responsable del servicio de identidad | SMTP y encargado de OTP/recuperación del operador; resolver su autorización sin asumir que dispone de buzón |
 | 3 | Responsable del producto y revisión jurídica profesional | Criterios de jornada y texto/evidencia del acuse con casos esperados |
 | 4 | Equipo que facilite tarjetas y teléfonos | Tecnología de tarjeta, autenticación y entrega de claves para probar captura real |

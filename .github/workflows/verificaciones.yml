@@ -33,7 +33,7 @@ jobs:
           docker compose -f compose.yaml -f infra/keycloak/compose.test.yaml --profile setup run --rm secrets-init
           docker compose -f compose.yaml -f infra/keycloak/compose.test.yaml up --wait keycloak
       - name: Probar realm importado y protección OTP
-        run: node --test infra/keycloak/health.test.mjs infra/keycloak/realm.test.mjs
+        run: node --test infra/keycloak/health.test.mjs infra/keycloak/realm.test.mjs infra/keycloak/password-change.test.mjs
       - name: Limpiar contenedores de pruebas
         if: always()
         run: |
