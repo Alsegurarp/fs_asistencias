@@ -2,8 +2,11 @@
 
 Revisión documental y verificación local: 20 de octubre de 2026, sobre `565dbdd`.
 [Pruebas repetidas y ambiente actual](verificacion-local-2026-10-20.md).
-Actualización posterior: [A1–A5 locales sobre 1984be3](entregas-a1-a5.md),
+Actualización posterior: [A1–A5 integradas en main/e4d7683](entregas-a1-a5.md),
 con nuevas pantallas, contrato 0.13 y [guion de QA](qa-a1-a5.md).
+Los cuatro trabajos de [CI de la PR #10](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988)
+aprobaron. La confirmación de funcionamiento del usuario queda registrada
+en la bitácora; falta el resultado por caso para cerrar la aceptación formal.
 Orden por riesgo y bloqueo del producto; los números originales remiten a
 [Estado y pendientes](estado-y-pendientes.md#lista-consolidada-de-tareas-pendientes).
 Esta revisión declara trabajo pendiente y no modifica el sistema desplegado.
@@ -20,7 +23,7 @@ por ejemplo, identidad es el orden 2 y las decisiones de negocio son el orden 5.
 | --- | --- |
 | Backend y contrato | Contrato 0.13, 62 operaciones. A1–A4: construcción, unitarias y 75 integraciones PostgreSQL; 7 comprobaciones de identidad aislada aprobadas |
 | Portal | 162 pruebas y compilación aprobadas; reactivación, consulta personal y cambio obligatorio implementados y levantados localmente. Sesiones reales y despliegue público pendientes |
-| Android | El 20 pasaron 13 unitarias, lint (0 errores, 13 advertencias) y APK debug/de instrumentación. Incluye semana/acuse y herramientas MF1K. ADB sin teléfonos; no se repitió instrumentación. Personal/terminal contra backend local y HTTPS conservan la evidencia del 19 |
+| Android | El 20 se repiten construcción, 13 unitarias y lint (0 errores, 13 advertencias). Samsung SM-S928B autorizado, API 36: instrumentación FIXTURE aprobada, incluidos semana/acuse, recuperación desde servidor simulado y reapertura. Actualización sin borrar datos. Backend real/HTTPS conserva la evidencia del 19; no acredita el nuevo recorrido contra ese servidor ni tarjeta física |
 | Despliegue | El 19 se usó una sesión de administración facilitada por el usuario para `/me`, preparación y limpieza de datos ficticios por HTTPS. Ambos modos Android pasaron contra el servidor publicado. El recorrido completo del navegador sigue abierto; no se accedió por SSH ni se desplegaron cambios |
 | Respaldo | Ensayo del 20 tras V008: 131 tablas/1,970 filas idénticas. Recuperación completa con origen apagado y secretos nuevos: evidencia del 18. Copia externa operativa y recuperación pública pendientes |
 | Entorno local | Docker y servicios estaban apagados. Ambiente reconstruido conservando volúmenes, V008 aplicada y HTTP comprobado; queda en ejecución. Se retiraron sólo contenedores desechables y se conservaron cambios previos de `backend/bin/` |
@@ -113,10 +116,27 @@ corregir tres altas; su cierre espera las imágenes del servidor mediante Gabrie
   resultados de cada caso y limpieza de dispositivos/sesiones de prueba;
   excluir credenciales, códigos vigentes y datos personales de los registros.
 
-Los puntos 13 y 14 ya están implementados y probados localmente.
-El punto 16 puede avanzar
-con la UI de reactivación; la suspensión debe respetar la decisión pendiente
-del punto 5. Ninguna de estas tareas sustituye los bloqueos P0.
+Los puntos 13 y 14 ya están implementados y probados. La reactivación del
+punto 16 y la consulta/recuperación de acuse del 15 están integradas en
+`main`; no se deben volver a implementar. La suspensión espera la decisión
+del punto 5. Ninguna de estas entregas sustituye los bloqueos P0.
+
+Para continuar después de la PR #10:
+
+1. Ejecutar y registrar el [guion A5](qa-a1-a5.md) con sesiones reales por
+   rol, incluidos aislamiento entre empresas, renovación y salida. Para el
+   ambiente público falta Q17: versión, imágenes y accesos de ensayo.
+2. Completar el recorrido portal/backend/Keycloak del cambio obligatorio:
+   próximo ingreso, contraseña nueva, OTP conservado y sesión anterior.
+   La configuración técnica local está documentada; su provisión pública
+   conserva Q04. La recuperación de acceso olvidado espera Q03.
+3. El teléfono de Q09 ya está conectado y la instrumentación de semana/acuse
+   con HTTP simulado aprobó. Falta su recorrido contra el backend real y
+   aceptación visual. La tarjeta autenticada conserva Q08; no está acreditada
+   por el simulador ni por la herramienta MF1K de ejemplo.
+4. Incorporar las respuestas Q01–Q22 antes de cambiar reglas, retención,
+   respaldo externo o nómina. Se puede medir una línea base local de carga
+   con datos ficticios; los criterios de aceptación requieren Q19.
 
 ### Definiciones necesarias para desbloquear tareas
 

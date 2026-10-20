@@ -1,11 +1,14 @@
-# Entregas locales A1–A5 — 20 de octubre de 2026
+# Entregas A1–A5 — 20 de octubre de 2026
 
 Implementación local sobre `1984be3`, autorizada por el usuario después de la
 declaración de tareas. No se cambiaron las decisiones pendientes de jornada,
 suspensión, baja, supervisor, retención o NFC. No se desplegó el servidor
-público. Para la PR se incorporan los avances de `origin/main`/`ef23c20`,
-incluido el modelo SaaS aprobado; se conservan las pruebas locales de este
-corte y la nueva ejecución de CI comprobará la integración propuesta.
+público. Se incorporaron los avances de `origin/main`/`ef23c20`, incluido
+el modelo SaaS aprobado. La [PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10)
+está integrada en `main`/`e4d7683`; sus cuatro trabajos de
+[CI aprobaron](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988).
+El usuario confirmó funcionamiento; la aceptación por caso conserva su acta
+pendiente. Los resultados locales siguientes corresponden al corte de implementación.
 
 ## Resultado
 
@@ -28,7 +31,7 @@ las huellas de cierres permanecen en sus versiones existentes.
 | --- | --- |
 | Backend | Construcción, unitarias y 75 pruebas de integración PostgreSQL aprobadas; cobertura de las 62 operaciones y esquemas |
 | Portal | Compilación y 162 pruebas en 16 archivos aprobadas |
-| Android | 13 unitarias, lint y APK debug/de instrumentación compilados; los nuevos casos de instrumentación no se ejecutaron por falta de teléfono |
+| Android | 13 unitarias, lint y ambos APK comprobados de nuevo. Samsung SM-S928B API 36: instrumentación FIXTURE aprobada, incluidos semana/acuse, recuperación sin copia local y reapertura. HTTP simulado; recorrido real/visual y tarjeta física pendientes |
 | Identidad | 7 comprobaciones aisladas aprobadas. El nuevo ensayo verifica UPDATE_PASSWORD, acciones previas y el mismo ID de credencial OTP; niega administración de realm/clientes. Se repitió con alcance explícito y `fullScopeAllowed=false` |
 | Contrato | OpenAPI y ejemplos válidos |
 | Imágenes modificadas | Backend y portal reconstruidos y aprobados por el análisis de vulnerabilidades; sin altas o críticas sin atender |
@@ -76,15 +79,17 @@ Registros locales, excluidos de Git:
 - `build/a4-identidad.log`, `a4-identidad-permisos.log`, `a4-cliente-local.log`.
 - `build/a1-a4-contrato.log`, `a1-a4-imagenes.log` y `build/security/summary.json`.
 - `build/a1-a4-arranque-local.log`, `a1-a4-http.json`, `a1-a5-diagramas.log`.
+- `build/reanudacion-android-build.log`, `reanudacion-android-fixture.log`,
+  `reanudacion-android-evidence.json` y `reanudacion-android-artifacts/`.
 
 Las pruebas de roles, vínculo, 404 entre empresas, 409 por estado y 503 del
 proveedor están en backend y portal. La instrumentación Android incluye
 recuperación sin copia local, reapertura y nulo explícito del servidor.
 
 Permanecen abiertos el recorrido manual por rol, login/OTP real de A4,
-instrumentación/tarjetas físicas, recuperación de contraseña olvidada,
+instrumentación contra backend real/tarjetas físicas, recuperación de contraseña olvidada,
 SMTP/cuentas operativas, despliegue público y las preguntas Q01–Q22.
 Las 17 tareas globales no cambian de cantidad por cerrar estas cinco entregas
-locales. GitHub Actions de `1984be3` corresponde al código previo; la nueva
-prueba de identidad está incorporada al workflow de la PR. Los resultados de
-esa ejecución deben consultarse en la PR; no sustituyen la aceptación manual.
+integradas. La nueva prueba de identidad aprobó dentro del workflow de la PR,
+junto con backend, portal, Android y contrato/seguridad. CI no sustituye
+la aceptación manual por caso ni las pruebas físicas.

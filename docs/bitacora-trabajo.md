@@ -1,5 +1,60 @@
 # Bitácora de trabajo
 
+## 20 de octubre de 2026 — Revisión de las 17 tareas y teléfono disponible
+
+El usuario pide identificar cierres posibles y dudas por tarea, e indica
+que hay teléfono ADB. Se comprueba Samsung SM-S928B autorizado, API 36.
+Backend, portal, base e identidad locales están en ejecución. La
+[matriz por tarea](tareas-ejecutables-y-preguntas-qa.md#posibilidad-de-cierre-con-la-evidencia-disponible)
+declara qué puede avanzarse y conserva Q01–Q22; Q09 ya no pide conseguir
+teléfono. No se cierra íntegramente ninguna de las 17 tareas con evidencia
+documental: 9/13 necesitan aceptación del portal y entorno; 15 conserva
+recorrido real, expediente y definiciones de jornada/evidencia.
+
+Se construyen ambos APK desde Android de `main`/`e4d7683`: 13 unitarias
+aprobadas, lint con 0 errores/13 advertencias. La primera instalación rechaza
+la firma Docker; se comprueba que la clave debug local coincide con la app
+instalada y se firman ambos APK con ella, sin copiar la clave al repositorio.
+La actualización con `adb install -r` aprueba sin desinstalar ni borrar datos.
+
+La instrumentación termina `OK: FIXTURE` e `INSTRUMENTATION_CODE: -1`.
+Además de Keystore, cola y sincronización simulada, ejecuta consulta semanal,
+objeción, recuperación del acuse sin copia local, reapertura y nulo explícito
+del servidor, conflicto 409 y rechazo local en terminal. Usa HTTP simulado
+en el teléfono y almacén separado; no acredita backend real, tarjeta física,
+login/OTP en navegador ni aceptación visual. Las fuentes instrumentales del
+contenedor coinciden con las actuales.
+
+Evidencia ignorada por Git: `build/reanudacion-android-build.log`,
+`build/reanudacion-android-fixture.log`, `build/reanudacion-android-evidence.json`
+y `build/reanudacion-android-artifacts/` (APK firmados bajo `local-signed/`,
+resultados unitarios y lint). Los cambios previos de `backend/bin/` se
+conservan. No se cambian redes del teléfono, cuentas humanas ni el servidor
+público; la prueba móvil de dos IP sigue diferida a otro desarrollador.
+
+## 20 de octubre de 2026 — PR integrada y contexto para continuar
+
+Se comprueba que `main` local y la referencia `origin/main` coinciden en
+`e4d7683`, commit de integración de la [PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10).
+GitHub confirma que está integrada. Los cuatro trabajos de la
+[ejecución de la PR](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988)
+aprobaron; el árbol de archivos de `e4d7683` coincide con el de la rama
+verificada `5c0b5c5`. A1–A5 están incorporadas a `main`.
+
+El usuario confirma funcionamiento después de aprobar la PR. No se recibió
+un acta por caso del guion de 33 pruebas ni el inventario del servidor;
+esa confirmación no acredita por separado pruebas físicas o despliegue.
+Se actualizan las referencias que todavía presentaban la PR y CI como
+pendientes, y se conserva el modelo SaaS aprobado. No hay nuevas respuestas
+a Q01–Q22 en el repositorio. Permanecen 17 tareas globales abiertas.
+
+El siguiente trabajo es registrar la aceptación por rol del guion A5 y
+completar el recorrido de contraseña/OTP de A4. El contexto y las dependencias
+están en [Tareas críticas primero](tareas-criticas-primero.md#trabajo-técnico-que-podemos-iniciar).
+Los cambios locales anteriores de `backend/bin/` se conservan. En esta
+revisión no se repiten pruebas funcionales, se levantan servicios ni se
+publican cambios; sólo se actualiza la documentación para retomar.
+
 ## 20 de octubre de 2026 — Preparación de PR e integración remota
 
 El usuario solicita la PR de A1–A5 y comprobar compatibilidad con el remoto.

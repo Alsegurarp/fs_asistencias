@@ -1,12 +1,14 @@
 # Verificaciones automáticas
 
-A1–A4 locales: 75 integraciones de backend, 162 pruebas del portal y 7 de
-identidad; el workflow ahora incluye `infra/keycloak/password-change.test.mjs`
-contra Keycloak aislado. [Evidencia local](entregas-a1-a5.md). Estos cambios
-aún no tienen una ejecución de Actions propia; las ejecuciones enlazadas
-abajo corresponden al código previo.
+A1–A5 integradas en `main`/`e4d7683` mediante la
+[PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10). Los cuatro
+trabajos aprobaron en su [ejecución 39504126988](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988).
+El árbol integrado coincide con el de la rama comprobada `5c0b5c5`.
+El workflow incluye `infra/keycloak/password-change.test.mjs` contra
+Keycloak aislado. El corte local acredita 75 integraciones de backend,
+162 pruebas del portal y 7 de identidad; [evidencia y límites](entregas-a1-a5.md).
 
-Última repetición local: **20 de octubre de 2026**, sobre `main`/`565dbdd`.
+Antecedente previo a A1–A5: **20 de octubre de 2026**, sobre `main`/`565dbdd`.
 Backend (74 de integración), portal (151), Android (13 unitarias y lint),
 identidad aislada (6), contrato, secretos y las cinco imágenes aprobaron.
 También se verificaron el arranque con V008, HTTP y restauración local.

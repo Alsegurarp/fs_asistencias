@@ -6,8 +6,9 @@ cambia alguna de las tres cosas.
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
-Última revisión: 20 de octubre de 2026; A1–A5 sobre `1984be3`
-e integración de `origin/main`/`ef23c20` para la PR.
+Última revisión: 20 de octubre de 2026; A1–A5 integradas en `main`/`e4d7683`
+mediante la [PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10),
+con sus cuatro trabajos de [CI aprobados](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988).
 [Resultado actual](entregas-a1-a5.md): contrato 0.13, reactivación, consulta
 personal, recuperación de acuses y cambio obligatorio de contraseña. El
 [guion QA](qa-a1-a5.md) conserva la aceptación manual pendiente.
@@ -50,7 +51,7 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 | Respaldo | El 20, tras V008, el ensayo restauró 131 tablas/1,970 filas idénticas. La recuperación completa con origen apagado y secretos nuevos sigue siendo la del 18: 130 tablas/1.867 filas. [Detalle](recuperacion-servicio.md). Copia externa, custodia, programación y recuperación pública pendientes |
 | Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
 | Portal | Catálogos y operación existentes, más reactivación de empresas, Mi asistencia y cambio obligatorio para cuentas activas vinculadas. 162 pruebas y compilación aprobadas. Actualizado en local; aceptación de navegador y despliegue público pendientes |
-| App Android | Captura/cola/sincronización existentes. A3 recupera el acuse del servidor y descarta su vigencia al reabrir; compatibilidad con servidor anterior sin campo. 13 unitarias, lint y ambos APK compilados. Instrumentación ampliada, sin ejecutar por falta de teléfono. La captura local/HTTPS del 19 conserva su evidencia |
+| App Android | Captura/cola/sincronización existentes. A3 recupera acuse del servidor y descarta vigencia al reabrir. Repetidas 13 unitarias y lint; ambos APK actualizados sin borrar datos. Instrumentación FIXTURE aprobada en Samsung SM-S928B API 36, incluidos los casos de semana/acuse. Falta ese recorrido contra backend real y tarjeta física; captura local/HTTPS del 19 conserva su evidencia |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -304,8 +305,8 @@ siguen abiertas donde se indican en **Sin verificar** y en la validación.
 
 | Quién | Primer paso sugerido |
 | --- | --- |
-| App | Verificar enrolamiento y marcajes con tarjeta simulada contra el ambiente publicado, como dice [Conectar la app al ambiente publicado](guia-app-android.md#conectar-la-app-al-ambiente-publicado). Después, semana y acuse; la tarjeta real requiere su prueba externa |
-| Portal | Completar las pantallas de horarios/importación y Configuración con sesión real; su API y pruebas locales ya pasaron. Después, suspensión/reactivación y trabajador |
+| App | Enrolamiento/captura simulada local y HTTPS conservan su evidencia del 19. El siguiente recorrido es semana y recuperación del acuse con el APK integrado; requiere teléfono. Tarjeta autenticada y claves siguen pendientes |
+| Portal | Ejecutar y registrar el guion A5 de horarios/importación, configuración, reactivación, consulta personal y cambio obligatorio de contraseña/OTP con sesiones reales. Las pantallas están implementadas; suspensión espera decisión de producto |
 | Backend | El detalle de bloqueos por corrida ya está implementado y probado junto con el portal; faltan despliegue y aceptación real. jOOQ generado sigue diferido; las reglas de negocio esperan sus decisiones |
 
 El portal ya no depende de la app para tener datos: el simulador deja

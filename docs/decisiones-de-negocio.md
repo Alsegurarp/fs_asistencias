@@ -51,8 +51,9 @@ La implementación de cambios no forma parte de esta tarea de definición.
 
 Retardos, faltas, salida anticipada, ausencias, reglas de jornada y evidencia del
 acuse requieren sus propios criterios. No se fijó una tolerancia a partir de
-los ejemplos visuales de Android. Tampoco se decidió el proveedor de integración
-continua, formato de nómina del primer cliente, almacenamiento externo de
+los ejemplos visuales de Android. GitHub Actions ya está integrado y probado;
+sigue pendiente decidir la obligatoriedad de sus trabajos (Q22). Tampoco se
+decidieron formato de nómina del primer cliente, almacenamiento externo de
 exportes ni fecha de congelación del contrato.
 
 Las reglas ejecutables vigentes están en [Lógica de negocio](logica-de-negocio.md)
