@@ -69,6 +69,31 @@ emisor anunciado no cambia. Faltan las cookies y las redirecciones de una
 sesión real, y la cuota por dirección del backend, que todavía ve la
 dirección del portal y no la del visitante.
 
+## Recuperación administrada desde el portal
+
+El 19 de octubre el usuario define que la recuperación se administra en la
+plataforma web: visualizar empleados y declarar para la cuenta seleccionada
+que en su próximo login debe establecer una contraseña nueva.
+
+El portal actual lista usuarios y permite vincularlos con empleados, editar
+roles, deshabilitar acceso y desvincular cuentas; no implementa esta nueva
+acción. Las contraseñas y el segundo factor viven en el proveedor de identidad,
+por lo que guardar una bandera sólo en la base del producto no completa el
+requisito. Falta incorporar contrato, backend, integración de identidad,
+control del permiso y acción en portal, con pruebas de aislamiento de empresa
+y de exigencia efectiva del cambio antes de entrar al producto.
+
+Para un empleado sin cuenta vinculada hay que resolver primero esa vinculación.
+También queda por definir cómo obtiene acceso quien olvidó la contraseña:
+el cambio obligatorio al próximo login no resuelve por sí solo la autenticación
+previa. No se ha elegido contraseña temporal ni enlace por correo. Conservar
+OTP y no registrar contraseñas en bitácoras o registros técnicos.
+
+Este flujo administrado no está implementado ni validado y no cierra los
+pendientes de cuentas personales, OTP o recuperación del operador. El
+procedimiento de correo siguiente corresponde al flujo por enlace cuando
+se habilite; no sustituye la acción administrativa solicitada en el portal.
+
 ## Correo y cuentas personales
 
 Gabriel debe ejecutar los cambios remotos por su acceso SSH autorizado y abrir

@@ -1,7 +1,9 @@
 # Tareas pendientes
 
-Estado actualizado el **19 de octubre de 2026**, sobre `main`, commit
-`430ac29`, con la tarea 14 implementada y validada localmente, sin desplegar.
+Estado actualizado el **19 de octubre de 2026**, con el código de la tarea 14
+publicado en `main`, commit `8a86916`, validado sin desplegar. Definiciones
+posteriores guardadas localmente. **Continuación en espera de la QA del usuario
+prevista para hoy**; [evidencia del corte](evidencia-avance-2026-10-19.md).
 Hay **17 tareas abiertas total o parcialmente**.
 La numeración corresponde a la columna **Orden** de
 [Tareas críticas primero](tareas-criticas-primero.md), que conserva los criterios
@@ -12,8 +14,8 @@ detallados de aceptación y las dependencias.
 | Orden | Tarea | Evidencia y alcance |
 | --- | --- | --- |
 | 7 | Android reproducible contra backend | Personal y terminal comprobados en teléfono contra backend local y HTTPS, con tarjeta simulada, cola, sincronización, recibos y renovación. No acredita tarjeta física autenticada ni apagado real de radios |
-| 11 | Verificaciones automáticas por cambio | Workflow integrado en `main`. Backend, portal, Android y contrato/seguridad aprobaron en la [ejecución 39303294132](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39303294132). Configurar los trabajos como obligatorios antes de integrar cambios sigue siendo una decisión adicional |
-| 14 | Personas que no pudieron cerrar y sus causas | Contrato 0.12, migración V008, registro transaccional por persona, consulta paginada y portal con nombres, causas y enlaces a incidencias. 74 pruebas de integración y 151 del portal aprobadas. Implementación local, sin despliegue ni aceptación con navegador real; las corridas antiguas conservan sólo sus conteos |
+| 11 | Verificaciones automáticas por cambio | Workflow integrado en `main`. Backend, portal, Android y contrato/seguridad aprobaron para `8a86916` en la [ejecución 39365266093](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39365266093). Configurar los trabajos como obligatorios antes de integrar cambios sigue siendo una decisión adicional |
+| 14 | Personas que no pudieron cerrar y sus causas | Contrato 0.12, migración V008, registro transaccional por persona, consulta paginada y portal con nombres, causas y enlaces a incidencias. 74 pruebas de integración y 151 del portal aprobadas; CI aprobado para `8a86916`. Implementación publicada, sin despliegue ni aceptación con navegador real; las corridas antiguas conservan sólo sus conteos |
 
 ## Tareas abiertas
 
@@ -22,8 +24,8 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 
 | Orden | Prioridad | Tarea pendiente | Qué falta para completarla |
 | --- | --- | --- | --- |
-| 1 | P0 | Respaldo externo y recuperación completa | Concretar destino externo, custodia de claves y responsables; automatizar copias y comprobar recuperación pública. La restauración local ya pasó |
-| 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | Completar correo, recuperación del operador, altas y recorridos reales; retirar el acceso temporal después de comprobar los personales |
+| 1 | P0 | Respaldo externo y recuperación completa | Definido: datos operativos en infraestructura del cliente y sistema en VPS de fastSolution; perfiles de 50/300 empleados, cuatro marcajes diarios y un año consultable. [Evaluación de S3/GCS y alternativas](evaluacion-respaldo-anual.md) disponible. Faltan elegir destino, custodia, adaptar bases separadas, automatizar y ensayar recuperación |
+| 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | Definido: recuperación administrada desde el portal, seleccionando al empleado para exigir contraseña nueva al próximo login. Falta implementar y probar la acción, precisar acceso cuando se olvidó la contraseña y completar cuentas personales, OTP, SMTP y recuperación del operador |
 | 3 | P0 | Jornada y evidencia del acuse | Obtener dictamen profesional y criterios aprobados; implementar reglas, casos esperados y evidencia versionada conservando históricos |
 | 4 | P0 | Captura autenticada con tarjetas reales | Definir tecnología, autenticación y entrega de claves; probar captura y rechazo con tarjetas y teléfonos físicos |
 | 5 | P0 | Suspensión, baja, supervisor y tipo de marcaje | Elegir las reglas propuestas y después implementar sus efectos sobre permisos, captura e históricos |
@@ -39,6 +41,42 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | 18 | P2 | Carga, continuidad y operación | Definir volumen e instancias; probar trabajos, cierres, exportes y cuotas, actualización de DNS y renovación real de certificados |
 | 19 | P2 | Conector y formato de nómina | Identificar sistema y formato del primer cliente; implementar sincronización y obtener aceptación del archivo exportado |
 | 20 | P2 | Congelar contrato 1.0 | Completar recorridos reales y decisiones pendientes; acordar compatibilidad y publicación de cambios con los consumidores |
+
+## Definiciones recibidas para P0-01 y P0-02
+
+**P0-01 — respaldo.** El usuario indica respaldo por ambas partes, con
+responsabilidad principal de fastSolution sobre la información de sus clientes.
+El tercero no tiene la información del cliente. El usuario precisa que la
+infraestructura del cliente aloja únicamente sus datos operativos y el sistema
+vive en un VPS de fastSolution. El destino externo sigue en evaluación.
+Quedan por precisar obligaciones, conectividad, adaptación de bases separadas,
+destinos, transferencia y custodia de claves.
+La política diaria/30 días y los objetivos 24 h/4 h registrados para el
+servicio no sustituyen concretar ese modelo ni ensayar su recuperación.
+
+El respaldo actual contiene todas las empresas y la identidad de una
+instalación. No es una copia individual que pueda entregarse a cualquier
+cliente. Perfiles declarados: 50 empleados para mediano y 300 para grande;
+entrada, inicio/fin de un descanso y salida, cinco días por 52 semanas:
+52,000 y 312,000 marcajes/año. Se requiere un año de datos consultables.
+La [evaluación de costos](evaluacion-respaldo-anual.md) propone conservarlo en
+PostgreSQL y separar las copias de recuperación. Proveedor y copias mensuales
+adicionales no están elegidos. Ver [Recuperación](recuperacion-servicio.md#definición-recibida-para-el-modelo-de-respaldo).
+
+**P0-02 — contraseña.** El usuario define un flujo administrado en el portal
+web: visualizar empleados, seleccionar su cuenta y declarar que al próximo
+login debe establecer una contraseña nueva. Esta acción todavía no existe
+en el contrato, backend ni portal; requiere integración con el proveedor de
+identidad, permisos dentro de la empresa y pruebas.
+
+Marcar cambio obligatorio no resuelve por sí solo el acceso de quien ya
+olvidó su contraseña. Falta definir cómo se autentica para establecer la
+nueva. No se ha elegido contraseña temporal ni enlace por correo. SMTP,
+cuentas personales, OTP y recuperación del operador siguen pendientes en sus
+propios alcances. Ver [Identidad](preparar-ambiente-compartido.md#recuperación-administrada-desde-el-portal).
+
+Ambas tareas siguen abiertas; estas respuestas definen requisitos, no una
+implementación ni una recuperación comprobadas.
 
 ## Siguiente trabajo que puede iniciarse
 
