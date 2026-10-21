@@ -38,6 +38,13 @@ Evidencia ignorada por Git: `build/security/web.cdx.json`, `web.vulns.json`,
 El push de esta corrección debe comprobarse en una nueva ejecución de Actions;
 repetir la ejecución antigua conserva el Dockerfile vulnerable de aquel commit.
 
+Confirmación posterior: la corrección se publicó en `main`/`f72941e` y los
+cuatro trabajos aprobaron en la
+[ejecución 39636653675](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39636653675):
+backend, portal, Android y contrato/seguridad, incluido el análisis de las
+cinco imágenes. Queda corregido el fallo de CI; el servidor público conserva
+su despliegue pendiente. Esta actualización documental no cambia las imágenes.
+
 ## 21 de octubre de 2026 — Entrega del cierre de QA para publicación
 
 Por solicitud del usuario, se reúne en `main` el cierre documental y técnico

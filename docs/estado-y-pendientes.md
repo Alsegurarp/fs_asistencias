@@ -59,7 +59,7 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 | Entorno local | Levantado de nuevo el 21 conservando volúmenes: backend en 18080, portal en 8081 e identidad en 8082. V008 aplicada; A5 local comprobado. Corregidos permisos tmpfs de identidad; tarjetas simuladas sólo para datos ficticios |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | El 20, tras V008, el ensayo restauró 131 tablas/1,970 filas idénticas. La recuperación completa con origen apagado y secretos nuevos sigue siendo la del 18: 130 tablas/1.867 filas. [Detalle](recuperacion-servicio.md). Copia externa, custodia, programación y recuperación pública pendientes |
-| Vulnerabilidades | El análisis de Actions de `b2f7832` detectó 3 críticas/2 altas en el portal. Corregido después con Nginx 1.30.6 y retirada de curl/libcurl: nuevo análisis local web con 0 críticas/altas y 3 medias. Las otras imágenes conservan su evidencia y las seis excepciones de identidad; falta confirmar CI del commit corregido y servidor |
+| Vulnerabilidades | Portal corregido con Nginx 1.30.6 y retirada de curl/libcurl: análisis local con 0 críticas/altas y 3 medias. Los cuatro trabajos de CI y las cinco imágenes aprobaron para `f72941e` en la ejecución 39636653675. Se conservan las seis excepciones de identidad; falta despliegue y comprobación del servidor |
 | Portal | Catálogos y operación existentes, más reactivación de empresas, Mi asistencia y cambio obligatorio. 162 pruebas y compilación aprobadas el 21; 33 casos A5 locales comprobados. Aceptación del usuario y despliegue/recorrido público pendientes |
 | App Android | Captura/cola/sincronización existentes. A3 recupera acuse del servidor y descarta vigencia al reabrir. Repetidas 13 unitarias y lint; ambos APK actualizados sin borrar datos. Instrumentación FIXTURE aprobada en Samsung SM-S928B API 36, incluidos los casos de semana/acuse. Falta ese recorrido contra backend real y tarjeta física; captura local/HTTPS del 19 conserva su evidencia |
 | Conector | No existe |
@@ -147,6 +147,8 @@ actualizó la base a Nginx 1.30.6 por digest y se retiró curl/libcurl sin uso
 en el portal. El análisis local web de las 16:31:18 UTC aprobó con 0 críticas,
 0 altas, 3 medias y ninguna excepción. Arranque, cabeceras y proxy comprobados;
 no se desplegó el servidor público. [Detalle](bitacora-trabajo.md#21-de-octubre-de-2026--corrección-del-análisis-de-seguridad-del-portal).
+Los cuatro trabajos de CI del arreglo `f72941e`, incluidas las cinco imágenes,
+aprobaron en la [ejecución 39636653675](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39636653675).
 
 Antecedente del 20 de octubre de 2026, sobre las cinco imágenes
 reconstruidas. Todas aprobaron; se conservan las seis excepciones de identidad.

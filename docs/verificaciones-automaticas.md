@@ -7,7 +7,10 @@ digest fijo y se retiraron curl/libcurl, que el portal no utiliza. El nuevo
 análisis local aprobó con 0 críticas, 0 altas y 3 medias, sin excepciones
 nuevas; construcción, arranque y proxy también aprobaron. El workflow y su
 umbral no cambiaron. [Evidencia y alcance](bitacora-trabajo.md#21-de-octubre-de-2026--corrección-del-análisis-de-seguridad-del-portal).
-El resultado de CI debe consultarse para el nuevo commit de corrección.
+La corrección publicada en `main`/`f72941e` aprobó los cuatro trabajos,
+incluidas las cinco imágenes, en la
+[ejecución 39636653675](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39636653675).
+El fallo de seguridad de CI queda resuelto; no acredita despliegue público.
 
 El 21 de octubre se añadió la prueba de CSS/JS reales del login para detectar
 permisos incorrectos en los tmpfs de Keycloak. Pasaron siete comprobaciones
