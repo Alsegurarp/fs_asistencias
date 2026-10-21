@@ -1,5 +1,75 @@
 # Bitácora de trabajo
 
+Las entradas están ordenadas por fecha y describen el resultado de cada
+sesión. Expresiones como «sin teléfono», «pendiente» o «en ejecución» dentro
+de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
+ni los avances posteriores. Se preservan los commits, conteos y límites
+originales para no atribuir pruebas de una versión a otra.
+
+## 21 de octubre de 2026 — Entrega del cierre de QA para publicación
+
+Por solicitud del usuario, se reúne en `main` el cierre documental y técnico
+del [acta A5](qa-a1-a5-2026-10-21.md): 33/33 casos locales, corrección de los
+permisos tmpfs de Keycloak y regresiones de recursos de identidad y acuse
+Android ajeno. Se verificó que la huella de `results.json` coincide con el
+acta, así como los 33 IDs, la limpieza y los enlaces relativos de los
+documentos modificados. `git diff --check` no encontró errores.
+
+La entrega conserva fuera del commit secretos, cookies, APK, registros y
+guiones locales bajo `build/`, además de los cambios preexistentes en
+`backend/bin/`. La sincronización con GitHub y su workflow no representan
+un despliegue del servidor: Q17, horarios/importación en navegador y el
+recorrido visual Android contra backend real mantienen sus pendientes.
+La ejecución de CI correspondiente se identifica por el SHA de esta entrega;
+las ejecuciones de PR #10/#11 documentadas anteriormente son antecedentes.
+
+## 21 de octubre de 2026 — Documentación reconciliada y QA A5 local
+
+Sobre `main`/`907a93a`, se actualizaron las secciones que seguían mostrando
+como pendientes reactivación, consulta personal, acuse del servidor o cambio
+obligatorio. Los cortes del 19 y del 20 previos a A1–A5 se identificaron como
+históricos, preservando commits/conteos. Se distinguieron la aplicación
+Android operativa, la administración con portal real y su presentación debug.
+Se corrigió también la propuesta histórica de bases por cliente: el modelo
+vigente es SaaS compartido con aislamiento lógico, ya aprobado.
+
+Docker estaba detenido; se levantó el ambiente conservando volúmenes y
+secretos. Backend saludable, portal e identidad accesibles, V001–V008 exitosas.
+Las 162 pruebas web y compilación aprobaron en la revisión del mismo día.
+
+Se ejecutaron **33/33 casos A5 locales**, con Chrome automatizado, Keycloak y
+backend reales, llamadas HTTP por rol y Android instrumental donde corresponde.
+[Acta por caso, entorno y límites](qa-a1-a5-2026-10-21.md). Incluye contraseña
+nueva obligatoria con OTP, auditoría, 503 real del proveedor, aislamiento,
+acuse desde dispositivo simulado firmado, recuperación desde otra sesión,
+reapertura/históricos y dos bloqueados paginados. Se observaron renovaciones
+automáticas en nueve cuentas y se comprobaron cookies/salida. No acredita
+despliegue público, aceptación del usuario ni recorrido visual Android real.
+
+La QA encontró CSS/JS de Keycloak con 404: tmpfs de UID 0/modo 0755 impedían
+crear la caché gzip al proceso UID 1000. Se fijó dueño/modo de sus directorios
+temporales, manteniendo raíz de sólo lectura y restricciones. Se recreó sólo
+identidad; recursos 200 y siete pruebas aisladas salud/realm aprobadas,
+incluida la nueva regresión. No se publicó el servidor ni se cambió su realm.
+
+En Samsung SM-S928B API 36 se actualizó sin borrar datos el APK instrumental,
+añadiendo rechazo de acuse de otro cierre. Construcción, unitarias, lint y
+ambos APK aprobados; `OK: FIXTURE`, código -1. La app operativa conserva la
+misma huella que el 20; el cambio sólo amplía instrumentación con HTTP simulado.
+
+Limpieza terminada a las 14:46:43 UTC: once identidades ficticias deshabilitadas,
+cuatro dispositivos y tres tarjetas revocados; ambas empresas de QA quedan
+identificadas y suspendidas, sin borrar históricos. Se restauró la lista
+original de operadores y se reinició backend para retirar el operador de
+ensayo. No se modificaron cuentas humanas, OTP existente ni los cambios
+preexistentes de `backend/bin/`.
+
+Evidencia local en `build/qa-a5-2026-10-21/`; credenciales/cookies únicamente
+en `secrets/`. Siguen 17 tareas globales abiertas total o parcialmente.
+Siguiente: inventario y aceptación pública mediante Q17, pantallas de
+horarios/importación fuera de A5 y recorrido visual Android contra backend
+real. Las decisiones jurídicas, operativas y NFC conservan sus dependencias.
+
 ## 20 de octubre de 2026 — Revisión de las 17 tareas y teléfono disponible
 
 El usuario pide identificar cierres posibles y dudas por tarea, e indica

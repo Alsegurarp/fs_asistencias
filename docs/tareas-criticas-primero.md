@@ -6,7 +6,10 @@ Actualización posterior: [A1–A5 integradas en main/e4d7683](entregas-a1-a5.md
 con nuevas pantallas, contrato 0.13 y [guion de QA](qa-a1-a5.md).
 Los cuatro trabajos de [CI de la PR #10](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988)
 aprobaron. La confirmación de funcionamiento del usuario queda registrada
-en la bitácora; falta el resultado por caso para cerrar la aceptación formal.
+en la bitácora. El 21 se ejecutaron y documentaron los
+[33 casos A5 en local](qa-a1-a5-2026-10-21.md); la aceptación del usuario y
+del entorno público conserva sus requisitos. Los conteos del 20 siguientes
+se mantienen como evidencia de sus versiones.
 Orden por riesgo y bloqueo del producto; los números originales remiten a
 [Estado y pendientes](estado-y-pendientes.md#lista-consolidada-de-tareas-pendientes).
 Esta revisión declara trabajo pendiente y no modifica el sistema desplegado.
@@ -26,7 +29,7 @@ por ejemplo, identidad es el orden 2 y las decisiones de negocio son el orden 5.
 | Android | El 20 se repiten construcción, 13 unitarias y lint (0 errores, 13 advertencias). Samsung SM-S928B autorizado, API 36: instrumentación FIXTURE aprobada, incluidos semana/acuse, recuperación desde servidor simulado y reapertura. Actualización sin borrar datos. Backend real/HTTPS conserva la evidencia del 19; no acredita el nuevo recorrido contra ese servidor ni tarjeta física |
 | Despliegue | El 19 se usó una sesión de administración facilitada por el usuario para `/me`, preparación y limpieza de datos ficticios por HTTPS. Ambos modos Android pasaron contra el servidor publicado. El recorrido completo del navegador sigue abierto; no se accedió por SSH ni se desplegaron cambios |
 | Respaldo | Ensayo del 20 tras V008: 131 tablas/1,970 filas idénticas. Recuperación completa con origen apagado y secretos nuevos: evidencia del 18. Copia externa operativa y recuperación pública pendientes |
-| Entorno local | Docker y servicios estaban apagados. Ambiente reconstruido conservando volúmenes, V008 aplicada y HTTP comprobado; queda en ejecución. Se retiraron sólo contenedores desechables y se conservaron cambios previos de `backend/bin/` |
+| Entorno local | El corte del 20 terminó reconstruido, con V008 y HTTP comprobados. Al comenzar el 21 Docker estaba detenido; la disponibilidad se comprueba en cada sesión. Se conservan volúmenes y cambios previos de `backend/bin/` |
 
 El producto tiene una base funcional y un ambiente de demostración publicado.
 Continúa pendiente su aceptación para uso con personas y datos reales. No se
@@ -50,14 +53,14 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | 6 | P0 | Aprovisionar producción administrada para datos reales | Modelo aprobado por Gabriel, Roberto Arregui y Alex Segura: producción exclusiva de Zenit, separada de pruebas y bajo control de fastSolution; aislamiento lógico por empresa. Faltan proveedor, región, cuenta, contratos, respaldo externo, restauración y pruebas. El servidor compartido conserva sólo datos ficticios |
 | 7 | P1 | Hacer reproducible Android contra backend y corregir la indicación de URL (7) | Completada el 19: `BackendSmoke.kt` y `infra/test-android-backend.ps1`, APK construidos juntos y hashes registrados. Personal y terminal pasaron contra backend local y HTTPS publicado, con datos ficticios y limpieza. Se corrigió la validación Android que rechazaba los códigos de cinco caracteres por grupo. El fallo de transporte se induce sólo en el almacén del ensayo; no acredita apagar radios ni NFC autenticado |
 | 8 | P1 | Dirección real y protocolo en la cadena de proxies (parte de 19) | Prueba pública del 19 aprobada: redirección HTTPS, identidad resistente a cabeceras falsas y cuota no eludible rotando IP falsas (10 respuestas 410 y dos 429). Teléfono comprobado por HTTPS bajo Wi-Fi. Por indicación del usuario, la prueba con datos móviles y dos IP públicas queda pendiente para otro desarrollador; [entrega](TareasPendientes.md#entrega-a-otro-desarrollador-prueba-con-datos-móviles-tarea-8) |
-| 9 | P1 | Recorridos del portal con sesión real (4 y parte de 14) | Horarios, asignación futura e importación aprobados por API HTTPS el 19, con sesión de administración y limpieza. Sigue pendiente navegador: pantallas, cookies, renovación, cierre de sesión y permisos de otros roles. No hay navegador conectado al control UI |
+| 9 | P1 | Recorridos del portal con sesión real (4 y parte de 14) | A5 local 33/33 el 21, con roles, cookies, renovación y salida. Horarios/importación aprobaron por API HTTPS el 19; sus pantallas quedan fuera de A5. Faltan esos recorridos y aceptación pública/del usuario con inventario Q17 |
 | 10 | P1 | Retención de sobres y recibos Android (8) | Requiere plazo y criterio de conservación. Después implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria; hoy crece sin purga |
 | 11 | P1 | Verificaciones automáticas por cambio (11) | Integrada en `main`. Los cuatro trabajos aprobaron en GitHub para `565dbdd` en la ejecución 39472077601 del 20 de octubre. La obligatoriedad de trabajos requiere una decisión adicional. [Procedimiento y resultados](verificaciones-automaticas.md) |
 | 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Cinco imágenes locales reconstruidas y analizadas el 20, con IDs registrados. Corregidas altas de libexpat en backend/portal y libx11 en portal; ninguna grave nueva sin atender. Siguen seis excepciones de identidad. Faltan IDs del servidor mediante Gabriel, análisis de esas imágenes, despliegue de correcciones y comprobación pública |
-| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación completada localmente. Configuración usa GET/PATCH /tenant y respeta permisos, cambios parciales y desactivación del cierre; nueve pruebas nuevas más navegación. Portal: 151 pruebas y compilación repetidas y aprobadas el 20. Falta despliegue y aceptación de pantallas con sesión real |
-| 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Completada localmente el 19: contrato 0.12, V008, registro transaccional por persona, consulta paginada y detalle en portal. 74 pruebas de integración y 151 del portal aprobadas, incluidos aislamiento, corrida parcial y reintentos. Sin desplegar ni aceptar en navegador real; los históricos anteriores conservan conteos |
-| 15 | P2 | Semana y acuse del trabajador (12) | A2 entrega consulta personal web; A3 recupera acuse desde servidor en web/Android. Faltan aceptación real, expediente completo y definiciones jurídicas/evidencia del orden 3 |
-| 16 | P2 | Pantallas de operador del servicio (13) | A1 entrega reactivación con motivo y pruebas. Faltan suspensión según orden 5 y aceptación de permisos/aislamiento con sesión real |
+| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación y aceptación técnica local por rol completadas en A5 el 21. Configuración GET/PATCH /tenant y permisos de dispositivos comprobados; faltan despliegue y aceptación pública/del usuario |
+| 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Implementación completada el 19: contrato 0.12 y V008, con 74 integraciones/151 pruebas web en ese corte. A5 local del 21 comprueba detalle y paginación en navegador; falta despliegue y aceptación pública/del usuario. Históricos anteriores conservan conteos |
+| 15 | P2 | Semana y acuse del trabajador (12) | A2/A3 y aceptación web/API local comprobados en A5; instrumentación Android ampliada aprobada. Faltan recorrido visual Android contra backend real, aceptación pública/del usuario, expediente y definiciones jurídicas/evidencia del orden 3 |
+| 16 | P2 | Pantallas de operador del servicio (13) | Reactivación y permisos/aislamiento comprobados con sesión real en A5 local del 21. Faltan suspensión según orden 5 y aceptación pública/del usuario |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias (18) | Requiere criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar resultados |
 | 18 | P2 | Carga, continuidad y operación del despliegue (resto de 19) | Requiere volumen objetivo y número de instancias. Probar trabajos, cierres, exportes y cuotas; resolver actualización del DNS ante IP dinámica y comprobar renovación real de certificados. Cuotas compartidas sólo si habrá varias instancias |
 | 19 | P2 | Conector y formato de nómina (20) | Depende del sistema y formato del primer cliente. Cierre con sincronización y archivo aceptados por ese sistema |
@@ -123,13 +126,13 @@ del punto 5. Ninguna de estas entregas sustituye los bloqueos P0.
 
 Para continuar después de la PR #10:
 
-1. Ejecutar y registrar el [guion A5](qa-a1-a5.md) con sesiones reales por
-   rol, incluidos aislamiento entre empresas, renovación y salida. Para el
-   ambiente público falta Q17: versión, imágenes y accesos de ensayo.
-2. Completar el recorrido portal/backend/Keycloak del cambio obligatorio:
-   próximo ingreso, contraseña nueva, OTP conservado y sesión anterior.
-   La configuración técnica local está documentada; su provisión pública
-   conserva Q04. La recuperación de acceso olvidado espera Q03.
+1. A5 local completado el 21: 33 casos con sesiones reales, aislamiento,
+   renovación y salida. Repetir en el ambiente público y obtener aceptación
+   del usuario; Q17 requiere versión, imágenes y accesos de ensayo. Las
+   pantallas de horarios/importación conservan su recorrido fuera de A5.
+2. Cambio obligatorio portal/backend/Keycloak comprobado localmente el 21:
+   contraseña nueva, OTP conservado y token anterior todavía aceptado.
+   La provisión pública conserva Q04 y el acceso olvidado espera Q03.
 3. El teléfono de Q09 ya está conectado y la instrumentación de semana/acuse
    con HTTP simulado aprobó. Falta su recorrido contra el backend real y
    aceptación visual. La tarjeta autenticada conserva Q08; no está acreditada

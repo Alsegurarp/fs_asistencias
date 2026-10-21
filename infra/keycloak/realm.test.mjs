@@ -42,6 +42,28 @@ test('verificación y recuperación por correo requieren SMTP configurado', () =
   assert.ok(!realm.users?.length, 'El realm no debe distribuir cuentas ni contraseñas')
 })
 
+test('el login sirve sus estilos y scripts con el sistema de archivos de sólo lectura', {
+  skip: !process.env.IDENTITY_TEST_SECRETOS,
+}, async () => {
+  const base = 'http://localhost:38082'
+  const login = new URL(`${base}/realms/zenit/protocol/openid-connect/auth`)
+  login.search = new URLSearchParams({ client_id: 'zenit-portal', redirect_uri: 'http://localhost:8081/',
+    response_type: 'code', scope: 'openid', code_challenge_method: 'S256',
+    code_challenge: 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG' }).toString()
+  const response = await fetch(login, { signal: AbortSignal.timeout(10000) })
+  assert.equal(response.status, 200)
+  const html = await response.text()
+  const resources = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map(match => new URL(match[1], base))
+    .filter(url => url.origin === base && url.pathname.startsWith('/resources/') && /\.(css|js)$/.test(url.pathname))
+  assert.ok(resources.some(url => url.pathname.endsWith('.css')), 'El formulario debe incluir sus estilos')
+  assert.ok(resources.some(url => url.pathname.endsWith('.js')), 'El formulario debe incluir sus scripts')
+  for (const url of resources) {
+    const asset = await fetch(url, { headers: { 'Accept-Encoding': 'gzip' }, signal: AbortSignal.timeout(10000) })
+    assert.equal(asset.status, 200, `Recurso de acceso ${url.pathname}`)
+    assert.ok((await asset.text()).length > 0)
+  }
+})
+
 test('Keycloak importa la protección del OTP y la reautenticación', {
   skip: !process.env.IDENTITY_TEST_SECRETOS,
 }, async () => {

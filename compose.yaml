@@ -93,8 +93,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-      - /opt/keycloak/data/tmp
-      - /opt/keycloak/data/transaction-logs
+      # Keycloak (UID 1000) necesita escribir la caché gzip y los registros temporales.
+      - /opt/keycloak/data/tmp:uid=1000,gid=0,mode=0700
+      - /opt/keycloak/data/transaction-logs:uid=1000,gid=0,mode=0700
     # Las contraseñas llegan en un archivo de configuración montado como
     # secreto; lo demás, por variables.
     command: ["--config-file=/run/secrets/keycloak.conf", "start", "--optimized", "--import-realm"]

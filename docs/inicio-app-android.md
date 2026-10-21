@@ -9,7 +9,22 @@ Keycloak; RH entrega un código para activar cada teléfono.
 - Personal: registra a su titular, consulta su semana y acusa el cierre.
 - Terminal: registra tarjetas en una sede; no consulta una semana personal.
 
-## Primera entrega
+## Estado vigente al 21 de octubre de 2026
+
+El acceso inicial usa `WelcomeActivity`: Empleado abre la aplicación
+operativa (`MainActivity`) y Administración abre el portal HTTPS existente en
+`AdministrationActivity`, con la identidad y permisos del portal. Las
+herramientas NFC de diagnóstico y provisión usan credenciales de ejemplo;
+no acreditan captura autenticada real. La presentación con datos ficticios
+sigue separada y sólo está disponible en debug.
+
+La app operativa ya activa, firma marcajes, conserva cola cifrada, sincroniza,
+consulta semana y recupera el acuse vigente desde servidor. Captura simulada
+contra backend local/HTTPS aprobó el 19 y la instrumentación ampliada con
+HTTP simulado aprobó el 20. Faltan el nuevo recorrido real de semana/acuse,
+aceptación visual y tarjeta autenticada. [Entregas y evidencia](entregas-a1-a5.md).
+
+## Primera entrega (histórico anterior a captura firmada)
 
 Se agregó una pantalla de activación con dirección del servidor y código de
 RH. Genera una clave P-256 en Android Keystore, envía su parte pública y una
@@ -24,7 +39,7 @@ Si la conexión se pierde después de que el servidor consume el código pero
 antes de guardar la respuesta, puede ser necesario solicitar otro código y
 resolver la activación con RH. No hay recuperación automática en esta entrega.
 
-## Siguientes entregas
+## Evolución de la presentación (histórico)
 
 La app compartida contiene el flujo de activación y los estados del teléfono.
 En la presentación actual, la interfaz muestra el teléfono ya vinculado y
@@ -54,11 +69,10 @@ La empresa `demo-local` y las invitaciones son datos ficticios sembrados con
 el rol dueño del esquema; la operación queda registrada en la bitácora.
 
 
-1. Aserción firmada y apertura de sesión, con manejo de reloj y revocación.
-2. Sobre firmado por lectura NFC, consecutivo y persistencia antes de enviar.
-3. Sincronización en lotes, recibos e idempotencia; límites sin conexión.
-4. Consulta de semana y acuse, exclusivamente en modalidad personal.
-5. Pruebas en teléfono y definición de la autenticación de la tarjeta real.
+Los puntos que seguían a la primera entrega ya tienen implementación:
+aserción y sesión, sobre firmado, cola y sincronización, y consulta/acuse
+personal. Las pruebas con tarjeta simulada en teléfono están documentadas;
+la autenticación de tarjeta real conserva su dependencia física y de claves.
 
 La guía completa está en [Guía Android](guia-app-android.md), y los campos
 exactos en [OpenAPI](../contracts/openapi.yaml).
@@ -79,10 +93,10 @@ El 19 de octubre de 2026 pasaron activación, cola, sincronización, recibos y
 renovación contra backend local y HTTPS publicado en teléfono, con tarjeta
 simulada. El [ensayo reproducible](guia-app-android.md#ensayo-reproducible-contra-el-backend)
 conserva también el fixture anterior; falta verificar NFC autenticado real.
-El APK debug se instaló por ADB inalámbrico y abrió correctamente en el
-teléfono. La interfaz compartida presenta el teléfono vinculado y recorridos
-de asistencia y Administrador/RH con históricos locales. El código de activación
-operativa ya se verificó; integrarla a la presentación sigue pendiente.
+El APK debug de aquella presentación se instaló por ADB inalámbrico y abrió
+correctamente en el teléfono con históricos locales. En el código vigente la
+presentación sigue separada del acceso operativo: la bienvenida abre Empleado
+o Administración real, y no requiere integrar la activación a la demostración.
 
 Para el servidor local usa `http://localhost:8080` con la conexión USB descrita
 en la guía. Un emulador también puede usar `adb reverse` y `localhost`.

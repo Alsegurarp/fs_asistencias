@@ -43,6 +43,7 @@ contradice al contrato, manda el contrato.
 | [Verificación local del 20 de octubre](verificacion-local-2026-10-20.md) | Código comprobado, pruebas repetidas, servicios locales y límites de la aceptación |
 | [Entregas A1–A5](entregas-a1-a5.md) | Reactivación, semana personal, recuperación de acuse, cambio obligatorio de contraseña y verificación |
 | [QA A1–A5](qa-a1-a5.md) | Datos ficticios, matriz de roles y casos con resultados esperados para aceptación manual |
+| [Resultado local de QA del 21](qa-a1-a5-2026-10-21.md) | 33 casos comprobados, login/OTP real, renovación por rol, paginación, corrección de recursos Keycloak y límites frente al ambiente público |
 | [Recorrido completo](recorrido-completo.md) | De una empresa nueva a un exporte, petición por petición |
 | [Continuar el backend](continuar-el-backend.md) | Cómo está hecho el código y cómo se agrega una ruta, una tabla o un trabajo |
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |
@@ -69,7 +70,7 @@ contradice al contrato, manda el contrato.
 | Backend | `backend/` | Atiende las 62 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo. Detrás del borde toma la dirección real del visitante |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
 | Portal web | `web/` | PKCE, catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, usuarios y configuración de empresa; horarios/CSV aprobados por API HTTPS, recorrido en navegador pendiente |
-| App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Verificada en un teléfono con servidor de prueba; falta el recorrido contra el backend y las tarjetas reales |
+| App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Captura simulada comprobada en teléfono contra backend local/HTTPS; semana/acuse aprobados con HTTP simulado. Falta el nuevo recorrido real de semana/acuse y tarjeta autenticada |
 | Conector | `connector/` | Vacío; es el futuro agente que sincronice el padrón desde la red de un cliente |
 | Infraestructura | `infra/` | Imagen y realm del proveedor de identidad, guiones de la base y ensayo de respaldo |
 | Despliegue | `deploy/servidor/` | Borde con certificados propios, Zenit encima de `compose.yaml` y la landing, tal como corren en el servidor compartido, y el guion `desplegar.sh` que los publica |

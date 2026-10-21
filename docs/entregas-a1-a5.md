@@ -7,8 +7,9 @@ público. Se incorporaron los avances de `origin/main`/`ef23c20`, incluido
 el modelo SaaS aprobado. La [PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10)
 está integrada en `main`/`e4d7683`; sus cuatro trabajos de
 [CI aprobaron](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988).
-El usuario confirmó funcionamiento; la aceptación por caso conserva su acta
-pendiente. Los resultados locales siguientes corresponden al corte de implementación.
+El usuario confirmó funcionamiento. El 21 se documentaron
+[33/33 casos locales](qa-a1-a5-2026-10-21.md); siguen pendientes su aceptación
+y el entorno público. Los resultados siguientes conservan el corte de implementación.
 
 ## Resultado
 
@@ -18,7 +19,7 @@ pendiente. Los resultados locales siguientes corresponden al corte de implementa
 | A2 | Mi asistencia para el rol Trabajador: fecha, semana propia, zona, tramos, totales, alertas, incidencias y cierre. Reutiliza el resumen existente; sin nuevo cálculo ni acceso a otros empleados. Cuenta sin vínculo recibe orientación tras 403 |
 | A3 | La consulta semanal entrega `acknowledgement` del cierre vigente. Web/Android recuperan el recibo del servidor, aunque se haya emitido desde otra sesión. Reapertura devuelve nulo; nueva versión no hereda acuse. Android usa copia local sólo con servidores anteriores que omitan el campo y rechaza un recibo de otro cierre |
 | A4 | Administración exige contraseña nueva al próximo ingreso de una cuenta activa vinculada. Nuevo endpoint protegido por empresa/rol, confirmación en portal, integración técnica y auditoría. Conserva OTP y otras acciones; sin contraseña temporal, correo ni revocación de sesiones. Cliente técnico preparado y habilitado sólo en local |
-| A5 | [Guion QA](qa-a1-a5.md) con datos ficticios, matriz de roles y 33 casos con resultados esperados y limpieza. Preparación terminada; sesión manual pendiente |
+| A5 | [Guion QA](qa-a1-a5.md) con datos ficticios, roles y 33 casos. Preparación y ejecución local completadas el 21 con acta; aceptación del usuario y pública pendientes |
 
 Contrato **0.13.0, 62 operaciones**. El único endpoint nuevo es
 `POST /users/{userId}/password-change`; el acuse se incorpora a la consulta
@@ -37,10 +38,11 @@ las huellas de cierres permanecen en sus versiones existentes.
 | Imágenes modificadas | Backend y portal reconstruidos y aprobados por el análisis de vulnerabilidades; sin altas o críticas sin atender |
 | Arranque local | Backend `UP`, portal HTTP 200 con las acciones nuevas en su JavaScript, rutas personales/contraseña con 401 sin credencial. Secreto técnico montado sólo en backend y URL interna comprobados |
 
-La integración de backend se probó con proveedor HTTP aislado, errores y
+En el corte de implementación, la integración de backend se probó con proveedor HTTP aislado, errores y
 aislamiento entre empresas. La prueba de Keycloak real usa un cliente y una
-cuenta ficticios separados y los elimina al terminar. No acredita todavía el
-recorrido completo portal/backend/Keycloak de contraseña/OTP en navegador.
+cuenta ficticios separados y los elimina al terminar. Ese corte no acreditaba
+el recorrido completo portal/backend/Keycloak de contraseña/OTP en navegador;
+se comprobó después, en A4-05 del acta local del 21.
 
 Se conservaron las advertencias previas de Gradle, Vite y lint; no impidieron
 las comprobaciones. La única corrección pendiente no es de compilación, sino
@@ -86,8 +88,9 @@ Las pruebas de roles, vínculo, 404 entre empresas, 409 por estado y 503 del
 proveedor están en backend y portal. La instrumentación Android incluye
 recuperación sin copia local, reapertura y nulo explícito del servidor.
 
-Permanecen abiertos el recorrido manual por rol, login/OTP real de A4,
-instrumentación contra backend real/tarjetas físicas, recuperación de contraseña olvidada,
+El recorrido local por rol y el login/OTP real de A4 aprobaron el 21, con
+renovación y salida. Permanecen abiertos la aceptación del usuario y pública,
+el recorrido visual Android contra backend real/tarjetas físicas, recuperación de contraseña olvidada,
 SMTP/cuentas operativas, despliegue público y las preguntas Q01–Q22.
 Las 17 tareas globales no cambian de cantidad por cerrar estas cinco entregas
 integradas. La nueva prueba de identidad aprobó dentro del workflow de la PR,

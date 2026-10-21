@@ -1,5 +1,15 @@
 # Verificaciones automáticas
 
+El 21 de octubre se añadió la prueba de CSS/JS reales del login para detectar
+permisos incorrectos en los tmpfs de Keycloak. Pasaron siete comprobaciones
+aisladas de salud/realm sin omisiones; ese subconjunto no incluye la prueba
+de cambio de contraseña. El recorrido A4 completo y los 33 casos A5 locales
+están en [el acta del 21](qa-a1-a5-2026-10-21.md). Android instrumental también
+rechazó un acuse de cierre ajeno en teléfono. Estas verificaciones son
+locales: la ejecución de Actions del commit de cierre debe consultarse para
+su SHA en [Verificaciones sobre main](https://github.com/Alsegurarp/fs_asistencias/actions/workflows/verificaciones.yml?query=branch%3Amain).
+Las ejecuciones enlazadas abajo son antecedentes; el push no despliega el servidor.
+
 A1–A5 integradas en `main`/`e4d7683` mediante la
 [PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10). Los cuatro
 trabajos aprobaron en su [ejecución 39504126988](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988).

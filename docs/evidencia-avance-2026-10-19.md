@@ -1,8 +1,13 @@
 # Evidencia de avance — 19 de octubre de 2026
 
-**Estado: en espera de la QA del usuario prevista para hoy.** Se retoma el
-trabajo cuando se reciban sus resultados. No se considera realizada ni
-aprobada esa QA y no se despliegan cambios para este corte.
+**Corte histórico previo a A1–A5.** Al cerrarlo se esperaba la QA del usuario
+del 19; no se consideró realizada ni aprobada y no se desplegaron cambios.
+Los avances posteriores están en [A1–A5](entregas-a1-a5.md) y
+[Estado y pendientes](estado-y-pendientes.md). La propuesta de datos en
+infraestructura de cada cliente fue sustituida por el
+[modelo SaaS aprobado](decisiones-de-negocio.md#modelo-de-alojamiento-aprobado).
+El cambio obligatorio de contraseña ya está implementado; el texto siguiente
+conserva lo que estaba pendiente en este corte, no una instrucción de rehacerlo.
 
 ## Versión publicada y verificaciones
 
@@ -40,14 +45,15 @@ por confirmar para interpretar los resultados del recorrido.
 - La prueba con datos móviles queda pendiente para otro desarrollador,
   por indicación del usuario. [Entrega y aceptación](TareasPendientes.md#entrega-a-otro-desarrollador-prueba-con-datos-móviles-tarea-8).
 
-## Definiciones guardadas después del push
+## Definiciones guardadas después del push (antecedente sustituido donde se indica)
 
 Estas definiciones y su evaluación están guardadas en el espacio de trabajo;
 no forman parte del commit publicado indicado arriba.
 
-- Los datos operativos viven en infraestructura del cliente; el sistema
-  vive en un VPS de fastSolution. Falta adaptar el backend, que actualmente
-  usa una sola fuente de datos, y probar el despliegue distribuido.
+- Propuesta de ese corte, posteriormente sustituida: datos operativos en
+  infraestructura del cliente y sistema en una VPS de fastSolution. La
+  decisión vigente es backend/PostgreSQL compartidos con aislamiento lógico;
+  no se requiere adaptar el backend a bases por cliente para el SaaS estándar.
 - Mediano: 50 empleados; grande: 300. Entrada, salida e inicio/fin de un
   descanso, cinco días por 52 semanas: 52,000 y 312,000 marcajes/año.
   Se requiere un año de asistencia consultable.
@@ -57,7 +63,8 @@ no forman parte del commit publicado indicado arriba.
   Las doce copias mensuales adicionales son propuesta, no política aprobada.
   Tamaños y costos estimados, sin medir un respaldo representativo real.
 - P0-02: el usuario define selección del empleado desde el portal y cambio
-  obligatorio de contraseña al próximo login. No está implementado. Falta
+  obligatorio de contraseña al próximo login. En ese corte no estaba
+  implementado; A4 lo completó después. Falta
   definir cómo obtiene acceso quien ya olvidó su contraseña; cuentas
   personales, OTP, SMTP y recuperación del operador conservan sus pendientes.
 

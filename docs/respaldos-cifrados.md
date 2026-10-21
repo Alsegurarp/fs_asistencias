@@ -126,9 +126,11 @@ Las claves y todos los archivos de esa prueba desaparecen con el contenedor.
   autentica quién creó el respaldo. Restaurar únicamente paquetes procedentes
   del almacén controlado: un dump contiene SQL que se ejecuta con privilegios.
 - No hay borrado automático, retención ni copia remota. No colocar la privada
-  junto al paquete en el mismo almacén. Definir destino externo, periodicidad,
-  responsable, tiempo máximo de recuperación y pérdida tolerable antes de
-  publicar. La retención debe preservar registros legales y bloqueos por litigio.
+  junto al paquete en el mismo almacén. Ya están aprobados respaldo diario,
+  retención de 30 días y objetivos de pérdida/recuperación de 24 h/4 h.
+  Faltan concretar destino externo, custodia y responsables, automatizar y
+  ensayar esos objetivos. La retención debe preservar registros legales y
+  bloqueos por litigio.
 
 ## Verificación de esta entrega
 
@@ -155,9 +157,10 @@ ensayo existente respaldó la base del producto en 108,830 bytes y la de
 identidad en 204,322; restauró 29 y 96 tablas y comparó 12 y 203 filas, en
 total 125 tablas y 215 filas con contenido idéntico, en 2 segundos.
 
-Sigue pendiente guardar un paquete age con las bases locales y restaurarlo:
-espera decidir quién custodia la clave privada y dónde queda su copia aislada.
-No se generaron claves de operación ni respaldos con datos locales.
+Al terminar el corte del 14 seguía pendiente guardar un paquete age con las
+bases locales y restaurarlo. Ese recorrido se comprobó el 18 con claves de
+ensayo eliminadas al terminar; las claves de operación y su custodia siguen
+pendientes. Véase la actualización del 18 más abajo.
 
 ### Repetición del 17 de octubre de 2026
 
@@ -170,9 +173,9 @@ El ensayo existente también pasó con las bases locales y la comparación de
 contenido: 130 tablas y 1.772 filas idénticas. No guardó un respaldo persistente
 ni comprobó escrituras simultáneas en esta ejecución.
 
-Siguen pendientes la generación y custodia de claves de operación, una copia
-cifrada comprobada de las bases locales y la recuperación completa del servicio.
-La autoprueba no sustituye esos recorridos. Resultados en la
+Al terminar el corte del 17 seguían pendientes una copia cifrada comprobada
+y la recuperación completa; se ensayaron el 18. Siguen pendientes claves y
+copia de operación. La autoprueba por sí sola no sustituye esos recorridos. Resultados en la
 [validación de tareas 1 a 6](validacion-tareas-1-a-6.md).
 
 ### Recuperación del servicio del 18 de octubre de 2026
@@ -186,3 +189,9 @@ recuperación. Detalles y límites en [Recuperación del servicio](recuperacion-
 Esto comprueba recuperación local de bases y servicios; no cierra destino
 externo, custodia, programación, retención ni recuperación del ambiente público.
 Las claves usadas fueron de ensayo y se eliminaron, sin generar una de operación.
+
+### Restauración posterior a V008 del 20 de octubre de 2026
+
+El ensayo de bases restauró 131 tablas y 1,970 filas con contenido idéntico
+en 6 segundos. No guardó copia operativa ni repitió la recuperación completa
+con origen apagado y secretos nuevos. [Evidencia](verificacion-local-2026-10-20.md).

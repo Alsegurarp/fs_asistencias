@@ -1,7 +1,11 @@
 # Guion de aceptación A1–A5
 
 Preparado el 20 de octubre de 2026. Contrato 0.13, 62 operaciones.
-Este guion está listo para ejecutar; no declara aprobada una sesión manual.
+Ejecución local del 21 de octubre: **33/33 casos comprobados** mediante
+navegador automatizado, API real e instrumentación Android según el caso;
+[acta y límites](qa-a1-a5-2026-10-21.md). La aceptación del usuario y del
+ambiente público sigue pendiente. Este documento conserva las acciones y
+resultados esperados para repetir el recorrido.
 El entorno publicado conserva la dependencia Q17 del
 [cuestionario](tareas-ejecutables-y-preguntas-qa.md).
 
@@ -77,7 +81,8 @@ vinculados y sólo envía `requiredActions`. No se asigna `realm-admin` ni
 
 ## Casos de aceptación
 
-Todos los casos empiezan como **pendientes de recorrido manual**. Para probar
+Los resultados de la ejecución local están en el acta enlazada arriba;
+los recorridos del servidor público conservan su aceptación pendiente. Para probar
 una ruta oculta usar un cliente HTTP con la sesión del rol indicado; ocultar
 un botón no acredita protección del backend.
 
@@ -134,7 +139,7 @@ volúmenes. No retirar OTP ni la cuenta de arranque hasta comprobar accesos
 personales de operación. La identidad desechable de las pruebas automáticas
 se retira por su Compose separado.
 
-El cierre de A5 es entregar este guion y sus resultados esperados. La
-aceptación manual permanece pendiente hasta completar el acta. A1–A4 pueden
+El guion A5 y su ejecución local ya tienen acta del 21 de octubre. La
+aceptación del usuario y del servidor público permanece pendiente. A1–A4 pueden
 estar técnicamente implementadas y probadas sin cerrar las tareas globales
 2, 9, 13, 15 y 16, que conservan las preguntas de producto y operación.

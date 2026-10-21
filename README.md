@@ -11,7 +11,8 @@ cierres, exportes, usuarios y configuración de empresa. A1–A4 añaden reactiv
 consulta semanal personal, recuperación de acuses y cambio obligatorio de
 contraseña. Pasaron 162 pruebas del portal y su compilación; los ensayos de
 horarios/importación por API HTTPS del 19 conservan su evidencia. Sigue el
-recorrido completo en navegador; [entregas y QA](docs/entregas-a1-a5.md). Android implementa
+recorrido público en navegador; los 33 casos A5 aprobaron localmente el 21
+de octubre, con [acta y límites](docs/qa-a1-a5-2026-10-21.md). Android implementa
 enrolamiento, sobres firmados y
 sincronización con cola cifrada; el 19 de octubre se verificaron personal y
 terminal en teléfono contra backend local y HTTPS publicado, con tarjetas

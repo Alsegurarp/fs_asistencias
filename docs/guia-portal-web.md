@@ -4,7 +4,9 @@ Actualización A1–A4 del 20 de octubre: el operador puede reactivar empresas
 con motivo, el trabajador consulta su semana y el acuse del servidor en
 Mi asistencia y administración puede exigir contraseña nueva a cuentas
 activas vinculadas. Se aprobaron 162 pruebas y compilación. Los recorridos
-manuales conservan sus pendientes; [guion de aceptación](qa-a1-a5.md).
+del usuario y del ambiente público conservan sus pendientes. El 21 aprobaron
+los [33 casos locales A5](qa-a1-a5-2026-10-21.md), con login/OTP real,
+renovación/salida, configuración y bloqueos por rol; [guion](qa-a1-a5.md).
 
 Qué tiene que hacer el portal: iniciar sesión, saber qué mostrar a cada rol y
 contra qué ruta va cada pantalla. Antes conviene leer
@@ -452,7 +454,10 @@ en Keycloak: esta operación conserva los roles y no bloquea el acceso.
 Si la cuenta anterior sigue activa con el mismo correo verificado, vuelve
 a vincularse al entrar. Para quitar el acceso a la empresa, deshabilitarlo.
 Ni habilitación ni desvinculación cambian contraseñas o segundo factor.
-La pantalla de Trabajador continúa pendiente, aunque ya se puede asignar su rol.
+El rol Trabajador dispone de **Mi asistencia**: consulta su semana y el acuse
+vigente recuperado del servidor. No permite consultar a otro empleado ni
+enviar acuses desde la web. El envío se realiza desde Android personal o API.
+La aceptación por rol se registra con el guion A5.
 
 Prueba manual sugerida en Zenit Demo:
 
@@ -567,8 +572,8 @@ sobrescribe campos ajenos que la persona no haya cambiado.
 El 19 de octubre de 2026 pasaron 148 pruebas del portal y su compilación. Nueve
 pruebas de Configuración cubren permisos, cambios parciales, desactivación,
 formularios con error y refresco durante la edición. La navegación tiene una
-prueba adicional. La pantalla está implementada localmente; falta desplegarla
-y recorrerla con sesión real.
+prueba adicional. La pantalla se recorrió después con sesiones reales por rol
+en A5 local del 21; falta su despliegue y aceptación pública y del usuario.
 
 Ese mismo día pasaron horarios, asignación futura e importación por API HTTPS
 con una sesión real de administración: validación sin escritura, aplicación

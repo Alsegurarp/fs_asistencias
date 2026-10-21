@@ -60,6 +60,11 @@ Referencias del proyecto: [revisión documental](revision-juridica-jornada-acuse
 
 ## Verificación
 
+Actualización del 21: la instrumentación se amplió para rechazar un acuse de
+otro cierre y aprobó de nuevo en Samsung API 36. Consulta/acuse web y API real
+pasaron en [A5 local](qa-a1-a5-2026-10-21.md), incluido un dispositivo simulado
+firmado. Eso no sustituye el recorrido visual Android contra backend real.
+
 Actualización del 20 de octubre, después de PR #10: Samsung SM-S928B
 disponible por ADB, API 36. Se repiten construcción de ambos APK, 13
 unitarias y lint (0 errores/13 advertencias). Instalados con firma debug

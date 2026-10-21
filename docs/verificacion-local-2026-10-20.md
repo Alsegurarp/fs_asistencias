@@ -1,5 +1,13 @@
 # Verificación del ambiente local — 20 de octubre de 2026
 
+Este documento conserva el corte **anterior a A1–A5**, sobre `565dbdd`.
+Sus conteos, disponibilidad del teléfono y pendientes describen esa ejecución,
+no el estado vigente. Después se integraron A1–A5 y aprobaron 75 integraciones,
+162 pruebas web, 7 de identidad e instrumentación Android en teléfono con
+HTTP simulado; véanse [las entregas](entregas-a1-a5.md) y
+[el estado actualizado](estado-y-pendientes.md). No se reemplazan aquí los
+resultados históricos por pruebas que pertenecen a otra versión.
+
 Código verificado: `main`, commit `565dbdda2561b823cf4e4bce22cb45222d1966a6`.
 Se conservaron los cambios preexistentes bajo `backend/bin/`. Esta revisión
 actualiza la evidencia local; no acredita despliegue público, QA del usuario

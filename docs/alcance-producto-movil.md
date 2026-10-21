@@ -4,7 +4,20 @@ La app es el punto de registro y consulta de la jornada. La administración de
 la organización permanece en el portal. El contrato actual contempla teléfonos
 personales y terminales de una sede, con tarjetas NFC.
 
-## Diseño implementado
+## Aplicación operativa y presentación
+
+Estado vigente al 21 de octubre de 2026: `WelcomeActivity` ofrece Empleado
+y Administración. Empleado abre `MainActivity` con activación, captura,
+cola cifrada, sincronización y semana/acuse. Administración abre el portal
+HTTPS en `AdministrationActivity`, con login y permisos reales del portal;
+la preparación MF1K permanece como herramienta de ejemplo y no prueba
+autenticación de asistencia. Véase [Inicio Android](inicio-app-android.md).
+
+Las secciones siguientes describen exclusivamente `PresentationActivity`,
+el prototipo debug con datos locales. Sus credenciales vacías y tolerancias
+de ejemplo no corresponden al acceso administrativo ni al cálculo operativo.
+
+## Diseño implementado en la presentación
 
 Inicio se resume en dos accesos: Mi asistencia y Administración, más el estado
 del teléfono vinculado. Los permisos se revisan en Dispositivo y los pendientes en

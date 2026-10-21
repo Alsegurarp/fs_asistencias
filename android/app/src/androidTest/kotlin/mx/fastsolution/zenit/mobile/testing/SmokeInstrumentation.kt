@@ -105,6 +105,8 @@ class SmokeInstrumentation : Instrumentation() {
             server.closureReopened = false
             server.weekAcknowledgement = null
             check(!repository.personalWeek("2026-10-05").has("_localAcknowledgement"))
+            server.weekAcknowledgement = JSONObject(ack.toString()).put("closureId", UUID.randomUUID().toString())
+            check(runCatching { repository.personalWeek("2026-10-05") }.exceptionOrNull() is IllegalStateException)
             server.weekAcknowledgement = ack
             check(!refreshed.toString().contains("keyAlias"))
             check(runCatching { repository.acknowledgeWeek(server.closureId, "agreed", "") }.exceptionOrNull().let { it is CaptureApiException && it.status == 409 })
