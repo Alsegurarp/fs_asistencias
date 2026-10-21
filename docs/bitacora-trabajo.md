@@ -23,6 +23,15 @@ configuración ni servicio del portal. Los usos de curl de la herramienta de
 despliegue pertenecen a otra imagen o al host y no se modificaron.
 Se conservaron el umbral del escáner y las excepciones existentes de identidad.
 
+Detalle de los hallazgos del fallo y su resolución en la imagen del portal:
+
+| Componente | Hallazgo | Resultado |
+| --- | --- | --- |
+| nginx 1.30.5-r1 | CVE-2026-93479, CVE-2026-15176 y CVE-2026-97205, críticas; CVE-2026-97629, alta; CVE-2026-95101, media | Actualizado a 1.30.6-r1; ausentes del informe posterior. |
+| curl 8.22.0-r0 | CVE-2026-92392, alta | Retirados curl y libcurl del runtime del portal. |
+| libxpm 3.5.19-r0 | CVE-2026-94287, media | Actualizado a 3.5.20-r0. |
+| busybox, busybox-binsh y ssl_client 1.37.0-r31 | CVE-2025-60876, media | Persisten tres hallazgos de una misma CVE; no se declaran resueltos. |
+
 `infra/check-images.ps1 -Targets web` aprobó a las 16:31:18 UTC:
 **0 críticas, 0 altas, 3 medias y 0 excepciones**. Son tres paquetes de
 BusyBox asociados a CVE-2025-60876. El SBOM confirma nginx 1.30.6-r1,
@@ -35,8 +44,8 @@ protegida 401 sin sesión. Conserva UID 101, raíz de sólo lectura y todas las
 capacidades retiradas. No se repitió QA A5 ni se desplegó el servidor público.
 Evidencia ignorada por Git: `build/security/web.cdx.json`, `web.vulns.json`,
 `web-scan.log`, `summary.json` y `web-runtime-2026-10-21.json`.
-El push de esta corrección debe comprobarse en una nueva ejecución de Actions;
-repetir la ejecución antigua conserva el Dockerfile vulnerable de aquel commit.
+La validación remota se realizó con el commit corregido: repetir la ejecución
+antigua conserva el Dockerfile vulnerable de aquel commit.
 
 Confirmación posterior: la corrección se publicó en `main`/`f72941e` y los
 cuatro trabajos aprobaron en la
@@ -44,6 +53,19 @@ cuatro trabajos aprobaron en la
 backend, portal, Android y contrato/seguridad, incluido el análisis de las
 cinco imágenes. Queda corregido el fallo de CI; el servidor público conserva
 su despliegue pendiente. Esta actualización documental no cambia las imágenes.
+
+El cierre de CI quedó documentado y publicado en `main`/`4852c66`. La evidencia
+de los cuatro trabajos aprobados corresponde a `f72941e`, no acredita por sí
+sola una ejecución posterior del commit documental. El resumen local conserva
+análisis del 20 para las otras cuatro imágenes; la aprobación conjunta del 21
+procede de Actions, sin atribuirles un nuevo análisis local.
+
+Pendientes derivados: atender las tres medias de BusyBox en una actualización
+posterior y completar Q17 para verificar el despliegue público. La imagen
+separada de la herramienta de despliegue conserva su referencia a curl 8.22.0;
+no forma parte de estas cinco imágenes y su seguridad no queda acreditada por
+este resultado. La actualización de esta bitácora sólo revisa evidencia ya
+generada; no repite pruebas, escaneos ni despliegues.
 
 ## 21 de octubre de 2026 — Entrega del cierre de QA para publicación
 
