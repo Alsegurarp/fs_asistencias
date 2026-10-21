@@ -11,6 +11,10 @@ actualiza la evidencia técnica; la QA funcional del usuario y la aceptación
 del ambiente publicado conservan sus pendientes. El [corte del 19](evidencia-avance-2026-10-19.md)
 se conserva como antecedente.
 Hay **17 tareas abiertas total o parcialmente**.
+El [recorrido visual Android de semana/acuse](qa-android-semana-acuse-2026-10-21.md)
+aprobó contra backend real local el 21: objeción, recuperación sin copia
+local, reapertura, versión nueva y conformidad. Entorno local levantado;
+teléfono restaurado y recursos ficticios deshabilitados al terminar.
 El 21 se ejecutaron los [33 casos A5 en local](qa-a1-a5-2026-10-21.md),
 incluidos login/OTP real, renovación/salida, configuración y bloqueos por rol.
 Eso completa la aceptación técnica local de ese guion; no cierra el
@@ -50,7 +54,7 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | 10 | P1 | Retención de sobres y recibos Android | Definir plazo y conservación; implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria |
 | 12 | P1 | Imágenes y correcciones del servidor | Obtener IDs y versión desplegada mediante el interlocutor SSH, analizar esas imágenes, desplegar correcciones y verificar públicamente. El análisis local y el de CI ya aprobaron |
 | 13 | P2 | Configuración de empresa y dispositivos en portal | Pantallas y permisos aceptados técnicamente en A5 local el 21. Faltan inventario/despliegue y aceptación pública y del usuario |
-| 15 | P2 | Semana y acuse del trabajador | A2/A3 implementados. Consulta web, acuse desde dispositivo simulado firmado, reapertura e histórico comprobados en A5 local; Android instrumental ampliado aprobado. Faltan recorrido visual Android contra backend real, aceptación pública/del usuario y expediente; evidencia/reglas dependen del orden 3 |
+| 15 | P2 | Semana y acuse del trabajador | A2/A3, A5 local e instrumentación aprobados. Recorrido visual Android contra backend real local aprobado el 21, con objeción, recuperación, reapertura y conformidad. Faltan aceptación pública/del usuario y expediente; evidencia/reglas dependen del orden 3 |
 | 16 | P2 | Pantallas del operador del servicio | A1 y sesión real del operador comprobados en A5 local. Faltan aceptación pública/del usuario y suspensión, que depende de la decisión del orden 5 |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias | Aprobar criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar |
 | 18 | P2 | Carga, continuidad y operación | Definir volumen e instancias; probar trabajos, cierres, exportes y cuotas, actualización de DNS y renovación real de certificados |
@@ -100,8 +104,9 @@ La implementación local de la **tarea 14** está completada y validada.
 A1 ya completa la reactivación local de la **tarea 16**; la suspensión espera
 la decisión de la tarea 5. A2/A3 añaden consulta personal web y recuperación
 de acuse desde servidor. A4 y los 33 casos A5 aprobaron en local el 21.
-Faltan el recorrido público, horarios/importación en navegador fuera de A5,
-el recorrido visual Android de semana/acuse contra backend real, expediente completo y
+El recorrido visual Android de semana/acuse contra backend real local aprobó
+el 21. Faltan el recorrido público, horarios/importación en navegador fuera
+de A5, expediente completo y
 las dependencias jurídicas y operativas de las tareas globales.
 
 Para desbloquear las P1 restantes:

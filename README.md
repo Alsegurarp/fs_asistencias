@@ -19,6 +19,10 @@ terminal en teléfono contra backend local y HTTPS publicado, con tarjetas
 simuladas. La tarjeta autenticada real sigue pendiente. Cada aplicación mantiene
 toolchain, dependencias y build propios.
 
+El 21 aprobó también el [recorrido visual de semana/acuse Android contra
+backend real local](docs/qa-android-semana-acuse-2026-10-21.md): objeción,
+recuperación sin copia local, reapertura, versión nueva y conformidad.
+
 Android debug también incluye una presentación independiente del producto,
 con históricos y panel de Administrador/RH. Su alcance está en
 [Producto móvil](docs/alcance-producto-movil.md).
