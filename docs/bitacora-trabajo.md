@@ -6,6 +6,38 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 21 de octubre de 2026 — Corrección del análisis de seguridad del portal
+
+La [ejecución 39626828092](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39626828092)
+de `main`/`b2f7832` aprobó backend, portal y Android, pero falló en seguridad:
+la imagen del portal aún incluía nginx 1.30.5 y curl 8.22.0, con tres
+críticas y dos altas sin aceptar. Los resultados del análisis del 20 son
+antecedentes y no sustituyen una consulta con la base de vulnerabilidades actual.
+
+Se actualizó `web/Dockerfile` a nginx-unprivileged 1.30.6 sobre Alpine 3.24,
+fijado al digest oficial
+`sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03`.
+La nueva base aún incluía curl 8.22.0 y el repositorio estable no ofrecía
+8.23.0. Se retiró curl y, por dependencia, libcurl: no se usan en el arranque,
+configuración ni servicio del portal. Los usos de curl de la herramienta de
+despliegue pertenecen a otra imagen o al host y no se modificaron.
+Se conservaron el umbral del escáner y las excepciones existentes de identidad.
+
+`infra/check-images.ps1 -Targets web` aprobó a las 16:31:18 UTC:
+**0 críticas, 0 altas, 3 medias y 0 excepciones**. Son tres paquetes de
+BusyBox asociados a CVE-2025-60876. El SBOM confirma nginx 1.30.6-r1,
+libxpm 3.5.20-r0 y ausencia de curl/libcurl. ID de la imagen comprobada:
+`sha256:6543df2a1fb2b0aa46a0d5e52d47768e10b7929885214506eae2c545ea7c6b42`.
+
+Construcción y compilación web aprobadas. La imagen se levantó sólo en local:
+`nginx -t`, HTML/JavaScript 200, cabeceras/CSP, proxy al backend 200 y API
+protegida 401 sin sesión. Conserva UID 101, raíz de sólo lectura y todas las
+capacidades retiradas. No se repitió QA A5 ni se desplegó el servidor público.
+Evidencia ignorada por Git: `build/security/web.cdx.json`, `web.vulns.json`,
+`web-scan.log`, `summary.json` y `web-runtime-2026-10-21.json`.
+El push de esta corrección debe comprobarse en una nueva ejecución de Actions;
+repetir la ejecución antigua conserva el Dockerfile vulnerable de aquel commit.
+
 ## 21 de octubre de 2026 — Entrega del cierre de QA para publicación
 
 Por solicitud del usuario, se reúne en `main` el cierre documental y técnico

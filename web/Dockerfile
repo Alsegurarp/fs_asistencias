@@ -8,11 +8,13 @@ ARG VITE_IDENTITY_URL=http://localhost:8082
 RUN VITE_IDENTITY_URL="$VITE_IDENTITY_URL" pnpm build
 
 # Variante que corre sin privilegios, con el usuario 101.
-FROM nginxinc/nginx-unprivileged:1.30.5-alpine3.24@sha256:15c994d10d6d78658721c3bcafff14cb281fba2a4bdf9d5ba92c416a472516e3
+FROM nginxinc/nginx-unprivileged:1.30.6-alpine3.24@sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03
 # Paquetes del sistema con una vulnerabilidad alta ya corregida, que la imagen
 # base todavía no trae. Se quita cuando la imagen base los incluya.
 USER root
-RUN apk add --no-cache "tiff>=4.7.2-r0" "zlib>=1.3.2-r1" "libexpat>=2.9.0-r0" "libx11>=1.8.14-r0"
+# curl no se usa al arrancar ni servir el portal; retirarlo elimina también libcurl vulnerable.
+RUN apk add --no-cache "tiff>=4.7.2-r0" "zlib>=1.3.2-r1" "libexpat>=2.9.0-r0" "libx11>=1.8.14-r0" \
+    && apk del --no-network curl
 ARG VITE_IDENTITY_URL=http://localhost:8082
 COPY nginx.conf /tmp/nginx.conf.template
 # La CSP y el cliente usan la misma dirección; se conservan las variables de nginx.

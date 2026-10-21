@@ -59,7 +59,7 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 | Entorno local | Levantado de nuevo el 21 conservando volúmenes: backend en 18080, portal en 8081 e identidad en 8082. V008 aplicada; A5 local comprobado. Corregidos permisos tmpfs de identidad; tarjetas simuladas sólo para datos ficticios |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | El 20, tras V008, el ensayo restauró 131 tablas/1,970 filas idénticas. La recuperación completa con origen apagado y secretos nuevos sigue siendo la del 18: 130 tablas/1.867 filas. [Detalle](recuperacion-servicio.md). Copia externa, custodia, programación y recuperación pública pendientes |
-| Vulnerabilidades | Inventario y análisis de las cinco imágenes. Ninguna tiene una alta o crítica sin atender: cuatro no tienen ninguna y la del proveedor de identidad tiene seis, aceptadas por escrito |
+| Vulnerabilidades | El análisis de Actions de `b2f7832` detectó 3 críticas/2 altas en el portal. Corregido después con Nginx 1.30.6 y retirada de curl/libcurl: nuevo análisis local web con 0 críticas/altas y 3 medias. Las otras imágenes conservan su evidencia y las seis excepciones de identidad; falta confirmar CI del commit corregido y servidor |
 | Portal | Catálogos y operación existentes, más reactivación de empresas, Mi asistencia y cambio obligatorio. 162 pruebas y compilación aprobadas el 21; 33 casos A5 locales comprobados. Aceptación del usuario y despliegue/recorrido público pendientes |
 | App Android | Captura/cola/sincronización existentes. A3 recupera acuse del servidor y descarta vigencia al reabrir. Repetidas 13 unitarias y lint; ambos APK actualizados sin borrar datos. Instrumentación FIXTURE aprobada en Samsung SM-S928B API 36, incluidos los casos de semana/acuse. Falta ese recorrido contra backend real y tarjeta física; captura local/HTTPS del 19 conserva su evidencia |
 | Conector | No existe |
@@ -141,14 +141,21 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 
 ## Vulnerabilidades conocidas
 
-Último análisis local: 20 de octubre de 2026, sobre las cinco imágenes
+Actualización del 21, posterior a `b2f7832`: Actions encontró tres críticas y
+dos altas en el portal que no aparecían en el corte local previo. Se
+actualizó la base a Nginx 1.30.6 por digest y se retiró curl/libcurl sin uso
+en el portal. El análisis local web de las 16:31:18 UTC aprobó con 0 críticas,
+0 altas, 3 medias y ninguna excepción. Arranque, cabeceras y proxy comprobados;
+no se desplegó el servidor público. [Detalle](bitacora-trabajo.md#21-de-octubre-de-2026--corrección-del-análisis-de-seguridad-del-portal).
+
+Antecedente del 20 de octubre de 2026, sobre las cinco imágenes
 reconstruidas. Todas aprobaron; se conservan las seis excepciones de identidad.
 Los IDs de las cuatro imágenes en ejecución coinciden con los analizados. Resultados en
 `build/security/summary.json`; cómo repetir está en
 [Verificaciones automáticas](verificaciones-automaticas.md). Falta identificar
 y analizar las imágenes efectivamente publicadas, mediante Gabriel.
 
-| Imagen | Al empezar | Ahora | Altas y críticas que quedan |
+| Imagen | Al empezar | Corte del 20 de octubre | Altas y críticas en ese corte |
 | --- | --- | --- | --- |
 | Backend | 66, con 3 críticas y 18 altas | 15, todas medias | Ninguna |
 | Portal | 7, con 2 altas | 4, todas medias | Ninguna |
@@ -156,7 +163,7 @@ y analizar las imágenes efectivamente publicadas, mediante Gabriel.
 | Herramientas de respaldo | 20, con 2 críticas y 10 altas | 6: 4 medias y 2 de gravedad desconocida | Ninguna alta o crítica |
 | Proveedor de identidad | 64, con 6 altas | 65: 30 medias, 29 bajas y 6 altas exceptuadas | 6 altas, aceptadas por escrito |
 
-Las cinco entradas del resumen local están aprobadas. Las correcciones todavía
+Las cinco entradas del resumen local de aquel corte estaban aprobadas. Las correcciones todavía
 no se han desplegado al servidor; su aceptación no queda cerrada por este ensayo.
 
 Qué se corrigió:

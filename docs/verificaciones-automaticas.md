@@ -1,5 +1,14 @@
 # Verificaciones automáticas
 
+Corrección del 21 de octubre, posterior a `b2f7832`: el análisis de esa
+[ejecución](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39626828092)
+falló únicamente por la imagen del portal. Se actualizó Nginx a 1.30.6 con
+digest fijo y se retiraron curl/libcurl, que el portal no utiliza. El nuevo
+análisis local aprobó con 0 críticas, 0 altas y 3 medias, sin excepciones
+nuevas; construcción, arranque y proxy también aprobaron. El workflow y su
+umbral no cambiaron. [Evidencia y alcance](bitacora-trabajo.md#21-de-octubre-de-2026--corrección-del-análisis-de-seguridad-del-portal).
+El resultado de CI debe consultarse para el nuevo commit de corrección.
+
 El 21 de octubre se añadió la prueba de CSS/JS reales del login para detectar
 permisos incorrectos en los tmpfs de Keycloak. Pasaron siete comprobaciones
 aisladas de salud/realm sin omisiones; ese subconjunto no incluye la prueba
