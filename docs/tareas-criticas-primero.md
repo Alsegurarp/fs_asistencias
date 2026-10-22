@@ -59,7 +59,7 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Cinco imágenes locales reconstruidas y analizadas el 20, con IDs registrados. Corregidas altas de libexpat en backend/portal y libx11 en portal; ninguna grave nueva sin atender. Siguen seis excepciones de identidad. Faltan IDs del servidor mediante Gabriel, análisis de esas imágenes, despliegue de correcciones y comprobación pública |
 | 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación y aceptación técnica local por rol completadas en A5 el 21. Configuración GET/PATCH /tenant y permisos de dispositivos comprobados; faltan despliegue y aceptación pública/del usuario |
 | 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Implementación completada el 19: contrato 0.12 y V008, con 74 integraciones/151 pruebas web en ese corte. A5 local del 21 comprueba detalle y paginación en navegador; falta despliegue y aceptación pública/del usuario. Históricos anteriores conservan conteos |
-| 15 | P2 | Semana y acuse del trabajador (12) | A2/A3 y aceptación web/API local comprobados en A5; instrumentación Android ampliada aprobada. Faltan recorrido visual Android contra backend real, aceptación pública/del usuario, expediente y definiciones jurídicas/evidencia del orden 3 |
+| 15 | P2 | Semana y acuse del trabajador (12) | A2/A3, A5 e instrumentación aprobados; recorrido visual Android contra backend real local aprobado el 21. Faltan aceptación pública/del usuario, expediente y definiciones jurídicas/evidencia del orden 3 |
 | 16 | P2 | Pantallas de operador del servicio (13) | Reactivación y permisos/aislamiento comprobados con sesión real en A5 local del 21. Faltan suspensión según orden 5 y aceptación pública/del usuario |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias (18) | Requiere criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar resultados |
 | 18 | P2 | Carga, continuidad y operación del despliegue (resto de 19) | Requiere volumen objetivo y número de instancias. Probar trabajos, cierres, exportes y cuotas; resolver actualización del DNS ante IP dinámica y comprobar renovación real de certificados. Cuotas compartidas sólo si habrá varias instancias |
@@ -133,9 +133,10 @@ Para continuar después de la PR #10:
 2. Cambio obligatorio portal/backend/Keycloak comprobado localmente el 21:
    contraseña nueva, OTP conservado y token anterior todavía aceptado.
    La provisión pública conserva Q04 y el acceso olvidado espera Q03.
-3. El teléfono de Q09 ya está conectado y la instrumentación de semana/acuse
-   con HTTP simulado aprobó. Falta su recorrido contra el backend real y
-   aceptación visual. La tarjeta autenticada conserva Q08; no está acreditada
+3. El teléfono de Q09 ya está conectado; instrumentación y [recorrido visual
+   de semana/acuse contra backend real local](qa-android-semana-acuse-2026-10-21.md)
+   aprobaron. Faltan aceptación pública/del usuario y expediente. La tarjeta
+   autenticada conserva Q08; no está acreditada
    por el simulador ni por la herramienta MF1K de ejemplo.
 4. Incorporar las respuestas Q01–Q22 antes de cambiar reglas, retención,
    respaldo externo o nómina. Se puede medir una línea base local de carga

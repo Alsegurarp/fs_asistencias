@@ -43,8 +43,9 @@ y acceso a evidencia cuando termina o se suspende el servicio.
 
 - Resuelto localmente en A3: la consulta semanal devuelve el acuse vigente
   desde servidor y Android lo recupera sin depender de su copia local.
-  Reapertura y nueva versión no heredan el acuse anterior. Falta aceptar el
-  recorrido real con teléfono; [guion](qa-a1-a5.md).
+  Reapertura y nueva versión no heredan el acuse anterior. El recorrido visual
+  con teléfono contra backend real local aprobó el 21; faltan aceptación
+  pública y del usuario. [Acta](qa-android-semana-acuse-2026-10-21.md).
 - Exponer marcajes originales, ajustes y sus motivos, historial y seguimiento
   de objeciones para que el trabajador pueda revisar el expediente completo.
 - Definir evidencia del acuerdo de ambas partes, texto versionado, copia del
@@ -59,6 +60,13 @@ Referencias del proyecto: [revisión documental](revision-juridica-jornada-acuse
 [estado](estado-y-pendientes.md) y [guía Android](guia-app-android.md).
 
 ## Verificación
+
+Actualización posterior del 21: [recorrido visual Android contra backend
+real local aprobado](qa-android-semana-acuse-2026-10-21.md), con semana vacía,
+cierre de ocho horas, objeción, recuperación sin copia local, reapertura,
+versión nueva y conformidad. Se restauró la vinculación original del teléfono,
+se deshabilitaron recursos ficticios y el entorno quedó levantado. No se
+cambió código ni APK. Los cortes siguientes conservan su alcance histórico.
 
 Actualización del 21: la instrumentación se amplió para rechazar un acuse de
 otro cierre y aprobó de nuevo en Samsung API 36. Consulta/acuse web y API real

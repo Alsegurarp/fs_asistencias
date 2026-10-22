@@ -6,6 +6,26 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 21 de octubre de 2026 — Entorno y semana/acuse Android reales locales
+
+Completadas las dos acciones autorizadas tras la revisión de avance: entorno
+levantado conservando volúmenes/secretos y recorrido visual de semana/acuse
+en Samsung SM-S928B API 36 contra backend real local. Backend, portal e
+identidad responden; PostgreSQL/Keycloak saludables y V001–V008 exitosas.
+
+Con datos ficticios se comprobaron semana vacía, cierre de ocho horas,
+revisión/confirmación/cancelación, objeción, recuperación del mismo recibo
+sin copia local, duplicado 409 con sesión Trabajador, reapertura, versión
+nueva sin herencia y conformidad. Preferencias originales del teléfono
+restauradas byte por byte y túnel retirado. Recursos de ensayo inactivos;
+eventos, cierres, acuses y auditoría conservados. Servicios locales levantados.
+
+[Acta, evidencia y límites](qa-android-semana-acuse-2026-10-21.md).
+No cambia código ni APK, no despliega el servidor ni prueba NFC físico.
+La tarea global 15 avanza; aceptación pública/del usuario y expediente
+conservan sus requisitos. Las 17 tareas globales permanecen abiertas total
+o parcialmente.
+
 ## 21 de octubre de 2026 — Corrección del análisis de seguridad del portal
 
 La [ejecución 39626828092](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39626828092)

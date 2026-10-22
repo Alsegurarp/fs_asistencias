@@ -29,14 +29,16 @@ API 36. La falta de teléfono ya no bloquea la instrumentación. El resultado
 de su ejecución se registra en la bitácora; disponer de ADB no acredita una
 tarjeta física, una segunda IP pública ni el login/OTP del navegador.
 La instrumentación `FIXTURE` ya aprobó, incluidos semana/acuse y recuperación
-desde servidor HTTP simulado; 13 unitarias y lint sin errores. No se repitió
-ese recorrido contra el backend real ni se probó una tarjeta física.
+desde servidor HTTP simulado; 13 unitarias y lint sin errores. Después aprobó
+el [recorrido visual contra backend real local](qa-android-semana-acuse-2026-10-21.md)
+el 21; no se probó una tarjeta física ni se aceptó el entorno público.
 
 **Ninguna de las 17 tareas puede declararse cerrada por leer las bitácoras.**
 Las tareas 9 y 13 ya tienen aceptación técnica local dentro de A5; falta
 comprobar el entorno publicado y la aceptación del usuario. La 9 conserva
 pantallas de horarios/importación fuera de A5. La 15 ya tiene aprobado el ensayo instrumental con HTTP
-simulado; conserva recorrido real, expediente y criterios de jornada/evidencia. No se
+simulado y recorrido visual contra backend real local; conserva aceptación
+pública/del usuario, expediente y criterios de jornada/evidencia. No se
 vuelve a implementar A1–A5 ni se repiten decisiones ya aprobadas del SaaS.
 
 | Orden | Trabajo que puede avanzarse ahora | Duda o recurso para el cierre completo |
@@ -52,7 +54,7 @@ vuelve a implementar A1–A5 ni se repiten decisiones ya aprobadas del SaaS.
 | 10 | Revisar almacenamiento y proteger los pendientes | Q14: días por tipo de sobre/recibo/acuse, evidencia que conserva servidor y condiciones de purga |
 | 12 | Conservar CI e inventario local como antecedentes | Q17: Gabriel debe aportar commit, migraciones e IDs del servidor; analizar, corregir/desplegar y comprobar esas imágenes |
 | 13 | Configuración y permisos de dispositivos comprobados en A5 local | Q17: confirmar versión y aceptación pública y del usuario |
-| 15 | Aceptar semana/acuse contra backend real; instrumentación FIXTURE ya aprobada | Q07/Q09/Q17: recorrido contra backend, expediente completo, texto/evidencia aprobados y entorno publicado; las reglas conservan Q06 |
+| 15 | Semana/acuse visual contra backend real local e instrumentación FIXTURE aprobados | Q07/Q17: aceptación pública/del usuario, expediente completo y texto/evidencia aprobados; las reglas conservan Q06 y tarjeta física Q09 |
 | 16 | Aceptar alta/listado y reactivación ya implementados | Q10/Q17: política de suspensión aprobada y aceptación del portal con operador y roles ajenos |
 | 17 | Usar horarios/asignaciones ya existentes sin inventar tolerancias | Q15/Q06: tolerancias/redondeos, solicitud y aprobación de ausencias, evidencia y efecto en semana/nómina |
 | 18 | Medir línea base local con datos ficticios | Q19: empresas/dispositivos concurrentes, instancias, latencia/error aceptables y responsables de DNS/certificados; después probar destino |
