@@ -6,6 +6,21 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 22 de octubre de 2026 — Corrección de Keycloak tras el fallo de CI
+
+El CI de la PR #14 detectó una crítica en certificados y una alta en Java
+de la imagen oficial de identidad. Keycloak 26.8.1 por sí solo no las
+resolvió. Se conserva su distribución y se construye un runtime UBI mínimo
+con Oracle JDK 25.0.5.0.2 verificado por SHA-256, incluido el bloqueo de
+certificados eMudhra. Se actualiza pcre2 y se retiran sus seis excepciones.
+
+Las cinco imágenes locales aprobaron el análisis sin críticas, altas ni
+aceptaciones. Nueve pruebas aisladas de identidad/seguridad aprobaron con
+UID 1000 y sistema de archivos de sólo lectura. Los hallazgos restantes,
+licencia, huella de la imagen y límite de ARM64 constan en el
+[acta de seguridad](seguridad-keycloak-2026-10-22.md).
+No se sustituyó el servicio local en operación ni se desplegó el servidor.
+
 ## 22 de octubre de 2026 — Consolidación, navegador, carga, imágenes y retención
 
 `git pull --autostash origin main` incorporó dos commits hasta `ad21177` y
