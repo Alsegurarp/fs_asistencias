@@ -1,5 +1,11 @@
 # Tareas pendientes
 
+Actualización del **22 de octubre de 2026**, desde `main`/`ad21177`:
+[horarios/importación local 17/17, carga 50/300 y revisión de imágenes](qa-local-2026-10-22.md).
+El [análisis de retención Android](retencion-android.md) está entregado;
+su implementación conserva Q14. El servidor público queda diferido.
+Se mantienen 17 tareas abiertas total o parcialmente; el corte siguiente es histórico.
+
 Estado documental revisado el **21 de octubre de 2026**, sobre `main`/`907a93a`:
 A1–A5 integradas mediante la [PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10),
 con los cuatro trabajos de [CI aprobados](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988).
@@ -11,6 +17,10 @@ actualiza la evidencia técnica; la QA funcional del usuario y la aceptación
 del ambiente publicado conservan sus pendientes. El [corte del 19](evidencia-avance-2026-10-19.md)
 se conserva como antecedente.
 Hay **17 tareas abiertas total o parcialmente**.
+El [recorrido visual Android de semana/acuse](qa-android-semana-acuse-2026-10-21.md)
+aprobó contra backend real local el 21: objeción, recuperación sin copia
+local, reapertura, versión nueva y conformidad. Entorno local levantado;
+teléfono restaurado y recursos ficticios deshabilitados al terminar.
 El 21 se ejecutaron los [33 casos A5 en local](qa-a1-a5-2026-10-21.md),
 incluidos login/OTP real, renovación/salida, configuración y bloqueos por rol.
 Eso completa la aceptación técnica local de ese guion; no cierra el
@@ -46,14 +56,14 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | 5 | P0 | Suspensión, baja, supervisor y tipo de marcaje | Elegir las reglas propuestas y después implementar sus efectos sobre permisos, captura e históricos |
 | 6 | P0 | Producción administrada para datos reales | El modelo está aprobado: producción exclusiva de Zenit bajo control de fastSolution y aislamiento lógico por empresa. Faltan proveedor, región, cuenta, contratos, respaldo externo, restauración y pruebas. El servidor compartido conserva sólo datos ficticios |
 | 8 | P1 | Dirección real y protocolo entre proxies | Comprobar que dos IP públicas reales conservan cuotas independientes en la misma ventana. Las pruebas públicas de HTTPS y cabeceras falsas ya pasaron |
-| 9 | P1 | Recorridos del portal con sesión real | A5 local aprobado el 21, con roles, cookies, renovación y salida. Faltan inventario/versión y recorrido público, aceptación del usuario y pantallas de horarios/importación fuera del alcance A5; API HTTPS ya comprobada |
-| 10 | P1 | Retención de sobres y recibos Android | Definir plazo y conservación; implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria |
+| 9 | P1 | Recorridos del portal con sesión real | A5 local aprobado el 21; horarios/importación y permisos en navegador local 17/17 el 22. Faltan inventario/versión, recorrido público y aceptación del usuario; API HTTPS del 19 conserva su evidencia |
+| 10 | P1 | Retención de sobres y recibos Android | Análisis de Room, acuses y evidencia en servidor entregado el 22. Definir plazo y conservación en Q14; después implementar purga acotada con protección de pendientes |
 | 12 | P1 | Imágenes y correcciones del servidor | Obtener IDs y versión desplegada mediante el interlocutor SSH, analizar esas imágenes, desplegar correcciones y verificar públicamente. El análisis local y el de CI ya aprobaron |
 | 13 | P2 | Configuración de empresa y dispositivos en portal | Pantallas y permisos aceptados técnicamente en A5 local el 21. Faltan inventario/despliegue y aceptación pública y del usuario |
-| 15 | P2 | Semana y acuse del trabajador | A2/A3 implementados. Consulta web, acuse desde dispositivo simulado firmado, reapertura e histórico comprobados en A5 local; Android instrumental ampliado aprobado. Faltan recorrido visual Android contra backend real, aceptación pública/del usuario y expediente; evidencia/reglas dependen del orden 3 |
+| 15 | P2 | Semana y acuse del trabajador | A2/A3, A5 local e instrumentación aprobados. Recorrido visual Android contra backend real local aprobado el 21, con objeción, recuperación, reapertura y conformidad. Faltan aceptación pública/del usuario y expediente; evidencia/reglas dependen del orden 3 |
 | 16 | P2 | Pantallas del operador del servicio | A1 y sesión real del operador comprobados en A5 local. Faltan aceptación pública/del usuario y suspensión, que depende de la decisión del orden 5 |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias | Aprobar criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar |
-| 18 | P2 | Carga, continuidad y operación | Definir volumen e instancias; probar trabajos, cierres, exportes y cuotas, actualización de DNS y renovación real de certificados |
+| 18 | P2 | Carga, continuidad y operación | Línea base local 50/300 del 22: 1,400 marcajes, 350 cierres y seis exportes verificados. Faltan objetivos Q19, carga sostenida/destino, continuidad, DNS y renovación real de certificados |
 | 19 | P2 | Conector y formato de nómina | Identificar sistema y formato del primer cliente; implementar sincronización y obtener aceptación del archivo exportado |
 | 20 | P2 | Congelar contrato 1.0 | Completar recorridos reales y decisiones pendientes; acordar compatibilidad y publicación de cambios con los consumidores |
 
@@ -100,8 +110,9 @@ La implementación local de la **tarea 14** está completada y validada.
 A1 ya completa la reactivación local de la **tarea 16**; la suspensión espera
 la decisión de la tarea 5. A2/A3 añaden consulta personal web y recuperación
 de acuse desde servidor. A4 y los 33 casos A5 aprobaron en local el 21.
-Faltan el recorrido público, horarios/importación en navegador fuera de A5,
-el recorrido visual Android de semana/acuse contra backend real, expediente completo y
+El recorrido visual Android de semana/acuse contra backend real local aprobó
+el 21. Faltan el recorrido público, horarios/importación en navegador fuera
+de A5, expediente completo y
 las dependencias jurídicas y operativas de las tareas globales.
 
 Para desbloquear las P1 restantes:
@@ -111,8 +122,8 @@ Para desbloquear las P1 restantes:
   instrumentación con HTTP simulado aprobó el 20. Esto no demuestra dos IP
   públicas distintas. **La prueba con datos móviles queda pendiente para otro
   desarrollador, por indicación del usuario.** Ver el procedimiento siguiente.
-- **9:** A5 local ya tiene acta con navegador real. Continuar el recorrido
-  público y las pantallas de horarios/importación con su inventario y accesos.
+- **9:** A5 y horarios/importación ya tienen actas locales con navegador real.
+  Continuar el recorrido público cuando se retome, con inventario y accesos.
 - **10:** definir cuántos días conservar sobres y recibos procesados y si habrá
   conservación externa. Los pendientes no deben purgarse.
 - **12:** coordinar inventario, despliegue y comprobación con el interlocutor

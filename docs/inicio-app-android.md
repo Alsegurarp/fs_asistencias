@@ -21,8 +21,9 @@ sigue separada y sólo está disponible en debug.
 La app operativa ya activa, firma marcajes, conserva cola cifrada, sincroniza,
 consulta semana y recupera el acuse vigente desde servidor. Captura simulada
 contra backend local/HTTPS aprobó el 19 y la instrumentación ampliada con
-HTTP simulado aprobó el 20. Faltan el nuevo recorrido real de semana/acuse,
-aceptación visual y tarjeta autenticada. [Entregas y evidencia](entregas-a1-a5.md).
+HTTP simulado aprobó el 20. El [recorrido visual de semana/acuse contra backend
+real local](qa-android-semana-acuse-2026-10-21.md) aprobó el 21. Faltan aceptación
+pública/del usuario, expediente y tarjeta autenticada. [Entregas y evidencia](entregas-a1-a5.md).
 
 ## Primera entrega (histórico anterior a captura firmada)
 

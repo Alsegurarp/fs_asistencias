@@ -6,6 +6,54 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 22 de octubre de 2026 — Consolidación, navegador, carga, imágenes y retención
+
+`git pull --autostash origin main` incorporó dos commits hasta `ad21177` y
+restauró los cambios locales sin conflictos. Se revisaron historial y actas,
+se comprobaron sus huellas y se consolidó la documentación Android del 21.
+Se preservan y excluyen de la entrega los cambios previos de `backend/bin/`.
+
+Por autorización del usuario se ejecutaron las tareas de sesión 1–5:
+17/17 casos de horarios/importación y permisos en Chrome local; línea base
+50/300 con 1,400 marcajes, 350 cierres, 240 consultas y seis exportes
+verificados; revisión/corrección de portal y herramienta de despliegue;
+análisis del alcance mínimo de retención Android sin fijar plazo ni purga.
+
+Ambas imágenes finales aprobaron con cero críticas/altas/desconocidas y
+tres medias de BusyBox por imagen, sin excepciones nuevas. Portal actualiza
+musl; la herramienta construye curl 8.23.0 verificado sin libssh2 vulnerable.
+Dos pruebas reproducibles, HTTP/HTTPS de la herramienta y nginx aprobaron.
+La limpieza revocó 400 tarjetas y 20 dispositivos ficticios, suspendió dos
+empresas, deshabilitó once identidades y restauró el archivo de operadores.
+Backend reiniciado para retirar el operador de ensayo; evidencia conservada.
+
+[Acta, métricas, huellas y límites](qa-local-2026-10-22.md) y
+[análisis de retención Android](retencion-android.md).
+La tarea de sesión 6 queda diferida: no hubo SSH, despliegue ni comprobación
+del servidor público. Se mantienen 17 tareas globales abiertas total o
+parcialmente y seis P0; Q14/Q19 conservan sus decisiones. No se repiten
+suites completas ni se atribuye CI remoto a las imágenes de esta sesión.
+
+## 21 de octubre de 2026 — Entorno y semana/acuse Android reales locales
+
+Completadas las dos acciones autorizadas tras la revisión de avance: entorno
+levantado conservando volúmenes/secretos y recorrido visual de semana/acuse
+en Samsung SM-S928B API 36 contra backend real local. Backend, portal e
+identidad responden; PostgreSQL/Keycloak saludables y V001–V008 exitosas.
+
+Con datos ficticios se comprobaron semana vacía, cierre de ocho horas,
+revisión/confirmación/cancelación, objeción, recuperación del mismo recibo
+sin copia local, duplicado 409 con sesión Trabajador, reapertura, versión
+nueva sin herencia y conformidad. Preferencias originales del teléfono
+restauradas byte por byte y túnel retirado. Recursos de ensayo inactivos;
+eventos, cierres, acuses y auditoría conservados. Servicios locales levantados.
+
+[Acta, evidencia y límites](qa-android-semana-acuse-2026-10-21.md).
+No cambia código ni APK, no despliega el servidor ni prueba NFC físico.
+La tarea global 15 avanza; aceptación pública/del usuario y expediente
+conservan sus requisitos. Las 17 tareas globales permanecen abiertas total
+o parcialmente.
+
 ## 21 de octubre de 2026 — Corrección del análisis de seguridad del portal
 
 La [ejecución 39626828092](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39626828092)

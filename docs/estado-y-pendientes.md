@@ -3,6 +3,14 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
+Actualización local del **22 de octubre de 2026**, desde `main`/`ad21177`:
+[17/17 casos de horarios/importación en navegador, línea base de carga de
+50/300 empleados y revisión de imágenes](qa-local-2026-10-22.md).
+[Retención Android analizada](retencion-android.md), sin fijar plazo ni purga.
+La comprobación del servidor público queda diferida por indicación del usuario.
+Se mantienen 17 tareas globales abiertas total o parcialmente y seis P0;
+los conteos y versiones siguientes conservan su fecha de comprobación.
+
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
@@ -12,7 +20,11 @@ Se corrigieron los permisos temporales que impedían servir recursos de
 Keycloak y se amplió la instrumentación Android para rechazar un acuse ajeno.
 La aceptación del usuario y del ambiente público conserva sus requisitos.
 
-Última revisión documental: 21 de octubre de 2026, sobre `main`/`907a93a`.
+Corte documental anterior: 21 de octubre de 2026, sobre `main`/`907a93a`.
+Actualización sobre `4852c66`: [semana/acuse Android visual contra backend
+real local aprobados](qa-android-semana-acuse-2026-10-21.md). Servicios
+locales levantados, ocho migraciones exitosas y teléfono restaurado al
+terminar. La aceptación pública y del usuario conserva sus requisitos.
 A1–A5 integradas en `main`/`e4d7683`
 mediante la [PR #10](https://github.com/Alsegurarp/fs_asistencias/pull/10),
 con sus cuatro trabajos de [CI aprobados](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39504126988).
@@ -59,9 +71,9 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 | Entorno local | Levantado de nuevo el 21 conservando volúmenes: backend en 18080, portal en 8081 e identidad en 8082. V008 aplicada; A5 local comprobado. Corregidos permisos tmpfs de identidad; tarjetas simuladas sólo para datos ficticios |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | El 20, tras V008, el ensayo restauró 131 tablas/1,970 filas idénticas. La recuperación completa con origen apagado y secretos nuevos sigue siendo la del 18: 130 tablas/1.867 filas. [Detalle](recuperacion-servicio.md). Copia externa, custodia, programación y recuperación pública pendientes |
-| Vulnerabilidades | Portal corregido con Nginx 1.30.6 y retirada de curl/libcurl: análisis local con 0 críticas/altas y 3 medias. Los cuatro trabajos de CI y las cinco imágenes aprobaron para `f72941e` en la ejecución 39636653675. Se conservan las seis excepciones de identidad; falta despliegue y comprobación del servidor |
+| Vulnerabilidades | El 22 portal y herramienta local aprobaron con 0 críticas/altas/desconocidas y 3 medias de BusyBox por imagen, sin excepciones nuevas. Portal actualiza musl; herramienta usa curl 8.23.0 sin libssh2. El CI previo de las cinco imágenes corresponde a `f72941e`, ejecución 39636653675; no acredita los cambios del 22. Se conservan seis excepciones de identidad y el despliegue/comprobación del servidor pendiente |
 | Portal | Catálogos y operación existentes, más reactivación de empresas, Mi asistencia y cambio obligatorio. 162 pruebas y compilación aprobadas el 21; 33 casos A5 locales comprobados. Aceptación del usuario y despliegue/recorrido público pendientes |
-| App Android | Captura/cola/sincronización existentes. A3 recupera acuse del servidor y descarta vigencia al reabrir. Repetidas 13 unitarias y lint; ambos APK actualizados sin borrar datos. Instrumentación FIXTURE aprobada en Samsung SM-S928B API 36, incluidos los casos de semana/acuse. Falta ese recorrido contra backend real y tarjeta física; captura local/HTTPS del 19 conserva su evidencia |
+| App Android | Captura/cola/sincronización existentes. A3 recupera acuse del servidor y descarta vigencia al reabrir. 13 unitarias, lint e instrumentación FIXTURE aprobados. Recorrido visual de semana/acuse contra backend real local aprobado el 21 en Samsung API 36, con objeción, recuperación y conformidad. Falta aceptación pública/del usuario, expediente y tarjeta física; captura local/HTTPS del 19 conserva su evidencia |
 | Conector | No existe |
 
 Lo que el backend ya hace, de punta a punta:
@@ -86,8 +98,8 @@ una cuenta de administración de prueba para validar Android por HTTPS.
 
 | Qué | Por qué importa |
 | --- | --- |
-| Completar el portal | Reactivación, consulta personal, cambio obligatorio y A5 local comprobados con sesiones reales el 21. Faltan aceptación del usuario y pública, horarios/importación en navegador fuera de A5, suspensión y expediente completo según decisiones pendientes |
-| Completar y validar la app | Enrolamiento y sincronización comprobados contra backend local y HTTPS publicado con datos ficticios. El 19 de octubre se agregó consulta semanal y acuse personal con recibo cifrado; [alcance y validación](revision-movil-empleado.md). Faltan recorrido real de semana/acuse, historial completo desde backend y captura autenticada con tarjetas reales |
+| Completar el portal | Reactivación, consulta personal, cambio obligatorio y A5 local comprobados el 21; horarios/importación en navegador local aprobados el 22. Faltan aceptación del usuario y pública, suspensión y expediente completo según decisiones pendientes |
+| Completar y validar la app | Enrolamiento y sincronización comprobados contra backend local y HTTPS publicado con datos ficticios. Semana y acuse con recibo cifrado aprobados visualmente contra backend real local el 21; [alcance y validación](revision-movil-empleado.md). Faltan aceptación pública/del usuario, historial completo desde backend y captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
 | Un ambiente publicado | Desde el 18 de octubre de 2026 Zenit está en <https://zenit.fastsolution.com.mx>, con certificados propios y sólo datos ficticios ([Despliegue en el servidor](despliegue-en-servidor.md)). El 19 pasaron Android y operaciones de administración por HTTPS usando una cuenta de prueba. Siguen SMTP, comprobar todas las cuentas personales, quién opera el servicio, respaldo externo y el recorrido completo del portal |
@@ -307,7 +319,7 @@ acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 | 9 | Completar configuración de empresa en el portal | Implementación y aceptación técnica local por rol completadas en A5 el 21. Faltan despliegue y aceptación pública/del usuario |
 | 10 | Mostrar las personas que no pudieron cerrar y sus causas | Implementada y comprobada en A5 local con detalle y paginación en navegador. Faltan despliegue y aceptación pública/del usuario; históricos anteriores a V008 conservan conteos |
 | 11 | Automatizar verificaciones en cada cambio | Workflow integrado en `main` el 19; cuatro trabajos aprobados en `avanceLunes` (ejecución 39301664714). La obligatoriedad de trabajos requiere una decisión adicional |
-| 12 | Completar semana y acuse del trabajador | A2/A3 y consulta/acuse web/API local comprobados en A5. Instrumentación Android ampliada aprobada; faltan recorrido visual Android contra backend real, expediente y criterios jurídicos |
+| 12 | Completar semana y acuse del trabajador | A2/A3 y consulta/acuse web/API local comprobados en A5. Instrumentación y recorrido visual Android contra backend real local aprobados; faltan aceptación pública/del usuario, expediente y criterios jurídicos |
 | 13 | Completar pantallas del operador del servicio | Reactivación y permisos/aislamiento comprobados con sesión real en A5 local. Faltan suspensión y aceptación pública/del usuario |
 | 14 | Publicar ambiente de pruebas con TLS, SMTP y cuentas personales | Publicado con TLS el 18 de octubre de 2026 ([Despliegue en el servidor](despliegue-en-servidor.md)). Faltan correo, cuentas personales, quién opera el servicio y el acceso con sesión por HTTPS; retirar la cuenta temporal sólo tras verificar las nuevas |
 | 15 | Comprobar recuperación completa y automatizar respaldos externos | Recuperación local comprobada. Política diaria/30 días, objetivos 24 h/4 h y atención por fastSolution aprobados; SSH por Gabriel y destino en otro servidor. Faltan custodia, concretar destino, automatizar y comprobar recuperación pública; [detalle](recuperacion-servicio.md) |
@@ -326,7 +338,7 @@ siguen abiertas donde se indican en **Sin verificar** y en la validación.
 
 | Quién | Primer paso sugerido |
 | --- | --- |
-| App | Con el teléfono ya disponible: recorrido visual de semana/acuse contra backend real. Instrumentación ampliada aprobada; tarjeta autenticada y claves conservan sus dependencias |
+| App | Recorrido visual de semana/acuse contra backend real local aprobado el 21. Continuar aceptación pública/del usuario y expediente; tarjeta autenticada y claves conservan sus dependencias |
 | Portal | A5 local completado. Continuar pantallas de horarios/importación y aceptación pública/del usuario con inventario Q17; suspensión espera decisión de producto |
 | Backend | Detalle de bloqueos implementado y aceptado técnicamente en A5 local. Faltan despliegue y aceptación pública/del usuario; jOOQ diferido y reglas pendientes de decisión |
 

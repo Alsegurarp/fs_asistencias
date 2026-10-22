@@ -1,5 +1,9 @@
 # Entregas A1–A5 — 20 de octubre de 2026
 
+Actualización del 22: [consolidación y trabajo local posterior](qa-local-2026-10-22.md),
+incluidos horarios/importación en navegador fuera de A5. Los resultados de
+implementación siguientes conservan su fecha; no se vuelve a entregar A1–A5.
+
 Implementación local sobre `1984be3`, autorizada por el usuario después de la
 declaración de tareas. No se cambiaron las decisiones pendientes de jornada,
 suspensión, baja, supervisor, retención o NFC. No se desplegó el servidor
@@ -74,6 +78,11 @@ la acción no ocurrió. Se responde 503 sin éxito falso ni reintento automátic
 
 ## Evidencias y pendientes
 
+Actualización posterior del 21: [semana/acuse visual Android contra backend
+real local aprobados](qa-android-semana-acuse-2026-10-21.md), con recuperación
+sin copia local, reapertura, versión nueva y conformidad. No se repitieron
+construcción ni suites completas; los conteos anteriores conservan su corte.
+
 Registros locales, excluidos de Git:
 
 - `build/a1-a4-backend.log`, `a1-a4-web-tests.log`, `a1-a4-web-build.log`.
@@ -90,7 +99,7 @@ recuperación sin copia local, reapertura y nulo explícito del servidor.
 
 El recorrido local por rol y el login/OTP real de A4 aprobaron el 21, con
 renovación y salida. Permanecen abiertos la aceptación del usuario y pública,
-el recorrido visual Android contra backend real/tarjetas físicas, recuperación de contraseña olvidada,
+la tarjeta física autenticada, recuperación de contraseña olvidada,
 SMTP/cuentas operativas, despliegue público y las preguntas Q01–Q22.
 Las 17 tareas globales no cambian de cantidad por cerrar estas cinco entregas
 integradas. La nueva prueba de identidad aprobó dentro del workflow de la PR,
