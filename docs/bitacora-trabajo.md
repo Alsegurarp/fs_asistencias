@@ -20,6 +20,9 @@ UID 1000 y sistema de archivos de sólo lectura. Los hallazgos restantes,
 licencia, huella de la imagen y límite de ARM64 constan en el
 [acta de seguridad](seguridad-keycloak-2026-10-22.md).
 No se sustituyó el servicio local en operación ni se desplegó el servidor.
+El CI posterior también detectó una carrera en la prueba de salida faltante:
+ahora espera la desaparición del botón tras guardar, además de comprobar
+el PATCH exacto; no cambia el comportamiento del portal.
 
 ## 22 de octubre de 2026 — Consolidación, navegador, carga, imágenes y retención
 
