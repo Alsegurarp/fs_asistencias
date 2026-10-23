@@ -1,6 +1,12 @@
 # Verificaciones automáticas
 
-Ampliación del 23 de octubre de 2026: el trabajo de contrato/seguridad añade
+Ampliación del 23 de octubre de 2026, publicada en `ffa8306` mediante la
+[PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15), en borrador:
+los cuatro trabajos aprobaron en la
+[ejecución 39990444637](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39990444637),
+incluido el nuevo ensayo. No está integrado en `main` ni desplegado.
+
+El trabajo de contrato/seguridad añade
 el autoensayo de respaldo cifrado, escrituras concurrentes por base,
 restauración sin origen y rechazos de alteraciones. Se ejecuta sin red ni
 volúmenes del proyecto, con datos y claves desechables. `/work` permite

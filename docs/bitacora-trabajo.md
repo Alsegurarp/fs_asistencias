@@ -6,6 +6,42 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 23 de octubre de 2026 — CI aprobado y criterio legal para retención y evidencia
+
+La entrega de respaldo/CI se publicó en `ffa8306`, rama
+`test/respaldo-concurrente-ci-2026-10-23`, con la
+[PR #15 en borrador](https://github.com/Alsegurarp/fs_asistencias/pull/15).
+Los cuatro trabajos de la
+[ejecución 39990444637](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39990444637)
+aprobaron: backend, portal, Android y contrato/seguridad. El nuevo paso de
+respaldo cifrado/recuperación sin red aprobó también en el runner.
+No se integró en `main` ni se desplegó el servidor.
+
+El usuario precisó que las tareas de sesión 3 y 5 deben seguir la legislación
+mexicana, incluida la reducción a 46 horas en 2027, y confirmó el cumplimiento
+legal como criterio rector. Se verificaron DOF, LFT, LSS, LFPDPPP y su
+Reglamento, además del ámbito de NOM-151; se actualizaron
+[retención](retencion-android.md), [criterios de negocio](decisiones-de-negocio.md)
+y [revisión legal](revision-juridica-jornada-acuse.md).
+V005 y su prueba existente ya contienen 46 horas para 2027; no se cambió el
+cálculo ni se consideran cerradas sus brechas diarias/descansos.
+
+La conservación laboral del artículo 804 no se convierte en una purga de
+cada fila a los 365 días ni en un plazo arbitrario de caché Android.
+El artículo 52 del Reglamento establece recuperación previa a la supresión
+al terminar el servicio en nube en el supuesto que regula. No obliga a un
+tercero certificador a habilitar cada recuperación. La entrega completa por
+empresa aún falta: la recuperación de toda la instalación no la sustituye
+y no debe exponer información de otros clientes.
+
+Las tareas de sesión 3 y 5 avanzan en criterios normativos; siguen parciales:
+archivo/recuperación íntegros y disponibilidad local antes de purgar, y
+opciones operativas de suspensión, baja, supervisor y marcaje que la ley no
+elige por sí sola. La tarea 4 conserva Q03/Q04: modalidad de recuperación,
+SMTP/remitente y responsables/cuentas, sin respuesta adicional. No se
+habilitó correo ni se borró evidencia. El cambio Android sólo precisa el
+comentario `shortcut:` del DAO; no altera su comportamiento.
+
 ## 23 de octubre de 2026 — Respaldo concurrente validado y preparación de CI
 
 El usuario autorizó las tareas de sesión 1–5 de la lista anterior: respaldo
@@ -24,8 +60,8 @@ de destino ocupado, contraseña antigua, filas eliminadas, contenido distinto,
 cifrado alterado y clave incorrecta. La garantía es por base; no sincroniza
 las instantáneas de Zenit e identidad entre sí.
 
-Se corrigió un fallo real del ensayo: Docker monta `/work` con `noexec` por
-defecto y el shell omitía el auxiliar de escritura al buscar `pg_dump`.
+Se corrigió un fallo real del ensayo: el montaje `/work` tenía `noexec` y
+el shell omitía el auxiliar de escritura al buscar `pg_dump`.
 La comprobación de cambios en el origen falló y evitó una aprobación falsa.
 Se habilita `exec` sólo en el tmpfs `/work` del autoensayo, tanto en CI como
 en el comando documentado. No cambia `rehearse.sh` ni los montajes operativos.

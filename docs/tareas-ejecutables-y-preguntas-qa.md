@@ -1,6 +1,13 @@
 # Trabajo ejecutable y preguntas para QA
 
-Avance posterior del 23: el autoensayo concurrente de respaldo aprobó
+Último corte del 23: cuatro trabajos de CI aprobados para `ffa8306` en la
+[PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15), todavía en
+borrador. Para Q14/Q10–Q13 el usuario aporta el criterio legal mexicano;
+[respuesta normativa y límites técnicos](revision-juridica-jornada-acuse.md).
+Esto no elige automáticamente plazos de caché, recuperación aún inexistente
+ni opciones comerciales. Q03/Q04 siguen sin completar.
+
+Avance anterior del 23: el autoensayo concurrente de respaldo aprobó
 localmente y su comando corregido se añadió al workflow; [evidencia](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
 Se solicitaron al usuario Q14, Q03/Q04 y Q10–Q13 para continuar las tareas de
 sesión 3–5 sin fijar plazos, métodos de recuperación ni reglas por inferencia.

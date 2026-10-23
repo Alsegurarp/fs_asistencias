@@ -1,7 +1,39 @@
 # Decisiones de negocio
 
-Estado al 19 de octubre de 2026: el modelo de alojamiento está aprobado. Las
-reglas de suspensión, baja, supervisor y tipo de marcaje siguen pendientes.
+**Criterio rector confirmado por el usuario el 23 de octubre de 2026:**
+el desarrollo debe cumplir la legislación aplicable. Las opciones técnicas
+y comerciales se evalúan dentro de esos límites; una implementación o una
+prueba aprobada no sustituye demostrar los requisitos jurídicos aplicables.
+
+Actualización del 23 de octubre de 2026: el modelo de alojamiento está
+aprobado y el usuario fija la legislación mexicana como criterio de
+retención/uso de datos. Las opciones concretas de suspensión, baja,
+supervisor y marcaje no quedan elegidas automáticamente por esa referencia.
+
+## Criterio legal recibido el 23 de octubre
+
+Se aplica la [revisión de fuentes oficiales](revision-juridica-jornada-acuse.md#actualización-del-23-de-octubre-de-2026-conservación-y-uso-de-datos),
+incluidos registro/exhibición, conservación laboral, protección de datos y
+46 horas semanales en 2027. Son límites para cualquier opción de producto:
+
+| Tema | Criterio para resolverlo | Elección que la ley no determina por sí sola |
+| --- | --- | --- |
+| Suspensión comercial del SaaS | No equivale a suspensión de la relación laboral ni extingue la obligación del empleador de conservar/exhibir registros. No borrar la evidencia por impago o suspensión; concretar su entrega y la continuidad de registro por el empleador | Mantener captura en Zenit durante la suspensión o usar otro mecanismo; la LFT no obliga por sí sola al proveedor SaaS a prestar servicio indefinido. La propuesta de conservar captura sigue disponible, sin activarla por inferencia |
+| Baja del empleado | Conservar marcajes, ajustes, cierres y acuses durante sus plazos. La fecha efectiva y las obligaciones pendientes condicionan el borrado; desactivar una credencial no debe destruir el expediente | Revocación irreversible de tarjeta, fin de horarios y tratamiento de asignaciones futuras/reactivación. No derivarlos automáticamente de la fecha de actualización del catálogo |
+| Supervisor | Acceso autorizado y adecuado a sus funciones, aislado por empresa y protegido contra usos ajenos a su finalidad | Si su función requiere toda la empresa o sólo ciertas sedes, y quién administra las asignaciones. La ley no define ese mapa organizativo |
+| Tipo de marcaje | Preservar lo observado y su trazabilidad; no ocultar tiempo efectivamente registrado ni tratar una deducción como manifestación expresa del trabajador | Declaración explícita, deducción del servidor o ambas. El mecanismo actual conserva ambas; su eficacia probatoria requiere además las condiciones del registro y del acuerdo |
+
+La instrucción recibida orienta estas decisiones y la política documental;
+no se registra como aprobación de todas las propuestas de la tabla histórica.
+No se cambia el comportamiento vigente mientras falte la opción operativa.
+Tampoco se presenta el cálculo actual como cumplimiento integral: conserva
+las brechas diarias, descansos y transición de vigencias ya documentadas.
+
+La [recuperación por el empleador y el papel de terceros](revision-juridica-jornada-acuse.md#recuperación-por-el-empleador-y-servicios-de-terceros)
+se incorpora al alcance de conservación y salida del SaaS. No requiere
+inferir un certificador externo para cada recuperación. El respaldo de toda
+la instalación no es el archivo que puede entregarse a un cliente: hace
+falta un expediente limitado a su empresa y comprobar su recuperación.
 
 ## Modelo de alojamiento aprobado
 

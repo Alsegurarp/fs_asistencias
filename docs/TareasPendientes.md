@@ -1,6 +1,14 @@
 # Tareas pendientes
 
-Avance posterior del **23 de octubre de 2026**: respaldo concurrente
+Último corte del **23 de octubre de 2026**: las tareas de sesión 1/2 tienen
+validación local y cuatro trabajos de CI aprobados para `ffa8306` en la
+[PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15), aún en borrador
+y sin integrar en `main`. La base legal de 3/5 fue indicada por el usuario
+y [documentada](revision-juridica-jornada-acuse.md); faltan las capacidades y
+opciones operativas allí señaladas. Identidad conserva Q03/Q04. El conteo
+global y los requisitos para datos reales permanecen abiertos.
+
+Avance anterior del **23 de octubre de 2026**: respaldo concurrente
 aprobado localmente y paso de CI preparado; [evidencia y límites](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
 Las tareas de sesión 3–5 requieren respuestas Q14, Q03/Q04 y Q10–Q13.
 No cambia el conteo global ni se habilita el uso con datos reales.

@@ -1,5 +1,94 @@
 # Revisión documental de jornada y acuse
 
+## Actualización del 23 de octubre de 2026: conservación y uso de datos
+
+El usuario indica resolver retención y reglas tomando como base la LFT y la
+reducción gradual de jornada. Se consultaron de nuevo fuentes oficiales:
+
+| Materia | Fuente y regla comprobada | Aplicación al proyecto |
+| --- | --- | --- |
+| Calendario | [DOF, 1 de mayo de 2026](https://dof.gob.mx/nota_detalle_popup.php?codigo=5786537), transitorios segundo y cuarto: 2027 tiene 46 horas ordinarias y 9 extraordinarias; 2028, 44/10; 2029, 42/11; 2030, 40/12 | V005 ya contiene estos valores y `WorkdayIT` comprueba su vigencia. No se sustituye 2027 por 40 horas ni se reescriben cierres históricos |
+| Registro y exhibición | El mismo decreto, artículo 132 XXXIV: inicio/fin de jornada, entrega a la autoridad y acuerdo de ambas partes para la condición probatoria indicada | Preservar registro, versiones y trazabilidad. El clic de acuse actual no acredita por sí solo todo ese acuerdo |
+| Conservación laboral | [LFT](https://www.diputados.gob.mx/LeyesBiblio/pdf/LFT.pdf), artículo 804, fracción III y penúltimo párrafo: controles del último año y un año después de extinguirse la relación | Conservar el último año de asistencia y, al terminar la relación, mantener ese conjunto hasta completar el año posterior; no borrar cada fila al cumplir 365 días. Verificar impedimentos legales antes de eliminar |
+| Registros de seguridad social | [LSS](https://www.diputados.gob.mx/LeyesBiblio/pdf/LSS.pdf), artículo 15 II: cinco años para los registros allí descritos, como nóminas/listas de raya con días trabajados y salarios | Si el documento pertenece a esa categoría, aplicar también ese plazo. No convertirlo en una regla universal de cinco años para cada coordenada, sobre o copia Android |
+| Finalidad, protección y supresión | [LFPDPPP](https://www.diputados.gob.mx/LeyesBiblio/pdf/LFPDPPP.pdf), artículos 10–14, 18, 20 y 24–25: finalidad y proporcionalidad, seguridad/confidencialidad, bloqueo y supresión con sus excepciones | Acceso por funciones, aviso de privacidad y conservación justificada; no uso ajeno a la finalidad ni retención indefinida por comodidad. Una obligación o actuación pendiente puede impedir cancelar datos |
+
+Ejemplo de interpretación técnica del artículo 804, no plazo nuevo: si la
+relación termina el 30 de junio de 2027, los controles del último año laboral
+no se eliminan sólo porque sean antiguos; deben seguir disponibles durante
+el año posterior a la terminación. Se revisan las demás obligaciones y
+actuaciones pendientes antes de determinar su liberación.
+
+La obligación documental del empleador no fija un plazo independiente para
+cada caché del teléfono. Retirar una copia local requiere identificar dónde
+queda el registro completo, íntegro y exhibible. Hoy no están cubiertos todos
+los rechazos y acuses históricos: se conserva esa evidencia local hasta
+resolver su archivo/recuperación. No se habilita una purga por antigüedad.
+La rotación diaria/30 días de respaldos tampoco sustituye conservar el
+archivo laboral durante su plazo aplicable.
+
+La búsqueda del 23 en DOF/STPS no localizó las disposiciones generales del
+registro de jornada; no demuestra que no existan. Se mantiene su revisión
+antes de publicar y de enero de 2027; no se inventan requisitos de NFC,
+biometría, formato o caducidad atribuyéndolos a lineamientos no localizados.
+
+La ley exige resultados y protección, pero no elige por sí sola la política
+comercial de suspensión del SaaS, la revocación de tarjetas al dar baja, las
+sedes de un supervisor ni la interacción para declarar el tipo de marcaje.
+Los límites y opciones concretas se distinguen en
+[Decisiones de negocio](decisiones-de-negocio.md#criterio-legal-recibido-el-23-de-octubre).
+Esta actualización no cierra las brechas del cálculo identificadas abajo.
+
+## Recuperación por el empleador y servicios de terceros
+
+El usuario confirma el cumplimiento de la ley como criterio rector del
+desarrollo. «Archivo recuperable de toda la evidencia» describe un objetivo
+técnico de preservación; no es una categoría textual de la LFT ni exige
+guardar indefinidamente todos los datos técnicos del sistema.
+
+- La LFT, artículos 804 y 836-A a 836-D, exige conservar/exhibir los
+  documentos aplicables y aportar medios para apreciar, localizar y valorar
+  la prueba electrónica. El artículo 836-D IV obliga al tercero que tenga el
+  documento a ponerlo a disposición del Tribunal. No establece que un
+  certificador externo deba habilitar cada recuperación del empleador.
+- El [Reglamento de la LFPDPPP](https://www.diputados.gob.mx/LeyesBiblio/regley/Reg_LFPDPPP.pdf),
+  artículo 52 II d), para servicios en nube contratados bajo las condiciones
+  allí descritas, exige mecanismos de supresión al concluir el servicio una
+  vez que el responsable haya podido recuperar sus datos. Los artículos
+  49–51 delimitan al encargado, sus instrucciones, seguridad,
+  confidencialidad y relación contractual; se preservan las excepciones de
+  conservación legal. Es una base directa para entrega/recuperación al
+  terminar el SaaS, no un requisito de contratar otro custodio.
+- La [NOM-151-SCFI-2016](https://sidof.segob.gob.mx/notas/docFuente/5478024)
+  tiene un ámbito de conservación/digitalización mercantil propio. Sus
+  numerales 6.2 y 6.3 distinguen las constancias de un prestador de servicios
+  de certificación acreditado del almacenamiento bajo control del usuario,
+  que puede contratar a terceros. No extender automáticamente ese régimen
+  a cada marcaje laboral ni confundir una constancia con un respaldo.
+
+Aplicación de diseño propuesta para Zenit: el empleador normalmente actúa
+como responsable del tratamiento laboral y fastSolution como encargado, según
+el servicio y contrato efectivos. El rol `owner` o administrador de la app
+no convierte a una persona en propietaria absoluta de los datos personales;
+las personas trabajadoras conservan sus derechos.
+
+El empleador autorizado debe disponer de una entrega por empresa que pueda
+conservar y consultar: registros y periodos aplicables, versiones/ajustes y
+evidencias necesarias para reproducirlos. Para ese propósito, **no se entrega
+el respaldo completo multiempresa ni el realm de identidad**. Formato,
+cifrado, verificación de contenido y procedimiento de recuperación son
+decisiones técnicas; no se atribuyen a la ley como un formato obligatorio.
+Se deben comprobar acceso, integridad, legibilidad y recuperación antes de
+suprimir la copia del proveedor conforme al régimen aplicable.
+
+Hoy el respaldo/restauración probado recupera la instalación; los exportes
+actuales no constituyen un expediente completo por empresa. La entrega del
+expediente, la salida del SaaS y las reglas contractuales correspondientes
+siguen pendientes de implementación/aceptación. No se anuncia esa capacidad
+como disponible ni se habilita por ello un borrado automático.
+
+## Revisión inicial del 14 de octubre
+
 Fecha de consulta: 14 de octubre de 2026. Ámbito: relaciones sujetas al
 apartado A del artículo 123 y a la Ley Federal del Trabajo de México.
 Es una revisión documental y técnica; no es un dictamen profesional ni una

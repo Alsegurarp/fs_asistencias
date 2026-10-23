@@ -3,7 +3,17 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
-Avance posterior del **23 de octubre de 2026**, tareas de sesión 1–5:
+Último corte del **23 de octubre de 2026**: respaldo concurrente validado
+localmente y en CI, con los cuatro trabajos aprobados para `ffa8306` en la
+[PR #15 en borrador](https://github.com/Alsegurarp/fs_asistencias/pull/15);
+integración en `main` pendiente. El usuario fija la legislación mexicana
+como base de las tareas de sesión 3/5 y criterio rector del desarrollo.
+[Conservación, recuperación y terceros](revision-juridica-jornada-acuse.md#recuperación-por-el-empleador-y-servicios-de-terceros)
+documentados; faltan archivo recuperable por empresa, disponibilidad local y
+opciones operativas no determinadas por la ley. Q03/Q04 de identidad siguen
+pendientes. No se purga, habilita correo ni declara cumplimiento integral.
+
+Avance anterior del **23 de octubre de 2026**, tareas de sesión 1–5:
 el autoensayo concurrente de respaldo **aprobó localmente**, con restauración
 sin origen, contraseñas nuevas y rechazos de alteraciones. Se corrigió el
 montaje `noexec` del auxiliar de prueba y se preparó su ejecución en CI.

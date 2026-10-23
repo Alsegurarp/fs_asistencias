@@ -1,5 +1,45 @@
 # Retención Android: análisis y alcance mínimo
 
+## Criterio recibido el 23 de octubre de 2026
+
+El usuario establece como base la legislación mexicana y la reforma de
+jornada. La [revisión oficial actualizada](revision-juridica-jornada-acuse.md#actualización-del-23-de-octubre-de-2026-conservación-y-uso-de-datos)
+separa las obligaciones del empleador de la copia del teléfono:
+
+- El archivo laboral debe cubrir el último año de controles y el año
+  posterior a la terminación de la relación conforme al artículo 804 LFT.
+  Una fila de más de un año no queda liberada automáticamente. Si faltan
+  fecha efectiva de terminación o información sobre impedimentos de borrado,
+  no puede darse por vencida su conservación sólo por antigüedad.
+- Los registros que correspondan a nóminas/listas de raya para seguridad
+  social tienen además el plazo del artículo 15 II LSS. No se extiende esa
+  clasificación automáticamente a todos los datos del teléfono.
+- El servidor o archivo del empleador debe conservar evidencia íntegra,
+  accesible y reproducible. Un respaldo que rota a 30 días no es el archivo
+  de conservación laboral. El cambio de tope a 46 horas en 2027 tampoco
+  acorta el plazo documental ni autoriza borrar versiones anteriores.
+- La finalidad, acceso y posterior bloqueo/supresión deben atender la
+  LFPDPPP. Conservar sin límite y sin finalidad no es la política definitiva.
+
+**Resultado aplicable ahora:** no activar una purga ciega Android. Pendientes,
+rechazos y acuses históricos conservan su protección; la recuperación actual
+no permite reemplazar toda esa evidencia local. Para eliminar duplicados
+procesados falta comprobar su archivo completo y elegir la disponibilidad
+operativa de la copia local. La LFT no fija para esa caché un número de días
+que permita deducirlo del máximo de jornada semanal.
+
+Q14 ya tiene una base normativa recibida del usuario; continúan abiertos el
+archivo/recuperación de evidencia y el plazo operativo de duplicados locales.
+No se añadió migración, fecha artificial ni borrado mientras dependan de ello.
+
+La [precisión sobre recuperación y terceros](revision-juridica-jornada-acuse.md#recuperación-por-el-empleador-y-servicios-de-terceros)
+distingue la entrega al empleador, la restauración del servicio y la
+certificación de documentos. No hay una exigencia general de que un tercero
+habilite cada recuperación; el expediente completo por empresa sigue sin
+implementarse y el respaldo multiempresa no se entrega a un cliente.
+
+## Análisis inicial del 22 de octubre
+
 Revisión de código del 22 de octubre de 2026, desde `main`/`ad21177`.
 Completa el análisis solicitado, no implementa ni habilita una purga.
 La tarea global 10 conserva la decisión Q14: plazos por tipo de evidencia,

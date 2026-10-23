@@ -1,6 +1,13 @@
 # Tareas críticas primero
 
-Avance posterior del **23 de octubre de 2026**: autoensayo concurrente de
+Último corte del **23 de octubre de 2026**: autoensayo concurrente aprobado
+en local y CI de la [PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15),
+todavía en borrador y sin integrar. La base legal indicada por el usuario
+para retención/uso y reglas se registra en la
+[revisión actualizada](revision-juridica-jornada-acuse.md); la ley no elige
+las opciones técnicas/comerciales que allí continúan pendientes.
+
+Avance anterior del **23 de octubre de 2026**: autoensayo concurrente de
 respaldo aprobado localmente; paso de CI preparado con el comando corregido.
 Retención, identidad y reglas esperan elecciones Q14, Q03/Q04 y Q10–Q13.
 [Evidencia](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
@@ -48,10 +55,10 @@ locales de horarios/importación y la línea base 50/300 ya están entregados.
 | Secuencia sugerida | Trabajo concreto | Dependencia y resultado esperado |
 | --- | --- | --- |
 | 1 | Validar el autoensayo local de respaldo con escrituras concurrentes (orden 1) | Completada localmente el 23 a las 16:47 UTC: escrituras posteriores a ambas instantáneas, restauración sin origen y rechazos previstos aprobados. Se corrigió el montaje noexec del auxiliar. No cierra el respaldo externo operativo |
-| 2 | Preparar la integración del autoensayo y su paso de CI (órdenes 1/11) | Después del resultado anterior, revisar sólo los dos archivos de respaldo/workflow, excluir cambios preexistentes de `backend/bin/` y documentar evidencia. La aprobación remota debe corresponder al commit publicado; no sustituye respaldo externo |
-| 3 | Definir y después implementar retención Android (orden 10) | Resolver Q14 sobre plazos y evidencia recuperable. Reutilizar el análisis entregado; probar migración, límites de vencimiento y conservación de pendientes antes de habilitar purga |
+| 2 | Preparar la integración del autoensayo y su paso de CI (órdenes 1/11) | Preparada en PR #15, commit ffa8306, con cuatro trabajos de CI aprobados y backend/bin excluido. PR en borrador, sin integrar ni desplegar; no sustituye respaldo externo |
+| 3 | Definir y después implementar retención Android (orden 10) | Base legal recibida el 23 y documentada: archivo laboral y copia Android tienen funciones distintas. Faltan archivo/recuperación íntegros, impedimentos de borrado y disponibilidad de duplicados locales; no habilitar purga por antigüedad sin ellos |
 | 4 | Completar identidad operativa y recuperación de acceso (orden 2) | Q03/Q04: procedimiento de acceso perdido, SMTP/remitente, cuentas personales y credencial técnica. Comprobar correo, contraseña y OTP; A4 ya entrega el cambio obligatorio local |
-| 5 | Aprobar las reglas de suspensión, baja, supervisor y marcaje (orden 5) | Resolver Q10–Q13 sobre las propuestas existentes; después implementar sólo lo aprobado, con permisos, captura e históricos comprobados |
+| 5 | Aprobar las reglas de suspensión, baja, supervisor y marcaje (orden 5) | El usuario fija la ley como criterio; límites de conservación, finalidad y exhibición documentados. Las opciones técnicas/comerciales Q10–Q13 que la ley no elige por sí sola continúan abiertas; no declarar todas las propuestas aprobadas |
 | 6 | Concretar respaldo externo y producción administrada (órdenes 1/6) | Q01/Q02/Q05: proveedor, región/cuenta, destino, custodia y responsables. Después automatizar y ensayar recuperación fuera del dominio de falla; conservar la topología SaaS aprobada |
 | 7 | Completar aceptación pública e inventario de imágenes (órdenes 9/12/13/14/15/16) | Cuando el usuario retome el servidor y se resuelva Q17: identificar commit, V008 e imágenes, desplegar correcciones y registrar resultados por rol y en Android |
 | 8 | Probar tarjeta física y captura autenticada (orden 4) | Q08/Q09: tecnología, tarjetas y provisión/custodia de claves. Ensayar lectura/escritura/borrado y captura/rechazo reales; la tarjeta simulada no cierra esta tarea |
