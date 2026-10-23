@@ -1,5 +1,9 @@
 # Entregas A1–A5 — 20 de octubre de 2026
 
+Actualización del 22: [consolidación y trabajo local posterior](qa-local-2026-10-22.md),
+incluidos horarios/importación en navegador fuera de A5. Los resultados de
+implementación siguientes conservan su fecha; no se vuelve a entregar A1–A5.
+
 Implementación local sobre `1984be3`, autorizada por el usuario después de la
 declaración de tareas. No se cambiaron las decisiones pendientes de jornada,
 suspensión, baja, supervisor, retención o NFC. No se desplegó el servidor

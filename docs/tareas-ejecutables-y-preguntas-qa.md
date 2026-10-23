@@ -1,5 +1,11 @@
 # Trabajo ejecutable y preguntas para QA
 
+Actualización del 22: [trabajo local 1–5](qa-local-2026-10-22.md) y
+[análisis de retención Android](retencion-android.md) entregados. Horarios e
+importación en navegador local aprobaron 17/17; la línea base 50/300 no fija
+objetivos de capacidad. Q14 y Q19 siguen abiertas y el servidor público
+quedó diferido. Las declaraciones originales siguientes conservan su corte.
+
 Revisión documental: 21 de octubre de 2026, sobre `main`/`907a93a`. Los números de tarea
 son la columna **Orden** de [Tareas críticas primero](tareas-criticas-primero.md).
 Este documento declara alcance; no inicia nuevas funcionalidades ni aprueba
@@ -50,7 +56,7 @@ vuelve a implementar A1–A5 ni se repiten decisiones ya aprobadas del SaaS.
 | 5 | Mantener los comportamientos vigentes y sus pruebas | Q10–Q13: suspensión total o captura permitida; revocación/horarios al dar baja; alcance del supervisor; tipo de marcaje del MVP |
 | 6 | Usar la topología SaaS ya aprobada para preparar producción | Q01/Q05: proveedor, región/cuenta, responsables, contratos, privacidad y aceptación operativa antes del primer dato real |
 | 8 | Reutilizar el procedimiento público ya preparado | Q18: dos conexiones con IP públicas distintas y responsable/fecha. La prueba móvil sigue diferida a otro desarrollador por indicación previa |
-| 9 | A5 local 33/33; continuar aceptación pública y horarios/importación | Q17: entorno/commit, acceso de ensayo y acta pública; la evidencia local no acredita su despliegue |
+| 9 | A5 local 33/33 y horarios/importación local 17/17; continuar aceptación pública cuando se retome | Q17: entorno/commit, acceso de ensayo y acta pública; la evidencia local no acredita su despliegue |
 | 10 | Revisar almacenamiento y proteger los pendientes | Q14: días por tipo de sobre/recibo/acuse, evidencia que conserva servidor y condiciones de purga |
 | 12 | Conservar CI e inventario local como antecedentes | Q17: Gabriel debe aportar commit, migraciones e IDs del servidor; analizar, corregir/desplegar y comprobar esas imágenes |
 | 13 | Configuración y permisos de dispositivos comprobados en A5 local | Q17: confirmar versión y aceptación pública y del usuario |

@@ -16,3 +16,17 @@ for (const [status, healthy] of [[200, true], [503, false]]) {
     assert.equal(result.status, healthy ? 0 : 1, result.stderr)
   })
 }
+
+test('runtime sin privilegios conserva Java corregido y el bloqueo de certificados comprometidos', {
+  skip: !process.env.IDENTITY_TEST_SECRETOS,
+}, () => {
+  const result = spawnSync('docker', ['run', '--rm', '--network', 'none', '--read-only', '--tmpfs', '/tmp', '--cap-drop', 'ALL',
+    '--security-opt', 'no-new-privileges', '--entrypoint', 'bash', 'zenit-identity-check-keycloak', '-ec',
+    'test "$(id -u)" = 1000; java -version; sha256sum "$JAVA_HOME/lib/security/blocked.certs"'],
+  { encoding: 'utf8', timeout: 15000 })
+  assert.ifError(result.error)
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stderr, /java version "25\.0\.5\.0\.2"/)
+  // Lista completa publicada en https://docs.azul.com/core/emudhra-workaround.html.
+  assert.equal(result.stdout.trim().split(/\s+/)[0], '2596bb6dda83c66d96c5a252d7b2ae1f24cc1ae3f1890223b4f3591a8d52bf10')
+})

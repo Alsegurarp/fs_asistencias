@@ -23,6 +23,11 @@ El 21 aprobó también el [recorrido visual de semana/acuse Android contra
 backend real local](docs/qa-android-semana-acuse-2026-10-21.md): objeción,
 recuperación sin copia local, reapertura, versión nueva y conformidad.
 
+El [trabajo local del 22](docs/qa-local-2026-10-22.md) añade 17 casos de
+horarios/importación en navegador y una línea base de carga de 50/300 empleados.
+También revisa las imágenes y la [retención Android](docs/retencion-android.md).
+El servidor público conserva su comprobación pendiente.
+
 Android debug también incluye una presentación independiente del producto,
 con históricos y panel de Administrador/RH. Su alcance está en
 [Producto móvil](docs/alcance-producto-movil.md).

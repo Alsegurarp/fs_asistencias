@@ -1,4 +1,4 @@
-param([ValidateSet('backend', 'web', 'db', 'keycloak', 'backup')][string[]]$Targets = @('backend', 'web', 'db', 'keycloak', 'backup'))
+param([ValidateSet('backend', 'web', 'db', 'keycloak', 'backup', 'deploy-tool')][string[]]$Targets = @('backend', 'web', 'db', 'keycloak', 'backup'))
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $output = Join-Path $root 'build/security'
@@ -10,7 +10,7 @@ $previousResults = if (Test-Path -LiteralPath $summaryPath) { @(Get-Content -Lit
 Push-Location $root
 try {
     foreach ($target in $Targets) {
-        $image = "fastsolution-zenit-$target"
+        $image = if ($target -eq 'deploy-tool') { 'fastsolution-despliegue:1' } else { "fastsolution-zenit-$target" }
         $archive = Join-Path $output "$target.tar"
         $entry = @{ target = $target; image = $image; scannedAt = [DateTime]::UtcNow.ToString('o') }
         try {

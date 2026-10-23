@@ -41,6 +41,18 @@ otra ruta.
 La primera corrida construye la herramienta (unos segundos); después queda en
 caché.
 
+La herramienta construye curl 8.23.0 sin libssh2 desde fuentes oficiales
+verificadas por SHA-256, mientras Alpine estable no ofrezca el APK corregido.
+El primer build tarda más; el compilador no queda en el runtime. Su
+[verificación local del 22](qa-local-2026-10-22.md) no acredita un despliegue.
+Para comprobar la imagen antes de usarla:
+
+```powershell
+docker build --tag fastsolution-despliegue:1 deploy/servidor/herramienta
+node --test infra/deploy-tool.test.mjs
+.\infra\check-images.ps1 -Targets deploy-tool
+```
+
 ## Uso
 
 Desde la raíz del monorepo, en Git Bash:

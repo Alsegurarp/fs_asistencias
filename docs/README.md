@@ -41,6 +41,8 @@ contradice al contrato, manda el contrato.
 | [Diccionario](diccionario.md) | Glosario, catálogos de valores y diccionario de datos |
 | [Entorno local](entorno-local.md) | Levantar, crear cuentas, obtener un token, simular dispositivos, ensayar el respaldo, revisar vulnerabilidades y resolver problemas frecuentes |
 | [Verificación local del 20 de octubre](verificacion-local-2026-10-20.md) | Código comprobado, pruebas repetidas, servicios locales y límites de la aceptación |
+| [Trabajo local del 22 de octubre](qa-local-2026-10-22.md) | Consolidación, 17 casos de navegador, carga 50/300, seguridad de imágenes y limpieza |
+| [Retención Android](retencion-android.md) | Almacenes, evidencia en servidor, protección de pendientes y alcance mínimo después de Q14 |
 | [Entregas A1–A5](entregas-a1-a5.md) | Reactivación, semana personal, recuperación de acuse, cambio obligatorio de contraseña y verificación |
 | [QA A1–A5](qa-a1-a5.md) | Datos ficticios, matriz de roles y casos con resultados esperados para aceptación manual |
 | [Resultado local de QA del 21](qa-a1-a5-2026-10-21.md) | 33 casos comprobados, login/OTP real, renovación por rol, paginación, corrección de recursos Keycloak y límites frente al ambiente público |

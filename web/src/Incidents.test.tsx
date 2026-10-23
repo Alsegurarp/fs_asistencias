@@ -115,7 +115,7 @@ it('ofrece agregar la salida del tramo abierto sin esconder el ajuste detrás de
   await click('Guardar resolución')
   await waitFor(() => patches().length === 1)
   expect(patches()[0][2]).toEqual({ resolution: { decision: 'adjusted', reason: 'Salida verificada para completar la jornada.', adjustment: { kind: 'add_event', eventType: 'clock_out', occurredAt: '2026-10-12T22:00:00.000Z' } } })
-  expect(button('Agregar salida faltante')).toBeUndefined()
+  await waitFor(() => button('Agregar salida faltante') === undefined)
 })
 
 it('no ofrece agregar una salida para una incidencia de otro tipo', async () => {

@@ -3,6 +3,18 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
+Actualización local del **22 de octubre de 2026**, desde `main`/`ad21177`:
+[17/17 casos de horarios/importación en navegador, línea base de carga de
+50/300 empleados y revisión de imágenes](qa-local-2026-10-22.md).
+[Retención Android analizada](retencion-android.md), sin fijar plazo ni purga.
+La comprobación del servidor público queda diferida por indicación del usuario.
+Corrección posterior del CI de la PR #14: [Keycloak 26.8.1 con Java corregido,
+cinco imágenes sin críticas/altas y nueve pruebas de identidad](seguridad-keycloak-2026-10-22.md).
+Se retiran las seis excepciones antiguas de pcre2; quedan hallazgos menores
+y desconocidos documentados. No acredita despliegue ni aceptación pública.
+Se mantienen 17 tareas globales abiertas total o parcialmente y seis P0;
+los conteos y versiones siguientes conservan su fecha de comprobación.
+
 El avance y lo que falta para cerrar las tareas críticas de jornada, acuse y
 respaldo se detallan en la [Bitácora de trabajo](bitacora-trabajo.md).
 
@@ -12,7 +24,7 @@ Se corrigieron los permisos temporales que impedían servir recursos de
 Keycloak y se amplió la instrumentación Android para rechazar un acuse ajeno.
 La aceptación del usuario y del ambiente público conserva sus requisitos.
 
-Última revisión documental: 21 de octubre de 2026, sobre `main`/`907a93a`.
+Corte documental anterior: 21 de octubre de 2026, sobre `main`/`907a93a`.
 Actualización sobre `4852c66`: [semana/acuse Android visual contra backend
 real local aprobados](qa-android-semana-acuse-2026-10-21.md). Servicios
 locales levantados, ocho migraciones exitosas y teléfono restaurado al
@@ -63,7 +75,7 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 | Entorno local | Levantado de nuevo el 21 conservando volúmenes: backend en 18080, portal en 8081 e identidad en 8082. V008 aplicada; A5 local comprobado. Corregidos permisos tmpfs de identidad; tarjetas simuladas sólo para datos ficticios |
 | Simulador de dispositivo | Llena una empresa con personas, dispositivos y marcajes firmados, sin la app |
 | Respaldo | El 20, tras V008, el ensayo restauró 131 tablas/1,970 filas idénticas. La recuperación completa con origen apagado y secretos nuevos sigue siendo la del 18: 130 tablas/1.867 filas. [Detalle](recuperacion-servicio.md). Copia externa, custodia, programación y recuperación pública pendientes |
-| Vulnerabilidades | Portal corregido con Nginx 1.30.6 y retirada de curl/libcurl: análisis local con 0 críticas/altas y 3 medias. Los cuatro trabajos de CI y las cinco imágenes aprobaron para `f72941e` en la ejecución 39636653675. Se conservan las seis excepciones de identidad; falta despliegue y comprobación del servidor |
+| Vulnerabilidades | El 22 aprobaron localmente las cinco imágenes con 0 críticas/altas y 0 aceptaciones; Keycloak 26.8.1 usa Java 25.0.5.0.2 y UBI mínima actualizada. Se retiran seis excepciones de identidad. Persisten medias/bajas/desconocidas según el [acta](seguridad-keycloak-2026-10-22.md). Portal y herramienta conservan su revisión previa: musl actualizado y curl 8.23.0 sin libssh2. Despliegue/comprobación del servidor pendiente |
 | Portal | Catálogos y operación existentes, más reactivación de empresas, Mi asistencia y cambio obligatorio. 162 pruebas y compilación aprobadas el 21; 33 casos A5 locales comprobados. Aceptación del usuario y despliegue/recorrido público pendientes |
 | App Android | Captura/cola/sincronización existentes. A3 recupera acuse del servidor y descarta vigencia al reabrir. 13 unitarias, lint e instrumentación FIXTURE aprobados. Recorrido visual de semana/acuse contra backend real local aprobado el 21 en Samsung API 36, con objeción, recuperación y conformidad. Falta aceptación pública/del usuario, expediente y tarjeta física; captura local/HTTPS del 19 conserva su evidencia |
 | Conector | No existe |
@@ -90,7 +102,7 @@ una cuenta de administración de prueba para validar Android por HTTPS.
 
 | Qué | Por qué importa |
 | --- | --- |
-| Completar el portal | Reactivación, consulta personal, cambio obligatorio y A5 local comprobados con sesiones reales el 21. Faltan aceptación del usuario y pública, horarios/importación en navegador fuera de A5, suspensión y expediente completo según decisiones pendientes |
+| Completar el portal | Reactivación, consulta personal, cambio obligatorio y A5 local comprobados el 21; horarios/importación en navegador local aprobados el 22. Faltan aceptación del usuario y pública, suspensión y expediente completo según decisiones pendientes |
 | Completar y validar la app | Enrolamiento y sincronización comprobados contra backend local y HTTPS publicado con datos ficticios. Semana y acuse con recibo cifrado aprobados visualmente contra backend real local el 21; [alcance y validación](revision-movil-empleado.md). Faltan aceptación pública/del usuario, historial completo desde backend y captura autenticada con tarjetas reales |
 | Verificar la tarjeta real | Hoy sólo se acepta la simulada, que no está autenticada. Depende de probar con tarjetas y teléfonos |
 | Revisión jurídica | Revisión documental del DOF y LFT realizada el 14 de octubre de 2026; calendario confirmado y brechas identificadas. Faltan dictamen profesional y cambios al cálculo y al acuse. Una búsqueda del 16 de octubre de 2026 en fuentes oficiales no encontró publicadas las disposiciones de la STPS sobre el registro electrónico, que rigen desde enero de 2027; la propia STPS las sigue anunciando en futuro |
