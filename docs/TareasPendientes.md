@@ -1,5 +1,18 @@
 # Tareas pendientes
 
+Avance posterior del **23 de octubre de 2026**: respaldo concurrente
+aprobado localmente y paso de CI preparado; [evidencia y límites](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
+Las tareas de sesión 3–5 requieren respuestas Q14, Q03/Q04 y Q10–Q13.
+No cambia el conteo global ni se habilita el uso con datos reales.
+
+Revisión anterior del **23 de octubre de 2026**, sobre `main`/`0723baf`, con PR #13/#14
+integradas según el historial local. El autoensayo concurrente de respaldo y
+su paso de CI tienen cambios locales sin commit; el único registro del 23
+muestra acceso denegado a Docker y no acredita su validación. La
+[lista de tareas posibles](tareas-criticas-primero.md#tareas-posibles-desde-el-corte-del-23-de-octubre)
+separa ese siguiente trabajo de las decisiones y recursos externos.
+Permanecen 17 tareas abiertas y seis P0; el servidor público sigue diferido.
+
 Actualización del **22 de octubre de 2026**, desde `main`/`ad21177`:
 [horarios/importación local 17/17, carga 50/300 y revisión de imágenes](qa-local-2026-10-22.md).
 El [análisis de retención Android](retencion-android.md) está entregado;
@@ -111,8 +124,8 @@ A1 ya completa la reactivación local de la **tarea 16**; la suspensión espera
 la decisión de la tarea 5. A2/A3 añaden consulta personal web y recuperación
 de acuse desde servidor. A4 y los 33 casos A5 aprobaron en local el 21.
 El recorrido visual Android de semana/acuse contra backend real local aprobó
-el 21. Faltan el recorrido público, horarios/importación en navegador fuera
-de A5, expediente completo y
+el 21; horarios/importación en navegador local aprobaron el 22. Faltan el
+recorrido público, expediente completo y
 las dependencias jurídicas y operativas de las tareas globales.
 
 Para desbloquear las P1 restantes:

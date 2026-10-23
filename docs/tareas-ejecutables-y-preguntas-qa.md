@@ -1,5 +1,17 @@
 # Trabajo ejecutable y preguntas para QA
 
+Avance posterior del 23: el autoensayo concurrente de respaldo aprobó
+localmente y su comando corregido se añadió al workflow; [evidencia](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
+Se solicitaron al usuario Q14, Q03/Q04 y Q10–Q13 para continuar las tareas de
+sesión 3–5 sin fijar plazos, métodos de recuperación ni reglas por inferencia.
+
+La [revisión anterior del 23 de octubre](bitacora-trabajo.md#23-de-octubre-de-2026--contexto-consolidado-y-siguientes-tareas)
+consolida el contexto de `main`/`0723baf` y añade
+[tareas posibles](tareas-criticas-primero.md#tareas-posibles-desde-el-corte-del-23-de-octubre).
+El autoensayo concurrente de respaldo y su paso de CI están modificados
+localmente, sin resultado aprobado; el registro sólo muestra acceso denegado
+a Docker. Las preguntas siguientes conservan sus IDs y dependencias.
+
 Actualización del 22: [trabajo local 1–5](qa-local-2026-10-22.md) y
 [análisis de retención Android](retencion-android.md) entregados. Horarios e
 importación en navegador local aprobaron 17/17; la línea base 50/300 no fija
@@ -42,7 +54,8 @@ el 21; no se probó una tarjeta física ni se aceptó el entorno público.
 **Ninguna de las 17 tareas puede declararse cerrada por leer las bitácoras.**
 Las tareas 9 y 13 ya tienen aceptación técnica local dentro de A5; falta
 comprobar el entorno publicado y la aceptación del usuario. La 9 conserva
-pantallas de horarios/importación fuera de A5. La 15 ya tiene aprobado el ensayo instrumental con HTTP
+aceptación pública de horarios/importación, ya aprobados localmente el 22
+fuera de A5. La 15 ya tiene aprobado el ensayo instrumental con HTTP
 simulado y recorrido visual contra backend real local; conserva aceptación
 pública/del usuario, expediente y criterios de jornada/evidencia. No se
 vuelve a implementar A1–A5 ni se repiten decisiones ya aprobadas del SaaS.

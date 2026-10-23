@@ -6,6 +6,108 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 23 de octubre de 2026 — Respaldo concurrente validado y preparación de CI
+
+El usuario autorizó las tareas de sesión 1–5 de la lista anterior: respaldo
+concurrente, integración en CI, retención Android, identidad y reglas de
+negocio. Estos números no sustituyen los órdenes de las tareas globales.
+
+**Tarea de sesión 1: aprobada localmente.** Se construyó `backup-tools` y se
+ejecutó `self-test.sh` en un contenedor sin red, sin volúmenes del proyecto,
+con raíz de sólo lectura, usuario PostgreSQL y capacidades retiradas.
+Después de exportar la instantánea de cada base, otra conexión actualiza una
+fila, elimina otra e inserta tres; se comprueban cuatro filas posteriores
+en cada origen. La restauración conserva las dos filas originales por base,
+con sus huellas, y se realiza con el origen apagado.
+También aprueban recuperación persistente con contraseñas nuevas y rechazos
+de destino ocupado, contraseña antigua, filas eliminadas, contenido distinto,
+cifrado alterado y clave incorrecta. La garantía es por base; no sincroniza
+las instantáneas de Zenit e identidad entre sí.
+
+Se corrigió un fallo real del ensayo: Docker monta `/work` con `noexec` por
+defecto y el shell omitía el auxiliar de escritura al buscar `pg_dump`.
+La comprobación de cambios en el origen falló y evitó una aprobación falsa.
+Se habilita `exec` sólo en el tmpfs `/work` del autoensayo, tanto en CI como
+en el comando documentado. No cambia `rehearse.sh` ni los montajes operativos.
+La ejecución final a las 16:47 UTC terminó con `AUTOPRUEBA CORRECTA` y código 0.
+Registro local ignorado: `build/respaldo-concurrente-prueba-2026-10-23.log`,
+SHA-256 `04E476BFEFC296311F232F12A3F04515D0F391853E3F076126FF1B20C5DB8BBE`.
+
+**Tarea de sesión 2:** se añade el mismo comando probado al trabajo
+`contrato-y-seguridad` del workflow. La integración remota y su resultado
+de CI se registrarán con la entrega; el éxito local no los sustituye.
+Los cambios preexistentes de `backend/bin/` se conservan fuera de la entrega.
+
+**Tareas de sesión 3–5:** se revisaron el DAO y el procesamiento Android,
+el realm y el procedimiento de identidad, y las propuestas de negocio.
+Se solicitaron los plazos/alcance de retención (Q14), la modalidad de
+recuperación y provisión SMTP/cuentas (Q03/Q04), y la elección explícita de
+reglas (Q10–Q13). Autorizar estas tareas no determina esas opciones.
+Mientras no haya respuesta no se elimina evidencia, no se habilita correo
+sin configurar ni se declaran reglas aprobadas. Tres pruebas estáticas del
+realm aprobaron; dos integraciones se omitieron al no configurar su entorno.
+Esto no acredita envío/recepción de correo ni recuperación completa de acceso.
+
+No hubo despliegue público ni cambios de datos reales. Las 17 tareas globales
+y seis P0 conservan sus dependencias; el ensayo de respaldo no entrega una
+copia externa ni acredita los objetivos operativos de recuperación.
+
+## 23 de octubre de 2026 — Contexto consolidado y siguientes tareas
+
+Se revisaron el historial local, el árbol de trabajo, las actas del 21/22 y
+los documentos de pendientes. `HEAD` y la referencia local `origin/main`
+siguen en `0723baf`, con las PR #13/#14 integradas; en esta revisión no se
+ejecutó otro pull/fetch ni se consultó GitHub. El modelo vigente es SaaS
+administrado por fastSolution, con aislamiento lógico entre empresas y sólo
+datos ficticios hasta cerrar los requisitos de producción.
+
+El avance comprobado conserva sus fechas: A5 local 33/33, semana/acuse
+Android contra backend real local, horarios/importación 17/17, línea base
+50/300 y cinco imágenes analizadas sin críticas/altas ni excepciones.
+Contrato 0.13, 62 operaciones y V001–V008 siguen siendo la base documentada;
+no se atribuyen nuevas pruebas ni disponibilidad actual a esas actas.
+
+Se identificó trabajo local adicional sin commit en
+`infra/postgres/backup/self-test.sh` y `.github/workflows/verificaciones.yml`:
+el autoensayo añade escrituras concurrentes posteriores a la instantánea
+de cada base y el workflow añade su ejecución aislada sin red. El registro
+`build/respaldo-concurrente-2026-10-23.log` sólo contiene una denegación de
+acceso a la API Docker. **No acredita ejecución ni aprobación del ensayo**;
+revisarlo, ejecutarlo y comprobar CI queda como siguiente trabajo posible.
+La garantía sigue siendo por base, sin un instante común entre Zenit e identidad.
+Se conservaron estos cambios y los preexistentes de `backend/bin/` sin editarlos.
+
+Se actualizaron estado, prioridades y referencias de tareas, con una
+[lista concreta para continuar](tareas-criticas-primero.md#tareas-posibles-desde-el-corte-del-23-de-octubre).
+No se reabren A1–A5 ni se inventan políticas de retención, jornada o negocio.
+Permanecen 17 tareas globales abiertas total o parcialmente y seis P0.
+El servidor público y la prueba móvil con dos IP conservan sus aplazamientos.
+Esta sesión sólo modifica documentación; no repite suites, escaneos, pruebas
+en teléfono, CI remoto ni despliegue.
+Verificación documental: `git diff --check` sin errores; 162 enlaces locales
+y las dos anclas nuevas comprobados en los seis documentos modificados.
+
+## 23 de octubre de 2026 — Sincronización y actualización de pendientes
+
+Por solicitud del usuario se ejecutó `git pull origin` en `main`: avance
+directo de `579270f` a `0723baf`, sin conflictos, con `HEAD` igual a
+`origin/main`. Quedan integradas las PR #13 (acta Android) y #14 (QA local,
+carga y seguridad, incluida la corrección posterior de Keycloak).
+Se conservaron los diez archivos modificados y las rutas sin seguimiento
+preexistentes de `backend/bin/`; no se borraron ni incluyeron en una entrega.
+
+Se revisaron historial, estado, prioridades y actas del 21/22. Se actualizaron
+las referencias pendientes de horarios/importación local (17/17), retención
+Android analizada sin purga, carga local 50/300 y cinco imágenes sin
+críticas/altas ni excepciones. Los resultados conservan la fecha y el alcance
+de sus actas; no se repitieron ni se atribuyen a esta sincronización.
+
+Permanecen 17 tareas abiertas total o parcialmente y seis P0: respaldo externo,
+identidad operativa, jornada/acuse aprobados, tarjeta autenticada, reglas de
+negocio y producción para datos reales. Q14/Q19 siguen pendientes; el servidor
+público conserva su aplazamiento. Se comprobó el estado de Git y la diferencia
+documental; no se verificaron servicios, teléfono, CI remoto ni despliegue.
+
 ## 22 de octubre de 2026 — Corrección de Keycloak tras el fallo de CI
 
 El CI de la PR #14 detectó una crítica en certificados y una alta en Java

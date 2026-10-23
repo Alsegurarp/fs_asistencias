@@ -1,5 +1,13 @@
 # Verificaciones automáticas
 
+Ampliación del 23 de octubre de 2026: el trabajo de contrato/seguridad añade
+el autoensayo de respaldo cifrado, escrituras concurrentes por base,
+restauración sin origen y rechazos de alteraciones. Se ejecuta sin red ni
+volúmenes del proyecto, con datos y claves desechables. `/work` permite
+ejecutar el auxiliar de escritura; la raíz sigue siendo de sólo lectura y se
+retiran todas las capacidades. El comando aprobó localmente; la ejecución de
+Actions debe corresponder al commit publicado. [Evidencia y límites](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
+
 Corrección del 21 de octubre, posterior a `b2f7832`: el análisis de esa
 [ejecución](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39626828092)
 falló únicamente por la imagen del portal. Se actualizó Nginx a 1.30.6 con
@@ -64,7 +72,7 @@ petición manual. Tiene cuatro trabajos independientes:
 | Backend | Construcción y unitarias; integración con PostgreSQL desechable; importación del realm, protección OTP y readiness con HTTP 200/503 |
 | Portal | Construcción y pruebas con dos procesos, sin red durante las pruebas |
 | Android | Unitarias, lint y construcción de APK de app e instrumentación |
-| Contrato y seguridad | Contrato y ejemplos, secretos en todo el historial, construcción de las cinco imágenes, SBOM y análisis de vulnerabilidades |
+| Contrato y seguridad | Contrato y ejemplos, secretos en todo el historial, construcción de las cinco imágenes, autoensayo de respaldo concurrente y restauración sin red, SBOM y análisis de vulnerabilidades |
 
 Los trabajos usan `contents: read` y checkout fijado a un SHA de
 [la versión 7.0.1 oficial](https://github.com/actions/checkout/releases/tag/v7.0.1),

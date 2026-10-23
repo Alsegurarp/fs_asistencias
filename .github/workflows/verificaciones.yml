@@ -76,6 +76,10 @@ jobs:
         run: docker compose --profile tools run --rm secret-scan
       - name: Construir imágenes del producto
         run: docker compose build backend web db keycloak backup
+      - name: Probar respaldo cifrado y recuperación sin red
+        run: |
+          docker build --target backup-tools --tag zenit-backup-check infra/postgres
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp --tmpfs /work:exec,uid=70,gid=70,mode=0700 --tmpfs /backups:uid=70,gid=70,mode=0700 --tmpfs /run/secrets:uid=70,gid=70,mode=0700 --entrypoint bash zenit-backup-check /opt/zenit/self-test.sh
       - name: Inventario y vulnerabilidades de las cinco imágenes
         shell: pwsh
         run: ./infra/check-images.ps1

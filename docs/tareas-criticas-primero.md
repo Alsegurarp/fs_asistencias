@@ -1,5 +1,16 @@
 # Tareas críticas primero
 
+Avance posterior del **23 de octubre de 2026**: autoensayo concurrente de
+respaldo aprobado localmente; paso de CI preparado con el comando corregido.
+Retención, identidad y reglas esperan elecciones Q14, Q03/Q04 y Q10–Q13.
+[Evidencia](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
+
+Sincronización del **23 de octubre de 2026**: `main` actualizado con
+`git pull origin` a `0723baf`, con PR #13/#14 integradas y cambios locales
+de `backend/bin/` conservados. Revisión documental, sin nuevas pruebas ni
+comprobación del servidor o CI remoto. Permanecen 17 tareas abiertas y seis
+P0; se conserva el aplazamiento del servidor público.
+
 Actualización del **22 de octubre de 2026**: [17 casos de navegador local,
 carga 50/300 y seguridad de imágenes](qa-local-2026-10-22.md) y
 [análisis de retención Android](retencion-android.md). El recorrido local de
@@ -26,6 +37,32 @@ autorizar todavía datos reales.
 Para declarar y ejecutar trabajo se usa la columna **Orden** de este documento.
 Los números entre paréntesis conservan la referencia a la lista histórica;
 por ejemplo, identidad es el orden 2 y las decisiones de negocio son el orden 5.
+
+## Tareas posibles desde el corte del 23 de octubre
+
+La revisión conserva `main`/`0723baf` y el servidor público diferido. Esta
+lista propone subtareas de las prioridades existentes; no aumenta las 17
+tareas globales abiertas ni autoriza cambios de reglas. A1–A5, los 17 casos
+locales de horarios/importación y la línea base 50/300 ya están entregados.
+
+| Secuencia sugerida | Trabajo concreto | Dependencia y resultado esperado |
+| --- | --- | --- |
+| 1 | Validar el autoensayo local de respaldo con escrituras concurrentes (orden 1) | Completada localmente el 23 a las 16:47 UTC: escrituras posteriores a ambas instantáneas, restauración sin origen y rechazos previstos aprobados. Se corrigió el montaje noexec del auxiliar. No cierra el respaldo externo operativo |
+| 2 | Preparar la integración del autoensayo y su paso de CI (órdenes 1/11) | Después del resultado anterior, revisar sólo los dos archivos de respaldo/workflow, excluir cambios preexistentes de `backend/bin/` y documentar evidencia. La aprobación remota debe corresponder al commit publicado; no sustituye respaldo externo |
+| 3 | Definir y después implementar retención Android (orden 10) | Resolver Q14 sobre plazos y evidencia recuperable. Reutilizar el análisis entregado; probar migración, límites de vencimiento y conservación de pendientes antes de habilitar purga |
+| 4 | Completar identidad operativa y recuperación de acceso (orden 2) | Q03/Q04: procedimiento de acceso perdido, SMTP/remitente, cuentas personales y credencial técnica. Comprobar correo, contraseña y OTP; A4 ya entrega el cambio obligatorio local |
+| 5 | Aprobar las reglas de suspensión, baja, supervisor y marcaje (orden 5) | Resolver Q10–Q13 sobre las propuestas existentes; después implementar sólo lo aprobado, con permisos, captura e históricos comprobados |
+| 6 | Concretar respaldo externo y producción administrada (órdenes 1/6) | Q01/Q02/Q05: proveedor, región/cuenta, destino, custodia y responsables. Después automatizar y ensayar recuperación fuera del dominio de falla; conservar la topología SaaS aprobada |
+| 7 | Completar aceptación pública e inventario de imágenes (órdenes 9/12/13/14/15/16) | Cuando el usuario retome el servidor y se resuelva Q17: identificar commit, V008 e imágenes, desplegar correcciones y registrar resultados por rol y en Android |
+| 8 | Probar tarjeta física y captura autenticada (orden 4) | Q08/Q09: tecnología, tarjetas y provisión/custodia de claves. Ensayar lectura/escritura/borrado y captura/rechazo reales; la tarjeta simulada no cierra esta tarea |
+| 9 | Completar jornada, acuse y ausencias (órdenes 3/15/17) | Q06/Q07/Q15: dictamen, texto/evidencia versionados y casos esperados aprobados. Implementar conservando cierres históricos |
+| 10 | Ampliar pruebas de capacidad y continuidad (orden 18) | Q19: volumen concurrente, infraestructura y criterios de aceptación. Medir carga sostenida, trabajos, cuotas, DNS y renovación de certificados; las ráfagas locales previas no garantizan capacidad |
+| 11 | Conector, nómina y contrato 1.0 (órdenes 19/20) | Q20/Q21: sistema/formato del primer cliente y consumidores del contrato. Cerrar con sincronización y archivo aceptados, y compatibilidad acordada |
+
+La prueba de dos IP públicas (orden 8) sigue asignada a otro desarrollador
+y diferida. Q22 permite decidir protección de `main` y trabajos obligatorios;
+no reabre la automatización ya integrada. jOOQ generado, notificaciones y
+almacén externo de exportes conservan su aplazamiento.
 
 ## Progreso verificado
 
@@ -63,13 +100,13 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | 9 | P1 | Recorridos del portal con sesión real (4 y parte de 14) | A5 local 33/33 el 21; horarios/importación en navegador local 17/17 el 22. API HTTPS del 19 conserva su evidencia. Faltan aceptación pública/del usuario e inventario Q17 |
 | 10 | P1 | Retención de sobres y recibos Android (8) | Requiere plazo y criterio de conservación. Después implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria; hoy crece sin purga |
 | 11 | P1 | Verificaciones automáticas por cambio (11) | Integrada en `main`. Los cuatro trabajos aprobaron en GitHub para `565dbdd` en la ejecución 39472077601 del 20 de octubre. La obligatoriedad de trabajos requiere una decisión adicional. [Procedimiento y resultados](verificaciones-automaticas.md) |
-| 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Cinco imágenes locales reconstruidas y analizadas el 20, con IDs registrados. Corregidas altas de libexpat en backend/portal y libx11 en portal; ninguna grave nueva sin atender. Siguen seis excepciones de identidad. Faltan IDs del servidor mediante Gabriel, análisis de esas imágenes, despliegue de correcciones y comprobación pública |
+| 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Cinco imágenes locales analizadas el 22 sin críticas/altas ni excepciones, tras corregir Keycloak 26.8.1 con Java 25.0.5.0.2 y retirar las seis excepciones de identidad; [acta y límites](seguridad-keycloak-2026-10-22.md). Faltan IDs del servidor mediante Gabriel, análisis de esas imágenes, despliegue y comprobación pública, actualmente diferidos |
 | 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación y aceptación técnica local por rol completadas en A5 el 21. Configuración GET/PATCH /tenant y permisos de dispositivos comprobados; faltan despliegue y aceptación pública/del usuario |
 | 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Implementación completada el 19: contrato 0.12 y V008, con 74 integraciones/151 pruebas web en ese corte. A5 local del 21 comprueba detalle y paginación en navegador; falta despliegue y aceptación pública/del usuario. Históricos anteriores conservan conteos |
 | 15 | P2 | Semana y acuse del trabajador (12) | A2/A3, A5 e instrumentación aprobados; recorrido visual Android contra backend real local aprobado el 21. Faltan aceptación pública/del usuario, expediente y definiciones jurídicas/evidencia del orden 3 |
 | 16 | P2 | Pantallas de operador del servicio (13) | Reactivación y permisos/aislamiento comprobados con sesión real en A5 local del 21. Faltan suspensión según orden 5 y aceptación pública/del usuario |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias (18) | Requiere criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar resultados |
-| 18 | P2 | Carga, continuidad y operación del despliegue (resto de 19) | Requiere volumen objetivo y número de instancias. Probar trabajos, cierres, exportes y cuotas; resolver actualización del DNS ante IP dinámica y comprobar renovación real de certificados. Cuotas compartidas sólo si habrá varias instancias |
+| 18 | P2 | Carga, continuidad y operación del despliegue (resto de 19) | Línea base local 50/300 aprobada el 22 con captura, consultas, cierres y exportes; no acredita capacidad sostenida ni nivel de servicio. Faltan Q19, pruebas en infraestructura objetivo, continuidad, actualización del DNS ante IP dinámica y renovación real de certificados. Cuotas compartidas sólo si habrá varias instancias |
 | 19 | P2 | Conector y formato de nómina (20) | Depende del sistema y formato del primer cliente. Cierre con sincronización y archivo aceptados por ese sistema |
 | 20 | P2 | Congelar contrato 1.0 | Después de recorridos reales y decisiones pendientes. Acordar compatibilidad y publicación de cambios con los consumidores |
 
@@ -103,11 +140,14 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 
 La tarea **7 está completada** en el alcance de ensayo con tarjeta simulada.
 Las comprobaciones públicas de cabeceras (8) y de horarios/importación por API
-(9) ya pasaron. Faltan otra IP real y un navegador conectado para sus recorridos
-restantes. Verificaciones automáticas (11) están publicadas en la rama y
+(9) ya pasaron. A5 y horarios/importación también aprobaron en navegador local;
+faltan otra IP pública real y aceptación pública/del usuario cuando se retome
+el servidor. Verificaciones automáticas (11) están publicadas en la rama y
 los cuatro trabajos aprobaron en GitHub; el workflow ya está integrado en `main`. Configuración (13) está probada
-localmente y espera despliegue. El análisis local (12) pasó tras
-corregir tres altas; su cierre espera las imágenes del servidor mediante Gabriel.
+localmente y espera despliegue. El análisis local (12) pasó el 22 para las cinco
+imágenes sin críticas/altas ni excepciones; su cierre espera las imágenes del
+servidor mediante Gabriel. La línea base local de carga ya está medida;
+la aceptación de capacidad conserva Q19.
 
 ### Declaración de la tarea 7
 
