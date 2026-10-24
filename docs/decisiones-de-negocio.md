@@ -1,5 +1,14 @@
 # Decisiones de negocio
 
+**Acuerdo adicional del 23 de octubre de 2026:**
+[expediente empresarial y MFA por descarga](expediente-empresa.md): entrega
+legible con versiones/ajustes de una sola empresa, recuperación comprobada
+antes de suprimir, permiso específico y autorización nueva de un uso por
+usuario/empresa/expediente. El usuario aprueba usar MFA de Keycloak/Red Hat;
+no implica que `owner` elimine derechos de trabajadores ni que los permisos
+del CSV semanal se extiendan al expediente. La distribución instalada sigue
+siendo Keycloak comunitario; el ensayo aislado no habilita aún la descarga.
+
 **Criterio rector confirmado por el usuario el 23 de octubre de 2026:**
 el desarrollo debe cumplir la legislación aplicable. Las opciones técnicas
 y comerciales se evalúan dentro de esos límites; una implementación o una

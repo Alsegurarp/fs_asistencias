@@ -1,5 +1,13 @@
 # Tareas pendientes
 
+Actualización posterior del **23 de octubre de 2026**: metas de expediente
+empresarial/MFA aprobadas y ensayo aislado de identidad 10/10 sin omisiones.
+Se declaran [E1–E6 para implementación](expediente-empresa.md#tareas-declaradas-para-implementación):
+contrato, permiso, archivo íntegro, autorización por descarga, portal y
+recuperación independiente. Todas abiertas; la prueba no habilita todavía
+expedientes ni purga. Son subtareas de órdenes existentes y se conservan
+17 tareas globales abiertas y seis P0.
+
 Último corte del **23 de octubre de 2026**: las tareas de sesión 1/2 tienen
 validación local y cuatro trabajos de CI aprobados para `ffa8306` en la
 [PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15), aún en borrador

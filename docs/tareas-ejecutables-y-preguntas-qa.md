@@ -1,5 +1,20 @@
 # Trabajo ejecutable y preguntas para QA
 
+Contexto aprobado después del corte legal del 23:
+[expediente por empresa, permiso específico y MFA por descarga](expediente-empresa.md).
+La prueba aislada del segundo factor por operación aprobó dentro de 10/10
+pruebas de identidad; su paso de CI queda preparado localmente. Las preguntas
+no reabren esas metas; Q07 conserva texto/valor del
+acuse y aprobación jurídica, Q14 conserva condiciones de purga y recuperación
+de evidencia local, Q03/Q04 conservan recuperación/SMTP/cuentas.
+
+Por solicitud del usuario se declaran las
+[tareas E1–E6 de implementación](expediente-empresa.md#tareas-declaradas-para-implementación),
+con entregas, dependencias, área responsable y criterios de cierre: contrato,
+permiso, archivo, MFA/autorización, portal y recuperación independiente.
+Todas siguen abiertas y no aumentan el conteo global. El ensayo MFA aprobado
+no se registra como implementación de las descargas.
+
 Último corte del 23: cuatro trabajos de CI aprobados para `ffa8306` en la
 [PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15), todavía en
 borrador. Para Q14/Q10–Q13 el usuario aporta el criterio legal mexicano;

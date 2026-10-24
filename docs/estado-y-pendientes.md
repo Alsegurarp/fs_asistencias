@@ -3,7 +3,22 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
-Último corte del **23 de octubre de 2026**: respaldo concurrente validado
+Actualización del **23 de octubre de 2026**, posterior al criterio legal:
+el usuario aprueba [expediente aislado por empresa y MFA por descarga](expediente-empresa.md).
+Permiso específico y autorización nueva de un solo uso; el permiso amplio de
+los CSV semanales no se extiende al expediente. La suite aislada de Keycloak
+aprobó 10/10 sin omisiones, incluida la nueva prueba MFA; paso de CI preparado
+localmente, sin publicar/ejecutar en remoto. El permiso, API, archivo íntegro y recuperación
+fuera del servicio siguen pendientes. No se fija plazo de purga Android ni se
+cierran Q03/Q04 o Q10–Q13. La distribución actual es Keycloak comunitario
+26.8.1 sobre UBI; Red Hat build of Keycloak no está instalado.
+
+Implementación declarada en [E1–E6](expediente-empresa.md#tareas-declaradas-para-implementación):
+contrato, permiso específico, preparación, autorización con MFA, portal y
+recuperación independiente. Pendientes, con sus dependencias y aceptación;
+la prueba aislada no habilita descargas empresariales.
+
+Corte anterior del **23 de octubre de 2026**: respaldo concurrente validado
 localmente y en CI, con los cuatro trabajos aprobados para `ffa8306` en la
 [PR #15 en borrador](https://github.com/Alsegurarp/fs_asistencias/pull/15);
 integración en `main` pendiente. El usuario fija la legislación mexicana

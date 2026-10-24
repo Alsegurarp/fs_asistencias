@@ -1,5 +1,12 @@
 # Verificaciones automáticas
 
+Ampliación posterior del 23 de octubre: el workflow añade
+`infra/keycloak/dossier-mfa.test.mjs`, ensayo de OTP por operación en un
+realm desechable, sin cambiar el flujo de acceso de Zenit. La suite local
+de identidad aprobó 10/10 sin omisiones; su ejecución remota queda pendiente
+de publicar y comprobar para el commit correspondiente. No acredita todavía
+el permiso ni la entrega del [expediente](expediente-empresa.md).
+
 Ampliación del 23 de octubre de 2026, publicada en `ffa8306` mediante la
 [PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15), en borrador:
 los cuatro trabajos aprobaron en la

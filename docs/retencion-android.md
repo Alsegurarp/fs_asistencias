@@ -38,6 +38,16 @@ certificación de documentos. No hay una exigencia general de que un tercero
 habilite cada recuperación; el expediente completo por empresa sigue sin
 implementarse y el respaldo multiempresa no se entrega a un cliente.
 
+## Actualización de expediente y MFA del 23 de octubre
+
+El usuario aprueba [las metas del expediente por empresa](expediente-empresa.md),
+con permiso específico y autorización nueva por descarga respaldada por MFA.
+La comprobación de identidad no demuestra conservación ni recuperación de
+sobres/recibos. Completar ese archivo y comprobar su consulta fuera de Zenit
+es un paso previo a suprimir al terminar el servicio; no fija por sí solo un
+plazo de caché móvil. Se conservan Q14 y los límites de rechazos/acuses
+descritos abajo; la prueba aislada de MFA no habilita ninguna purga.
+
 ## Análisis inicial del 22 de octubre
 
 Revisión de código del 22 de octubre de 2026, desde `main`/`ad21177`.

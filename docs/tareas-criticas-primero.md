@@ -1,5 +1,17 @@
 # Tareas críticas primero
 
+Actualización posterior del **23 de octubre de 2026**: el usuario aprueba
+[las metas del expediente por empresa y MFA por descarga](expediente-empresa.md).
+MFA con SSO validado en identidad aislada: 10/10 pruebas, sin omisiones.
+Siguiente trabajo: completar permiso específico, expediente íntegro y
+autorización nueva de un solo uso; paso de CI preparado aún sin publicar.
+Requiere comprobación de recuperación/consulta antes de cualquier supresión;
+no habilita purga Android ni resuelve las elecciones comerciales pendientes.
+
+El trabajo se desglosa en [E1–E6](expediente-empresa.md#tareas-declaradas-para-implementación),
+en ese orden salvo E3/E4 después de su contrato común. No cambia el conteo
+de tareas globales ni sustituye los bloqueos P0.
+
 Último corte del **23 de octubre de 2026**: autoensayo concurrente aprobado
 en local y CI de la [PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15),
 todavía en borrador y sin integrar. La base legal indicada por el usuario
@@ -57,6 +69,7 @@ locales de horarios/importación y la línea base 50/300 ya están entregados.
 | 1 | Validar el autoensayo local de respaldo con escrituras concurrentes (orden 1) | Completada localmente el 23 a las 16:47 UTC: escrituras posteriores a ambas instantáneas, restauración sin origen y rechazos previstos aprobados. Se corrigió el montaje noexec del auxiliar. No cierra el respaldo externo operativo |
 | 2 | Preparar la integración del autoensayo y su paso de CI (órdenes 1/11) | Preparada en PR #15, commit ffa8306, con cuatro trabajos de CI aprobados y backend/bin excluido. PR en borrador, sin integrar ni desplegar; no sustituye respaldo externo |
 | 3 | Definir y después implementar retención Android (orden 10) | Base legal recibida el 23 y documentada: archivo laboral y copia Android tienen funciones distintas. Faltan archivo/recuperación íntegros, impedimentos de borrado y disponibilidad de duplicados locales; no habilitar purga por antigüedad sin ellos |
+| 3a | Expediente empresarial y MFA por operación (órdenes 2/3/10/15) | Metas aprobadas el 23: [alcance y aceptación](expediente-empresa.md). MFA aislado aprobado dentro de 10/10 pruebas de identidad; paso de CI preparado. Pendientes permiso específico, autorización por usuario/empresa/expediente y archivo verificable fuera de Zenit. No heredar permisos amplios del CSV ni entregar respaldo multiempresa |
 | 4 | Completar identidad operativa y recuperación de acceso (orden 2) | Q03/Q04: procedimiento de acceso perdido, SMTP/remitente, cuentas personales y credencial técnica. Comprobar correo, contraseña y OTP; A4 ya entrega el cambio obligatorio local |
 | 5 | Aprobar las reglas de suspensión, baja, supervisor y marcaje (orden 5) | El usuario fija la ley como criterio; límites de conservación, finalidad y exhibición documentados. Las opciones técnicas/comerciales Q10–Q13 que la ley no elige por sí sola continúan abiertas; no declarar todas las propuestas aprobadas |
 | 6 | Concretar respaldo externo y producción administrada (órdenes 1/6) | Q01/Q02/Q05: proveedor, región/cuenta, destino, custodia y responsables. Después automatizar y ensayar recuperación fuera del dominio de falla; conservar la topología SaaS aprobada |

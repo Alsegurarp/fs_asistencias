@@ -6,6 +6,80 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 23 de octubre de 2026 — Preparación de PR y declaración de implementación
+
+El usuario solicita publicar una PR con el contexto, metas, prueba MFA y
+workflow de esta sesión, y declarar el trabajo para implementar el expediente.
+Se declaran [E1–E6](expediente-empresa.md#tareas-declaradas-para-implementación),
+con alcance, área responsable, dependencias y aceptación: contrato, permiso,
+preparación del archivo, autorización por descarga con MFA, portal y
+recuperación independiente. Todas siguen abiertas; no se asignan personas o
+fechas ni se incrementa el conteo global.
+
+La PR #15 permanece abierta y contiene la base documental de esta entrega.
+Se prepara una rama/PR dependiente sobre
+`test/respaldo-concurrente-ci-2026-10-23`, desde `2ad99e7`, para que su diff
+incluya sólo esta sesión y no vuelva a presentar respaldo/CI como trabajo
+nuevo. La publicación y su enlace se registrarán al obtener la respuesta de
+GitHub. Se excluyen cambios previos de `backend/bin/`, secretos y registros
+locales. Se conserva la evidencia local 10/10 de identidad; la publicación
+no equivale a integración, despliegue o aceptación del expediente completo.
+La declaración se conserva en el repositorio y como lista de seguimiento en
+la descripción de PR. El conector de GitHub rechazó crear un issue con 403
+(`Resource not accessible by integration`); no se creó un issue externo.
+Comprobaciones previas a publicación: sintaxis del ensayo Node y diff sin
+errores; nueve documentos, 150 enlaces locales y 41 anclas comprobados.
+
+## 23 de octubre de 2026 — Metas de expediente empresarial y MFA por descarga
+
+El usuario aprobó continuar los pendientes e incorporar el contexto y las
+metas de esta conversación. Se acuerda entregar al empleador autorizado un
+expediente legible e íntegro de su empresa, con versiones y ajustes; comprobar
+que pueda conservarlo y consultarlo antes de suprimirlo al terminar el
+servicio; y mantener el aislamiento entre clientes. El respaldo completo
+multiempresa no sustituye esa entrega.
+
+Según servicio y contrato, empleador y fastSolution normalmente actuarán como
+responsable y encargado del tratamiento, respectivamente. El rol `owner` no
+elimina derechos de las personas trabajadoras. Se acuerda permiso específico,
+MFA de Keycloak/Red Hat y autorización nueva, breve y de un uso ligada al
+usuario, empresa y expediente para cada descarga. MFA comprueba identidad;
+Zenit decide y audita qué archivo puede obtener esa persona. La extracción
+indebida por una persona autorizada conserva el control de permisos/finalidad.
+
+Se revisó el código: los CSV semanales admiten descargar el exporte de otra
+persona de la misma empresa con administración, RH o auditoría; ese caso está
+probado y no se amplía al expediente completo. El acceso actual usa OTP, pero
+el backend no exige otra verificación para cada descarga. La imagen usa
+Keycloak comunitario 26.8.1 sobre UBI; no es Red Hat build of Keycloak.
+No se infiere una migración de distribución ni soporte comercial.
+
+Se documentan [alcance, controles, secuencia y casos de aceptación](expediente-empresa.md).
+Se completó la prueba aislada de viabilidad de MFA por operación,
+versionada en `infra/keycloak/dossier-mfa.test.mjs` e incorporada al workflow.
+**Resultado local: 10/10 pruebas de identidad aprobadas, sin omisiones.**
+La prueba nueva verifica firma/emisor/audiencia, PKCE, `state` y `nonce`;
+con la misma sesión SSO exige OTP de nuevo, rechaza OTP incorrecto/consumido
+y la elevación silenciosa, y devuelve ACR 1 al solicitar nivel inferior.
+Se comprobó la renovación antes de bajar el nivel: el token renovado conserva
+ACR 2 y `auth_time`, sin pedir otro OTP. Por tanto, ACR 2 por sí solo tampoco
+prueba una verificación nueva por descarga; la vinculación y el consumo del
+desafío/autorización del lado de Zenit siguen siendo necesarios.
+
+El ensayo usa su propio realm/cuenta en Keycloak aislado, eliminado al terminar;
+Compose retira sus contenedores y redes. No modifica el realm `zenit` ni
+secretos de operación. El paso de CI está preparado localmente; no se ha
+publicado ni ejecutado en GitHub para estos cambios. La validación no acredita
+todavía expediente, permiso de negocio, desafío ligado al archivo ni
+autorización de descarga. Siguiente trabajo: pasos 2–4 del documento técnico.
+Ejecución final: 24 de octubre a las 03:02 UTC (23 de octubre, 21:02 en
+Ciudad de México), 29.7 segundos de pruebas. Registro local ignorado:
+`build/dossier-mfa-2026-10-23/tests.log`, SHA-256
+`70789CEA3A6A248D42FCE83E53CC639E37BFA3A311517A7638689E78EF3DDFF1`.
+Se conservan Q14, Q03/Q04 y Q10–Q13, las 17 tareas globales abiertas y seis P0.
+No se purgan datos, modifica el realm activo, despliega el servidor público
+ni se incluyen los cambios preexistentes de `backend/bin/`.
+
 ## 23 de octubre de 2026 — CI aprobado y criterio legal para retención y evidencia
 
 La entrega de respaldo/CI se publicó en `ffa8306`, rama
