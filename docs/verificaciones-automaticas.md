@@ -1,5 +1,26 @@
 # Verificaciones automáticas
 
+Ampliación posterior del 23 de octubre: el workflow añade
+`infra/keycloak/dossier-mfa.test.mjs`, ensayo de OTP por operación en un
+realm desechable, sin cambiar el flujo de acceso de Zenit. La suite local
+de identidad aprobó 10/10 sin omisiones; su ejecución remota queda pendiente
+de publicar y comprobar para el commit correspondiente. No acredita todavía
+el permiso ni la entrega del [expediente](expediente-empresa.md).
+
+Ampliación del 23 de octubre de 2026, publicada en `ffa8306` mediante la
+[PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15), en borrador:
+los cuatro trabajos aprobaron en la
+[ejecución 39990444637](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39990444637),
+incluido el nuevo ensayo. No está integrado en `main` ni desplegado.
+
+El trabajo de contrato/seguridad añade
+el autoensayo de respaldo cifrado, escrituras concurrentes por base,
+restauración sin origen y rechazos de alteraciones. Se ejecuta sin red ni
+volúmenes del proyecto, con datos y claves desechables. `/work` permite
+ejecutar el auxiliar de escritura; la raíz sigue siendo de sólo lectura y se
+retiran todas las capacidades. El comando aprobó localmente; la ejecución de
+Actions debe corresponder al commit publicado. [Evidencia y límites](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
+
 Corrección del 21 de octubre, posterior a `b2f7832`: el análisis de esa
 [ejecución](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39626828092)
 falló únicamente por la imagen del portal. Se actualizó Nginx a 1.30.6 con
@@ -64,7 +85,7 @@ petición manual. Tiene cuatro trabajos independientes:
 | Backend | Construcción y unitarias; integración con PostgreSQL desechable; importación del realm, protección OTP y readiness con HTTP 200/503 |
 | Portal | Construcción y pruebas con dos procesos, sin red durante las pruebas |
 | Android | Unitarias, lint y construcción de APK de app e instrumentación |
-| Contrato y seguridad | Contrato y ejemplos, secretos en todo el historial, construcción de las cinco imágenes, SBOM y análisis de vulnerabilidades |
+| Contrato y seguridad | Contrato y ejemplos, secretos en todo el historial, construcción de las cinco imágenes, autoensayo de respaldo concurrente y restauración sin red, SBOM y análisis de vulnerabilidades |
 
 Los trabajos usan `contents: read` y checkout fijado a un SHA de
 [la versión 7.0.1 oficial](https://github.com/actions/checkout/releases/tag/v7.0.1),

@@ -3,6 +3,58 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
+Actualización del **23 de octubre de 2026**, posterior al criterio legal:
+el usuario aprueba [expediente aislado por empresa y MFA por descarga](expediente-empresa.md).
+Permiso específico y autorización nueva de un solo uso; el permiso amplio de
+los CSV semanales no se extiende al expediente. La suite aislada de Keycloak
+aprobó 10/10 sin omisiones, incluida la nueva prueba MFA; paso de CI preparado
+localmente, sin publicar/ejecutar en remoto. El permiso, API, archivo íntegro y recuperación
+fuera del servicio siguen pendientes. No se fija plazo de purga Android ni se
+cierran Q03/Q04 o Q10–Q13. La distribución actual es Keycloak comunitario
+26.8.1 sobre UBI; Red Hat build of Keycloak no está instalado.
+
+Implementación declarada en [E1–E6](expediente-empresa.md#tareas-declaradas-para-implementación):
+contrato, permiso específico, preparación, autorización con MFA, portal y
+recuperación independiente. Pendientes, con sus dependencias y aceptación;
+la prueba aislada no habilita descargas empresariales.
+
+Corte anterior del **23 de octubre de 2026**: respaldo concurrente validado
+localmente y en CI, con los cuatro trabajos aprobados para `ffa8306` en la
+[PR #15 en borrador](https://github.com/Alsegurarp/fs_asistencias/pull/15);
+integración en `main` pendiente. El usuario fija la legislación mexicana
+como base de las tareas de sesión 3/5 y criterio rector del desarrollo.
+[Conservación, recuperación y terceros](revision-juridica-jornada-acuse.md#recuperación-por-el-empleador-y-servicios-de-terceros)
+documentados; faltan archivo recuperable por empresa, disponibilidad local y
+opciones operativas no determinadas por la ley. Q03/Q04 de identidad siguen
+pendientes. No se purga, habilita correo ni declara cumplimiento integral.
+
+Avance anterior del **23 de octubre de 2026**, tareas de sesión 1–5:
+el autoensayo concurrente de respaldo **aprobó localmente**, con restauración
+sin origen, contraseñas nuevas y rechazos de alteraciones. Se corrigió el
+montaje `noexec` del auxiliar de prueba y se preparó su ejecución en CI.
+[Evidencia y límites](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
+Retención Android, recuperación/SMTP y reglas de negocio esperan las
+elecciones concretas Q14, Q03/Q04 y Q10–Q13, solicitadas al usuario.
+Permanecen 17 tareas globales abiertas y seis P0; no hubo despliegue público.
+
+Revisión anterior de contexto del **23 de octubre de 2026**: `HEAD` y la referencia
+local `origin/main` siguen en `0723baf`; no se volvió a consultar el remoto.
+Hay cambios locales sin commit en el autoensayo de respaldo concurrente y
+su paso de CI. El registro disponible sólo muestra acceso denegado a Docker:
+esa ampliación **no está validada**. Se preservan también los cambios de
+`backend/bin/`. El avance integrado, las decisiones aprobadas y las
+dependencias se consolidan en la [bitácora](bitacora-trabajo.md) y las
+[tareas posibles](tareas-criticas-primero.md#tareas-posibles-desde-el-corte-del-23-de-octubre).
+No cambia el conteo de 17 tareas abiertas ni los seis P0.
+
+Sincronización anterior del **23 de octubre de 2026**: `git pull origin` avanzó
+`main` de `579270f` a `0723baf`, igual que `origin/main`, sin conflictos.
+Quedan integradas las PR #13 y #14. Se conservaron los cambios locales
+previos de `backend/bin/`; no son una entrega nueva. Se revisaron historial,
+actas y prioridades sin repetir pruebas ni comprobar servicios o CI remoto.
+Se mantienen 17 tareas abiertas total o parcialmente y seis P0; el servidor
+público sigue diferido por indicación del usuario.
+
 Actualización local del **22 de octubre de 2026**, desde `main`/`ad21177`:
 [17/17 casos de horarios/importación en navegador, línea base de carga de
 50/300 empleados y revisión de imágenes](qa-local-2026-10-22.md).
@@ -317,9 +369,9 @@ acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 | N.º original | Tarea pendiente | Estado o dependencia para continuar |
 | --- | --- | --- |
 | 2 | Acordar suspensión de empresa, baja de empleado, alcance del supervisor y tipo de marcaje | Propuestas en [Decisiones de negocio](decisiones-de-negocio.md); falta elección del responsable del producto. No se han cambiado las reglas |
-| 4 | Probar horarios e importación con sesión real en el portal | API HTTPS aprobada el 19 con sesión de administración y limpieza. Siguen las pantallas, otros roles, renovación y cierre de sesión; no hay navegador conectado al control UI |
+| 4 | Probar horarios e importación con sesión real en el portal | API HTTPS aprobada el 19; A5 local 33/33 el 21 y horarios/importación en navegador local 17/17 el 22, con permisos y aislamiento. Faltan aceptación pública/del usuario e inventario Q17; comprobación pública diferida |
 | 7 | Probar enrolamiento, captura simulada, cola sin conexión, sincronización y renovación Android contra el backend local | Completada el 19 también por HTTPS en teléfono: personal y terminal, tres fases por modalidad y limpieza. Autoensayo y guion versionados; no acredita NFC real ni apagar físicamente las radios |
-| 8 | Definir e implementar retención de sobres y recibos Android | Acordar qué se conserva y durante cuánto tiempo; proteger pendientes y evidencia |
+| 8 | Definir e implementar retención de sobres y recibos Android | Análisis y alcance mínimo entregados el 22 en [Retención Android](retencion-android.md). Q14 sigue pendiente: plazos, evidencia en servidor y condiciones de eliminación; no hay purga implementada |
 | 9 | Completar configuración de empresa en el portal | Implementación y aceptación técnica local por rol completadas en A5 el 21. Faltan despliegue y aceptación pública/del usuario |
 | 10 | Mostrar las personas que no pudieron cerrar y sus causas | Implementada y comprobada en A5 local con detalle y paginación en navegador. Faltan despliegue y aceptación pública/del usuario; históricos anteriores a V008 conservan conteos |
 | 11 | Automatizar verificaciones en cada cambio | Workflow integrado en `main` el 19; cuatro trabajos aprobados en `avanceLunes` (ejecución 39301664714). La obligatoriedad de trabajos requiere una decisión adicional |
@@ -330,7 +382,7 @@ acceso real por HTTPS, y la 6 no incluye recuperación operativa del servicio.
 | 16 | Validar captura autenticada con tarjetas reales | Definir y probar autenticación y entrega de claves con tarjetas y teléfonos físicos |
 | 17 | Aprobar e implementar reglas de jornada y evidencia del acuse | Dictamen profesional, criterios y casos esperados; conservar reglas y cierres históricos |
 | 18 | Comparar asistencia con horarios y gestionar ausencias | Definir retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y probar |
-| 19 | Validar carga y comportamiento del despliegue | Volumen del cliente, proxy, dirección real, trabajos y cuotas; compartir cuotas si habrá varias instancias |
+| 19 | Validar carga y comportamiento del despliegue | Línea base local 50/300 comprobada el 22: 1,400 marcajes, 350 cierres, 240 consultas y seis exportes. Cinco imágenes analizadas sin críticas/altas ni excepciones tras corregir Keycloak. Faltan Q19, carga sostenida e infraestructura objetivo, IDs/análisis/despliegue públicos y dos IP públicas reales; cuotas compartidas sólo con varias instancias |
 | 20 | Construir conector y adaptar exporte a nómina real | Sistema y formato del primer cliente; aceptación del archivo y sincronización |
 
 Siguen diferidos jOOQ generado, notificaciones y un almacén externo para exportes;
@@ -343,7 +395,7 @@ siguen abiertas donde se indican en **Sin verificar** y en la validación.
 | Quién | Primer paso sugerido |
 | --- | --- |
 | App | Recorrido visual de semana/acuse contra backend real local aprobado el 21. Continuar aceptación pública/del usuario y expediente; tarjeta autenticada y claves conservan sus dependencias |
-| Portal | A5 local completado. Continuar pantallas de horarios/importación y aceptación pública/del usuario con inventario Q17; suspensión espera decisión de producto |
+| Portal | A5 local y horarios/importación local completados. Continuar aceptación pública/del usuario con inventario Q17 cuando se retome el servidor; suspensión espera decisión de producto |
 | Backend | Detalle de bloqueos implementado y aceptado técnicamente en A5 local. Faltan despliegue y aceptación pública/del usuario; jOOQ diferido y reglas pendientes de decisión |
 
 El portal ya no depende de la app para tener datos: el simulador deja

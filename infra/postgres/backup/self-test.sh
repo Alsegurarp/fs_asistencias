@@ -32,7 +32,28 @@ ALTER TABLE probe OWNER TO fixture_owner;
 SQL
 done
 export PGHOST=/work/source-socket BACKUP_DATABASES='zenit keycloak'
-BACKUP_MODE=backup bash /opt/zenit/rehearse.sh
+# Otra conexión confirma escrituras después de exportar la instantánea y antes del dump.
+# /work requiere exec para que psql use este auxiliar en lugar del pg_dump original.
+export FIXTURE_PG_DUMP
+FIXTURE_PG_DUMP=$(command -v pg_dump)
+mkdir /work/bin
+cat > /work/bin/pg_dump <<'SH'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+psql -X -q -v ON_ERROR_STOP=1 -h "$PGHOST" -U fixture -d "$ZENIT_DB" <<'SQL'
+BEGIN;
+UPDATE probe SET label = 'posterior' WHERE id = 1;
+DELETE FROM probe WHERE id = 2;
+INSERT INTO probe(label) SELECT 'posterior' FROM generate_series(1, 3);
+COMMIT;
+SQL
+exec "$FIXTURE_PG_DUMP" "$@"
+SH
+chmod 700 /work/bin/pg_dump
+PATH="/work/bin:$PATH" BACKUP_MODE=backup bash /opt/zenit/rehearse.sh
+for db in zenit keycloak; do
+  test "$(psql -X -w -At -h "$PGHOST" -U fixture -d "$db" -c "select count(*) from probe where label = 'posterior'")" = 4
+done
 export BACKUP_FILE
 BACKUP_FILE=$(basename /backups/zenit-*.tar.age)
 # Se apaga el origen antes de restaurar: ya no puede suministrar datos ni roles.
@@ -85,4 +106,4 @@ if BACKUP_MODE=restore bash /opt/zenit/rehearse.sh > /work/wrong.log 2>&1; then
   echo 'FALLO: aceptó otra clave privada.' >&2; exit 1
 fi
 grep -q 'no se pudo autenticar y descifrar' /work/wrong.log
-echo 'AUTOPRUEBA CORRECTA: restauración sin origen, recuperación persistente con contraseñas nuevas, rechazo de destino ocupado, filas eliminadas, contenido distinto, cifrado alterado y clave incorrecta.'
+echo 'AUTOPRUEBA CORRECTA: instantáneas coherentes con inserciones, cambios y borrados concurrentes en ambas bases, restauración sin origen, recuperación persistente con contraseñas nuevas, rechazo de destino ocupado, filas eliminadas, contenido distinto, cifrado alterado y clave incorrecta.'

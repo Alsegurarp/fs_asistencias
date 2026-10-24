@@ -72,7 +72,7 @@ contradice al contrato, manda el contrato.
 | --- | --- | --- |
 | Backend | `backend/` | Atiende las 62 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo. Detrás del borde toma la dirección real del visitante |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
-| Portal web | `web/` | PKCE, catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, usuarios y configuración de empresa; horarios/CSV aprobados por API HTTPS, recorrido en navegador pendiente |
+| Portal web | `web/` | PKCE, catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, usuarios y configuración de empresa; A5 local 33/33 y horarios/CSV en navegador local 17/17 aprobados. Aceptación pública/del usuario pendiente |
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Captura simulada comprobada contra backend local/HTTPS; semana/acuse visual aprobados en teléfono contra backend real local el 21. Faltan aceptación pública/del usuario, expediente y tarjeta autenticada |
 | Conector | `connector/` | Vacío; es el futuro agente que sincronice el padrón desde la red de un cliente |
 | Infraestructura | `infra/` | Imagen y realm del proveedor de identidad, guiones de la base y ensayo de respaldo |

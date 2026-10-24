@@ -92,14 +92,21 @@ de cero. No considerar una copia comprobada hasta obtener ese resultado.
 
 ```powershell
 docker build --target backup-tools --tag zenit-backup-tools infra/postgres
-docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp --tmpfs /work:uid=70,gid=70,mode=0700 --tmpfs /backups:uid=70,gid=70,mode=0700 --tmpfs /run/secrets:uid=70,gid=70,mode=0700 --entrypoint bash zenit-backup-tools /opt/zenit/self-test.sh
+docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp --tmpfs /work:exec,uid=70,gid=70,mode=0700 --tmpfs /backups:uid=70,gid=70,mode=0700 --tmpfs /run/secrets:uid=70,gid=70,mode=0700 --entrypoint bash zenit-backup-tools /opt/zenit/self-test.sh
 ```
 
 Crea dos bases ficticias con Unicode, valores nulos, JSON, binarios,
-identidades y propietarios separados. Apaga el origen antes de restaurar.
+identidades y propietarios separados. Después de exportar cada instantánea,
+otra conexión inserta, modifica y elimina filas antes del dump; comprueba los
+cambios en el origen y que el respaldo restaure el contenido anterior.
+El tmpfs `/work` permite ejecución para que el shell invoque ese auxiliar.
+Apaga el origen antes de restaurar.
 Exige éxito y luego rechazo de filas eliminadas, una huella de contenido
 distinta con el mismo conteo, ciphertext alterado y otra clave privada.
 Las claves y todos los archivos de esa prueba desaparecen con el contenedor.
+
+La ampliación concurrente aprobó localmente el 23 de octubre de 2026 con el
+mismo comando preparado para CI. [Registro y alcance](bitacora-trabajo.md#23-de-octubre-de-2026--respaldo-concurrente-validado-y-preparación-de-ci).
 
 ## Límites y recuperación operativa
 

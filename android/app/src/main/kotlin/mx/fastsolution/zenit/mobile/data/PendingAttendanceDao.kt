@@ -27,7 +27,7 @@ interface PendingAttendanceDao {
     fun observeReceipts(): Flow<List<PendingAttendanceEvent>>
 
     @Query("UPDATE pending_attendance_event SET status = :status, encryptedReceipt = :receipt, receiptInitializationVector = :iv WHERE id = :id AND status = 'pending_signed'")
-    // shortcut: conserva sobres y recibos sin purga; definir retención antes de terminales en uso continuo.
+    // shortcut: falta archivo recuperable de toda la evidencia; purgar sólo tras cubrir conservación legal y disponibilidad local.
     suspend fun complete(id: String, status: String, receipt: ByteArray, iv: ByteArray)
 
     @Query(
