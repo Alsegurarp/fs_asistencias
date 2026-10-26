@@ -53,8 +53,10 @@ el dispositivo, no lee una tarjeta real, no escribe en la cola local ni llama
 al backend. Sus datos sólo pertenecen a la vista de demostración.
 
 El contrato no autoriza una semana personal en dispositivos `terminal`.
-La navegación contempla esa restricción. El registro real de descansos deberá
-ofrecerse sólo cuando la sesión tenga `breakPolicy=marked`; todavía está pendiente.
+La navegación contempla esa restricción. El registro real de descansos se
+ofrece en `MainActivity` sólo cuando la sesión tiene `breakPolicy=marked`:
+muestra Inicio de descanso y Fin de descanso. Su aceptación visual contra
+backend real sigue pendiente.
 
 Dispositivo muestra un teléfono personal vinculado y activo con información
 de presentación. No guarda esa vinculación en el repositorio de activaciones.

@@ -45,6 +45,7 @@ contradice al contrato, manda el contrato.
 | [Retención Android](retencion-android.md) | Almacenes, evidencia en servidor, protección de pendientes y alcance mínimo después de Q14 |
 | [Entregas A1–A5](entregas-a1-a5.md) | Reactivación, semana personal, recuperación de acuse, cambio obligatorio de contraseña y verificación |
 | [QA A1–A5](qa-a1-a5.md) | Datos ficticios, matriz de roles y casos con resultados esperados para aceptación manual |
+| [QA Android: semana y acuse](qa-android-semana-acuse.md) | Guion reutilizable de 15 casos; distingue el acta local aprobada y las verificaciones restantes |
 | [Resultado local de QA del 21](qa-a1-a5-2026-10-21.md) | 33 casos comprobados, login/OTP real, renovación por rol, paginación, corrección de recursos Keycloak y límites frente al ambiente público |
 | [Semana/acuse Android real local del 21](qa-android-semana-acuse-2026-10-21.md) | Recorrido visual en teléfono, objeción, recuperación sin copia local, reapertura, conformidad y restauración de la vinculación original |
 | [Recorrido completo](recorrido-completo.md) | De una empresa nueva a un exporte, petición por petición |

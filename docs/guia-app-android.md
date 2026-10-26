@@ -13,6 +13,20 @@ Puede renovar la sesión y volver a enrolarse. En modalidad personal permite
 consultar una semana del servidor y responder al cierre con conformidad u
 objeción. Véase la sección 8 y [Revisión móvil del empleado](revision-movil-empleado.md).
 
+La interfaz operativa organiza estas acciones mediante navegación inferior:
+Inicio reúne captura y sincronización; Mi semana muestra consulta y acuse
+sólo en modalidad personal; Actividad reúne pendientes y recibos; Dispositivo
+contiene permisos, sesión, servidor y cambio de vinculación. La presentación
+con datos ficticios se abre desde Dispositivo, sólo en debug. La navegación
+no cambia las reglas de captura ni los registros guardados.
+
+La interfaz mantiene un tono formal y claro para uso empresarial. Emplea
+«registro de asistencia», evita expresiones coloquiales como «checada» y
+presenta estados impersonales, por ejemplo «Sin registros de asistencia» o
+«Registros pendientes de envío». Las instrucciones utilizan tratamiento
+formal. «Recibo» identifica la confirmación del servidor para un registro;
+«acuse» identifica la respuesta del empleado al cierre semanal.
+
 La variante debug ofrece «Explorar presentación · datos de ejemplo». Abre una
 actividad separada con el diseño, los históricos y el panel de Administrador/RH
 descritos en [Producto móvil](alcance-producto-movil.md). Sus datos son locales
@@ -399,13 +413,21 @@ aceptar un marcaje real.
 
 ## 8. Semana y acuse, en modalidad personal
 
-Implementado en la pantalla operativa «Mi semana · registros del servidor»:
-fecha de consulta, tramos en la zona horaria de la empresa, totales informativos,
-alertas, número de incidencias abiertas y cierre con versión. No usa datos de
-la presentación. Requiere conexión y no necesita NFC ni permiso de ubicación
+La pantalla operativa «Mi semana» carga la consulta al abrirse. Presenta
+primero el rango de fechas, el tiempo trabajado y el estado del cierre.
+Las flechas cambian de semana y Elegir fecha abre el calendario del
+teléfono, sin pedir que la persona escriba fechas técnicas. Las jornadas
+se agrupan por día y se despliegan para consultar tramos y descansos.
+Los avisos y la distribución de horas tienen sus propios detalles;
+identificadores, huellas y comentario del acuse están en Más sobre esta semana.
+Una semana vacía muestra un único estado sin registros de asistencia, con ayuda y copia
+del resumen en Más opciones. Si hay tiempo extraordinario, se destaca en
+el resumen y también se presenta al revisar la respuesta al cierre.
+No usa datos de la presentación. Requiere conexión y no necesita NFC ni permiso de ubicación
 para consultar o responder. Los pendientes locales se avisan por separado y
 bloquean conformidad hasta sincronizar; no bloquean reportar una diferencia.
 
+Responder al cierre abre un paso separado de revisión y comentario.
 Antes de enviar, el empleado confirma haber revisado el resumen y confirma
 tipo, comentario y versión en un diálogo. No se preselecciona conformidad.
 El texto aclara que no renuncia a derechos ni confirma pago de salarios.
@@ -414,7 +436,7 @@ y se recupera al consultar esa versión. Un fallo de envío no se reintenta
 automáticamente: se avisa que puede haberse guardado y se pide verificar con RH.
 El servidor resuelve conflictos por cierre reabierto o ya acusado (409).
 
-«Compartir copia del resumen» abre el selector Android por acción expresa;
+«Compartir resumen» abre el selector Android por acción expresa;
 no manda información automáticamente a RH ni al gobierno. La copia incluye
 lo mostrado y el acuse local si existe; no es el expediente probatorio completo.
 Desde el contrato 0.13 la consulta devuelve el acuse guardado por el servidor,
