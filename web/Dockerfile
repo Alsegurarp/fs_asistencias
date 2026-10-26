@@ -13,7 +13,7 @@ FROM nginxinc/nginx-unprivileged:1.30.6-alpine3.24@sha256:f5116ed4606f3eb015dd4a
 # base todavía no trae. Se quita cuando la imagen base los incluya.
 USER root
 # curl no se usa al arrancar ni servir el portal; retirarlo elimina también libcurl vulnerable.
-RUN apk add --no-cache "tiff>=4.7.2-r0" "zlib>=1.3.2-r1" "libexpat>=2.9.0-r0" "libx11>=1.8.14-r0" "musl>=1.2.6-r3" "musl-utils>=1.2.6-r3" \
+RUN apk add --no-cache "tiff>=4.7.2-r0" "zlib>=1.3.2-r1" "libexpat>=2.9.0-r0" "libx11>=1.8.14-r0" "musl>=1.2.6-r3" "musl-utils>=1.2.6-r3" "brotli-libs>=1.2.1-r0" \
     && apk del --no-network curl
 ARG VITE_IDENTITY_URL=http://localhost:8082
 COPY nginx.conf /tmp/nginx.conf.template
