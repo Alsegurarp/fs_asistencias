@@ -24,36 +24,38 @@ class WelcomeActivity : ComponentActivity() {
                 Surface(Modifier.fillMaxSize()) {
                     Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(28.dp),
                         verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                        Spacer(Modifier.height(32.dp))
+                        Spacer(Modifier.height(8.dp))
                         Text("ZENIT", color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text(if (welcome) "Tu jornada, en orden." else "¿Cómo quieres acceder?",
-                            style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                        Text(if (welcome) "Asistencia y equipo en un mismo lugar. Elige tu espacio y continúa en pocos pasos."
-                            else "Elige el espacio que necesitas hoy.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if (welcome) "Control de jornada laboral" else "Seleccionar acceso",
+                            style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text(if (welcome) "Registro de asistencia y administración del personal en una misma aplicación."
+                            else "Seleccione el perfil correspondiente.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         if (welcome) {
                             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                                 Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    Text("Para tu equipo", style = MaterialTheme.typography.titleLarge)
-                                    Text("Administra tu equipo y registra tu asistencia desde el teléfono.")
+                                    Text("Gestión del personal", style = MaterialTheme.typography.titleLarge)
+                                    Text("Administración del personal y registro de asistencia desde el dispositivo.")
                                 }
                             }
                             Button(onClick = { preferences.edit().putBoolean("completed", true).apply(); welcome = false },
                                 modifier = Modifier.fillMaxWidth()) { Text("Comenzar") }
                         } else {
-                            AccessCard("Administración", "Gestiona tu empresa, empleados y dispositivos con tu cuenta.", "Acceder a Administración") {
-                                startActivity(Intent(this@WelcomeActivity, AdministrationActivity::class.java))
-                            }
-                            AccessCard("Empleado", "Vincula este teléfono con el código que te entrega tu empresa y registra tu asistencia.", "Continuar como empleado") {
+                            AccessCard("Mi asistencia", "Registro de asistencia y consulta del resumen semanal.", "Entrar como empleado") {
                                 startActivity(Intent(this@WelcomeActivity, MainActivity::class.java))
                             }
-                            OutlinedButton(onClick = { startActivity(Intent(this@WelcomeActivity, NfcDiagnosticActivity::class.java)) },
-                                modifier = Modifier.fillMaxWidth()) { Text("Consultar tarjeta NFC") }
-                            Text("¿Es tu primer acceso al portal? Usa la contraseña temporal que recibiste y sigue los pasos para actualizarla.",
-                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            if (BuildConfig.DEBUG) TextButton(onClick = {
-                                startActivity(Intent(this@WelcomeActivity, PresentationActivity::class.java))
-                            }) { Text("Explorar presentación · datos de ejemplo") }
+                            AccessCard("Administración", "Administración de empleados, horarios y dispositivos de la empresa.", "Entrar a administración", primary = false) {
+                                startActivity(Intent(this@WelcomeActivity, AdministrationActivity::class.java))
+                            }
+                            ExpandablePanel("Otras opciones", "Consultar tarjeta y ayuda de acceso") {
+                                OutlinedButton(onClick = { startActivity(Intent(this@WelcomeActivity, NfcDiagnosticActivity::class.java)) },
+                                    modifier = Modifier.fillMaxWidth()) { Text("Consultar tarjeta NFC") }
+                                Text("Para acceder a Administración, utilice la cuenta proporcionada por la empresa. El acceso del empleado requiere un código de vinculación emitido por Recursos Humanos.",
+                                    style = MaterialTheme.typography.bodySmall)
+                                if (BuildConfig.DEBUG) TextButton(onClick = {
+                                    startActivity(Intent(this@WelcomeActivity, PresentationActivity::class.java))
+                                }) { Text("Ver presentación con ejemplos") }
+                            }
                         }
                     }
                 }
@@ -63,12 +65,9 @@ class WelcomeActivity : ComponentActivity() {
 }
 
 @Composable
-private fun AccessCard(title: String, description: String, action: String, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-            Text(description)
-            Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(action) }
-        }
+private fun AccessCard(title: String, description: String, action: String, primary: Boolean = true, onClick: () -> Unit) {
+    InfoPanel(title, description) {
+        if (primary) Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(action) }
+        else OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(action) }
     }
 }

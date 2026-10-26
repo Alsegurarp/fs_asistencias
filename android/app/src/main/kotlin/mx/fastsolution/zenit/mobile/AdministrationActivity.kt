@@ -26,6 +26,8 @@ class AdministrationActivity : ComponentActivity() {
         setContent {
             var browser by remember { mutableStateOf<WebView?>(null) }
             var error by remember { mutableStateOf("") }
+            var loading by remember { mutableStateOf(true) }
+            var tools by remember { mutableStateOf(false) }
             BackHandler { if (browser?.canGoBack() == true) browser?.goBack() else finish() }
             DisposableEffect(Unit) { onDispose { browser?.apply { stopLoading(); destroy() }; browser = null } }
             MaterialTheme(colorScheme = ZenitColors) {
@@ -33,8 +35,20 @@ class AdministrationActivity : ComponentActivity() {
                     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                             TextButton(onClick = { finish() }) { Text("Volver") }
-                            TextButton(onClick = { startActivity(Intent(this@AdministrationActivity, CardProvisioningActivity::class.java)) }) { Text("Preparar tarjetas") }
+                            Text("Administración", Modifier.padding(top = 14.dp), style = MaterialTheme.typography.titleSmall)
+                            Box {
+                                TextButton(onClick = { tools = true }) { Text("Opciones") }
+                                DropdownMenu(expanded = tools, onDismissRequest = { tools = false }) {
+                                    DropdownMenuItem(text = { Text("Preparar tarjeta de prueba") }, onClick = {
+                                        tools = false
+                                        startActivity(Intent(this@AdministrationActivity, CardProvisioningActivity::class.java))
+                                    })
+                                }
+                            }
                         }
+                        Text("Portal del servidor público", Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
                         if (error.isNotEmpty()) {
                             Text(error, Modifier.padding(16.dp))
                             TextButton(onClick = { error = ""; browser?.loadUrl("https://zenit.fastsolution.com.mx") }) { Text("Reintentar") }
@@ -48,6 +62,8 @@ class AdministrationActivity : ComponentActivity() {
                                 settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
                                 CookieManager.getInstance().setAcceptCookie(true)
                                 webViewClient = object : WebViewClient() {
+                                    override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) { loading = true }
+                                    override fun onPageFinished(view: WebView, url: String?) { loading = false }
                                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                                         val uri = request.url
                                         val allowed = uri.scheme == "https" && uri.host == "zenit.fastsolution.com.mx" && (uri.port == -1 || uri.port == 443)
@@ -55,7 +71,10 @@ class AdministrationActivity : ComponentActivity() {
                                         return !allowed
                                     }
                                     override fun onReceivedError(view: WebView, request: WebResourceRequest, failure: android.webkit.WebResourceError) {
-                                        if (request.isForMainFrame) error = "No se pudo cargar Administración. Revisa tu conexión y vuelve a intentar."
+                                        if (request.isForMainFrame) {
+                                            loading = false
+                                            error = "No fue posible cargar Administración. Verifique la conexión e intente nuevamente."
+                                        }
                                     }
                                 }
                                 browser = this
