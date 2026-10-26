@@ -14,7 +14,7 @@ class DeviceStore(context: Context) {
 
     fun registration(): JSONObject? = read("registration")?.let(::JSONObject)
     fun saveRegistration(value: JSONObject) = write("registration", value.toString())
-    fun notice(): String = read("notice") ?: "Acerca una tarjeta NFC"
+    fun notice(): String = read("notice") ?: "Aproxime una tarjeta NFC al lector"
     fun saveNotice(value: String) = write("notice", value)
     fun acknowledgement(deviceId: String, closureId: String): JSONObject? = read("ack:$deviceId:$closureId")?.let(::JSONObject)
     fun saveAcknowledgement(deviceId: String, closureId: String, value: JSONObject) = write("ack:$deviceId:$closureId", value.toString())

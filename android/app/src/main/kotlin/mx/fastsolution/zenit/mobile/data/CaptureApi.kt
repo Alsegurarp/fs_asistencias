@@ -60,9 +60,9 @@ class CaptureApi(private val baseUrl: String) {
                         val serverTime = runCatching { Instant.parse(json.getString("serverTime")) }.getOrNull()
                         if (serverTime != null && kotlin.math.abs(Duration.between(Instant.now(), serverTime).seconds) > 60)
                             "Corrige la fecha y hora del teléfono antes de reintentar."
-                        else "El dispositivo no tiene acceso. Consulta a RH: puede estar revocado, reemplazado o su empresa suspendida."
+                        else "El dispositivo no tiene acceso. Consulte a Recursos Humanos: puede estar revocado, reemplazado o su empresa suspendida."
                     }
-                    410 -> "El código venció o ya se usó. Solicita otro código a RH."
+                    410 -> "El código venció o ya se usó. Solicite otro código a Recursos Humanos."
                     429 -> "Demasiados intentos. Se reintentará con una pausa."
                     else -> detail
                 }

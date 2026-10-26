@@ -37,8 +37,8 @@ internal fun CardToolsDemo(
         TextButton(onClick = onClose) { Text("Volver a administración") }
         Text("TARJETAS NFC", color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        Text("Una tarjeta, tu equipo", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        Text("Consulta y prepara las credenciales de tu personal.")
+        Text("Credenciales del personal", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        Text("Consulta y preparación de credenciales del personal.")
         Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.medium) {
             Text("Demostración · Las acciones sólo cambian esta tarjeta de ejemplo. No se usa el NFC ni se guarda en el servidor.",
                 Modifier.padding(16.dp), style = MaterialTheme.typography.bodySmall)
@@ -61,7 +61,7 @@ internal fun CardToolsDemo(
         }
         when (operation) {
             "Leer" -> {
-                Text("Consulta el contenido", style = MaterialTheme.typography.titleLarge)
+                Text("Consultar contenido", style = MaterialTheme.typography.titleLarge)
                 Text("En el flujo final acercarás la tarjeta a la parte posterior del teléfono.")
                 Button(onClick = { read = true; result = "Lectura de ejemplo completada." }, modifier = Modifier.fillMaxWidth()) {
                     Text("Simular lectura")
@@ -80,7 +80,7 @@ internal fun CardToolsDemo(
                 }
                 OutlinedTextField(content, { content = it.take(200) }, label = { Text("Datos de ejemplo") },
                     supportingText = { Text("${content.length}/200 caracteres") }, modifier = Modifier.fillMaxWidth())
-                Text("Revisa el titular y los datos antes de reemplazar el contenido existente.", style = MaterialTheme.typography.bodySmall)
+                Text("Revise el titular y los datos antes de reemplazar el contenido existente.", style = MaterialTheme.typography.bodySmall)
                 Button(onClick = { pending = "Escribir" }, enabled = label.isNotBlank() && content.isNotBlank() && employees.any { it.first == employee },
                     modifier = Modifier.fillMaxWidth()) { Text("Revisar escritura") }
             }

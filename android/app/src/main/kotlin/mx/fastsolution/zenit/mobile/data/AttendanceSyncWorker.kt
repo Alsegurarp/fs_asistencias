@@ -27,7 +27,7 @@ class AttendanceSyncWorker(context: Context, parameters: WorkerParameters) : Cor
             repository.store.saveNotice(when (error) {
                 is CaptureApiException -> error.message ?: "No se pudo sincronizar."
                 is IOException -> "Sin conexión con el servidor. Se conservan los marcajes y se reintentará."
-                else -> "No se pudo sincronizar. Los marcajes se conservan; solicita revisión a RH."
+                else -> "No se pudo sincronizar. Los marcajes se conservan; solicite revisión a Recursos Humanos."
             })
             if ((error is CaptureApiException && (error.status == 429 || error.status >= 500)) ||
                 (error is IOException && error !is CaptureApiException)) Result.retry() else Result.failure()

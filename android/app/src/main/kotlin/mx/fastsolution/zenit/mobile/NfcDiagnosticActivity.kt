@@ -25,23 +25,23 @@ class NfcDiagnosticActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
     private val busy = AtomicBoolean(false)
     @Volatile private var readKey = MifareClassic.KEY_DEFAULT.copyOf()
     @Volatile private var activeCard: MifareClassic? = null
-    private var status by mutableStateOf("Acerca una tarjeta a la parte posterior del teléfono.")
+    private var status by mutableStateOf("Aproxime la tarjeta a la parte posterior del dispositivo.")
     private var content by mutableStateOf("")
     private var loading by mutableStateOf(false)
     private var waiting by mutableStateOf(false)
     private val noCard = Runnable {
         waiting = false
-        status = "No se detectó una tarjeta. Acércala al lector o pulsa Leer tarjeta para intentar de nuevo."
+        status = "No se detectó una tarjeta. Aproxímela al lector y seleccione Leer tarjeta para intentar nuevamente."
     }
     private fun waitForCard() {
         handler.removeCallbacks(noCard)
         if (adapter?.isEnabled != true) {
             waiting = false
-            status = "NFC no está disponible. Actívalo en los ajustes del teléfono."
+            status = "El lector NFC no está disponible. Actívelo en la configuración del dispositivo."
             return
         }
         content = ""; waiting = true
-        status = "Buscando tarjeta. Acércala a la parte posterior del teléfono."
+        status = "Lectura de tarjeta en espera. Aproxime la tarjeta a la parte posterior del dispositivo."
         handler.postDelayed(noCard, 20000)
     }
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,7 +53,7 @@ class NfcDiagnosticActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
                         verticalArrangement = Arrangement.spacedBy(20.dp)) {
                         TextButton(onClick = { finish() }) { Text("Volver") }
                         Text("Consultar tarjeta", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                        Text("Acerca la tarjeta para consultar el nombre, puesto, horario e ID del empleado.")
+                        Text("Aproxime la tarjeta para consultar el nombre, puesto, horario e ID del empleado.")
                         Button(onClick = { waitForCard() }, enabled = !loading && readKey.size == 6, modifier = Modifier.fillMaxWidth()) { Text("Leer tarjeta") }
                         if (waiting || loading) LinearProgressIndicator(Modifier.fillMaxWidth())
                         Card(Modifier.fillMaxWidth()) {
@@ -94,7 +94,7 @@ class NfcDiagnosticActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
             } finally { runCatching { card.close() }; activeCard = null }
             runOnUiThread { status = "Lectura terminada"; content = description }
         } catch (failure: Exception) {
-            runOnUiThread { status = "No se pudo leer la credencial"; content = "Mantén la tarjeta cerca y vuelve a intentar. Si continúa el problema, solicita ayuda a Administración." }
+            runOnUiThread { status = "No se pudo leer la credencial"; content = "Mantenga la tarjeta próxima al lector e intente nuevamente. Si el problema persiste, contacte a Administración." }
         } finally { busy.set(false); runOnUiThread { loading = false } }
     }
 }

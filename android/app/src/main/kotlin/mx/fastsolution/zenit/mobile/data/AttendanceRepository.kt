@@ -57,7 +57,7 @@ class AttendanceRepository(private val context: Context) {
             check(registration.getString("mode") == "personal") { "La terminal no puede enviar un acuse personal." }
             val id = UUID.fromString(closureId)
             require(type in setOf("agreed", "objected") && note.length <= 500)
-            check(type != "agreed" || dao.pendingCount() == 0) { "Sincroniza los marcajes pendientes antes de expresar conformidad." }
+            check(type != "agreed" || dao.pendingCount() == 0) { "Sincronice los marcajes pendientes antes de expresar conformidad." }
             val body = JSONObject().put("type", type)
             if (note.isNotBlank()) body.put("note", note.trim())
             val receipt = CaptureApi(registration.getString("baseUrl")).post("/week-closures/$id/acknowledgements", body, signer(registration).assertion(registration))
@@ -72,13 +72,13 @@ class AttendanceRepository(private val context: Context) {
 
     suspend fun activate(baseUrl: String, enrollmentCode: String, preservePreviousPending: Boolean = false) = withContext(Dispatchers.IO) {
         lock.withLock {
-            check(!syncLock.isLocked) { "Espera a que termine la sincronización antes de volver a enrolar." }
-            check(dao.pendingCount() == 0 || preservePreviousPending) { "Sincroniza los pendientes o confirma que se conserven sin enviar antes de volver a enrolar." }
+            check(!syncLock.isLocked) { "Espere a que termine la sincronización antes de volver a enrolar." }
+            check(dao.pendingCount() == 0 || preservePreviousPending) { "Sincronice los pendientes o confirme que se conserven sin enviar antes de volver a enrolar." }
             val base = CaptureApi.validateBaseUrl(baseUrl)
             val code = enrollmentCode.trim().uppercase(java.util.Locale.ROOT)
-            require(code.length in 6..32) { "Revisa el código de activación que te dio RH." }
+            require(code.length in 6..32) { "Revise el código de activación proporcionado por Recursos Humanos." }
             val screenLock = ContextCompat.getSystemService(context, KeyguardManager::class.java)?.isDeviceSecure == true
-            check(screenLock) { "Activa el bloqueo de pantalla del teléfono antes de enrolarlo." }
+            check(screenLock) { "Active el bloqueo de pantalla del teléfono antes de enrolarlo." }
             val signer = DeviceSigner.create()
             val body = JSONObject().put("enrollmentCode", code).put("publicKey", signer.publicJwk())
                 .put("proof", signer.sign(JSONObject().put("enrollmentCode", code)))
@@ -95,21 +95,21 @@ class AttendanceRepository(private val context: Context) {
             registration.put("baseUrl", base).put("keyAlias", signer.alias).put("nextSequence", 1)
             if (preservePreviousPending) dao.preservePreviousPending()
             store.saveRegistration(registration)
-            store.saveNotice("Dispositivo activado. Acerca una tarjeta NFC.")
+            store.saveNotice("Dispositivo activado. Aproxime una tarjeta NFC al lector.")
         }
     }
 
     suspend fun renewSession() = withContext(Dispatchers.IO) {
         lock.withLock {
-            check(!syncLock.isLocked) { "Espera a que termine la sincronización antes de renovar la sesión." }
-            check(dao.pendingCount() == 0) { "Sincroniza los marcajes pendientes antes de renovar la sesión." }
+            check(!syncLock.isLocked) { "Espere a que termine la sincronización antes de renovar la sesión." }
+            check(dao.pendingCount() == 0) { "Sincronice los marcajes pendientes antes de renovar la sesión." }
             val registration = requireRegistration()
             val session = CaptureApi(registration.getString("baseUrl")).post("/device-sessions",
                 JSONObject().put("appVersion", BuildConfig.VERSION_NAME), signer(registration).assertion(registration))
             validateSession(session)
             registration.put("session", session).put("nextSequence", 1)
             store.saveRegistration(registration)
-            store.saveNotice("Sesión renovada. Acerca una tarjeta NFC.")
+            store.saveNotice("Sesión renovada. Aproxime una tarjeta NFC al lector.")
         }
     }
 
@@ -117,8 +117,8 @@ class AttendanceRepository(private val context: Context) {
         lock.withLock {
             check(BuildConfig.DEBUG) { "La verificación de tarjetas reales todavía no está disponible." }
             val registration = requireRegistration()
-            check(sessionUsable(registration, observedAt)) { "La sesión venció o alcanzó su límite. Sincroniza y renueva la sesión." }
-            check(ContextCompat.getSystemService(context, KeyguardManager::class.java)?.isDeviceSecure == true) { "Activa el bloqueo de pantalla para marcar." }
+            check(sessionUsable(registration, observedAt)) { "La sesión venció o alcanzó su límite. Sincronice y renueva la sesión." }
+            check(ContextCompat.getSystemService(context, KeyguardManager::class.java)?.isDeviceSecure == true) { "Active el bloqueo de pantalla para marcar." }
             val session = registration.getJSONObject("session")
             require(declaredType == null || declaredType in setOf("clock_in", "clock_out") ||
                 (session.getString("breakPolicy") == "marked" && declaredType in setOf("break_start", "break_end")))
@@ -187,7 +187,7 @@ class AttendanceRepository(private val context: Context) {
                     }
                 }
                 val rejected = encrypted.count { it.first == "rejected" }
-                store.saveNotice("Recibidos: ${pending.size - rejected}. Rechazados: $rejected. Consulta los últimos recibos.")
+                store.saveNotice("Recibidos: ${pending.size - rejected}. Rechazados: $rejected. Consulte los recibos recientes.")
             }
         }
     }

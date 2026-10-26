@@ -23,7 +23,7 @@ import mx.fastsolution.zenit.mobile.data.CaptureApiException
 
 data class CaptureUiState(
     val pendingCount: Int = 0,
-    val message: String = "Acerca una tarjeta NFC",
+    val message: String = "Aproxime una tarjeta NFC al lector",
     val isCapturing: Boolean = false,
     val registered: Boolean = false,
     val deviceLabel: String = "",
@@ -58,7 +58,7 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
             receipts = receipts.filter { repository.belongsToDevice(it, device?.getString("deviceId")) }.map(repository::readReceipt),
         )
     }.flowOn(Dispatchers.IO).catch {
-        emit(CaptureUiState(message = "No se pudo leer la cola o las claves locales. Los datos se conservan; solicita revisión a RH."))
+        emit(CaptureUiState(message = "No se pudo leer la cola o las claves locales. Los datos se conservan; solicite revisión a Recursos Humanos."))
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -79,7 +79,7 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
             weekState.value = PersonalWeekState(week = week, acknowledgement = receipt)
         } catch (error: CancellationException) { throw error
         } catch (error: Exception) {
-            weekState.value = PersonalWeekState(message = if (error is CaptureApiException) error.message.orEmpty() else "No se pudo consultar la semana. Revisa la conexión y vuelve a intentar.")
+            weekState.value = PersonalWeekState(message = if (error is CaptureApiException) error.message.orEmpty() else "No se pudo consultar la semana. Revise la conexión y vuelva a intentarlo.")
         }
     }
 
@@ -94,13 +94,13 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
         } catch (error: Exception) {
             // Una respuesta perdida puede haberse guardado: no se reintenta automáticamente.
             weekState.value = current.copy(allowAcknowledgement = false, message = if (error is CaptureApiException && error.status == 409)
-                "Este cierre ya tiene acuse o cambió de estado. Solicita a RH confirmar el registro antes de responder otra vez."
-                else "No se pudo confirmar la respuesta. Puede haberse guardado; consulta a RH antes de reenviarla.")
+                "Este cierre ya tiene acuse o cambió de estado. Solicite a Recursos Humanos confirmar el registro antes de responder otra vez."
+                else "No se pudo confirmar la respuesta. Puede haberse guardado; consulte a Recursos Humanos antes de reenviarla.")
         }
     }
 
     fun activate(baseUrl: String, code: String, preservePreviousPending: Boolean) = perform {
-        check(!weekState.value.busy) { "Espera a que termine la consulta o el acuse antes de cambiar de vinculación." }
+        check(!weekState.value.busy) { "Espere a que termine la consulta o el acuse antes de cambiar de vinculación." }
         repository.activate(baseUrl, code, preservePreviousPending)
         weekState.value = PersonalWeekState()
         AttendanceSyncWorker.schedule(getApplication())

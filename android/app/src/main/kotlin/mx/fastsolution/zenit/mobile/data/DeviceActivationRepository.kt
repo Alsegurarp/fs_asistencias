@@ -28,7 +28,7 @@ class DeviceActivationRepository(private val context: Context) {
             "El servidor debe usar HTTPS; HTTP local sólo se permite en depuración."
         }
         val normalizedCode = code.trim().uppercase(java.util.Locale.ROOT)
-        require(normalizedCode.length in 6..32) { "Revisa el código de activación que te dio RH." }
+        require(normalizedCode.length in 6..32) { "Revise el código de activación proporcionado por Recursos Humanos." }
         check(context.getSystemService(KeyguardManager::class.java).isDeviceSecure) {
             "Configura un bloqueo de pantalla antes de activar el teléfono."
         }
@@ -60,9 +60,9 @@ class DeviceActivationRepository(private val context: Context) {
                         .putString("baseUrl", uri.toString()).commit()) { "No se pudo guardar la activación." }
                     activation
                 }
-                410 -> error("El código venció o ya no está disponible. Pide otro a RH.")
-                429 -> error("Demasiados intentos. Espera un minuto antes de volver a intentar.")
-                422 -> error("No se pudo validar el dispositivo. Revisa el código y solicita ayuda a soporte.")
+                410 -> error("El código venció o ya no está disponible. Solicite otro a Recursos Humanos.")
+                429 -> error("Demasiados intentos. Espere un minuto antes de volver a intentar.")
+                422 -> error("No se pudo validar el dispositivo. Revise el código y solicite ayuda a soporte.")
                 else -> error("El servidor no pudo activar el teléfono. Intenta más tarde.")
             }
         } finally {

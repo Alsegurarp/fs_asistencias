@@ -30,17 +30,17 @@ internal fun MockShift(modifier: Modifier = Modifier, onClose: () -> Unit) {
         Text(when {
             exitedAt != null -> "Turno terminado"
             enteredAt != null -> "En turno"
-            else -> "Comienza tu turno"
+            else -> "Inicio de jornada"
         }, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         Text("Roberto AR", style = MaterialTheme.typography.titleLarge)
         Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Tu jornada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Resumen de jornada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 ShiftDetail("Hora de entrada", "08:00")
-                ShiftDetail("Checaste entrada", time(enteredAt))
+                ShiftDetail("Entrada registrada", time(enteredAt))
                 HorizontalDivider()
                 ShiftDetail("Hora de salida", "16:00")
-                ShiftDetail("Checaste salida", time(exitedAt))
+                ShiftDetail("Salida registrada", time(exitedAt))
                 Text("Horario asignado · 08:00 a 16:00",
                     style = MaterialTheme.typography.bodySmall)
             }
@@ -51,18 +51,18 @@ internal fun MockShift(modifier: Modifier = Modifier, onClose: () -> Unit) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Salida confirmada", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text("Roberto AR · ${time(exitedAt)}")
-                        Text("Tu jornada quedó registrada.")
+                        Text("La jornada se registró correctamente.")
                     }
                 }
                 OutlinedButton(onClick = { enteredAt = null; exitedAt = null; scanning = null },
                     modifier = Modifier.fillMaxWidth()) { Text("Iniciar otro turno") }
             }
             enteredAt != null -> {
-                Text("Entrada confirmada a las ${time(enteredAt)}. Cuando termines, registra tu salida.")
+                Text("Entrada confirmada a las ${time(enteredAt)}. Al finalizar la jornada, registre la salida.")
                 Button(onClick = { scanning = "salida" }, modifier = Modifier.fillMaxWidth()) { Text("Marcar salida") }
             }
             else -> {
-                Text("Acerca tu tarjeta para registrar el inicio de tu jornada.")
+                Text("Aproxime la tarjeta para registrar el inicio de su jornada.")
                 Button(onClick = { scanning = "entrada" }, modifier = Modifier.fillMaxWidth()) { Text("Marcar entrada") }
             }
         }
@@ -71,7 +71,7 @@ internal fun MockShift(modifier: Modifier = Modifier, onClose: () -> Unit) {
     scanning?.let { kind ->
         AlertDialog(
             onDismissRequest = { scanning = null },
-            title = { Text("Escanea tu tarjeta") },
+            title = { Text("Lectura de tarjeta") },
             text = {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
@@ -79,7 +79,7 @@ internal fun MockShift(modifier: Modifier = Modifier, onClose: () -> Unit) {
                         Text("NFC", Modifier.padding(32.dp), style = MaterialTheme.typography.headlineLarge,
                             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
-                    Text("Acerca la tarjeta a la parte posterior del teléfono para marcar tu $kind.")
+                    Text("Aproxime la tarjeta a la parte posterior del teléfono para marcar su $kind.")
                     Text("Roberto AR · Tarjeta de asistencia", style = MaterialTheme.typography.labelMedium)
                 }
             },

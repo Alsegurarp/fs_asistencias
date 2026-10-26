@@ -40,7 +40,7 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
     @Volatile private var armed: CardWrite? = null
     @Volatile private var activeCard: MifareClassic? = null
     @Volatile private var readKey = MifareClassic.KEY_DEFAULT.copyOf()
-    private var message by mutableStateOf("Selecciona un empleado listo y pulsa Cargar tarjeta.")
+    private var message by mutableStateOf("Seleccione un empleado habilitado y pulse Cargar tarjeta.")
     private var uid by mutableStateOf("")
     private var existing by mutableStateOf("")
     private var replaceable by mutableStateOf(false)
@@ -66,7 +66,7 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
                         verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         TextButton(onClick = { finish() }) { Text("Volver a administración") }
                         Text("Empleados listos para cargar", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                        Text("Dos empleados de ejemplo ya listos para cargar. La aprobación corresponde a nuestro equipo; aquí sólo cargas y consultas sus tarjetas. Estos ejemplos no están registrados en el servidor.", style = MaterialTheme.typography.bodySmall)
+                        Text("Hay dos empleados de ejemplo disponibles para la carga de tarjetas. Esta herramienta permite consultar y cargar credenciales de prueba. Los empleados de ejemplo no están registrados en el servidor.", style = MaterialTheme.typography.bodySmall)
                         employees.forEachIndexed { index, item ->
                             OutlinedButton(onClick = { selected = index; armed = null; uid = ""; existing = ""; waitingForCard = false; handler.removeCallbacks(noCard); message = "Empleado listo. Pulsa Cargar tarjeta para continuar." }, enabled = !working,
                                 modifier = Modifier.fillMaxWidth()) { Text("${item.id} · ${item.name}\n${if (item.id in loadedIds) "Carga verificada en este teléfono" else "Listo para cargar"}${if (selected == index) " ✓" else ""}") }
@@ -80,7 +80,7 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
                         }
                         if (working || waiting) {
                             LinearProgressIndicator(Modifier.fillMaxWidth())
-                            Text(if (working) "Tarjeta detectada · mantén la tarjeta inmóvil" else "Buscando tarjeta · acércala al teléfono")
+                            Text(if (working) "Tarjeta detectada · mantenga la tarjeta inmóvil" else "Buscando tarjeta · aproxímela al dispositivo")
                         }
                         Text(message)
                         if (existing.isNotEmpty()) Text(existing)
@@ -94,17 +94,17 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
                         OutlinedButton(onClick = { confirmErase = true; confirm = true },
                             enabled = validKey && uid.isNotEmpty() && !working && !waiting,
                             modifier = Modifier.fillMaxWidth()) { Text("Borrar datos Zenit") }
-                        Text("Para borrar, acerca primero la tarjeta a esta pantalla para identificarla. Después confirma el borrado y vuelve a acercar la misma tarjeta.", style = MaterialTheme.typography.bodySmall)
+                        Text("Para borrar, aproxime primero la tarjeta a esta pantalla para identificarla. Confirme el borrado y aproxime nuevamente la misma tarjeta.", style = MaterialTheme.typography.bodySmall)
                     }
                     if (confirm) AlertDialog(onDismissRequest = { confirm = false },
                         title = { Text(if (confirmErase) "¿Borrar los datos de esta tarjeta?" else "Confirmar escritura física") },
                         text = { Text(if (confirmErase)
-                            "Se borrarán los datos guardados en la tarjeta consultada. No podrás recuperarlos desde esta app. Este borrado no da de baja al empleado. Acerca de nuevo la misma tarjeta para continuar."
-                            else "${employee.name}\n${employee.position}\n${employee.schedule}\n${employee.id}\n\nSe guardarán estos datos en la tarjeta. Mantén la tarjeta inmóvil hasta finalizar.") },
+                            "Se borrarán los datos guardados en la tarjeta consultada. No podrá recuperarlos desde esta app. Este borrado no da de baja al empleado. Aproxime nuevamente la misma tarjeta para continuar."
+                            else "${employee.name}\n${employee.position}\n${employee.schedule}\n${employee.id}\n\nSe guardarán estos datos en la tarjeta. Mantenga la tarjeta inmóvil hasta finalizar.") },
                         confirmButton = { TextButton(onClick = {
                             armed = CardWrite(uid, employee, readKey.copyOf(), confirmErase)
                             waitingForCard = true
-                            message = if (confirmErase) "Acerca la tarjeta consultada para borrar sus datos." else "Esperando tarjeta. Acércala para cargar los datos de ${employee.name}."
+                            message = if (confirmErase) "Aproxime la tarjeta consultada para borrar sus datos." else "Esperando tarjeta. Aproxímela para cargar los datos de ${employee.name}."
                             handler.removeCallbacks(noCard); handler.postDelayed(noCard, 20000); confirm = false
                         }, enabled = !working && (!confirmErase || uid.isNotEmpty())) { Text(if (confirmErase) "Borrar y acercar tarjeta" else "Confirmar y acercar tarjeta") } },
                         dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancelar") } })
@@ -116,7 +116,7 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
         super.onResume()
         if (adapter?.isEnabled == true) adapter?.enableReaderMode(this, this,
             NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK, null)
-        else message = "NFC no está disponible. Actívalo en los ajustes del teléfono."
+        else message = "El lector NFC no está disponible. Actívelo en la configuración del dispositivo."
     }
     override fun onPause() {
         armed = null
@@ -141,20 +141,20 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
                 card.connect()
                 require(card.type == MifareClassic.TYPE_CLASSIC && card.size == MifareClassic.SIZE_1K) { "Esta herramienta requiere una tarjeta MIFARE Classic de 1 KB." }
                 val key = task?.key ?: readKey.copyOf()
-                require(key.size == 6) { "Introduce una clave A de 12 caracteres hexadecimales antes de consultar." }
+                require(key.size == 6) { "Introduzca una clave A de 12 caracteres hexadecimales antes de consultar." }
                 fun readArea(): ByteArray = CardCredentialReader.read(card, key)
                 val before = readArea() // Authenticate and read every target block before changing any data.
                 if (task == null) {
                     val safe = CardCredentialFormat.canReplace(before)
                     val content = runCatching { CardCredentialReader.describe(before) }.getOrElse {
-                        if (safe) "No hay datos de empleado disponibles. Puedes cargar una credencial." else "No se encontraron datos de empleado reconocibles. Puedes borrar los datos antes de cargar una nueva credencial."
+                        if (safe) "No hay datos de empleado disponibles. Puede cargar una credencial." else "No se encontraron datos de empleado reconocibles. Puede borrar los datos antes de cargar una nueva credencial."
                     }
-                    runOnUiThread { uid = id; replaceable = safe; existing = content; message = "Tarjeta consultada. Revisa los datos antes de cargar." }
+                    runOnUiThread { uid = id; replaceable = safe; existing = content; message = "Tarjeta consultada. Revise los datos antes de cargar." }
                 } else {
-                    check(task.erase || CardCredentialFormat.canReplace(before)) { "La tarjeta contiene otros datos. Consúltala y usa Borrar datos Zenit antes de cargar al empleado." }
+                    check(task.erase || CardCredentialFormat.canReplace(before)) { "La tarjeta contiene otros datos. Consulte la tarjeta y utilice Borrar datos Zenit antes de cargar al empleado." }
                     val prefs = getSharedPreferences("example_card_requests", MODE_PRIVATE)
                     val assigned = prefs.getString("card_$id", null)
-                    check(task.erase || assigned == null || assigned == task.employee.id) { "Esta tarjeta está asignada a otro empleado. Para reutilizarla, primero usa Borrar datos Zenit y después carga el nuevo empleado." }
+                    check(task.erase || assigned == null || assigned == task.employee.id) { "Esta tarjeta está asignada a otro empleado. Para reutilizarla, primero utilice Borrar datos Zenit y después cargue el nuevo empleado." }
                     val bytes = if (task.erase) ByteArray(CardCredentialFormat.capacity) else CardCredentialFormat.encode(task.employee.payload())
                     fun write(block: Int, data: ByteArray) {
                         check(card.authenticateSectorWithKeyA(card.blockToSector(block), key)) { "Acceso rechazado durante la escritura." }
@@ -180,7 +180,7 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
                     val loaded = employees.filter { prefs.contains("employee_card_${it.id}") }.map { it.id }.toSet()
                     runOnUiThread {
                         uid = id; existing = CardCredentialReader.describe(verified); loadedIds = loaded; replaceable = true
-                        message = if (task.erase) "Datos borrados y verificados. Ya puedes cargar otro empleado."
+                        message = if (task.erase) "Datos borrados y verificados. Puede cargar otro empleado."
                             else "Datos del empleado cargados y verificados en la tarjeta."
                     }
                 }
@@ -188,12 +188,12 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
         } catch (failure: Exception) {
             runOnUiThread {
                 uid = ""; existing = ""; replaceable = false
-                message = if (writing) "No se confirmó la operación; puede haber quedado parcial. Mantén la tarjeta cerca, vuelve a consultar y repite la carga o el borrado. "
+                message = if (writing) "No se confirmó la operación; puede haber quedado parcial. Mantenga la tarjeta cerca, consulte nuevamente y repita la carga o el borrado. "
                     else when {
                         failure.message?.contains("asignada") == true -> "Esta tarjeta está asignada a otro empleado. Borra sus datos antes de reutilizarla."
-                        failure.message?.contains("coincide") == true -> "La tarjeta no es la que confirmaste. Acerca la tarjeta correcta."
+                        failure.message?.contains("coincide") == true -> "La tarjeta no es la que confirmó. Aproxime la tarjeta correcta."
                         failure.message?.contains("contiene otros datos") == true -> "La tarjeta contiene otros datos. Consúltala y borra sus datos antes de cargar al empleado."
-                        else -> "No se pudo completar la operación. Mantén la tarjeta cerca e intenta de nuevo. Si continúa, solicita ayuda a Administración."
+                        else -> "No se pudo completar la operación. Mantenga la tarjeta cerca e intente nuevamente. Si continúa, solicite ayuda a Administración."
                     }
             }
         } finally { busy.set(false); runOnUiThread { working = false } }

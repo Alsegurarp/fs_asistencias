@@ -82,28 +82,28 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
         Text("ZENIT · ADMINISTRACIÓN", style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         if (!signedIn) {
-            Text("Control de tu equipo", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+            Text("Administración del personal", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("Empleados y asistencia mensual, en un solo lugar.")
-            Text("Acceso de demostración · Administrador / RH", style = MaterialTheme.typography.labelMedium,
+            Text("Acceso de demostración · Administrador / Recursos Humanos", style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary)
-            Text("Explora las pantallas con datos de ejemplo. Para gestionar tu empresa, abre Administración desde la pantalla de acceso.")
+            Text("Consulte las pantallas con datos de ejemplo. Para administrar la empresa, acceda a Administración desde la pantalla de acceso.")
             Button(onClick = { signedIn = true }, modifier = Modifier.fillMaxWidth()) { Text("Explorar administración") }
             TextButton(onClick = onClose) { Text("Volver a mi asistencia") }
         } else if (destination == "Cuenta") {
-            Text("Tu espacio de trabajo", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-            AdminPanel("Administrador / RH") {
+            Text("Espacio de trabajo", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+            AdminPanel("Administrador / Recursos Humanos") {
                 Text(email.ifBlank { "Cuenta de demostración" }, style = MaterialTheme.typography.titleMedium)
                 Text("Zenit · Sede Centro")
                 Text("Gestión de empleados, asistencia y tarjetas NFC")
             }
             AdminPanel("Cambiar de perfil") {
-                Text("Consulta tu asistencia personal desde el espacio de empleado.")
+                Text("La asistencia personal se consulta desde el acceso del empleado.")
                 Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text("Ir a mi perfil de empleado") }
             }
             OutlinedButton(onClick = { signedIn = false; email = ""; destination = "Resumen" },
                 modifier = Modifier.fillMaxWidth()) { Text("Cerrar sesión de demostración") }
         } else if (destination == "Resumen") {
-            Text("Tu equipo, al día", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+            Text("Resumen del personal", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("Sede Centro · $presentationMonthLabel")
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)) {
                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -128,7 +128,7 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
             }
             AdminPanel("Pendientes de revisión") {
                 Text("${employees.sumOf { it.late }} retardos y ${employees.sumOf { it.absent }} faltas en el periodo")
-                Text("Abre el detalle de cada empleado para consultar su historial.", style = MaterialTheme.typography.bodySmall)
+                Text("Abra el detalle de cada empleado para consultar su historial.", style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = { destination = "Empleados" }) { Text("Revisar equipo →") }
             }
             Text("Datos de demostración", style = MaterialTheme.typography.labelSmall,
@@ -187,7 +187,7 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
                     }
                 }
             }
-            if (filtered.isEmpty()) Text("No hay empleados que coincidan con tu búsqueda.")
+            if (filtered.isEmpty()) Text("No hay empleados que coincidan con su búsqueda.")
         }
     }
     }

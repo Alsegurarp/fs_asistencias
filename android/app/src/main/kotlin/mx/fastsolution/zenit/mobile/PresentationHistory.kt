@@ -88,7 +88,7 @@ internal fun PersonalWeek() {
 @Composable
 internal fun PersonalActivity() {
     Text("Actividad", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-    Text("Tus últimos registros")
+    Text("Registros recientes")
     HistoryPanel("Sincronización") {
         Text("Todo al día", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Text("0 registros pendientes · Últimos marcajes confirmados")

@@ -16,7 +16,7 @@ data class ActivationUiState(
     val breakPolicy: String? = null,
     val activated: Boolean = false,
     val busy: Boolean = false,
-    val message: String = "RH te dará un código para vincular este teléfono.",
+    val message: String = "Solicite a Recursos Humanos un código para vincular este dispositivo.",
 )
 
 class ActivationViewModel(application: Application) : AndroidViewModel(application) {
@@ -34,9 +34,9 @@ class ActivationViewModel(application: Application) : AndroidViewModel(applicati
                 throw cancelled
             } catch (error: Exception) {
                 mutableState.value = ActivationUiState(message = when (error) {
-                    is IOException -> "No se pudo conectar. Revisa la dirección y tu conexión. Si el código se consumió, pide otro a RH."
+                    is IOException -> "No se pudo conectar. Revise la dirección y su conexión. Si el código se consumió, solicite otro a Recursos Humanos."
                     is IllegalArgumentException, is IllegalStateException -> error.message ?: "No se pudo activar."
-                    else -> "No se pudo completar la activación. Solicita ayuda a soporte."
+                    else -> "No se pudo completar la activación. Solicite ayuda a soporte."
                 })
             }
         }

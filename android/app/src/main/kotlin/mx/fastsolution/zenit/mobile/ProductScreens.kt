@@ -79,20 +79,20 @@ internal fun ProductApp(
                                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Text(if (terminal) "Punto de asistencia" else "Mi asistencia",
                                         style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                                    Text("Registra tu entrada y salida con tu tarjeta.")
+                                    Text("Registro de entrada y salida mediante tarjeta.")
                                     Button(onClick = { showMock = true }, modifier = Modifier.fillMaxWidth()) {
-                                        Text("Checar asistencia")
+                                        Text("Registrar asistencia")
                                     }
                                 }
                             }
-                            Panel("Tu jornada de hoy") {
+                            Panel("Jornada actual") {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                     Metric("Entrada", "08:00"); Metric("Salida", "16:00"); Metric("Sede", "Centro")
                                 }
                                 Text("Turno de 8 horas · Tarjeta asignada", style = MaterialTheme.typography.bodySmall)
                             }
                             Panel("Espacio de trabajo") {
-                                Text("Estás en tu perfil de empleado.")
+                                Text("Acceso al perfil de empleado.")
                                 OutlinedButton(onClick = { showAdmin = true }, modifier = Modifier.fillMaxWidth()) {
                                     Text("Cambiar a Administración / RH")
                                 }

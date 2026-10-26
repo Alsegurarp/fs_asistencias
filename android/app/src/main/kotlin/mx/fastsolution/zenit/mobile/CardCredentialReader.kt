@@ -5,13 +5,13 @@ import org.json.JSONObject
 
 internal object CardCredentialReader {
     fun read(card: MifareClassic, key: ByteArray): ByteArray {
-        require(key.size == 6) { "Introduce una clave A válida de 12 caracteres hexadecimales." }
+        require(key.size == 6) { "Introduzca una clave A válida de 12 caracteres hexadecimales." }
         require(card.type == MifareClassic.TYPE_CLASSIC && card.size == MifareClassic.SIZE_1K) {
             "Se requiere MIFARE Classic de 1 KB para consultar este formato."
         }
         return CardCredentialFormat.blocks.flatMap { block ->
             check(card.authenticateSectorWithKeyA(card.blockToSector(block), key)) {
-                "No se pudo leer el contenido con esta clave A. Solicita la clave al proveedor."
+                "No se pudo leer el contenido con esta clave A. Solicite la clave al proveedor."
             }
             card.readBlock(block).toList()
         }.toByteArray()
