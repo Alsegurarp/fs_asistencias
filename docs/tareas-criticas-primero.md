@@ -4,7 +4,8 @@
 con 60 unitarias, 83 integraciones y perfiles anuales 50/300 aprobados.
 El modelo `.puml` conserva 32 entidades/52 relaciones y renderiza con
 PlantUML 1.2025.10 y 1.2026.8. Continuar **E4 → E5 → E6**; la descarga
-permanece cerrada. PR en preparación; los cortes siguientes son históricos.
+permanece cerrada. [PR #20 abierta](https://github.com/Alsegurarp/fs_asistencias/pull/20),
+sin integrar/desplegar y con CI en curso al publicar; los cortes siguientes son históricos.
 
 **Corte vigente: 26 de octubre de 2026.** Consultar el
 [listado verificado para desarrollo](tareas-desarrollo-2026-10-26.md).

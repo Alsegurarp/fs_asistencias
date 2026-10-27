@@ -4,7 +4,8 @@
 [Permiso y preparación del expediente](entrega-expediente-e2-e3.md), con
 60 unitarias y 83 integraciones aprobadas, incluidos historia completa,
 concurrencia y perfiles anuales 50/300. Continúan E4 → E5 y después E6.
-La descarga sigue cerrada; PR en preparación, sin despliegue. El diagrama
+La descarga sigue cerrada; [PR #20 abierta](https://github.com/Alsegurarp/fs_asistencias/pull/20),
+sin integrar/desplegar y con CI en curso al publicar. El diagrama
 de relaciones ya es compatible con PlantUML 1.2025.10 y 1.2026.8. Los cortes
 siguientes son históricos y no sustituyen esta entrega.
 

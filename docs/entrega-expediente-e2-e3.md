@@ -4,8 +4,11 @@ Entrega local del 27 de octubre de 2026, en
 `feat/expediente-e2-e3`, sobre el árbol E1 integrado mediante PR #19.
 E2 y E3 quedan implementadas y verificadas en su alcance técnico.
 E4 (MFA/autorización/descarga), E5 (portal) y E6 conservan sus pendientes.
-La entrega se prepara para revisión mediante PR contra `main`; el enlace de
-publicación se registra en la bitácora. No se desplegó en el servidor público.
+Publicada en la [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20)
+contra `main`, abierta y sin integrar. Commit funcional
+`15fa11cfcbf40155c4834ea09eebc252d629dd98`; el seguimiento posterior sólo
+actualiza documentación. [CI de la PR](https://github.com/Alsegurarp/fs_asistencias/pull/20/checks)
+en curso al publicar, sin atribuirle aprobación. No se desplegó en el servidor público.
 
 ## Qué se implementó
 

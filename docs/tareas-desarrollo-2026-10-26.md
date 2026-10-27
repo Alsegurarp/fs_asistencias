@@ -2,7 +2,9 @@
 
 **Entrega local posterior del 27:** [E2/E3 implementadas y verificadas](entrega-expediente-e2-e3.md),
 con 60 unitarias, 83 integraciones y perfiles 50/300 aprobados; API 0.14.0.
-E4/E5/E6 siguen pendientes. El texto siguiente conserva los cortes anteriores.
+Publicada en la [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20),
+abierta y sin integrar/desplegar. E4/E5/E6 siguen pendientes. El texto siguiente
+conserva los cortes anteriores.
 
 **Actualización del 27 de octubre:** la
 [verificación E2–E5](verificacion-e2-e5-2026-10-27.md) sustituye el estado de

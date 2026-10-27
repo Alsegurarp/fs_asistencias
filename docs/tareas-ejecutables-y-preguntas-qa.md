@@ -4,7 +4,8 @@
 con historia HTTP/PostgreSQL real, 60 unitarias y 83 integraciones aprobadas.
 El siguiente trabajo es E4, seguido de E5 y E6 con sus decisiones/aceptación.
 Los modelos están en `dbFlow/*.puml`, incluida la corrección de compatibilidad
-de PlantUML. PR en preparación; los cortes siguientes son históricos.
+de PlantUML. [PR #20 abierta](https://github.com/Alsegurarp/fs_asistencias/pull/20),
+sin integrar/desplegar; los cortes siguientes son históricos.
 
 **Corte vigente: 26 de octubre de 2026.** El
 [listado de desarrollo verificado](tareas-desarrollo-2026-10-26.md) distingue

@@ -6,6 +6,29 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 27 de octubre de 2026 — Publicación de E2/E3, PR #20
+
+La [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) está abierta,
+sin borrador y sin integrar contra `main/f4104e1`. Rama
+`feat/expediente-e2-e3`; commit funcional
+`15fa11cfcbf40155c4834ea09eebc252d629dd98`. Incluye 31 archivos de código,
+migración, contrato, pruebas y documentación, verificados también mediante
+la lista remota de cambios; ninguno pertenece a `backend/bin/` o a secretos,
+logs/renders locales. La actualización posterior de publicación sólo toca docs.
+
+El conector GitHub devolvió 403 al crear la PR; se completó con la credencial
+Git configurada y el mecanismo de publicación local del repositorio, sin
+exponer la credencial. GitHub confirmó PR abierta, head esperado y base main.
+Los [checks de la PR](https://github.com/Alsegurarp/fs_asistencias/pull/20/checks)
+están en curso al corte de publicación; no se registran como aprobados.
+
+Se conservan las **60 unitarias y 83 integraciones locales aprobadas**. Los
+90 archivos de fuentes/recursos coinciden por SHA-256 con la imagen probada;
+no se repitió negocio por cambios de documentación. PlantUML 1.2025.10 y
+1.2026.8 validan el modelo corregido (32 entidades/52 relaciones). Análisis
+del historial previo a publicar: 81 commits, sin secretos. E4/E5/E6, aceptación
+y despliegue permanecen pendientes; no se integra la PR ni se habilita descarga.
+
 ## 27 de octubre de 2026 — Compatibilidad PlantUML y preparación de PR E2/E3
 
 Ante el reporte del usuario, se reprodujo `IllegalStateException` con el JAR

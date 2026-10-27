@@ -11,8 +11,10 @@ aprobadas sin omisiones, perfiles anuales 50/300 y ambos contratos válidos.
 [relaciones](dbFlow/02-relaciones.puml) incorporan V009. E4/E5/E6 siguen
 pendientes; la descarga continúa cerrada. El modelo de relaciones se corrigió
 para Plan UML/PlantUML 1.2025.10 y se verificó también con 1.2026.8.
-PR en preparación por instrucción del usuario; todavía sin CI remoto ni
-despliegue de esta entrega. Los cortes siguientes conservan su evidencia histórica.
+[PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) abierta y sin
+integrar; [CI en curso](https://github.com/Alsegurarp/fs_asistencias/pull/20/checks)
+al publicar. No hay despliegue de esta entrega. Los cortes siguientes conservan
+su evidencia histórica.
 
 **Revisión anterior del 27 de octubre, previa a E2/E3.** La
 [verificación de E2–E5](verificacion-e2-e5-2026-10-27.md) confirma E1 integrada
