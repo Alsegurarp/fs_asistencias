@@ -1,0 +1,100 @@
+@startmindmap
+title Zenit — jerarquía de conceptos y entidades (V001–V009)
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam ArrowColor #52677D
+<style>
+mindmapDiagram {
+  node {
+    BackgroundColor #F0F5FA
+    LineColor #52677D
+    FontColor #172B4D
+    RoundCorner 8
+    Padding 8
+  }
+  rootNode {
+    BackgroundColor #17365D
+    FontColor white
+    FontSize 20
+  }
+}
+</style>
+
+* Zenit\nAsistencia, jornada y evidencia por empresa
+** Empresa: tenant\nFrontera de aislamiento y configuración
+*** Acceso al producto
+**** tenant_user\nInvitación y vínculo con cuenta; empleado opcional
+***** tenant_user_role\nRoles: administración, RH, supervisor, trabajador, auditor
+***** dossier_permission\nConcesión explícita; ningún rol la hereda
+*** Padrón y catálogos
+**** site\nSede, zona horaria y geocerca
+**** employee\nPersona laboral; vigencia y baja lógica
+**** schedule
+***** schedule_day\nDías y horas del horario
+**** schedule_assignment\nEmpleado ↔ horario; vigencias históricas
+**** card\nTarjeta, huella y estado; sin clave privada
+***** card_assignment\nTarjeta ↔ empleado; historial de reemplazos
+**** employee_import\nResultado de importación CSV
+**** integration_source
+***** integration_checkpoint\nCursor y versión del padrón
+*** Captura y evidencia original
+**** device_enrollment\nCódigo de activación; sólo se guarda su huella
+**** device\nPersonal → empleado; terminal → sede
+***** device_session\nSesión numerada de captura, distinta de OIDC
+**** attendance_event\nMarcaje aceptado y sobre original
+***** location_evidence\nCoordenada y precisión disponibles
+**** attendance_rejection\nRastro y huella; sobre original ausente
+*** Jornada y atención
+**** incident\nAnomalía, responsable, decisión y motivo
+**** adjustment\nCorrección añadida; no reescribe el marcaje
+**** week_closure\nVersión congelada, snapshot y SHA-256
+***** closure_acknowledgement\nConformidad u objeción sobre esa versión
+**** week_closure_run\nCorrida de cierre manual o programada
+***** week_closure_run_blocked\nEmpleado, causa e incidencias
+*** Trabajos y salidas
+**** job\nCola durable, referencia, arrendamiento y reintentos
+**** export\nCSV semanal de cierres vigentes
+**** dossier\nExpediente íntegro; solicitante y vínculo fijos
+***** dossier_chunk\nZIP por bloques de hasta 64 KiB
+***** Formato 1\n23 colecciones, README y manifiesto con conteos/huellas
+***** Ciclo E3\nqueued → preparing → ready; failed o expired
+**** audit_log\nActor, acción, objetivo, fecha y correlación
+
+left side
+** Canales y procesamiento
+*** Portal React\nAdministración, consulta y CSV semanal
+*** Android\nNFC, ubicación puntual, firma y sincronización
+*** Backend Kotlin / Spring\nAPI y JobWorker en el mismo servicio
+**** CurrentPerson\nIdentidad resuelta → empresa, usuario y roles en servidor
+**** Validación, cuotas y correlación
+** Identidad externa: Keycloak\nBase separada de PostgreSQL del producto
+*** Cuenta\nsubject, correo verificado, contraseña y OTP
+*** Sesión OIDC\nTokens; no son sesiones de captura
+*** Operador SaaS\nAdministración del servicio; sin empresa ni permiso de expediente
+** Reglas públicas compartidas
+*** rule_set\nVersión, vigencia, parámetros y fuentes
+*** Cálculo de jornada\nEventos + ajustes + reglas vigentes
+** Persistencia Android\nFuera de las tablas del servidor
+*** Room\nCola de sobres y recibos cifrados
+*** DeviceStore\nActivación, modalidad y estado local
+*** Android Keystore\nClaves privadas del dispositivo
+** Fronteras y límites
+*** Cuenta ≠ empleado\nCrear padrón no crea acceso ni contraseña
+*** Rol ≠ permiso de expediente\nConcesión explícita y revalidada en cada operación
+*** CSV ≠ expediente\nResumen semanal frente a históricos íntegros
+*** SHA-256\nComparación de bytes; no certificación ni firma avanzada
+*** Evidencia ausente\nNo reconstruir sobres de rechazos ni texto histórico no guardado
+*** Pendientes E4 / E5\nMFA nuevo por descarga y portal del expediente
+*** Conservación\nDescargar no autoriza borrar servidor ni purgar Android
+
+legend bottom
+Jerarquía conceptual, no borrado en cascada ni diagrama de todas las FK.
+32 tablas de negocio: rule_set global; las demás agrupadas por empresa.
+job y audit_log también admiten tenant_id nulo para operaciones globales.
+V004/V006 sustituyen tablas iniciales: se cuentan una sola vez.
+Keycloak, Room y flyway_schema_history no forman parte de esas 32 tablas.
+E2/E3: implementación local. Descarga cerrada hasta E4; interfaz pendiente en E5.
+Relaciones y cardinalidades: 02-relaciones.puml.
+endlegend
+@endmindmap

@@ -1,7 +1,7 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://zenit.invalid/contrato/dossier-format.schema.yaml
-title: Expediente empresarial — formato 1 propuesto
-description: Esquemas normativos del manifiesto y de cada línea NDJSON; E1, sin exportador implementado.
+title: Expediente empresarial — formato 1
+description: Esquemas normativos del manifiesto y de cada línea NDJSON; preparación E3 implementada, descarga pendiente de E4.
 oneOf:
   - { $ref: '#/$defs/Manifest' }
   - { $ref: '#/$defs/Record' }

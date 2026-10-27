@@ -7,6 +7,7 @@ import com.networknt.schema.Schema
 import com.networknt.schema.SchemaLocation
 import com.networknt.schema.SchemaRegistry
 import com.networknt.schema.dialect.Dialects
+import java.net.URI
 import tools.jackson.databind.JsonNode
 import tools.jackson.dataformat.yaml.YAMLMapper
 import java.nio.file.Files
@@ -35,7 +36,10 @@ object ContractCheck {
     private val text: String by lazy { Files.readString(Path.of(System.getProperty("zenit.contract") ?: error("Falta zenit.contract"))) }
     private val root: JsonNode by lazy { YAMLMapper().readTree(text) }
     private val registry: SchemaRegistry by lazy {
-        SchemaRegistry.withDialect(Dialects.getOpenApi31()) { it.schemas(mapOf(DOCUMENT to text)) }
+        val directory = Path.of(System.getProperty("zenit.contract")).parent
+        SchemaRegistry.withDialects(listOf(Dialects.getOpenApi31(), Dialects.getDraft202012())) {
+            it.schemas(mapOf(DOCUMENT to text, URI(DOCUMENT).resolve("dossier-format.schema.yaml").toString() to Files.readString(directory.resolve("dossier-format.schema.yaml"))))
+        }
     }
     private val schemas = ConcurrentHashMap<String, Schema>()
 
@@ -128,7 +132,8 @@ object ContractCheck {
     /** Lo que ese cuerpo incumple del esquema; vacío si lo cumple. */
     private fun violations(pointer: String, body: String): String {
         val schema = schemas.computeIfAbsent(pointer) {
-            registry.getSchema(SchemaLocation.of("$DOCUMENT#" + it.replace("{", "%7B").replace("}", "%7D")))
+            val location = if (it.startsWith("/")) "$DOCUMENT#$it" else URI(DOCUMENT).resolve(it).toString()
+            registry.getSchema(SchemaLocation.of(location.replace("{", "%7B").replace("}", "%7D")))
         }
         val errors: List<Error> = schema.validate(
             body, InputFormat.JSON,

@@ -3,9 +3,9 @@ info:
   title: Zenit API — expediente empresarial propuesto
   version: 0.14.0-draft.1
   description: |
-    Entrega E1: contrato candidato; estas operaciones NO están implementadas.
-    Se incorporarán al contrato vigente al implementar E2–E5. No modifica
-    openapi.yaml, los CSV semanales ni sus permisos.
+    E2/E3 implementan permiso, solicitud, estado y manifiesto en openapi.yaml.
+    Desafío, autorización y descarga siguen pendientes de E4.
+    El CSV semanal y sus permisos conservan su comportamiento.
 
     La empresa y el solicitante se resuelven en servidor. Cada operación de
     expediente exige cuenta/vínculo activos y permiso explícito dossier_download;
@@ -23,7 +23,7 @@ info:
     tokens ni URLs OIDC completas. Los ejemplos son ficticios.
 servers:
   - url: /api/v1
-x-implementation: planned
+x-implementation: partial
 externalDocs:
   url: https://github.com/Alsegurarp/fs_asistencias/blob/feat/expediente-e1-contrato/docs/contrato-expediente-e1.md
   description: Formato, transiciones, caducidades, relaciones y límites de E1.

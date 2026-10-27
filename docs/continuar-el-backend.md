@@ -35,6 +35,7 @@ servicio y su controlador.
 | `capture` | Recibir un marcaje: reglas (`CaptureRules`), valores (`CaptureProperties`) y el proceso |
 | `workday` | Cálculo de la semana (`WeekCalculator`), incidencias, cierres, y corridas de cierre con el cierre programado (`ClosureRuns`) |
 | `export` | Exportes y su archivo |
+| `dossier` | Permiso explícito, solicitud y preparación del expediente íntegro por bloques; descarga pendiente de E4 |
 | `jobs` | Trabajos durables y quien los atiende |
 | `integration` | Fuentes del padrón |
 | `audit` | Bitácora |

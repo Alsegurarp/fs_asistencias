@@ -292,7 +292,8 @@ services:
     networks:
       - pruebas
     pids_limit: 256
-    mem_limit: 512m
+    # El perfil anual de 300 personas conserva 219 000 marcajes en este tmpfs.
+    mem_limit: 2g
 
   # Pruebas del backend contra PostgreSQL real:
   #   docker compose --profile test run --rm --build backend-it

@@ -137,6 +137,10 @@ class SecurityConfig {
                     .hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/rule-sets").hasAnyRole(admin, rh, supervisor, auditor)
                 // Exportes y fuentes del padrón.
+                it.requestMatchers(HttpMethod.GET, "/api/v1/me/dossier-permission", "/api/v1/dossiers/{dossierId}", "/api/v1/dossiers/{dossierId}/manifest")
+                    .hasAnyRole(admin, rh, supervisor, auditor, worker)
+                it.requestMatchers(HttpMethod.PUT, "/api/v1/users/{userId}/dossier-permission").hasRole(admin)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/dossiers").hasAnyRole(admin, rh, supervisor, auditor, worker)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/exports").hasAnyRole(admin, rh, auditor)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/exports/{exportId}", "/api/v1/exports/{exportId}/download", "/api/v1/exports/{exportId}/manifest")
                     .hasAnyRole(admin, rh, auditor)

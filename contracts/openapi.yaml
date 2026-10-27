@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.13.0
+  version: 0.14.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -62,6 +62,8 @@ info:
 servers:
   - url: /api/v1
 tags:
+  - name: expediente
+    description: Permiso explícito y preparación del expediente empresarial; descarga pendiente de MFA E4.
   - name: sistema
     description: Estado del servicio.
   - name: identidad
@@ -85,6 +87,169 @@ tags:
 security:
   - userToken: []
 paths:
+  /me/dossier-permission:
+    get:
+      tags: [expediente]
+      operationId: getMyDossierPermission
+      summary: Consulta el permiso explícito propio
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      responses:
+        '200':
+          description: Permiso explícito; false no se convierte en true por el rol
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DossierPermission' }
+              example: { enabled: false }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /users/{userId}/dossier-permission:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    put:
+      tags: [expediente]
+      operationId: setDossierPermission
+      summary: Concede o revoca explícitamente el permiso de un usuario de la empresa
+      description: |
+        Acción auditada de administración, incluida una asignación a sí misma.
+        Conceder exige usuario activo y vinculado; revocar también se permite a
+        usuarios deshabilitados o desvinculados. No elimina evidencia ni revoca
+        otros roles. Idempotente: repetir el mismo estado no crea otra concesión.
+        Los recursos ya preparados dejan de estar disponibles al revocar; volver
+        a conceder no reactiva desafíos/autorizaciones anteriores.
+      x-roles: [admin_empresa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DossierPermission' }
+            example: { enabled: true }
+      responses:
+        '200':
+          description: Estado explícito guardado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DossierPermission' }
+              example: { enabled: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: user_not_linked o user_not_active al intentar conceder
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+              example: { type: 'https://zenit.invalid/problems/conflict', title: Usuario sin vínculo, status: 409, code: user_not_linked, correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /dossiers:
+    post:
+      tags: [expediente]
+      operationId: createDossier
+      summary: Prepara una instantánea íntegra de la empresa para el solicitante
+      description: |
+        Todo el histórico conservado, sin filtros de fecha, persona o sede.
+        Idempotencia por empresa/usuario/clave: mismo cuerpo devuelve el mismo
+        expediente, incluso fallido, vencido o descargado; cuerpo distinto da
+        idempotency_conflict. Una preparación nueva requiere otra clave.
+        El corte snapshotAt se fija al abrir la instantánea coherente de datos,
+        no al recibir la solicitud. Caduca 24 horas después de createdAt,
+        incluyendo el tiempo de cola. El trabajo no amplía ese plazo.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DossierCreate' }
+            example: { formatVersion: 1 }
+      responses:
+        '202':
+          description: Solicitud registrada o repetida; consultar su estado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dossier' }
+              example:
+                id: e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+                tenantId: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                formatVersion: 1
+                scope: all_retained
+                status: queued
+                createdAt: '2026-10-26T12:00:00Z'
+                expiresAt: '2026-10-27T12:00:00Z'
+                snapshotAt: null
+                readyAt: null
+                manifestSha256: null
+                fileSha256: null
+                failureCode: null
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /dossiers/{dossierId}:
+    parameters:
+      - $ref: '#/components/parameters/DossierId'
+    get:
+      tags: [expediente]
+      operationId: getDossier
+      summary: Consulta estado y huellas del expediente propio
+      description: |
+        No devuelve un enlace con autorización. Las huellas y el manifiesto
+        ya generado se conservan al caducar/consumir el archivo. No publicar
+        mensajes internos del trabajo como failureCode.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      responses:
+        '200':
+          description: Estado del expediente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dossier' }
+              example:
+                id: e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+                tenantId: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                formatVersion: 1
+                scope: all_retained
+                status: ready
+                createdAt: '2026-10-26T12:00:00Z'
+                expiresAt: '2026-10-27T12:00:00Z'
+                snapshotAt: '2026-10-26T12:00:01Z'
+                readyAt: '2026-10-26T12:00:03Z'
+                manifestSha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                fileSha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                failureCode: null
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /dossiers/{dossierId}/manifest:
+    parameters:
+      - $ref: '#/components/parameters/DossierId'
+    get:
+      tags: [expediente]
+      operationId: getDossierManifest
+      summary: Obtiene los bytes originales del manifiesto propio
+      description: |
+        Disponible desde ready, también tras downloaded/expired si se generó.
+        Su SHA-256 debe coincidir con manifestSha256. No requiere otro MFA,
+        pero sí permiso/vínculo vigente y propiedad. No contiene filas de datos.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      responses:
+        '200':
+          description: Manifiesto original; ejemplo completo en contracts/examples/dossier-v1
+          content:
+            application/json:
+              schema: { $ref: './dossier-format.schema.yaml#/$defs/Manifest' }
+              examples:
+                ficticio:
+                  summary: Empresa ficticia sin marcajes
+                  externalValue: ./examples/dossier-v1/manifest.json
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /system/status:
     get:
       tags: [sistema]
@@ -3102,6 +3267,11 @@ components:
         modalidad.
 
   parameters:
+    DossierId:
+      name: dossierId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     Cursor:
       name: cursor
       in: query
@@ -3298,6 +3468,71 @@ components:
             correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
 
   schemas:
+    DossierPermission:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+    DossierCreate:
+      type: object
+      additionalProperties: false
+      required: [formatVersion]
+      properties:
+        formatVersion: { type: integer, const: 1 }
+    Dossier:
+      type: object
+      additionalProperties: false
+      required: [id, tenantId, requestedBy, formatVersion, scope, status, createdAt, expiresAt, snapshotAt, readyAt, manifestSha256, fileSha256, failureCode]
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid, description: Derivado de la identidad; no se admite en solicitudes. }
+        requestedBy: { type: string, format: uuid }
+        formatVersion: { type: integer, const: 1 }
+        scope: { type: string, const: all_retained }
+        status: { type: string, enum: [queued, preparing, ready, failed, expired, downloaded] }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        snapshotAt: { type: [string, 'null'], format: date-time }
+        readyAt: { type: [string, 'null'], format: date-time }
+        manifestSha256: { type: [string, 'null'], pattern: '^[a-f0-9]{64}$' }
+        fileSha256: { type: [string, 'null'], pattern: '^[a-f0-9]{64}$' }
+        failureCode: { enum: [null, preparation_failed] }
+      allOf:
+        - if: { additionalProperties: true, properties: { status: { enum: [ready, downloaded] } } }
+          then:
+            additionalProperties: true
+            properties:
+              snapshotAt: { type: string }
+              readyAt: { type: string }
+              manifestSha256: { type: string }
+              fileSha256: { type: string }
+        - if: { additionalProperties: true, properties: { status: { const: queued } } }
+          then: { additionalProperties: true, properties: { snapshotAt: { type: 'null' } } }
+        - if: { additionalProperties: true, properties: { status: { const: preparing } } }
+          then: { additionalProperties: true, properties: { snapshotAt: { type: string } } }
+        - if: { additionalProperties: true, properties: { status: { enum: [queued, preparing, failed] } } }
+          then:
+            additionalProperties: true
+            properties:
+              readyAt: { type: 'null' }
+              manifestSha256: { type: 'null' }
+              fileSha256: { type: 'null' }
+        - if: { additionalProperties: true, properties: { status: { const: failed } } }
+          then: { additionalProperties: true, properties: { failureCode: { const: preparation_failed } } }
+          else: { additionalProperties: true, properties: { failureCode: { type: 'null' } } }
+        - if: { additionalProperties: true, properties: { manifestSha256: { type: string } } }
+          then:
+            additionalProperties: true
+            properties:
+              snapshotAt: { type: string }
+              readyAt: { type: string }
+              fileSha256: { type: string }
+          else:
+            additionalProperties: true
+            properties:
+              readyAt: { type: 'null' }
+              fileSha256: { type: 'null' }
     SystemStatus:
       type: object
       additionalProperties: false

@@ -3,7 +3,29 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
-**Corte vigente: 26 de octubre de 2026.** El
+**Entrega local posterior del 27 de octubre: E2/E3 implementadas y probadas.**
+[Acta y pruebas](entrega-expediente-e2-e3.md): permiso explícito/aislamiento y
+preparación íntegra por bloques, API 0.14.0, 60 unitarias y 83 integraciones
+aprobadas sin omisiones, perfiles anuales 50/300 y ambos contratos válidos.
+[Modelo jerárquico PlantUML](dbFlow/01-jerarquia.puml) y
+[relaciones](dbFlow/02-relaciones.puml) incorporan V009. E4/E5/E6 siguen
+pendientes; la descarga continúa cerrada. El modelo de relaciones se corrigió
+para Plan UML/PlantUML 1.2025.10 y se verificó también con 1.2026.8.
+[PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) abierta y sin
+integrar; [CI en curso](https://github.com/Alsegurarp/fs_asistencias/pull/20/checks)
+al publicar. No hay despliegue de esta entrega. Los cortes siguientes conservan
+su evidencia histórica.
+
+**Revisión anterior del 27 de octubre, previa a E2/E3.** La
+[verificación de E2–E5](verificacion-e2-e5-2026-10-27.md) confirma E1 integrada
+en `main/f4104e1` mediante PR #19, con los cuatro trabajos de CI de la PR
+aprobados. E2–E5 siguen sin implementar; orden: **E2 → E3/E4 → E5**.
+Docker responde, sin servicios del proyecto activos. Se preservaron los
+cambios previos de `backend/bin/`; no se ejecutaron nuevas pruebas locales.
+La issue #18 sigue abierta, con su lista sin actualizar. Los cortes siguientes
+son históricos; E6 y los bloqueos globales conservan su alcance.
+
+**Corte anterior: 26 de octubre de 2026.** El
 [listado para desarrollo](tareas-desarrollo-2026-10-26.md) contrasta código y
 GitHub: PR #15/#16 integradas, CI de main/5d7b783 aprobado en sus cuatro
 trabajos y la issue #18 abierta. E1 entrega el

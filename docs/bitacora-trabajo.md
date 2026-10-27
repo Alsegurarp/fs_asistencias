@@ -6,6 +6,87 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 27 de octubre de 2026 — Publicación de E2/E3, PR #20
+
+La [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) está abierta,
+sin borrador y sin integrar contra `main/f4104e1`. Rama
+`feat/expediente-e2-e3`; commit funcional
+`15fa11cfcbf40155c4834ea09eebc252d629dd98`. Incluye 31 archivos de código,
+migración, contrato, pruebas y documentación, verificados también mediante
+la lista remota de cambios; ninguno pertenece a `backend/bin/` o a secretos,
+logs/renders locales. La actualización posterior de publicación sólo toca docs.
+
+El conector GitHub devolvió 403 al crear la PR; se completó con la credencial
+Git configurada y el mecanismo de publicación local del repositorio, sin
+exponer la credencial. GitHub confirmó PR abierta, head esperado y base main.
+Los [checks de la PR](https://github.com/Alsegurarp/fs_asistencias/pull/20/checks)
+están en curso al corte de publicación; no se registran como aprobados.
+
+Se conservan las **60 unitarias y 83 integraciones locales aprobadas**. Los
+90 archivos de fuentes/recursos coinciden por SHA-256 con la imagen probada;
+no se repitió negocio por cambios de documentación. PlantUML 1.2025.10 y
+1.2026.8 validan el modelo corregido (32 entidades/52 relaciones). Análisis
+del historial previo a publicar: 81 commits, sin secretos. E4/E5/E6, aceptación
+y despliegue permanecen pendientes; no se integra la PR ni se habilita descarga.
+
+## 27 de octubre de 2026 — Compatibilidad PlantUML y preparación de PR E2/E3
+
+Ante el reporte del usuario, se reprodujo `IllegalStateException` con el JAR
+1.2025.10 de Plan UML 0.0.8. El fallo ocurre en Smetana (`JUtils.qsort`,
+`mincross.restore_best`) al distribuir horizontalmente `02-relaciones.puml`;
+la comprobación previa sólo con 1.2026.8 no lo revelaba. Se retiró
+`left to right direction` y se conservó el motor sin dependencias nuevas.
+
+[Acta actualizada](entrega-expediente-e2-e3.md#corrección-de-compatibilidad-de-02-relacionespuml):
+sintaxis y renderizado SVG/PNG correctos con 1.2025.10 y 1.2026.8, revisión
+visual y comprobación de las mismas 32 entidades y 52 relaciones. El código
+de salida no bastaba para detectar la excepción: también se revisaron stderr
+y SVG. No se cambió código de negocio ni se repitieron sus pruebas por este
+ajuste visual; se conservan las 60 unitarias y 83 integraciones ya aprobadas.
+
+Por instrucción del usuario se actualizan documentación, seguimiento y
+bitácora y se prepara una PR de E2/E3 contra `main`. Incluye implementación,
+migración V009, contrato 0.14.0, pruebas, modelos `.puml` y esta corrección.
+Los archivos previos/generados de `backend/bin/`, secretos, logs y renders
+locales quedan fuera. E4/E5/E6 y el despliegue conservan sus pendientes.
+
+## 27 de octubre de 2026 — E2/E3: permiso y expediente íntegro
+
+Implementación local en `feat/expediente-e2-e3`, sin publicar ni desplegar.
+V009 añade permiso explícito ligado a la cuenta, expediente y bloques del ZIP;
+API 0.14.0 publica cinco operaciones de permiso/solicitud/consulta/manifiesto.
+La preparación usa una instantánea REPEATABLE READ, cursor de 256 filas y
+bloques de 64 KiB. Conserva históricos/evidencia original y limpia únicamente
+el archivo temporal vencido. E4/E5/E6 siguen pendientes, sin descarga ni purga.
+
+[Acta](entrega-expediente-e2-e3.md): **60 unitarias y 83 integraciones aprobadas**,
+sin fallos, errores u omisiones; cuatro unitarias y ocho historias nuevas.
+Incluye el recorrido de Ana, revocación/cambio de cuenta, permisos/aislamiento,
+concurrencia con escrituras, fallos/reintentos, caducidad y perfiles anuales
+50/300 (36 500/219 000 marcajes). Ambos contratos válidos y regresión CSV aprobada.
+Se corrigieron timestamptz SQL y coerciones JSON detectadas por las pruebas.
+
+El usuario pidió el modelo general en `docs/dbFlow` y precisó formato `.puml`.
+Se añaden [jerarquía](dbFlow/01-jerarquia.puml) y [relaciones](dbFlow/02-relaciones.puml),
+con las 32 tablas y las fronteras de Keycloak/Android; sintaxis PlantUML validada.
+El Markdown de esa carpeta queda como índice. Se mantienen fuera de la entrega
+los cambios de `backend/bin/`; no se modificaron servicios/datos públicos.
+
+## 27 de octubre de 2026 — Verificación de E2–E5
+
+Se contrastaron las fuentes backend/portal, migraciones, contratos, realm y
+ensayo MFA con GitHub e historial actualizado mediante `git fetch origin`.
+La [verificación](verificacion-e2-e5-2026-10-27.md) corrige el corte anterior:
+E1 ya está integrada en `main/f4104e1` mediante PR #19 y el CI de la PR
+40454604478 aprobó sus cuatro trabajos. La issue #18 sigue abierta con su
+lista sin actualizar. E2–E5 aún no tienen implementación; quedan documentados
+alcance, dependencias y pruebas de cierre en el orden E2 → E3/E4 → E5.
+
+Docker responde fuera del aislamiento, sin servicios del proyecto activos.
+No se cambió de rama, ejecutaron nuevas pruebas, modificó el producto ni se
+publicaron cambios en GitHub. Se preservó `backend/bin/`. E6, aceptación y
+decisiones externas mantienen su alcance; no se cierran pendientes globales.
+
 ## 26 de octubre de 2026 — E1: contrato candidato, formato y pruebas
 
 El usuario pidió desarrollar E1, probarla y publicar una PR. Rama de entrega:

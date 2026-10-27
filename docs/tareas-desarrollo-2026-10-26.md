@@ -1,5 +1,18 @@
 # Tareas disponibles para desarrollo — 26 de octubre de 2026
 
+**Entrega local posterior del 27:** [E2/E3 implementadas y verificadas](entrega-expediente-e2-e3.md),
+con 60 unitarias, 83 integraciones y perfiles 50/300 aprobados; API 0.14.0.
+Publicada en la [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20),
+abierta y sin integrar/desplegar. E4/E5/E6 siguen pendientes. El texto siguiente
+conserva los cortes anteriores.
+
+**Actualización del 27 de octubre:** la
+[verificación E2–E5](verificacion-e2-e5-2026-10-27.md) sustituye el estado de
+integración/CI de este corte: PR #19 integrada en `main/f4104e1` y cuatro
+trabajos de CI de la PR aprobados. E2–E5 siguen sin implementar; Docker
+responde, sin servicios del proyecto activos. El contenido siguiente conserva
+la evidencia del 26 y los criterios de desarrollo.
+
 Revisión solicitada de pendientes, código fuente, historial y GitHub. Base:
 `main`, commit `5d7b7833447ca7ccf5ec7b74cb7c650fa24dbe66`, coincidente con la
 referencia local `origin/main`. No se hizo pull, despliegue ni cambio de código.

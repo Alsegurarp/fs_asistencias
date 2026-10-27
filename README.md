@@ -434,7 +434,11 @@ entre el backend, el portal y la app. Cada cuerpo lleva un ejemplo ficticio.
 
 El [contrato candidato del expediente E1](contracts/dossier.openapi.yaml) se
 valida junto al vigente, con su [formato y límites](docs/contrato-expediente-e1.md).
-Sus ocho operaciones todavía no están implementadas ni forman parte del API activo.
+E2/E3 incorporan cinco operaciones al API 0.14.0: permiso explícito, solicitud,
+estado y manifiesto. Desafío, autorización y descarga siguen pendientes de E4;
+el portal del expediente corresponde a E5. El
+[modelo jerárquico PlantUML](docs/dbFlow/01-jerarquia.puml) y el
+[modelo de relaciones](docs/dbFlow/02-relaciones.puml) describen las entidades y conceptos.
 
 ```powershell
 docker compose --profile tools run --rm contract-lint
