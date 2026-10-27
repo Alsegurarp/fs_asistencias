@@ -9,6 +9,8 @@ uso y portal; API 0.15.0, formato 1. Aprobaron 64 unitarias, 88 integraciones,
 189 pruebas web, 11 de identidad real y la historia en Chrome con ZIP íntegro.
 Ambos contratos y modelos PlantUML V010 comprobados. E6, Q07/Q14 y aceptación
 siguen pendientes; no hay despliegue público de esta entrega.
+[PR #21](https://github.com/Alsegurarp/fs_asistencias/pull/21) abierta sobre
+la rama de #20; CI remoto en curso al publicar. Ambas siguen sin integrar.
 
 **Corte anterior del 27 de octubre: E2/E3 implementadas y probadas.**
 [Acta y pruebas](entrega-expediente-e2-e3.md): permiso explícito/aislamiento y

@@ -6,6 +6,14 @@ ocho operaciones del expediente en **OpenAPI 0.15.0**, conservando formato 1
 y los permisos del CSV semanal. E6 sigue pendiente; descargar no autoriza
 borrado del servidor ni purga Android. No hay despliegue público de esta entrega.
 
+Publicada en la [PR #21](https://github.com/Alsegurarp/fs_asistencias/pull/21),
+abierta y sin borrador, con commit funcional
+`ba953047b24185534707e5fb77703abfd7ef5e08`. Base
+`feat/expediente-e2-e3`, porque la PR #20 sigue abierta; el diff sólo incluye
+E4/E5. Después de integrar #20, cambiar la base de #21 a `main` antes de
+integrarla. [CI remoto](https://github.com/Alsegurarp/fs_asistencias/pull/21/checks)
+en curso al publicar; no se acredita su éxito con las pruebas locales.
+
 ## Implementación
 
 V010 incorpora `dossier_challenge` y `dossier_authorization`. Las FK incluyen
@@ -129,6 +137,9 @@ Los 96 archivos de fuentes/recursos del backend coinciden por SHA-256 con el
 contenedor que aprobó la ejecución final: 64/88 pruebas, cero fallos, errores
 u omisiones. El diff preparado pasó el análisis de secretos sin hallazgos;
 253 enlaces locales de los documentos modificados apuntan a destinos existentes.
+El entorno de QA y la base `db-it` quedaron detenidos y retirados después de
+guardar los resultados; se conservan la evidencia local y los secretos ficticios
+ignorados por Git.
 
 Para repetir las suites, usar las órdenes Docker existentes de
 [verificaciones automáticas](verificaciones-automaticas.md). Para la batería

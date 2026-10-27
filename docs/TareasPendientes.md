@@ -6,6 +6,8 @@ descarga de un uso y portal. API 0.15.0; 64 unitarias, 88 integraciones,
 189 pruebas web y 11 de identidad, además de historia real en Chrome.
 Continúa E6: consulta/recuperación independiente, Q07/Q14 y aceptación.
 No se habilitan borrado/purga ni se acredita despliegue público.
+[PR #21](https://github.com/Alsegurarp/fs_asistencias/pull/21) abierta sobre
+E2/E3 (#20), todavía sin integrar y con CI remoto en curso al publicar.
 
 **Corte anterior del 27 de octubre: E2/E3 completadas en alcance técnico.**
 [Permiso y preparación del expediente](entrega-expediente-e2-e3.md), con

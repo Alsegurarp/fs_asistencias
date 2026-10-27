@@ -8,7 +8,14 @@ originales para no atribuir pruebas de una versión a otra.
 
 ## 27 de octubre de 2026 — E4/E5: MFA por operación y portal
 
-Implementación local en `feat/expediente-e4-e5`, sobre E2/E3. V010 añade
+Publicada en la [PR #21](https://github.com/Alsegurarp/fs_asistencias/pull/21),
+abierta y sin integrar; commit funcional `ba95304`. La base es
+`feat/expediente-e2-e3` porque #20 sigue abierta. Tras integrar #20, cambiar
+la base de #21 a `main`. CI remoto en curso al publicar, sin atribuirle las
+pruebas locales. El conector devolvió 403; la publicación terminó mediante
+la credencial Git configurada, sin exponerla.
+
+Implementación en `feat/expediente-e4-e5`, sobre E2/E3. V010 añade
 desafíos/autorizaciones ligados a empresa, expediente y solicitante, versiones
 de acceso y consumo antes de transmitir. Se versionan el cliente dedicado,
 retorno exacto, mapa/mínimo ACR 2 y OTP con edad cero. El portal administra
@@ -27,6 +34,9 @@ E6 y Q07/Q14 siguen pendientes. No se despliega, elimina evidencia ni purga
 Android; no se modifica el realm público. Un realm ya existente requiere
 aplicar administrativamente la configuración nueva: reiniciar no la importa.
 Se conservan los cambios previos/generados de `backend/bin/`.
+Los 96 archivos de fuentes/recursos coinciden con el contenedor final aprobado;
+el diff preparado pasó el análisis de secretos sin hallazgos. Entorno aislado
+y contenedores de pruebas retirados, con XML/capturas/evidencia local guardados.
 
 ## 27 de octubre de 2026 — Publicación de E2/E3, PR #20
 
