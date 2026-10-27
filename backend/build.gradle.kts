@@ -44,6 +44,13 @@ dependencies {
 // Las pruebas unitarias corren en cada build. Las de integración necesitan una
 // base PostgreSQL real y se corren aparte, con docker compose.
 tasks.test {
+    val contracts = rootProject.layout.projectDirectory.dir("contracts")
+    inputs.dir(contracts)
+    systemProperty("zenit.contractsDirectory", contracts.asFile.absolutePath)
+    testLogging {
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = false
+    }
     useJUnitPlatform {
         excludeTags("integration")
     }

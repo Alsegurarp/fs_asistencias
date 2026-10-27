@@ -432,6 +432,10 @@ Docker.
 `contracts/openapi.yaml` describe el API completo del MVP y es la frontera
 entre el backend, el portal y la app. Cada cuerpo lleva un ejemplo ficticio.
 
+El [contrato candidato del expediente E1](contracts/dossier.openapi.yaml) se
+valida junto al vigente, con su [formato y límites](docs/contrato-expediente-e1.md).
+Sus ocho operaciones todavía no están implementadas ni forman parte del API activo.
+
 ```powershell
 docker compose --profile tools run --rm contract-lint
 docker compose --profile tools run --rm secret-scan

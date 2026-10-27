@@ -6,6 +6,105 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 26 de octubre de 2026 — E1: contrato candidato, formato y pruebas
+
+El usuario pidió desarrollar E1, probarla y publicar una PR. Rama de entrega:
+`feat/expediente-e1-contrato`, desde main/5d7b783. Se entregan el
+[contrato candidato 0.14.0-draft.1 y formato 1](contrato-expediente-e1.md): ocho
+operaciones propuestas, permiso explícito, destinatario por empresa/usuario/
+vínculo OIDC, estados, errores, caducidades y reintentos. El formato define
+23 tipos de registro y sus campos/relaciones, ZIP/NDJSON y manifiesto con
+huellas. Incluye un ejemplo ficticio con inventario, conteos y bytes verificables.
+El contrato activo 0.13.0 y sus 62 operaciones/CSV siguen sin cambios.
+
+**Entrega publicada:** commit `b5aff1f1848e617e96a2297b9c9ec3ed499f468b`,
+[PR #19](https://github.com/Alsegurarp/fs_asistencias/pull/19) abierta para
+revisión contra main, sin integrar. Estado consultado el 26 a las 23:15
+de Ciudad de México (27 de octubre, 05:15 UTC): las ejecuciones de
+[push 40453960241](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40453960241)
+y [PR 40454133202](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40454133202)
+siguen en curso; no se registran todavía como aprobadas. El conector devolvió
+403 al crear la PR; se completó mediante el mecanismo del repositorio con
+la credencial Git configurada, sin exponerla ni incluirla en la entrega.
+
+Validación local en Docker, sin SDK/dependencias nuevos en el host:
+
+- Lint de contrato activo y candidato aprobado.
+- Build backend/simulador y **56 pruebas unitarias aprobadas**, incluidas
+  **8 nuevas DossierContractTest**, sin omisiones ni errores. Cubren ejemplos/
+  referencias, PKCE real del ejemplo y state, inyección de empresa/campos/JWT,
+  estados incompatibles, manifiesto, secretos y huellas/conteos del fixture.
+- **75 integraciones PostgreSQL aprobadas**, incluidas ExportsIT y
+  ContractCoverageIT: igualdad de rutas y contrato, permisos/aislamiento y
+  validación de respuestas/peticiones del API existente.
+- El lint existente valida ambos contratos; las pruebas nuevas entran al build
+  y trabajo backend de CI. XML de la suite E1: 8 pruebas, 0 omitidas, 0 fallos,
+  0 errores. Registros locales ignorados: build/e1-contract-final.log,
+  build/e1-backend-final.log y build/e1-backend-integration.log.
+- Diez documentos y 241 enlaces locales/anclas comprobados; diff sin errores.
+  Se detuvo sólo db-it, creada para esta ejecución, sin borrar datos/volúmenes.
+- Búsqueda de secretos en los 79 commits del historial, incluido el commit
+  de E1, sin hallazgos antes de publicar la rama.
+
+Se corrigieron durante la validación la iteración de arrays de Jackson 3 y
+la configuración explícita de ambos dialectos de esquema en el registro de
+pruebas. Las condiciones parciales declaran additionalProperties=true para
+el lint, conservando cerrados el objeto final y los cuerpos de petición.
+No se flexibilizaron reglas de lint ni se añadieron dependencias/excepciones.
+
+E1 queda completada en su alcance técnico de diseño y pruebas; la descripción
+de PR registra el commit y evidencia de entrega. E2 es el siguiente desarrollo.
+Las rutas candidatas aún no atienden peticiones; MFA de negocio, permiso,
+exportador y portal siguen en E2–E5. E6 conserva aceptación/Q07/Q14.
+No se despliega, purga, modifica el realm activo ni se cierran pendientes
+globales. Cambios previos de backend/bin excluidos de la entrega.
+
+### Tarea realizada y trabajo restante
+
+**Realizada: E1 — contrato y formato del expediente, con pruebas locales.**
+Su publicación no significa integración en main ni funcionamiento de las
+operaciones propuestas. Falta completar CI remoto y la revisión/integración
+de la PR #19. El seguimiento funcional permanece en la
+[issue #18](https://github.com/Alsegurarp/fs_asistencias/issues/18).
+
+| Orden | Pendiente por realizar | Dependencia y criterio de cierre |
+| --- | --- | --- |
+| E2, siguiente | Permiso específico y aislamiento en backend/persistencia | Usar E1; concesión/revocación auditadas, vínculo/empresa/usuario resueltos en servidor y pruebas de acceso ajeno, revocación y cambios de cuenta. No heredar permiso de roles actuales |
+| E3 | Preparación del expediente íntegro | E1/E2; instantánea coherente, históricos y archivo/manifiesto legibles, excluyendo secretos y otros clientes. Probar concurrencia, caducidad/limpieza y perfiles 50/300 durante un año por lotes |
+| E4 | MFA nuevo y autorización de un uso | E1/E2; E3 para aceptar la descarga real. Correlacionar desafío/OIDC/usuario/empresa/expediente y consumir atómicamente; probar renovación, reutilización, vencimiento, revocación y descargas concurrentes |
+| E5 | Solicitud, estado y descarga en portal | E1–E4; permisos, PKCE/state/nonce, accesibilidad, cancelación, errores y cambio de cuenta; conservar CSV semanal |
+| E6 | Recuperación y consulta fuera de Zenit | E3–E5; detectar alteraciones/truncamiento/datos ajenos y comprobar históricos. Q07/Q14 y aceptación siguen necesarias para el cierre integral; no habilitar supresión automáticamente |
+
+Secuencia restante: **E2 → E3/E4 → E5 → E6**. QA de las nuevas pantallas
+Android requiere teléfono/servicios disponibles. Respaldos externos,
+producción, identidad/SMTP, tarjeta real, reglas laborales, retención,
+aceptación pública y nómina conservan los bloqueos descritos en
+[el listado vigente](tareas-desarrollo-2026-10-26.md#pendientes-que-todavía-no-pueden-cerrarse-íntegramente).
+Se mantienen **17 tareas globales abiertas y seis P0**; E1 es una subtarea,
+no una tarea global adicional ni un cierre de esos requisitos.
+
+## 26 de octubre de 2026 — Pendientes disponibles para desarrollo
+
+Por solicitud del usuario se contrastaron documentos, código, historial y
+GitHub sobre main/5d7b783. Las PR #15/#16 están integradas; los cuatro
+trabajos de [Verificaciones 40311310435](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40311310435)
+aprobaron. La issue #18 conserva E1–E6 abiertas y el contrato/backend/portal
+no implementan el expediente. Las mejoras Android y de paquetes del 26 ya
+están en main; queda separado el recorrido visual de las pantallas nuevas.
+
+Se declaró el [listado para desarrollo](tareas-desarrollo-2026-10-26.md):
+E1 inmediata; E2–E5 con dependencias internas; verificación técnica de E6
+después, conservando Q07/Q14/aceptación. QA Android requiere Docker y
+teléfono disponible. Se enlazó el corte vigente desde los documentos de
+seguimiento sin alterar la evidencia histórica. Permanecen 17 tareas globales
+abiertas y seis P0; no se implementaron funcionalidades ni modificaron issues.
+
+La consulta de solo lectura de Compose no pudo conectar a dockerDesktopLinuxEngine
+(tubería inexistente). No se inició el motor ni ejecutaron pruebas nuevas de
+producto, recorrido de teléfono o comprobación pública. Se conservaron los
+cambios previos de backend/bin. La revisión de documentación no acredita
+despliegue, purga o habilitación para datos reales.
+
 ## 23 de octubre de 2026 — Preparación de PR y declaración de implementación
 
 El usuario solicita publicar una PR con el contexto, metas, prueba MFA y

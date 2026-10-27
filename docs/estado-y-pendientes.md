@@ -3,6 +3,23 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
+**Corte vigente: 26 de octubre de 2026.** El
+[listado para desarrollo](tareas-desarrollo-2026-10-26.md) contrasta código y
+GitHub: PR #15/#16 integradas, CI de main/5d7b783 aprobado en sus cuatro
+trabajos y la issue #18 abierta. E1 entrega el
+[contrato/formato candidato](contrato-expediente-e1.md) con ocho pruebas nuevas
+aprobadas; E2 es el siguiente desarrollo. E3–E5 tienen dependencias internas
+y E6 conserva Q07/Q14/aceptación.
+Mejoras Android del 26 integradas, con QA visual de esa interfaz pendiente.
+Docker disponible para E1; servidor/teléfono no verificados. Se conservan
+17 tareas globales abiertas y seis P0; los cortes siguientes son históricos.
+
+E1 publicada en `b5aff1f`, [PR #19 abierta](https://github.com/Alsegurarp/fs_asistencias/pull/19),
+sin integrar. Las 56 unitarias, 75 integraciones, lint y análisis de secretos
+locales aprobaron; CI remoto sigue en curso al corte del 26 a las 23:15 de
+Ciudad de México. La [bitácora](bitacora-trabajo.md#tarea-realizada-y-trabajo-restante)
+declara E1 realizada y E2–E6 pendientes, con dependencias y límites.
+
 Actualización del **23 de octubre de 2026**, posterior al criterio legal:
 el usuario aprueba [expediente aislado por empresa y MFA por descarga](expediente-empresa.md).
 Permiso específico y autorización nueva de un solo uso; el permiso amplio de

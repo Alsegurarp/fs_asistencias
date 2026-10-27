@@ -1,0 +1,625 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://zenit.invalid/contrato/dossier-format.schema.yaml
+title: Expediente empresarial — formato 1 propuesto
+description: Esquemas normativos del manifiesto y de cada línea NDJSON; E1, sin exportador implementado.
+oneOf:
+  - { $ref: '#/$defs/Manifest' }
+  - { $ref: '#/$defs/Record' }
+$defs:
+  Manifest:
+    type: object
+    additionalProperties: false
+    required: [formatVersion, dossierId, tenantId, requestedBy, scope, snapshotAt, generatedAt, timeZone, files, counts, limitations]
+    properties:
+      formatVersion: { type: integer, const: 1 }
+      dossierId: { type: string, format: uuid }
+      tenantId: { type: string, format: uuid }
+      requestedBy: { type: string, format: uuid }
+      scope: { type: string, const: all_retained }
+      snapshotAt: { type: string, format: date-time }
+      generatedAt: { type: string, format: date-time }
+      timeZone: { type: string, minLength: 1 }
+      files:
+        type: array
+        minItems: 2
+        maxItems: 2
+        items: { $ref: '#/$defs/File' }
+        allOf:
+          - contains: { properties: { path: { const: records.ndjson } } }
+            minContains: 1
+            maxContains: 1
+          - contains: { properties: { path: { const: README.txt } } }
+            minContains: 1
+            maxContains: 1
+      counts: { $ref: '#/$defs/Counts' }
+      limitations:
+        type: array
+        uniqueItems: true
+        minItems: 4
+        maxItems: 4
+        items:
+          type: string
+          enum: [rejected_envelopes_unavailable, historical_acknowledgement_text_unavailable, local_android_evidence_not_included, audit_metadata_filtered]
+        contains: { const: rejected_envelopes_unavailable }
+  File:
+    type: object
+    additionalProperties: false
+    required: [path, bytes, sha256]
+    properties:
+      path: { type: string, enum: [records.ndjson, README.txt] }
+      bytes: { type: integer, minimum: 0 }
+      sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+  PublicJwk:
+    type: object
+    additionalProperties: false
+    required: [kty, crv, x, y]
+    properties:
+      kty: { const: EC }
+      crv: { const: P-256 }
+      x: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+      y: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+      kid: { type: string }
+      use: { const: sig }
+      alg: { const: ES256 }
+      key_ops: { type: array, items: { const: verify }, maxItems: 1 }
+  Metadata:
+    type: object
+    additionalProperties: false
+    properties:
+      reason: { type: string }
+      version: { type: string }
+      weekStart: { type: string }
+      siteId: { type: string }
+      type: { type: string }
+      assigned: { type: string }
+      decision: { type: string }
+      adjustmentId: { type: string }
+      adjustment: { type: string }
+      fields: { type: string }
+      roles: { type: string }
+      by: { type: string }
+      rows: { type: string }
+      fileHash: { type: string }
+      closed: { type: string }
+      origin: { type: string }
+      openIncidents: { type: string }
+      openSegment: { type: string }
+  Counts:
+    type: object
+    additionalProperties: false
+    required: [tenant, tenant_user, tenant_user_role, site, schedule, schedule_day, employee, schedule_assignment, card, card_assignment, device, device_session, attendance_event, location_evidence, attendance_rejection, incident, adjustment, rule_set, week_closure, closure_acknowledgement, week_closure_run, week_closure_run_blocked, audit_log]
+    properties:
+      tenant: { type: integer, minimum: 0 }
+      tenant_user: { type: integer, minimum: 0 }
+      tenant_user_role: { type: integer, minimum: 0 }
+      site: { type: integer, minimum: 0 }
+      schedule: { type: integer, minimum: 0 }
+      schedule_day: { type: integer, minimum: 0 }
+      employee: { type: integer, minimum: 0 }
+      schedule_assignment: { type: integer, minimum: 0 }
+      card: { type: integer, minimum: 0 }
+      card_assignment: { type: integer, minimum: 0 }
+      device: { type: integer, minimum: 0 }
+      device_session: { type: integer, minimum: 0 }
+      attendance_event: { type: integer, minimum: 0 }
+      location_evidence: { type: integer, minimum: 0 }
+      attendance_rejection: { type: integer, minimum: 0 }
+      incident: { type: integer, minimum: 0 }
+      adjustment: { type: integer, minimum: 0 }
+      rule_set: { type: integer, minimum: 0 }
+      week_closure: { type: integer, minimum: 0 }
+      closure_acknowledgement: { type: integer, minimum: 0 }
+      week_closure_run: { type: integer, minimum: 0 }
+      week_closure_run_blocked: { type: integer, minimum: 0 }
+      audit_log: { type: integer, minimum: 0 }
+  Record:
+    oneOf:
+      - { $ref: '#/$defs/tenant' }
+      - { $ref: '#/$defs/tenant_user' }
+      - { $ref: '#/$defs/tenant_user_role' }
+      - { $ref: '#/$defs/site' }
+      - { $ref: '#/$defs/schedule' }
+      - { $ref: '#/$defs/schedule_day' }
+      - { $ref: '#/$defs/employee' }
+      - { $ref: '#/$defs/schedule_assignment' }
+      - { $ref: '#/$defs/card' }
+      - { $ref: '#/$defs/card_assignment' }
+      - { $ref: '#/$defs/device' }
+      - { $ref: '#/$defs/device_session' }
+      - { $ref: '#/$defs/attendance_event' }
+      - { $ref: '#/$defs/location_evidence' }
+      - { $ref: '#/$defs/attendance_rejection' }
+      - { $ref: '#/$defs/incident' }
+      - { $ref: '#/$defs/adjustment' }
+      - { $ref: '#/$defs/rule_set' }
+      - { $ref: '#/$defs/week_closure' }
+      - { $ref: '#/$defs/closure_acknowledgement' }
+      - { $ref: '#/$defs/week_closure_run' }
+      - { $ref: '#/$defs/week_closure_run_blocked' }
+      - { $ref: '#/$defs/audit_log' }
+  tenant:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: tenant }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, slug, name, status, created_at, time_zone, week_starts_on, break_policy, auto_close_after_hours]
+        properties:
+          id: { type: string, format: uuid }
+          slug: { type: string }
+          name: { type: string }
+          status: { type: string }
+          created_at: { type: string, format: date-time }
+          time_zone: { type: string }
+          week_starts_on: { type: string }
+          break_policy: { type: string }
+          auto_close_after_hours: { type: [integer, 'null'], minimum: 0 }
+  tenant_user:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: tenant_user }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, display_name, status, employee_id, created_at, linked_at]
+        properties:
+          id: { type: string, format: uuid }
+          display_name: { type: string }
+          status: { type: string }
+          employee_id: { type: [string, 'null'], format: uuid }
+          created_at: { type: string, format: date-time }
+          linked_at: { type: [string, 'null'], format: date-time }
+  tenant_user_role:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: tenant_user_role }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [user_id, role, granted_at, granted_by]
+        properties:
+          user_id: { type: string, format: uuid }
+          role: { type: string }
+          granted_at: { type: string, format: date-time }
+          granted_by: { type: string }
+  site:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: site }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, name, time_zone, latitude, longitude, radius_m, status, created_at]
+        properties:
+          id: { type: string, format: uuid }
+          name: { type: string }
+          time_zone: { type: string }
+          latitude: { type: number }
+          longitude: { type: number }
+          radius_m: { type: integer, minimum: 0 }
+          status: { type: string }
+          created_at: { type: string, format: date-time }
+  schedule:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: schedule }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, name, time_zone, valid_from, valid_to, created_at]
+        properties:
+          id: { type: string, format: uuid }
+          name: { type: string }
+          time_zone: { type: string }
+          valid_from: { type: string, format: date }
+          valid_to: { type: [string, 'null'], format: date }
+          created_at: { type: string, format: date-time }
+  schedule_day:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: schedule_day }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [schedule_id, day_of_week, start_time, end_time, break_minutes]
+        properties:
+          schedule_id: { type: string, format: uuid }
+          day_of_week: { type: string }
+          start_time: { type: string }
+          end_time: { type: string }
+          break_minutes: { type: integer, minimum: 0 }
+  employee:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: employee }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, external_id, display_name, status, site_id, employment_start, employment_end, source, created_at, updated_at]
+        properties:
+          id: { type: string, format: uuid }
+          external_id: { type: string }
+          display_name: { type: string }
+          status: { type: string }
+          site_id: { type: [string, 'null'], format: uuid }
+          employment_start: { type: string, format: date }
+          employment_end: { type: [string, 'null'], format: date }
+          source: { type: string }
+          created_at: { type: string, format: date-time }
+          updated_at: { type: string, format: date-time }
+  schedule_assignment:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: schedule_assignment }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, employee_id, schedule_id, valid_from, valid_to, created_at]
+        properties:
+          id: { type: string, format: uuid }
+          employee_id: { type: string, format: uuid }
+          schedule_id: { type: string, format: uuid }
+          valid_from: { type: string, format: date }
+          valid_to: { type: [string, 'null'], format: date }
+          created_at: { type: string, format: date-time }
+  card:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: card }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, label, fingerprint, status, key_version, created_at, updated_at]
+        properties:
+          id: { type: string, format: uuid }
+          label: { type: string }
+          fingerprint: { type: string }
+          status: { type: string }
+          key_version: { type: [integer, 'null'], minimum: 0 }
+          created_at: { type: string, format: date-time }
+          updated_at: { type: string, format: date-time }
+  card_assignment:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: card_assignment }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, card_id, employee_id, since, until, replaced_card_id]
+        properties:
+          id: { type: string, format: uuid }
+          card_id: { type: string, format: uuid }
+          employee_id: { type: string, format: uuid }
+          since: { type: string, format: date-time }
+          until: { type: [string, 'null'], format: date-time }
+          replaced_card_id: { type: [string, 'null'], format: uuid }
+  device:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: device }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, mode, status, employee_id, site_id, label, public_jwk, key_thumbprint, manufacturer, model, android_sdk, app_version, enrolled_at, last_seen_at, revoked_at]
+        properties:
+          id: { type: string, format: uuid }
+          mode: { type: string }
+          status: { type: string }
+          employee_id: { type: [string, 'null'], format: uuid }
+          site_id: { type: [string, 'null'], format: uuid }
+          label: { type: [string, 'null'] }
+          public_jwk: { $ref: '#/$defs/PublicJwk' }
+          key_thumbprint: { type: string }
+          manufacturer: { type: string }
+          model: { type: string }
+          android_sdk: { type: integer, minimum: 0 }
+          app_version: { type: string }
+          enrolled_at: { type: string, format: date-time }
+          last_seen_at: { type: [string, 'null'], format: date-time }
+          revoked_at: { type: [string, 'null'], format: date-time }
+  device_session:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: device_session }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, device_id, app_version, started_at, ended_at]
+        properties:
+          id: { type: string, format: uuid }
+          device_id: { type: string, format: uuid }
+          app_version: { type: string }
+          started_at: { type: string, format: date-time }
+          ended_at: { type: [string, 'null'], format: date-time }
+  attendance_event:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: attendance_event }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, idempotency_key, event_type, declared_type, outcome, observed_at, received_at, time_zone, elapsed_realtime_ms, device_id, device_mode, session_id, sequence, employee_id, card_id, card_scheme, site_id, location_verdict, accuracy_m, envelope, payload_sha256]
+        properties:
+          id: { type: string, format: uuid }
+          idempotency_key: { type: string, format: uuid }
+          event_type: { type: string }
+          declared_type: { type: [string, 'null'] }
+          outcome: { type: string }
+          observed_at: { type: string, format: date-time }
+          received_at: { type: string, format: date-time }
+          time_zone: { type: string }
+          elapsed_realtime_ms: { type: [integer, 'null'], minimum: 0 }
+          device_id: { type: string, format: uuid }
+          device_mode: { type: string }
+          session_id: { type: string, format: uuid }
+          sequence: { type: integer, minimum: 0 }
+          employee_id: { type: string, format: uuid }
+          card_id: { type: string, format: uuid }
+          card_scheme: { type: string }
+          site_id: { type: [string, 'null'], format: uuid }
+          location_verdict: { type: string }
+          accuracy_m: { type: [number, 'null'] }
+          envelope: { type: string }
+          payload_sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+  location_evidence:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: location_evidence }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [event_id, latitude, longitude, accuracy_m, captured_at, provider, mock]
+        properties:
+          event_id: { type: string, format: uuid }
+          latitude: { type: number }
+          longitude: { type: number }
+          accuracy_m: { type: number }
+          captured_at: { type: string, format: date-time }
+          provider: { type: [string, 'null'] }
+          mock: { type: [boolean, 'null'] }
+  attendance_rejection:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: attendance_rejection }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, idempotency_key, device_id, code, message, observed_at, received_at, payload_sha256]
+        properties:
+          id: { type: string, format: uuid }
+          idempotency_key: { type: string, format: uuid }
+          device_id: { type: string, format: uuid }
+          code: { type: string }
+          message: { type: string }
+          observed_at: { type: [string, 'null'], format: date-time }
+          received_at: { type: string, format: date-time }
+          payload_sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+  incident:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: incident }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, event_id, employee_id, site_id, type, status, severity, assignee_user_id, resolution_decision, resolution_reason, adjustment_id, resolved_by, resolved_at, created_at]
+        properties:
+          id: { type: string, format: uuid }
+          event_id: { type: string, format: uuid }
+          employee_id: { type: string, format: uuid }
+          site_id: { type: [string, 'null'], format: uuid }
+          type: { type: string }
+          status: { type: string }
+          severity: { type: string }
+          assignee_user_id: { type: [string, 'null'], format: uuid }
+          resolution_decision: { type: [string, 'null'] }
+          resolution_reason: { type: [string, 'null'] }
+          adjustment_id: { type: [string, 'null'], format: uuid }
+          resolved_by: { type: [string, 'null'], format: uuid }
+          resolved_at: { type: [string, 'null'], format: date-time }
+          created_at: { type: string, format: date-time }
+  adjustment:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: adjustment }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, employee_id, kind, event_id, event_type, occurred_at, reason, created_by, created_at]
+        properties:
+          id: { type: string, format: uuid }
+          employee_id: { type: string, format: uuid }
+          kind: { type: string }
+          event_id: { type: [string, 'null'], format: uuid }
+          event_type: { type: [string, 'null'] }
+          occurred_at: { type: [string, 'null'], format: date-time }
+          reason: { type: string }
+          created_by: { type: string }
+          created_at: { type: string, format: date-time }
+  rule_set:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: rule_set }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, jurisdiction, version, valid_from, valid_to, weekly_ordinary_max_minutes, parameters, sources, created_at]
+        properties:
+          id: { type: string, format: uuid }
+          jurisdiction: { type: string }
+          version: { type: integer, minimum: 0 }
+          valid_from: { type: string, format: date }
+          valid_to: { type: [string, 'null'], format: date }
+          weekly_ordinary_max_minutes: { type: integer, minimum: 0 }
+          parameters: { type: object, additionalProperties: { type: string } }
+          sources: { type: array, items: { type: string } }
+          created_at: { type: string, format: date-time }
+  week_closure:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: week_closure }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, employee_id, week_start, version, status, rule_set_id, rule_set_version, worked_minutes, break_minutes, ordinary_minutes, overtime_minutes, snapshot, hash, closed_at, closed_by, reopened_at, reopened_by, reopen_reason]
+        properties:
+          id: { type: string, format: uuid }
+          employee_id: { type: string, format: uuid }
+          week_start: { type: string, format: date }
+          version: { type: integer, minimum: 0 }
+          status: { type: string }
+          rule_set_id: { type: string, format: uuid }
+          rule_set_version: { type: integer, minimum: 0 }
+          worked_minutes: { type: integer, minimum: 0 }
+          break_minutes: { type: integer, minimum: 0 }
+          ordinary_minutes: { type: integer, minimum: 0 }
+          overtime_minutes: { type: integer, minimum: 0 }
+          snapshot: { type: string }
+          hash: { type: string, pattern: '^[a-f0-9]{64}$' }
+          closed_at: { type: string, format: date-time }
+          closed_by: { type: [string, 'null'], format: uuid }
+          reopened_at: { type: [string, 'null'], format: date-time }
+          reopened_by: { type: [string, 'null'], format: uuid }
+          reopen_reason: { type: [string, 'null'] }
+  closure_acknowledgement:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: closure_acknowledgement }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, closure_id, employee_id, type, note, at, actor_type, actor_id, evidence_hash]
+        properties:
+          id: { type: string, format: uuid }
+          closure_id: { type: string, format: uuid }
+          employee_id: { type: string, format: uuid }
+          type: { type: string }
+          note: { type: [string, 'null'] }
+          at: { type: string, format: date-time }
+          actor_type: { type: string }
+          actor_id: { type: string }
+          evidence_hash: { type: string, pattern: '^[a-f0-9]{64}$' }
+  week_closure_run:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: week_closure_run }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, week_start, site_id, origin, status, requested_by, total, closed, blocked_open_incidents, blocked_open_segment, failure, created_at, started_at, finished_at]
+        properties:
+          id: { type: string, format: uuid }
+          week_start: { type: string, format: date }
+          site_id: { type: [string, 'null'], format: uuid }
+          origin: { type: string }
+          status: { type: string }
+          requested_by: { type: [string, 'null'], format: uuid }
+          total: { type: [integer, 'null'], minimum: 0 }
+          closed: { type: integer, minimum: 0 }
+          blocked_open_incidents: { type: integer, minimum: 0 }
+          blocked_open_segment: { type: integer, minimum: 0 }
+          failure: { type: [string, 'null'] }
+          created_at: { type: string, format: date-time }
+          started_at: { type: [string, 'null'], format: date-time }
+          finished_at: { type: [string, 'null'], format: date-time }
+  week_closure_run_blocked:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: week_closure_run_blocked }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [run_id, employee_id, reason, incident_ids, created_at]
+        properties:
+          run_id: { type: string, format: uuid }
+          employee_id: { type: string, format: uuid }
+          reason: { type: string }
+          incident_ids: { type: array, items: { type: string, format: uuid }, uniqueItems: true }
+          created_at: { type: string, format: date-time }
+  audit_log:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: audit_log }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, at, actor_type, actor_id, action, target_type, target_id, correlation_id, metadata]
+        properties:
+          id: { type: string, format: uuid }
+          at: { type: string, format: date-time }
+          actor_type: { type: string }
+          actor_id: { type: [string, 'null'] }
+          action: { type: string }
+          target_type: { type: string }
+          target_id: { type: [string, 'null'] }
+          correlation_id: { type: string, format: uuid }
+          metadata: { $ref: '#/$defs/Metadata' }

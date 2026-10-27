@@ -1,0 +1,53 @@
+{
+  "formatVersion": 1,
+  "dossierId": "e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a",
+  "tenantId": "7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10",
+  "requestedBy": "a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e",
+  "scope": "all_retained",
+  "snapshotAt": "2026-10-26T12:00:01Z",
+  "generatedAt": "2026-10-26T12:00:03Z",
+  "timeZone": "America/Mexico_City",
+  "files": [
+    {
+      "path": "records.ndjson",
+      "bytes": 617,
+      "sha256": "e2614a5add3f288ea469bdcba78c579544c9e5200711d491587218bcdebaeec3"
+    },
+    {
+      "path": "README.txt",
+      "bytes": 1434,
+      "sha256": "4e846bbd0cd8ca19168d2b1f388c703e279ca250fbbf4b06b90c77cb48080267"
+    }
+  ],
+  "counts": {
+    "tenant": 1,
+    "tenant_user": 1,
+    "tenant_user_role": 0,
+    "site": 0,
+    "schedule": 0,
+    "schedule_day": 0,
+    "employee": 0,
+    "schedule_assignment": 0,
+    "card": 0,
+    "card_assignment": 0,
+    "device": 0,
+    "device_session": 0,
+    "attendance_event": 0,
+    "location_evidence": 0,
+    "attendance_rejection": 0,
+    "incident": 0,
+    "adjustment": 0,
+    "rule_set": 0,
+    "week_closure": 0,
+    "closure_acknowledgement": 0,
+    "week_closure_run": 0,
+    "week_closure_run_blocked": 0,
+    "audit_log": 0
+  },
+  "limitations": [
+    "rejected_envelopes_unavailable",
+    "historical_acknowledgement_text_unavailable",
+    "local_android_evidence_not_included",
+    "audit_metadata_filtered"
+  ]
+}
