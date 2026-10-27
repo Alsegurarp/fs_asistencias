@@ -1,6 +1,21 @@
 # Tareas pendientes
 
-**Corte vigente: 26 de octubre de 2026.** Véase el
+**Avance local del 27 de octubre: E2/E3 completadas en alcance técnico.**
+[Permiso y preparación del expediente](entrega-expediente-e2-e3.md), con
+60 unitarias y 83 integraciones aprobadas, incluidos historia completa,
+concurrencia y perfiles anuales 50/300. Continúan E4 → E5 y después E6.
+La descarga sigue cerrada; PR en preparación, sin despliegue. El diagrama
+de relaciones ya es compatible con PlantUML 1.2025.10 y 1.2026.8. Los cortes
+siguientes son históricos y no sustituyen esta entrega.
+
+**Revisión anterior del 27 de octubre, previa a E2/E3.** Véase la
+[verificación E2–E5](verificacion-e2-e5-2026-10-27.md): E1 integrada mediante
+PR #19, CI de la PR aprobado en sus cuatro trabajos; E2–E5 pendientes de
+implementación en el orden **E2 → E3/E4 → E5**. Docker disponible, servicios
+detenidos; sin pruebas locales nuevas. E6 conserva recuperación/aceptación y
+Q07/Q14. Los cortes siguientes son históricos.
+
+**Corte anterior: 26 de octubre de 2026.** Véase el
 [listado verificado para desarrollo](tareas-desarrollo-2026-10-26.md): E1
 entregada como [contrato/formato candidato](contrato-expediente-e1.md), con
 ocho pruebas nuevas aprobadas. E2 es el siguiente desarrollo; E3–E5 conservan

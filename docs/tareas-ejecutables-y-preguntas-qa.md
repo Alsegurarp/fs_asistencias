@@ -1,5 +1,11 @@
 # Trabajo ejecutable y preguntas para QA
 
+**Avance local del 27 de octubre:** [E2/E3 completadas técnicamente](entrega-expediente-e2-e3.md),
+con historia HTTP/PostgreSQL real, 60 unitarias y 83 integraciones aprobadas.
+El siguiente trabajo es E4, seguido de E5 y E6 con sus decisiones/aceptación.
+Los modelos están en `dbFlow/*.puml`, incluida la corrección de compatibilidad
+de PlantUML. PR en preparación; los cortes siguientes son históricos.
+
 **Corte vigente: 26 de octubre de 2026.** El
 [listado de desarrollo verificado](tareas-desarrollo-2026-10-26.md) distingue
 E1 entregada como [contrato/formato candidato probado](contrato-expediente-e1.md),

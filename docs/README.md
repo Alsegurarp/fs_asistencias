@@ -51,9 +51,12 @@ contradice al contrato, manda el contrato.
 | [Recorrido completo](recorrido-completo.md) | De una empresa nueva a un exporte, petición por petición |
 | [Continuar el backend](continuar-el-backend.md) | Cómo está hecho el código y cómo se agrega una ruta, una tabla o un trabajo |
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |
+| [Jerarquía general PlantUML](dbFlow/01-jerarquia.puml) y [relaciones PlantUML](dbFlow/02-relaciones.puml) | Conceptos, entidades y cardinalidades; 32 tablas V001–V009 y fronteras de identidad/Android |
+| [Entrega E2/E3 del expediente](entrega-expediente-e2-e3.md) | Implementación local, historia completa, 60 unitarias, 83 integraciones, perfiles anuales y límites |
 | [Tareas pendientes](TareasPendientes.md) | Resumen de las 17 tareas abiertas, prioridades, dependencias y trabajo disponible; incluye entrega de la prueba móvil a otro desarrollador |
-| [Desarrollo disponible al 26 de octubre](tareas-desarrollo-2026-10-26.md) | Código/GitHub/CI contrastados, E1–E6 por dependencia, QA Android y bloqueos externos; corte vigente de pendientes |
-| [Contrato y formato del expediente E1](contrato-expediente-e1.md) | Contrato candidato, operaciones, permisos, estados, errores, caducidades, campos/relaciones, ejemplos y pruebas; implementación operativa E2–E5 pendiente |
+| [Verificación E2–E5 del 27 de octubre](verificacion-e2-e5-2026-10-27.md) | Corte previo a implementar E2/E3; evidencia de integración E1, pendientes y orden de trabajo |
+| [Desarrollo disponible al 26 de octubre](tareas-desarrollo-2026-10-26.md) | Corte anterior de código/GitHub/CI, criterios E1–E6, QA Android y bloqueos externos |
+| [Contrato y formato del expediente E1](contrato-expediente-e1.md) | Diseño y evidencia originales; actualización E2/E3 con cinco operaciones implementadas y descarga pendiente de E4 |
 | [Tareas críticas primero](tareas-criticas-primero.md) | Declaración de las 20 tareas priorizadas, dependencias, criterios de cierre y primer trabajo técnico |
 | [Verificaciones automáticas](verificaciones-automaticas.md) | Workflow de GitHub Actions, pruebas por cambio, análisis de imágenes y comprobación del servidor |
 | [Validación de cierres](validacion-cierres.md) | Pruebas ejecutadas y guion de aceptación de cierres semanales |

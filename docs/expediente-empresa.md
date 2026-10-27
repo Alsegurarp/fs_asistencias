@@ -1,5 +1,11 @@
 # Expediente recuperable por empresa
 
+**Entrega local del 27 de octubre:** [E2/E3 implementadas y probadas](entrega-expediente-e2-e3.md).
+Permiso explícito y preparación íntegra por bloques en API 0.14.0; 60
+unitarias y 83 integraciones aprobadas, con concurrencia y perfiles 50/300.
+La descarga permanece cerrada hasta E4; portal E5 y recuperación/aceptación E6
+siguen pendientes. Los acuerdos y criterios siguientes mantienen su alcance.
+
 Acuerdo del usuario del **23 de octubre de 2026**. Da continuidad a las
 tareas de evidencia/conservación, identidad y retención Android; no añade
 una tarea global ni declara cerradas las existentes.

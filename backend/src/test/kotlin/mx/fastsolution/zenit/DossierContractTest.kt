@@ -86,14 +86,16 @@ class DossierContractTest {
     }
 
     @Test
-    fun `candidate does not publish routes or change CSV permissions in the live contract`() {
+    fun `E2 E3 publish only implemented routes and preserve CSV permissions`() {
         val live = mapper.readTree(documents.getValue("openapi.yaml"))
-        assertEquals("0.13.0", live.at("/info/version").asString())
-        assertEquals("planned", api.get("x-implementation").asString())
+        assertEquals("0.14.0", live.at("/info/version").asString())
+        assertEquals("partial", api.get("x-implementation").asString())
         assertEquals(8, operations.size)
         assertEquals(8, operations.map { it.third.get("operationId").asString() }.toSet().size)
         for ((path, _, operation) in operations) {
-            assertFalse(live.get("paths").has(path), "Una ruta candidata entró al contrato vigente")
+            val implemented = !path.endsWith("/challenges") && !path.endsWith("/authorizations") && !path.endsWith("/download")
+            assertEquals(implemented, live.get("paths").has(path), path)
+            if (implemented) assertEquals(operation.get("operationId"), live.get("paths").get(path).get(operations.first { it.first == path }.second).get("operationId"))
             val roles = operation.get("x-roles").asSequence().map { it.asString() }.toSet()
             assertFalse("operador_saas" in roles || "conector" in roles)
             assertEquals("userToken", api.get("security")[0].propertyNames().single())

@@ -76,6 +76,7 @@ tasks.register<Test>("integrationTest") {
     systemProperty("junit.jupiter.testclass.order.default", "org.junit.jupiter.api.ClassOrderer\$OrderAnnotation")
     val contract = rootProject.layout.projectDirectory.file("contracts/openapi.yaml")
     inputs.file(contract)
+    inputs.file(rootProject.layout.projectDirectory.file("contracts/dossier-format.schema.yaml"))
     systemProperty("zenit.contract", contract.asFile.absolutePath)
     shouldRunAfter(tasks.test)
 }

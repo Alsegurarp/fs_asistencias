@@ -1,0 +1,139 @@
+@startuml
+!pragma layout smetana
+' La orientación vertical evita IllegalStateException de Smetana en PlantUML 1.2025.10.
+title Zenit — entidades y relaciones por dominio (32 tablas, V001–V009)
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam packageStyle rectangle
+hide circle
+hide empty members
+
+package "Empresa y acceso" #E8F0FA {
+  entity tenant
+  entity tenant_user
+  entity tenant_user_role
+  entity dossier_permission
+  entity audit_log
+}
+package "Padrón y catálogos" #EAF5EE {
+  entity site
+  entity employee
+  entity schedule
+  entity schedule_day
+  entity schedule_assignment
+  entity card
+  entity card_assignment
+  entity employee_import
+  entity integration_source
+  entity integration_checkpoint
+}
+package "Captura" #FFF4E5 {
+  entity device_enrollment
+  entity device
+  entity device_session
+  entity attendance_event
+  entity attendance_rejection
+  entity location_evidence
+}
+package "Jornada y evidencia" #F3EAF8 {
+  entity rule_set
+  entity incident
+  entity adjustment
+  entity week_closure
+  entity closure_acknowledgement
+  entity week_closure_run
+  entity week_closure_run_blocked
+}
+package "Trabajos y salidas" #E8F5F5 {
+  entity job
+  entity export
+  entity dossier
+  entity dossier_chunk
+}
+
+tenant ||--o{ tenant_user : pertenece
+tenant_user ||--o{ tenant_user_role : roles
+tenant_user ||--o| dossier_permission : permiso explícito
+tenant_user |o--o| employee : vínculo opcional
+tenant |o--o{ audit_log : contexto de empresa
+
+site |o--o{ employee : sede opcional
+schedule ||--o{ schedule_day : días
+employee ||--o{ schedule_assignment : historial
+schedule ||--o{ schedule_assignment : vigencia
+employee ||--o{ card_assignment : historial
+card ||--o{ card_assignment : asignación
+integration_source ||--o| integration_checkpoint : avance
+employee_import ..> integration_checkpoint : cursor CSV; vínculo lógico
+
+employee |o--o{ device_enrollment : personal
+site |o--o{ device_enrollment : terminal
+device_enrollment ..> device : activación; sin FK directa
+employee |o--o{ device : personal
+site |o--o{ device : terminal
+device ||--o{ device_session : sesiones de captura
+device ||--o{ attendance_event : dispositivo
+device_session ||--o{ attendance_event : secuencia única
+employee ||--o{ attendance_event : persona
+card ||--o{ attendance_event : tarjeta
+site |o--o{ attendance_event : sede opcional
+device ||--o{ attendance_rejection : rechazos
+attendance_event ||--o| location_evidence : ubicación
+attendance_event ||--o{ incident : anomalías
+employee ||--o{ incident : persona
+site |o--o{ incident : sede opcional
+tenant_user |o--o{ incident : asignación / resolución
+
+employee ||--o{ adjustment : intención de corrección
+attendance_event |o--o{ adjustment : evento opcional
+adjustment |o--o{ incident : resolución ajustada
+employee ||--o{ week_closure : versiones por semana
+rule_set ||--o{ week_closure : reglas congeladas
+tenant_user |o--o{ week_closure : cierre / reapertura
+week_closure ||--o| closure_acknowledgement : una respuesta por versión
+employee ||--o{ closure_acknowledgement : persona
+site |o--o{ week_closure_run : alcance opcional
+tenant_user |o--o{ week_closure_run : solicitante opcional
+week_closure_run ||--o{ week_closure_run_blocked : bloqueos
+employee ||--o{ week_closure_run_blocked : persona bloqueada
+week_closure_run_blocked ..> incident : incident_ids; sin FK por elemento
+
+tenant_user ||--o{ export : solicitado por
+tenant_user |o--o{ export : descargado por
+site |o--o{ export : alcance opcional
+rule_set ||--o{ export : versión
+tenant_user ||--o{ dossier : sólo su solicitante
+dossier ||--o{ dossier_chunk : bloques ordenados del ZIP
+job ..> export : type=export; reference_id
+job ..> week_closure_run : type=week_closure; reference_id
+job ..> dossier : type=dossier; reference_id
+
+note bottom of dossier_permission
+enabled + subject + linked_at: concesión ligada a la cuenta.
+version cambia al conceder/revocar, sin herencia de roles.
+El usuario también tiene dossier_access_version para
+invalidar futuras pruebas E4 ante cambios de cuenta/vínculo.
+end note
+
+note bottom of dossier
+PK (tenant_id, id); FK al solicitante de la misma empresa.
+Idempotencia única (tenant_id, requested_by, idempotency_key).
+Guarda subject y linked_at originales; no se exportan.
+24 h desde creación. Vencido: conserva manifiesto/huellas,
+limpia bloques; no elimina evidencia de origen.
+La descarga continúa cerrada hasta E4.
+end note
+
+legend bottom
+Continuas: FK persistidas. Punteadas: referencia lógica, sin FK.
+|| = uno; |o / o| = cero o uno; o{ = cero o muchos.
+Las FK de empresa incluyen tenant_id. Se omiten flechas repetidas desde tenant.
+rule_set es global; job/audit_log admiten contexto global con tenant_id nulo.
+Cuenta Keycloak → tenant_user.subject: vínculo lógico con una base separada.
+Actores/objetivos de auditoría y autores de texto son referencias históricas, sin FK.
+La modalidad de device y device_enrollment exige empleado o sede, nunca ambos.
+schedule exige días al crearse; el diagrama muestra la cardinalidad permitida por FK.
+Identidad Keycloak, Room Android e historial Flyway quedan fuera de estas 32 tablas.
+endlegend
+@enduml
