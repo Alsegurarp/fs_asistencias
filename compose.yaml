@@ -447,7 +447,7 @@ services:
     volumes:
       - ./contracts:/spec/contracts:ro
       - ./redocly.yaml:/spec/redocly.yaml:ro
-    command: ["lint", "contracts/openapi.yaml"]
+    command: ["lint", "contracts/openapi.yaml", "contracts/dossier.openapi.yaml"]
 
   # Inventario de lo que lleva una imagen (SBOM, en formato CycloneDX). La
   # imagen se exporta antes a un archivo, para no darle a la herramienta el

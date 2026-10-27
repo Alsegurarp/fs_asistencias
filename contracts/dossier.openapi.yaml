@@ -1,0 +1,463 @@
+openapi: 3.1.0
+info:
+  title: Zenit API — expediente empresarial propuesto
+  version: 0.14.0-draft.1
+  description: |
+    Entrega E1: contrato candidato; estas operaciones NO están implementadas.
+    Se incorporarán al contrato vigente al implementar E2–E5. No modifica
+    openapi.yaml, los CSV semanales ni sus permisos.
+
+    La empresa y el solicitante se resuelven en servidor. Cada operación de
+    expediente exige cuenta/vínculo activos y permiso explícito dossier_download;
+    ningún rol lo hereda. Sólo el solicitante accede a su expediente, desafío
+    y autorización. También se vinculan al subject OIDC resuelto en servidor;
+    cambiar el vínculo requiere otro expediente, aunque userId sea el mismo.
+    Un recurso ajeno, incluso de otro usuario de la misma
+    empresa, responde 404 sin revelar metadatos. Un usuario sin permiso recibe
+    403 antes de buscar recursos. El operador SaaS y los dispositivos no entran.
+    La administración sólo puede conceder/revocar mediante la operación explícita.
+
+    Instantes UTC RFC 3339, UUID y errores RFC 9457 siguen las convenciones del
+    contrato vigente. Todas las operaciones pueden responder 429. Cada respuesta
+    lleva Cache-Control no-store. No registrar cuerpos de autorización, códigos,
+    tokens ni URLs OIDC completas. Los ejemplos son ficticios.
+servers:
+  - url: /api/v1
+x-implementation: planned
+externalDocs:
+  url: https://github.com/Alsegurarp/fs_asistencias/blob/feat/expediente-e1-contrato/docs/contrato-expediente-e1.md
+  description: Formato, transiciones, caducidades, relaciones y límites de E1.
+tags:
+  - name: expediente
+    description: Contrato candidato del expediente de una sola empresa.
+security:
+  - userToken: []
+paths:
+  /me/dossier-permission:
+    get:
+      tags: [expediente]
+      operationId: getMyDossierPermission
+      summary: Consulta el permiso explícito propio
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      responses:
+        '200':
+          description: Permiso explícito; false no se convierte en true por el rol
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DossierPermission' }
+              example: { enabled: false }
+        '401': { $ref: './openapi.yaml#/components/responses/Unauthorized' }
+        '403': { $ref: './openapi.yaml#/components/responses/Forbidden' }
+  /users/{userId}/dossier-permission:
+    parameters:
+      - $ref: './openapi.yaml#/components/parameters/UserId'
+    put:
+      tags: [expediente]
+      operationId: setDossierPermission
+      summary: Concede o revoca explícitamente el permiso de un usuario de la empresa
+      description: |
+        Acción auditada de administración, incluida una asignación a sí misma.
+        Conceder exige usuario activo y vinculado; revocar también se permite a
+        usuarios deshabilitados o desvinculados. No elimina evidencia ni revoca
+        otros roles. Idempotente: repetir el mismo estado no crea otra concesión.
+        Los recursos ya preparados dejan de estar disponibles al revocar; volver
+        a conceder no reactiva desafíos/autorizaciones anteriores.
+      x-roles: [admin_empresa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DossierPermission' }
+            example: { enabled: true }
+      responses:
+        '200':
+          description: Estado explícito guardado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DossierPermission' }
+              example: { enabled: true }
+        '401': { $ref: './openapi.yaml#/components/responses/Unauthorized' }
+        '403': { $ref: './openapi.yaml#/components/responses/Forbidden' }
+        '404': { $ref: './openapi.yaml#/components/responses/NotFound' }
+        '409':
+          description: user_not_linked o user_not_active al intentar conceder
+          content:
+            application/problem+json:
+              schema: { $ref: './openapi.yaml#/components/schemas/Problem' }
+              example: { type: 'https://zenit.invalid/problems/conflict', title: Usuario sin vínculo, status: 409, code: user_not_linked, correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e }
+        '422': { $ref: './openapi.yaml#/components/responses/Unprocessable' }
+  /dossiers:
+    post:
+      tags: [expediente]
+      operationId: createDossier
+      summary: Prepara una instantánea íntegra de la empresa para el solicitante
+      description: |
+        Todo el histórico conservado, sin filtros de fecha, persona o sede.
+        Idempotencia por empresa/usuario/clave: mismo cuerpo devuelve el mismo
+        expediente, incluso fallido, vencido o descargado; cuerpo distinto da
+        idempotency_conflict. Una preparación nueva requiere otra clave.
+        El corte snapshotAt se fija al abrir la instantánea coherente de datos,
+        no al recibir la solicitud. Caduca 24 horas después de createdAt,
+        incluyendo el tiempo de cola. El trabajo no amplía ese plazo.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      parameters:
+        - $ref: './openapi.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DossierCreate' }
+            example: { formatVersion: 1 }
+      responses:
+        '202':
+          description: Solicitud registrada o repetida; consultar su estado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dossier' }
+              example:
+                id: e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+                tenantId: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                formatVersion: 1
+                scope: all_retained
+                status: queued
+                createdAt: '2026-10-26T12:00:00Z'
+                expiresAt: '2026-10-27T12:00:00Z'
+                snapshotAt: null
+                readyAt: null
+                manifestSha256: null
+                fileSha256: null
+                failureCode: null
+        '401': { $ref: './openapi.yaml#/components/responses/Unauthorized' }
+        '403': { $ref: './openapi.yaml#/components/responses/Forbidden' }
+        '409': { $ref: './openapi.yaml#/components/responses/Conflict' }
+        '422': { $ref: './openapi.yaml#/components/responses/Unprocessable' }
+  /dossiers/{dossierId}:
+    parameters:
+      - $ref: '#/components/parameters/DossierId'
+    get:
+      tags: [expediente]
+      operationId: getDossier
+      summary: Consulta estado y huellas del expediente propio
+      description: |
+        No devuelve un enlace con autorización. Las huellas y el manifiesto
+        ya generado se conservan al caducar/consumir el archivo. No publicar
+        mensajes internos del trabajo como failureCode.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      responses:
+        '200':
+          description: Estado del expediente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dossier' }
+              example:
+                id: e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+                tenantId: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                formatVersion: 1
+                scope: all_retained
+                status: ready
+                createdAt: '2026-10-26T12:00:00Z'
+                expiresAt: '2026-10-27T12:00:00Z'
+                snapshotAt: '2026-10-26T12:00:01Z'
+                readyAt: '2026-10-26T12:00:03Z'
+                manifestSha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                fileSha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                failureCode: null
+        '401': { $ref: './openapi.yaml#/components/responses/Unauthorized' }
+        '403': { $ref: './openapi.yaml#/components/responses/Forbidden' }
+        '404': { $ref: './openapi.yaml#/components/responses/NotFound' }
+  /dossiers/{dossierId}/manifest:
+    parameters:
+      - $ref: '#/components/parameters/DossierId'
+    get:
+      tags: [expediente]
+      operationId: getDossierManifest
+      summary: Obtiene los bytes originales del manifiesto propio
+      description: |
+        Disponible desde ready, también tras downloaded/expired si se generó.
+        Su SHA-256 debe coincidir con manifestSha256. No requiere otro MFA,
+        pero sí permiso/vínculo vigente y propiedad. No contiene filas de datos.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      responses:
+        '200':
+          description: Manifiesto original; ejemplo completo en contracts/examples/dossier-v1
+          content:
+            application/json:
+              schema: { $ref: './dossier-format.schema.yaml#/$defs/Manifest' }
+              examples:
+                ficticio:
+                  summary: Empresa ficticia sin marcajes
+                  externalValue: ./examples/dossier-v1/manifest.json
+        '401': { $ref: './openapi.yaml#/components/responses/Unauthorized' }
+        '403': { $ref: './openapi.yaml#/components/responses/Forbidden' }
+        '404': { $ref: './openapi.yaml#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/NotReady' }
+  /dossiers/{dossierId}/challenges:
+    parameters:
+      - $ref: '#/components/parameters/DossierId'
+    post:
+      tags: [expediente]
+      operationId: createDossierChallenge
+      summary: Inicia una verificación nueva ligada al expediente listo
+      description: |
+        El portal genera PKCE; el servidor fija cliente/redirect_uri, state,
+        nonce y nivel requerido, y los correlaciona con expediente/usuario/empresa.
+        authorizationUrl apunta únicamente al emisor configurado. El portal
+        conserva state y verifica la vuelta antes de enviar el código al servidor.
+        Requiere OTP nuevo incluso con SSO; nunca acepta prompt=none.
+        Un desafío nuevo invalida el anterior no consumido del mismo expediente.
+        expiresAt = mínimo de ahora + 300 segundos y caducidad del expediente.
+        El servidor comprueba que nonce/state sean criptográficamente aleatorios.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChallengeCreate' }
+            example: { codeChallenge: DwBzhbb51LfusnSGBa_hqYSgo7-j8BTQnip4TOnlzRo }
+      responses:
+        '201':
+          description: Desafío creado; ninguna autorización de descarga todavía
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Challenge' }
+              example:
+                id: c1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+                authorizationUrl: https://identity.example.invalid/realms/zenit/protocol/openid-connect/auth?client_id=zenit-web&redirect_uri=https%3A%2F%2Fportal.example.invalid%2Fdossier%2Fcallback&response_type=code&scope=openid&code_challenge_method=S256&code_challenge=DwBzhbb51LfusnSGBa_hqYSgo7-j8BTQnip4TOnlzRo&state=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&nonce=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&acr_values=2
+                state: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                expiresAt: '2026-10-26T12:05:00Z'
+        '401': { $ref: './openapi.yaml#/components/responses/Unauthorized' }
+        '403': { $ref: './openapi.yaml#/components/responses/Forbidden' }
+        '404': { $ref: './openapi.yaml#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/NotReady' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '422': { $ref: './openapi.yaml#/components/responses/Unprocessable' }
+  /dossiers/{dossierId}/authorizations:
+    parameters:
+      - $ref: '#/components/parameters/DossierId'
+    post:
+      tags: [expediente]
+      operationId: authorizeDossierDownload
+      summary: Canjea una verificación OIDC nueva por una autorización de descarga
+      description: |
+        El servidor canjea el código con PKCE y redirect_uri/cliente fijados,
+        valida firma, emisor, audiencia, sujeto, vigencia, nonce, state y nivel
+        2 con OTP nuevo del flujo configurado. No acepta JWT, OTP ni tokens
+        renovados enviados como prueba. Revalida cuenta, vínculo y permiso.
+        Desafío/expediente/solicitante/empresa deben coincidir; consume desafío
+        y emite una autorización de un uso en una transición atómica.
+        Caduca al mínimo de ahora + 60 segundos y expiresAt del expediente.
+        Código incorrecto no crea autorización; error de red al canjear no
+        reutiliza el código: iniciar otro desafío. Respuesta perdida exige
+        otro desafío, que invalida autorizaciones anteriores no consumidas.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthorizationCreate' }
+            example:
+              challengeId: c1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+              code: codigo-ficticio-sin-valor
+              codeVerifier: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+              state: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      responses:
+        '201':
+          description: Autorización opaca; sólo se devuelve en esta respuesta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DownloadAuthorization' }
+              example: { authorization: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA, expiresAt: '2026-10-26T12:01:00Z' }
+        '401': { $ref: './openapi.yaml#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/VerificationFailed' }
+        '404': { $ref: './openapi.yaml#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/NotReady' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '422': { $ref: './openapi.yaml#/components/responses/Unprocessable' }
+        '503':
+          description: Identidad no disponible; no se autoriza la descarga y se inicia otro desafío al recuperarse
+          content:
+            application/problem+json:
+              schema: { $ref: './openapi.yaml#/components/schemas/Problem' }
+              example: { type: 'https://zenit.invalid/problems/unavailable', title: Identidad no disponible, status: 503, code: identity_unavailable, correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e }
+  /dossiers/{dossierId}/download:
+    parameters:
+      - $ref: '#/components/parameters/DossierId'
+    post:
+      tags: [expediente]
+      operationId: downloadDossier
+      summary: Consume una autorización y entrega una sola vez el ZIP del expediente
+      description: |
+        Bearer normal y autorización en JSON, nunca en query/URL. Revalida usuario,
+        empresa y permiso. Bloquea/consume autorización y cambia ready a downloaded
+        atómicamente antes de transmitir; dos peticiones concurrentes no obtienen
+        dos entregas. Una interrupción puede dejar la entrega incompleta aunque
+        esté consumida: no hay Range/resume ni reintento con el mismo token.
+        Solicitar otro expediente con nueva clave y pasar MFA otra vez.
+        Descargado/caducado, el archivo queda inaccesible; limpiar temporales al
+        terminar la transmisión y reintentar limpieza si falla. Hashes/manifiesto
+        permanecen. Content-Disposition usa sólo el UUID, sin nombres personales.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DownloadRequest' }
+            example: { authorization: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA }
+      responses:
+        '200':
+          description: ZIP formato 1; huella de bytes igual a fileSha256
+          headers:
+            Content-Disposition:
+              schema: { type: string }
+              example: attachment; filename="expediente-e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a.zip"
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+        '401': { $ref: './openapi.yaml#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/VerificationFailed' }
+        '404': { $ref: './openapi.yaml#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/NotReady' }
+        '410': { $ref: '#/components/responses/Gone' }
+        '422': { $ref: './openapi.yaml#/components/responses/Unprocessable' }
+components:
+  securitySchemes:
+    userToken:
+      $ref: './openapi.yaml#/components/securitySchemes/userToken'
+  parameters:
+    DossierId:
+      name: dossierId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    NotReady:
+      description: dossier_not_ready, challenge_consumed o idempotency_conflict; ver tabla de errores E1
+      content:
+        application/problem+json:
+          schema: { $ref: './openapi.yaml#/components/schemas/Problem' }
+          example: { type: 'https://zenit.invalid/problems/conflict', title: Expediente no listo, status: 409, code: dossier_not_ready, correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e }
+    Gone:
+      description: dossier_expired, dossier_downloaded, challenge_expired o authorization_expired
+      content:
+        application/problem+json:
+          schema: { $ref: './openapi.yaml#/components/schemas/Problem' }
+          example: { type: 'https://zenit.invalid/problems/gone', title: Expediente vencido, status: 410, code: dossier_expired, correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e }
+    VerificationFailed:
+      description: forbidden sin permiso o verification_failed si la prueba/autorización no coincide; no revelar detalles criptográficos
+      content:
+        application/problem+json:
+          schema: { $ref: './openapi.yaml#/components/schemas/Problem' }
+          example: { type: 'https://zenit.invalid/problems/forbidden', title: Verificación no válida, status: 403, code: verification_failed, correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e }
+  schemas:
+    DossierPermission:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+    DossierCreate:
+      type: object
+      additionalProperties: false
+      required: [formatVersion]
+      properties:
+        formatVersion: { type: integer, const: 1 }
+    Dossier:
+      type: object
+      additionalProperties: false
+      required: [id, tenantId, requestedBy, formatVersion, scope, status, createdAt, expiresAt, snapshotAt, readyAt, manifestSha256, fileSha256, failureCode]
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid, description: Derivado de la identidad; no se admite en solicitudes. }
+        requestedBy: { type: string, format: uuid }
+        formatVersion: { type: integer, const: 1 }
+        scope: { type: string, const: all_retained }
+        status: { type: string, enum: [queued, preparing, ready, failed, expired, downloaded] }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        snapshotAt: { type: [string, 'null'], format: date-time }
+        readyAt: { type: [string, 'null'], format: date-time }
+        manifestSha256: { type: [string, 'null'], pattern: '^[a-f0-9]{64}$' }
+        fileSha256: { type: [string, 'null'], pattern: '^[a-f0-9]{64}$' }
+        failureCode: { enum: [null, preparation_failed] }
+      allOf:
+        - if: { additionalProperties: true, properties: { status: { enum: [ready, downloaded] } } }
+          then:
+            additionalProperties: true
+            properties:
+              snapshotAt: { type: string }
+              readyAt: { type: string }
+              manifestSha256: { type: string }
+              fileSha256: { type: string }
+        - if: { additionalProperties: true, properties: { status: { const: queued } } }
+          then: { additionalProperties: true, properties: { snapshotAt: { type: 'null' } } }
+        - if: { additionalProperties: true, properties: { status: { const: preparing } } }
+          then: { additionalProperties: true, properties: { snapshotAt: { type: string } } }
+        - if: { additionalProperties: true, properties: { status: { enum: [queued, preparing, failed] } } }
+          then:
+            additionalProperties: true
+            properties:
+              readyAt: { type: 'null' }
+              manifestSha256: { type: 'null' }
+              fileSha256: { type: 'null' }
+        - if: { additionalProperties: true, properties: { status: { const: failed } } }
+          then: { additionalProperties: true, properties: { failureCode: { const: preparation_failed } } }
+          else: { additionalProperties: true, properties: { failureCode: { type: 'null' } } }
+        - if: { additionalProperties: true, properties: { manifestSha256: { type: string } } }
+          then:
+            additionalProperties: true
+            properties:
+              snapshotAt: { type: string }
+              readyAt: { type: string }
+              fileSha256: { type: string }
+          else:
+            additionalProperties: true
+            properties:
+              readyAt: { type: 'null' }
+              fileSha256: { type: 'null' }
+    ChallengeCreate:
+      type: object
+      additionalProperties: false
+      required: [codeChallenge]
+      properties:
+        codeChallenge: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+    Challenge:
+      type: object
+      additionalProperties: false
+      required: [id, authorizationUrl, state, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        authorizationUrl: { type: string, format: uri, pattern: '^https://' }
+        state: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+        expiresAt: { type: string, format: date-time }
+    AuthorizationCreate:
+      type: object
+      additionalProperties: false
+      required: [challengeId, code, codeVerifier, state]
+      properties:
+        challengeId: { type: string, format: uuid }
+        code: { type: string, minLength: 1, maxLength: 2048 }
+        codeVerifier: { type: string, pattern: '^[A-Za-z0-9._~-]{43,128}$' }
+        state: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+    DownloadAuthorization:
+      type: object
+      additionalProperties: false
+      required: [authorization, expiresAt]
+      properties:
+        authorization: { type: string, pattern: '^[A-Za-z0-9_-]{43}$', description: 32 bytes aleatorios base64url sin relleno; ejemplo sin valor. }
+        expiresAt: { type: string, format: date-time }
+    DownloadRequest:
+      type: object
+      additionalProperties: false
+      required: [authorization]
+      properties:
+        authorization: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }

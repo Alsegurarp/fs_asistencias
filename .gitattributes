@@ -1,3 +1,5 @@
 # Los guiones corren dentro de contenedores Linux: siempre con fin de línea LF,
 # también en un clon hecho en Windows.
 *.sh text eol=lf
+# Los ejemplos de expediente tienen huellas sobre sus bytes exactos.
+contracts/examples/dossier-v1/* -text

@@ -4,6 +4,17 @@ Acuerdo del usuario del **23 de octubre de 2026**. Da continuidad a las
 tareas de evidencia/conservación, identidad y retención Android; no añade
 una tarea global ni declara cerradas las existentes.
 
+**Seguimiento del 26 de octubre:** las PR #15/#16 están integradas y los
+cuatro trabajos de [CI de main/5d7b783](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40311310435)
+aprobaron, incluido el paso de identidad con el ensayo MFA. La
+[issue #18](https://github.com/Alsegurarp/fs_asistencias/issues/18) conserva
+el seguimiento E1–E6. E1 ya entrega un
+[contrato/formato candidato validado](contrato-expediente-e1.md), con ocho
+pruebas nuevas aprobadas; E2–E6 siguen pendientes. Véase el
+[listado de desarrollo](tareas-desarrollo-2026-10-26.md).
+Las referencias posteriores a CI sin publicar describen el corte del 23;
+la funcionalidad operativa de expediente sigue sin implementar.
+
 ## Metas acordadas
 
 1. Permitir al empleador autorizado obtener el expediente de su empresa.
@@ -131,7 +142,9 @@ que el archivo recupera evidencia que hoy sólo existe en Android.
 
 Declaradas por solicitud del usuario el **23 de octubre de 2026**. Son
 subtareas de los órdenes globales 2/3/10/15, no seis pendientes globales
-nuevos. Todas están abiertas; el ensayo MFA ya aprobado es una prueba de
+nuevos. E1 entrega el contrato candidato y formato de archivo con pruebas;
+su integración en main se registra con la PR. E2–E6 siguen abiertas.
+El ensayo MFA ya aprobado es una prueba de
 viabilidad y no implementa ninguna de estas entregas. Los responsables de
 la tabla indican el área de trabajo; no se han asignado personas ni fechas.
 

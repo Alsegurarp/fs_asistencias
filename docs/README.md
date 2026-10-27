@@ -52,6 +52,8 @@ contradice al contrato, manda el contrato.
 | [Continuar el backend](continuar-el-backend.md) | Cómo está hecho el código y cómo se agrega una ruta, una tabla o un trabajo |
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |
 | [Tareas pendientes](TareasPendientes.md) | Resumen de las 17 tareas abiertas, prioridades, dependencias y trabajo disponible; incluye entrega de la prueba móvil a otro desarrollador |
+| [Desarrollo disponible al 26 de octubre](tareas-desarrollo-2026-10-26.md) | Código/GitHub/CI contrastados, E1–E6 por dependencia, QA Android y bloqueos externos; corte vigente de pendientes |
+| [Contrato y formato del expediente E1](contrato-expediente-e1.md) | Contrato candidato, operaciones, permisos, estados, errores, caducidades, campos/relaciones, ejemplos y pruebas; implementación operativa E2–E5 pendiente |
 | [Tareas críticas primero](tareas-criticas-primero.md) | Declaración de las 20 tareas priorizadas, dependencias, criterios de cierre y primer trabajo técnico |
 | [Verificaciones automáticas](verificaciones-automaticas.md) | Workflow de GitHub Actions, pruebas por cambio, análisis de imágenes y comprobación del servidor |
 | [Validación de cierres](validacion-cierres.md) | Pruebas ejecutadas y guion de aceptación de cierres semanales |

@@ -1,5 +1,14 @@
 # Tareas críticas primero
 
+**Corte vigente: 26 de octubre de 2026.** Consultar el
+[listado verificado para desarrollo](tareas-desarrollo-2026-10-26.md).
+PR #15/#16 ya integradas y cuatro trabajos de CI de main/5d7b783 aprobados;
+no repetir esas integraciones. E1 entrega el
+[contrato/formato candidato y sus pruebas](contrato-expediente-e1.md).
+Continuar E2 → E3/E4 → E5; E6 conserva aceptación/Q07/Q14.
+Docker disponible para las pruebas E1; no hay endpoints nuevos implementados.
+Los cortes siguientes son históricos; permanecen 17 tareas abiertas y seis P0.
+
 Actualización posterior del **23 de octubre de 2026**: el usuario aprueba
 [las metas del expediente por empresa y MFA por descarga](expediente-empresa.md).
 MFA con SSO validado en identidad aislada: 10/10 pruebas, sin omisiones.

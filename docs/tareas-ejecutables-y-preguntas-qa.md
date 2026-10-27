@@ -1,5 +1,13 @@
 # Trabajo ejecutable y preguntas para QA
 
+**Corte vigente: 26 de octubre de 2026.** El
+[listado de desarrollo verificado](tareas-desarrollo-2026-10-26.md) distingue
+E1 entregada como [contrato/formato candidato probado](contrato-expediente-e1.md),
+E2 siguiente, E3–E5 con dependencias internas, E6 con aceptación pendiente y
+QA Android condicionada a teléfono/servicios. PR #15/#16 integradas y CI de
+main/5d7b783 aprobado. Q01–Q22 conservan los bloqueos allí indicados; los
+cortes siguientes son históricos y no reabren integraciones completadas.
+
 Contexto aprobado después del corte legal del 23:
 [expediente por empresa, permiso específico y MFA por descarga](expediente-empresa.md).
 La prueba aislada del segundo factor por operación aprobó dentro de 10/10
