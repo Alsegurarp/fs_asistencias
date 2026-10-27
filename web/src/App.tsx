@@ -5,6 +5,7 @@ import { auth, authReady } from './auth'
 import { api, type Me } from './api'
 import { ErrorNotice } from './Directory'
 import { Workspace } from './Workspace'
+import { clearDossierVerification } from './dossierFlow'
 
 export function App() {
   const cache = useQueryClient()
@@ -12,7 +13,7 @@ export function App() {
   const [signedIn, setSignedIn] = useState(false)
   const [error, setError] = useState('')
   useEffect(() => {
-    auth.onAuthLogout = () => { setSignedIn(false); cache.clear() }
+    auth.onAuthLogout = () => { clearDossierVerification(); setSignedIn(false); cache.clear() }
     authReady.then(() => { setSignedIn(!!auth.authenticated); setReady(true) })
       .catch(() => { setError('No se pudo conectar con el proveedor de identidad.'); setReady(true) })
     const timer = window.setInterval(() => {
@@ -24,7 +25,7 @@ export function App() {
   return <>
     <AppBar position="static"><Toolbar sx={{ gap: 2 }}>
       <Typography variant="h6" sx={{ flexGrow: 1 }}>Zenit · {me.data?.tenant?.name || 'fastSolution'}</Typography>
-      {signedIn && <Button color="inherit" onClick={() => { cache.clear(); void auth.logout({ redirectUri: `${window.location.origin}/` }).catch(() => setError('No se pudo cerrar la sesión en el proveedor de identidad.')) }}>Cerrar sesión</Button>}
+      {signedIn && <Button color="inherit" onClick={() => { clearDossierVerification(); cache.clear(); void auth.logout({ redirectUri: `${window.location.origin}/` }).catch(() => setError('No se pudo cerrar la sesión en el proveedor de identidad.')) }}>Cerrar sesión</Button>}
     </Toolbar></AppBar>
     <Container maxWidth="lg" component="main" sx={{ py: 4 }}>
       {!ready ? <CircularProgress aria-label="Preparando inicio de sesión" /> : !signedIn ? <Stack spacing={3} sx={{ maxWidth: 540, mx: 'auto', py: 6 }}>

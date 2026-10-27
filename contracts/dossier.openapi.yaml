@@ -3,8 +3,8 @@ info:
   title: Zenit API — expediente empresarial propuesto
   version: 0.14.0-draft.1
   description: |
-    E2/E3 implementan permiso, solicitud, estado y manifiesto en openapi.yaml.
-    Desafío, autorización y descarga siguen pendientes de E4.
+    E2–E5 implementan las ocho operaciones en openapi.yaml 0.15.0.
+    La descarga requiere MFA nuevo y autorización de un uso.
     El CSV semanal y sus permisos conservan su comportamiento.
 
     La empresa y el solicitante se resuelven en servidor. Cada operación de
@@ -23,7 +23,7 @@ info:
     tokens ni URLs OIDC completas. Los ejemplos son ficticios.
 servers:
   - url: /api/v1
-x-implementation: partial
+x-implementation: implemented
 externalDocs:
   url: https://github.com/Alsegurarp/fs_asistencias/blob/feat/expediente-e1-contrato/docs/contrato-expediente-e1.md
   description: Formato, transiciones, caducidades, relaciones y límites de E1.
@@ -228,7 +228,7 @@ paths:
               schema: { $ref: '#/components/schemas/Challenge' }
               example:
                 id: c1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
-                authorizationUrl: https://identity.example.invalid/realms/zenit/protocol/openid-connect/auth?client_id=zenit-web&redirect_uri=https%3A%2F%2Fportal.example.invalid%2Fdossier%2Fcallback&response_type=code&scope=openid&code_challenge_method=S256&code_challenge=DwBzhbb51LfusnSGBa_hqYSgo7-j8BTQnip4TOnlzRo&state=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&nonce=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&acr_values=2
+                authorizationUrl: https://identity.example.invalid/realms/zenit/protocol/openid-connect/auth?client_id=zenit-dossier&redirect_uri=https%3A%2F%2Fportal.example.invalid%2Fdossier%2Fcallback&response_type=code&scope=openid&code_challenge_method=S256&code_challenge=DwBzhbb51LfusnSGBa_hqYSgo7-j8BTQnip4TOnlzRo&state=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&nonce=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&acr_values=2
                 state: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
                 expiresAt: '2026-10-26T12:05:00Z'
         '401': { $ref: './openapi.yaml#/components/responses/Unauthorized' }
@@ -436,7 +436,7 @@ components:
       required: [id, authorizationUrl, state, expiresAt]
       properties:
         id: { type: string, format: uuid }
-        authorizationUrl: { type: string, format: uri, pattern: '^https://' }
+        authorizationUrl: { type: string, format: uri, pattern: '^https://|^http://(localhost|127\.0\.0\.1)(:[0-9]+)?/' }
         state: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
         expiresAt: { type: string, format: date-time }
     AuthorizationCreate:

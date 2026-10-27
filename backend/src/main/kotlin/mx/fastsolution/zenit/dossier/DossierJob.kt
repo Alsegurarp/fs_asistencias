@@ -12,7 +12,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 @Component
-class DossierJob(private val dsl: DSLContext, private val dossiers: DossierRepository, private val audit: AuditLog, private val json: JsonMapper) : JobHandler {
+class DossierJob(private val dsl: DSLContext, private val dossiers: DossierRepository, private val audit: AuditLog, private val json: JsonMapper, private val files: DossierDownloadFiles) : JobHandler {
     override val type = TYPE
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
@@ -66,6 +66,7 @@ class DossierJob(private val dsl: DSLContext, private val dossiers: DossierRepos
         )
         expired.forEach { r -> audit.record(r.get("tenant_id", UUID::class.java), "system", null, "dossier.expired", "dossier", r.get("id", UUID::class.java)) }
         dsl.execute("delete from dossier_chunk c using dossier d where d.tenant_id = c.tenant_id and d.id = c.dossier_id and d.status in ('expired', 'downloaded', 'failed')")
+        files.maintain()
     }
 
     private fun expire(tenantId: UUID, id: UUID) {

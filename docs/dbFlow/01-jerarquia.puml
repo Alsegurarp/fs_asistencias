@@ -1,5 +1,5 @@
 @startmindmap
-title Zenit — jerarquía de conceptos y entidades (V001–V009)
+title Zenit — jerarquía de conceptos y entidades (V001–V010)
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName SansSerif
@@ -58,12 +58,14 @@ mindmapDiagram {
 **** dossier\nExpediente íntegro; solicitante y vínculo fijos
 ***** dossier_chunk\nZIP por bloques de hasta 64 KiB
 ***** Formato 1\n23 colecciones, README y manifiesto con conteos/huellas
-***** Ciclo E3\nqueued → preparing → ready; failed o expired
+***** Ciclo\nqueued → preparing → ready → downloaded; failed o expired
+***** dossier_challenge\nState/nonce con huella, PKCE S256 y versiones de acceso; hasta 5 min
+****** dossier_authorization\nHuella del permiso opaco; hasta 60 s; consumo antes de transmitir
 **** audit_log\nActor, acción, objetivo, fecha y correlación
 
 left side
 ** Canales y procesamiento
-*** Portal React\nAdministración, consulta y CSV semanal
+*** Portal React\nAdministración, consulta, CSV semanal y expediente con permiso explícito
 *** Android\nNFC, ubicación puntual, firma y sincronización
 *** Backend Kotlin / Spring\nAPI y JobWorker en el mismo servicio
 **** CurrentPerson\nIdentidad resuelta → empresa, usuario y roles en servidor
@@ -71,6 +73,7 @@ left side
 ** Identidad externa: Keycloak\nBase separada de PostgreSQL del producto
 *** Cuenta\nsubject, correo verificado, contraseña y OTP
 *** Sesión OIDC\nTokens; no son sesiones de captura
+*** Cliente zenit-dossier\nRetorno exacto, mínimo ACR 2 y OTP nuevo por operación
 *** Operador SaaS\nAdministración del servicio; sin empresa ni permiso de expediente
 ** Reglas públicas compartidas
 *** rule_set\nVersión, vigencia, parámetros y fuentes
@@ -85,16 +88,16 @@ left side
 *** CSV ≠ expediente\nResumen semanal frente a históricos íntegros
 *** SHA-256\nComparación de bytes; no certificación ni firma avanzada
 *** Evidencia ausente\nNo reconstruir sobres de rechazos ni texto histórico no guardado
-*** Pendientes E4 / E5\nMFA nuevo por descarga y portal del expediente
+*** Pendiente E6\nConsulta/recuperación independiente y aceptación
 *** Conservación\nDescargar no autoriza borrar servidor ni purgar Android
 
 legend bottom
 Jerarquía conceptual, no borrado en cascada ni diagrama de todas las FK.
-32 tablas de negocio: rule_set global; las demás agrupadas por empresa.
+34 tablas de negocio: rule_set global; las demás agrupadas por empresa.
 job y audit_log también admiten tenant_id nulo para operaciones globales.
 V004/V006 sustituyen tablas iniciales: se cuentan una sola vez.
-Keycloak, Room y flyway_schema_history no forman parte de esas 32 tablas.
-E2/E3: implementación local. Descarga cerrada hasta E4; interfaz pendiente en E5.
+Keycloak, Room y flyway_schema_history no forman parte de esas 34 tablas.
+E2–E5: implementación local; E6 conserva su alcance independiente.
 Relaciones y cardinalidades: 02-relaciones.puml.
 endlegend
 @endmindmap

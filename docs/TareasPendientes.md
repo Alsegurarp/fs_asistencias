@@ -1,6 +1,13 @@
 # Tareas pendientes
 
-**Avance local del 27 de octubre: E2/E3 completadas en alcance técnico.**
+**Avance vigente del 27 de octubre: E2–E5 completadas en alcance técnico.**
+[E4/E5 verificadas](entrega-expediente-e4-e5.md): autorización con OTP nuevo,
+descarga de un uso y portal. API 0.15.0; 64 unitarias, 88 integraciones,
+189 pruebas web y 11 de identidad, además de historia real en Chrome.
+Continúa E6: consulta/recuperación independiente, Q07/Q14 y aceptación.
+No se habilitan borrado/purga ni se acredita despliegue público.
+
+**Corte anterior del 27 de octubre: E2/E3 completadas en alcance técnico.**
 [Permiso y preparación del expediente](entrega-expediente-e2-e3.md), con
 60 unitarias y 83 integraciones aprobadas, incluidos historia completa,
 concurrencia y perfiles anuales 50/300. Continúan E4 → E5 y después E6.

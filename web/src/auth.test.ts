@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from 'vitest'
 const keycloak = vi.hoisted(() => ({
   init: vi.fn().mockResolvedValue(false), updateToken: vi.fn().mockResolvedValue(false),
@@ -14,7 +15,7 @@ beforeEach(() => {
 })
 it('inicializa una vez con PKCE S256 y sin iframe de sesión', async () => {
   await authReady
-  expect(keycloak.init).toHaveBeenCalledExactlyOnceWith({ pkceMethod: 'S256', checkLoginIframe: false })
+  expect(keycloak.init).toHaveBeenCalledExactlyOnceWith({ onLoad: 'check-sso', pkceMethod: 'S256', checkLoginIframe: false })
 })
 it('renueva antes de entregar la credencial', async () => {
   await expect(accessToken()).resolves.toBe('renovado')

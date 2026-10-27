@@ -1,11 +1,11 @@
 # E1 — Contrato y formato del expediente empresarial
 
-**Actualización local E2/E3 del 27 de octubre:** el API vigente 0.14.0 ya
-incorpora permiso propio, concesión/revocación, solicitud, estado y manifiesto.
-La preparación implementa el formato 1 por bloques; desafío, autorización y
-descarga siguen pendientes de E4, y el portal de E5. La versión/campos del
-formato no cambian. El contenido siguiente conserva el diseño y la evidencia
-originales de E1; véase el [modelo actual](dbFlow/README.md).
+**Actualización local E2–E5 del 27 de octubre:** el API vigente 0.15.0
+incorpora las ocho operaciones, incluido desafío, canje OIDC y descarga de
+un uso. [E4/E5 verificadas](entrega-expediente-e4-e5.md) añaden el portal y
+el cliente efectivo con OTP nuevo por operación. El formato 1 no cambia.
+El contenido siguiente conserva el diseño y la evidencia originales de E1;
+véase el [modelo actual](dbFlow/README.md). E6 sigue pendiente.
 
 Contrato candidato `0.14.0-draft.1`, formato de archivo **1**, del 26 de
 octubre de 2026. Implementa la definición E1 de la

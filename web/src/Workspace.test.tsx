@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -5,13 +6,20 @@ vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }
 import { type Me } from './api'
 import { Workspace } from './Workspace'
 
-function render(roles: string[], tenant: Me['tenant'] = { name: 'Empresa', timeZone: 'America/Mexico_City' }) {
+function render(roles: string[], tenant: Me['tenant'] = { name: 'Empresa', timeZone: 'America/Mexico_City' }, dossier = false) {
   const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   cache.setQueryData(['sites'], { pages: [{ items: [], nextCursor: null }], pageParams: [''] })
+  cache.setQueryData(['dossier-permission', 'self:'], { enabled: dossier })
   const html = renderToStaticMarkup(<QueryClientProvider client={cache}><Workspace me={{ userId: 'self', displayName: 'Prueba', roles, tenant }} /></QueryClientProvider>)
   cache.clear()
   return html
 }
+
+it.each(['admin_empresa', 'rh', 'supervisor', 'auditor', 'trabajador'])('el expediente depende del permiso explícito para %s', role => {
+  expect(render([role])).not.toContain('id="tab-dossier"')
+  expect(render([role], undefined, true)).toContain('id="tab-dossier"')
+  expect(render([role], null, true)).not.toContain('id="tab-dossier"')
+})
 
 it.each(['admin_empresa', 'rh', 'auditor'])('muestra las tres secciones operativas a %s', role => {
   const html = render([role])

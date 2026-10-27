@@ -3,7 +3,14 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
-**Entrega local posterior del 27 de octubre: E2/E3 implementadas y probadas.**
+**Estado local vigente del 27 de octubre: E2–E5 implementadas y probadas.**
+[E4/E5](entrega-expediente-e4-e5.md) completan MFA nuevo, autorización de un
+uso y portal; API 0.15.0, formato 1. Aprobaron 64 unitarias, 88 integraciones,
+189 pruebas web, 11 de identidad real y la historia en Chrome con ZIP íntegro.
+Ambos contratos y modelos PlantUML V010 comprobados. E6, Q07/Q14 y aceptación
+siguen pendientes; no hay despliegue público de esta entrega.
+
+**Corte anterior del 27 de octubre: E2/E3 implementadas y probadas.**
 [Acta y pruebas](entrega-expediente-e2-e3.md): permiso explícito/aislamiento y
 preparación íntegra por bloques, API 0.14.0, 60 unitarias y 83 integraciones
 aprobadas sin omisiones, perfiles anuales 50/300 y ambos contratos válidos.

@@ -55,7 +55,7 @@ import kotlin.test.assertTrue
 abstract class ApiTestBase {
     companion object {
         const val KEY_ID = "prueba"
-        const val ISSUER = "http://identidad.invalid/realms/zenit"
+        const val ISSUER = "https://identidad.invalid/realms/zenit"
         const val OPERATOR = "operadora@zenit.invalid"
         val keys: KeyPair by lazy { rsa() }
         val databaseUrl: String by lazy { System.getenv("IT_DB_URL") ?: error("Falta IT_DB_URL") }
