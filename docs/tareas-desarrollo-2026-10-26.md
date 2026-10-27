@@ -9,15 +9,21 @@ referencia local `origin/main`. No se hizo pull, despliegue ni cambio de código
 habilitar endpoints. El siguiente desarrollo es E2. E3–E5 pueden completarse después, con
 dependencias internas y datos ficticios. E6 puede completar su verificación
 técnica después de esas entregas, pero conserva aceptación y decisiones
-externas.** Ninguna de estas subtareas cierra por sí sola un pendiente global.
+externas. Ninguna de estas subtareas cierra por sí sola un pendiente global.
 Se mantienen **17 tareas globales abiertas total o parcialmente y seis P0**.
+
+E1 publicada en `b5aff1f`, [PR #19 abierta](https://github.com/Alsegurarp/fs_asistencias/pull/19)
+y sin integrar. Validación local aprobada: 56 unitarias (ocho nuevas), 75
+integraciones, lint de ambos contratos y secretos sin hallazgos. CI remoto
+en curso al corte del 26 a las 23:15 de Ciudad de México; véase
+[entrega y pendientes en bitácora](bitacora-trabajo.md#tarea-realizada-y-trabajo-restante).
 
 ## Estado verificado que sustituye los cortes anteriores
 
 | Comprobación | Resultado al 26 de octubre |
 | --- | --- |
 | Integración de respaldo concurrente y MFA | GitHub confirma integradas las [PR #15](https://github.com/Alsegurarp/fs_asistencias/pull/15) y [#16](https://github.com/Alsegurarp/fs_asistencias/pull/16). No queda pendiente volver a integrarlas |
-| CI del commit actual | [Verificaciones 40311310435](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40311310435), evento push en main: backend, portal, Android y contrato/seguridad completados con éxito. Incluye identidad, respaldo aislado e inventario/análisis de cinco imágenes |
+| CI de la base main/5d7b783 | [Verificaciones 40311310435](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40311310435), evento push en main: backend, portal, Android y contrato/seguridad completados con éxito. Incluye identidad, respaldo aislado e inventario/análisis de cinco imágenes; no sustituye CI de la PR #19 |
 | Expediente empresarial | La [issue #18](https://github.com/Alsegurarp/fs_asistencias/issues/18) está abierta con E1–E6 sin marcar. No hay operaciones de expediente en OpenAPI 0.13.0 ni implementación de negocio en backend/portal. La prueba MFA no entrega esta funcionalidad |
 | Android del día 26 | Navegación por secciones, resumen semanal/calendario, accesos, administración y lenguaje formal ya están en main. CI compila app/instrumentación, ejecuta pruebas unitarias y lint; no demuestra el recorrido visual de estas pantallas en un teléfono |
 | Seguridad del día 26 | Las actualizaciones de brotli/libcurl ya están en main y su paso de CI aprobó. Queda separado el inventario, actualización y aceptación del servidor público |
@@ -50,7 +56,7 @@ resuelve SMTP/recuperación de acceso, reglas laborales ni habilitación públic
 
 | Entrega | Código y verificaciones que debe alcanzar |
 | --- | --- |
-| E1 | contracts/openapi.yaml, ejemplos ficticios, documentación de formato y validación de contrato; revisar los consumidores web/Android afectados |
+| E1, entregada | contracts/dossier.openapi.yaml, dossier-format.schema.yaml, ejemplos ficticios y documentación de formato; pruebas DossierContractTest y lint. contracts/openapi.yaml permanece vigente en 0.13.0; promover operaciones sólo al implementarlas |
 | E2 | identity/CurrentPerson.kt, identity/IdentityResolver.kt, security/SecurityConfig.kt, usuarios, auditoría y migraciones nuevas en backend/src/main/resources/db/migration. Reutilizar los patrones de pruebas de aislamiento y permisos de ExportsIT y DatabaseRolesIT |
 | E3 | export/Exports.kt y jobs/Jobs.kt como patrones de trabajos, manifiestos y vencimiento; entidades de asistencia, incidencias, cierres/acuses versionados y reglas. Conservar aislamiento y procesar por lotes; el ByteArray del CSV actual no resuelve el tamaño anual del expediente |
 | E4 | infra/keycloak/dossier-mfa.test.mjs como evidencia de viabilidad, configuración versionada de identidad y seguridad backend. El principal actual no conserva prueba de MFA ligada a la operación; un ACR 2 renovado no demuestra un OTP nuevo |

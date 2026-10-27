@@ -9,6 +9,14 @@ integral condicionado. PR #15/#16 integradas; cuatro trabajos de CI aprobados
 para la base main/5d7b783. Docker disponible para la validación de E1. Se mantienen
 17 tareas globales abiertas y seis P0. Los cortes siguientes son históricos.
 
+Entrega E1 publicada en `b5aff1f` mediante la
+[PR #19](https://github.com/Alsegurarp/fs_asistencias/pull/19), abierta y sin
+integrar. Validación local: 56 unitarias (ocho nuevas), 75 integraciones y
+ambos contratos válidos; secretos sin hallazgos. CI remoto en curso al corte
+del 26 a las 23:15 de Ciudad de México. La
+[bitácora](bitacora-trabajo.md#tarea-realizada-y-trabajo-restante) registra
+la entrega, evidencia y lista E2–E6 por dependencia.
+
 Actualización posterior del **23 de octubre de 2026**: metas de expediente
 empresarial/MFA aprobadas y ensayo aislado de identidad 10/10 sin omisiones.
 Se declaran [E1–E6 para implementación](expediente-empresa.md#tareas-declaradas-para-implementación):
