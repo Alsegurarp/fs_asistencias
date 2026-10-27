@@ -1,6 +1,13 @@
 # Expediente recuperable por empresa
 
-**Entrega local del 27 de octubre:** [E2/E3 implementadas y probadas](entrega-expediente-e2-e3.md).
+**Entrega local vigente del 27 de octubre:** [E4/E5 implementadas y probadas](entrega-expediente-e4-e5.md).
+MFA nuevo, autorización de un uso y portal completan las ocho operaciones en
+API 0.15.0. Aprobaron 64 unitarias, 88 integraciones, 189 pruebas web, 11 de
+identidad real y la historia en Chrome. E6 conserva consulta/recuperación
+independiente, Q07/Q14 y aceptación. No hay despliegue ni autorización de purga.
+Los cortes siguientes conservan su evidencia histórica.
+
+**Entrega anterior del 27 de octubre:** [E2/E3 implementadas y probadas](entrega-expediente-e2-e3.md).
 Permiso explícito y preparación íntegra por bloques en API 0.14.0; 60
 unitarias y 83 integraciones aprobadas, con concurrencia y perfiles 50/300.
 La descarga permanece cerrada hasta E4; portal E5 y recuperación/aceptación E6

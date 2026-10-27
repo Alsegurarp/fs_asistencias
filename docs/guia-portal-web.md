@@ -1,5 +1,15 @@
 # Guía del portal web
 
+Actualización E4/E5 del 27 de octubre: **Expediente empresarial** aparece sólo
+con permiso explícito, incluso para administración. Desde **Usuarios**, una
+cuenta administradora puede conceder/revocar con confirmación. El expediente
+permite solicitar, consultar preparación/vencimiento, guardar manifiesto y
+verificar identidad con OTP nuevo antes de cada descarga. Al volver de Keycloak,
+pulsar **Continuar con la descarga verificada**. Cancelar o vencer exige otra
+verificación; si la descarga se consume e interrumpe, solicitar otro expediente.
+No admite reanudación. El CSV semanal conserva su recorrido y permisos.
+[Pruebas, configuración y límites](entrega-expediente-e4-e5.md).
+
 Actualización A1–A4 del 20 de octubre: el operador puede reactivar empresas
 con motivo, el trabajador consulta su semana y el acuse del servidor en
 Mi asistencia y administración puede exigir contraseña nueva a cuentas

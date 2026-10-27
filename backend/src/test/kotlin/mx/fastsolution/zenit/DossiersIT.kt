@@ -155,8 +155,8 @@ class DossiersIT : WorkdayTestBase() {
         assertEquals(200, grant(c, ana.id).status)
         assertEquals(3, count("select version from dossier_permission where tenant_id = ? and user_id = ?", uuid(c.id), uuid(ana.id)))
         assertEquals("ready", dossier(ana.token, id).at("status"))
-        // No se habilita descarga hasta que E4 vincule/consuma MFA nuevo.
-        assertProblem(403, "forbidden", call("POST", "/api/v1/dossiers/$id/download", ana.token, "{}"))
+        // Sin autorización de un uso no se permite la descarga.
+        assertProblem(422, "validation", call("POST", "/api/v1/dossiers/$id/download", ana.token, "{}"))
     }
 
     @Test

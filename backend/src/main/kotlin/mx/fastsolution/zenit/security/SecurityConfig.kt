@@ -141,6 +141,8 @@ class SecurityConfig {
                     .hasAnyRole(admin, rh, supervisor, auditor, worker)
                 it.requestMatchers(HttpMethod.PUT, "/api/v1/users/{userId}/dossier-permission").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/dossiers").hasAnyRole(admin, rh, supervisor, auditor, worker)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/dossiers/{dossierId}/challenges", "/api/v1/dossiers/{dossierId}/authorizations", "/api/v1/dossiers/{dossierId}/download")
+                    .hasAnyRole(admin, rh, supervisor, auditor, worker)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/exports").hasAnyRole(admin, rh, auditor)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/exports/{exportId}", "/api/v1/exports/{exportId}/download", "/api/v1/exports/{exportId}/manifest")
                     .hasAnyRole(admin, rh, auditor)
