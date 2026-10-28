@@ -6,6 +6,77 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 28 de octubre de 2026 — Avance verificado y pendientes priorizados
+
+Se revisaron historial, árbol de trabajo, fuentes, contratos, migraciones,
+workflow, documentación y GitHub mediante consultas de lectura. `main` local
+y la rama remota consultada coinciden en
+`fa2396d6d77ccef63a4dac2589c62a300e622727`. La
+[PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) se integró el
+27 de octubre a las 11:50 de Ciudad de México; sustituye el estado «abierta»
+del corte anterior. E1–E3 están integradas; E4–E6 siguen pendientes.
+
+### Cambios que ya tiene el proyecto
+
+- Backend/contrato: API 0.14.0 con **67 operaciones**. E2/E3 añaden permiso
+  explícito por cuenta/empresa, concesión y revocación auditadas, solicitud
+  idempotente, estado y manifiesto. V009 incorpora permiso, expediente y
+  bloques. La preparación conserva históricos y evidencia disponible en
+  ZIP/NDJSON, con instantánea coherente y bloques de hasta 64 KiB; caduca a
+  las 24 horas sin borrar la evidencia de origen. La descarga sigue cerrada.
+- Portal: están integrados catálogos, horarios/importación, dispositivos,
+  incidencias, cierres, CSV, usuarios, configuración, semana y acuse personal
+  y las entregas A1–A5. Las actas previas acreditan 33 casos A5 locales y
+  17 casos locales de horarios/CSV; no se repitieron en esta sesión.
+  La interfaz del expediente E5 todavía no existe.
+- Android: captura y cola cifrada, sincronización, semana/acuse y navegación
+  operativa simplificada del 26 están integradas. El recorrido visual del
+  21 es evidencia de aquella versión; falta QA visual de la interfaz del 26.
+  Las herramientas MF1K no acreditan captura autenticada de asistencia.
+- Infraestructura: CI para backend/identidad, portal, Android y
+  contrato/seguridad; ensayo de respaldo cifrado/restauración y revisión de
+  imágenes integrados. No equivalen a un respaldo externo operativo.
+- Modelos: V001–V009 representadas en PlantUML, con 32 entidades y 52
+  relaciones; la entrega anterior verificó compatibilidad con 1.2025.10 y
+  1.2026.8. No se volvieron a renderizar en esta revisión.
+
+### Evidencia comprobada en esta sesión
+
+| Comprobación | Resultado y límite |
+| --- | --- |
+| Integración | Git local y consulta de `main` en GitHub coinciden; PR #20 cerrada e integrada |
+| CI de la PR #20 | [Ejecución 40541212345](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40541212345): cuatro trabajos aprobados |
+| CI del merge en `main/fa2396d` | [Ejecución 40554372464](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464): backend, portal, Android y contrato/seguridad aprobados; incluidos identidad/OTP, respaldo y análisis de imágenes |
+| Resultados locales E2/E3 conservados | Recuento de 22 XML unitarios: **60 pruebas**; 14 XML de integración: **83 pruebas**. Cero fallos, errores u omisiones en ambos grupos. Es lectura de resultados anteriores, no otra ejecución |
+| Implementación del expediente | Cinco operaciones activas verificadas en contrato/controlador; desafío, autorización y descarga sólo en contrato candidato. Sin pantalla de expediente en el portal |
+| Entorno local | `docker compose ps --all` no conecta: no existe la tubería del motor Docker Desktop. No se arrancaron servicios ni se ejecutaron pruebas nuevas |
+| Árbol de trabajo recibido | Cambios previos exclusivamente en `backend/bin/`, incluidos archivos sin seguimiento; se preservan y no se contabilizan como una entrega funcional nueva |
+| Seguimiento remoto | [Issue #18](https://github.com/Alsegurarp/fs_asistencias/issues/18) abierta y sin actualizar sus casillas E1–E3; no refleja las integraciones ya confirmadas. No se modificó GitHub |
+
+### Trabajo pendiente y orden recomendado
+
+El [listado priorizado](TareasPendientes.md#trabajo-priorizado-con-el-contexto-del-28-de-octubre)
+declara alcance, dependencias y criterios verificables. Primero **E4**
+(MFA nuevo, autorización y descarga de un uso), después **E5** (portal).
+La verificación técnica de **E6** puede iniciarse con el ejemplo existente;
+su aceptación completa requiere la descarga implementada, Q07/Q14 y las
+decisiones de conservación. La QA Android del 26 necesita teléfono y backend
+disponibles. Para ejecutar pruebas locales, primero restablecer Docker.
+
+Se mantienen **17 tareas globales abiertas total o parcialmente y seis P0**:
+respaldo externo, identidad operativa/SMTP, jornada/acuse, tarjetas reales,
+reglas de negocio y producción administrada. E1–E6 son subtareas de ese
+inventario. No se fija un porcentaje global sin criterios de aceptación
+equivalentes, ni se cierran tareas por integración o por CI solamente.
+
+Esta sesión actualiza bitácora, estado, lista de tareas y referencias de
+seguimiento. Se comprobaron 229 enlaces/anclas locales en los ocho documentos
+modificados, las 67 operaciones del contrato y `git diff --check`, sin errores.
+No modifica producto, datos, realm activo ni `backend/bin/`;
+no hace commit, publicación o despliegue. Servidor público, teléfono y
+aceptación del usuario/jurídica no comprobados. Los cortes anteriores
+conservan su fecha y resultados originales.
+
 ## 27 de octubre de 2026 — Publicación de E2/E3, PR #20
 
 La [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) está abierta,

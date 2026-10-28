@@ -3,6 +3,24 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
+**Estado verificado al 28 de octubre de 2026.** `main` local y GitHub
+coinciden en `fa2396d`; la [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20)
+ya está integrada. E1–E3 entregadas técnicamente: API 0.14.0, 67 operaciones,
+permiso explícito y preparación del expediente con V009. Los cuatro trabajos
+del [CI de main](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464)
+aprobaron. Recuento de resultados locales conservados: 60 unitarias y 83
+integraciones, sin fallos/errores/omisiones; no se ejecutaron otra vez.
+**Siguiente desarrollo: E4 → E5; E6 puede iniciar verificación del formato**
+con los ejemplos existentes y mantiene su aceptación/decisiones pendientes.
+La descarga sigue cerrada; no se acredita despliegue de E2/E3.
+
+Docker Desktop no ofrece actualmente la tubería del motor; no se comprobaron
+servicios, teléfono ni servidor público. Los cambios previos de `backend/bin/`
+se preservan. Continúan 17 tareas globales abiertas y seis P0. Consultar la
+[bitácora de este corte](bitacora-trabajo.md#28-de-octubre-de-2026--avance-verificado-y-pendientes-priorizados)
+y el [trabajo priorizado con dependencias y criterios](TareasPendientes.md#trabajo-priorizado-con-el-contexto-del-28-de-octubre).
+Los cortes siguientes son históricos y no sustituyen este estado.
+
 **Entrega local posterior del 27 de octubre: E2/E3 implementadas y probadas.**
 [Acta y pruebas](entrega-expediente-e2-e3.md): permiso explícito/aislamiento y
 preparación íntegra por bloques, API 0.14.0, 60 unitarias y 83 integraciones

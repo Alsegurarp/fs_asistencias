@@ -53,7 +53,7 @@ contradice al contrato, manda el contrato.
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |
 | [Jerarquía general PlantUML](dbFlow/01-jerarquia.puml) y [relaciones PlantUML](dbFlow/02-relaciones.puml) | Conceptos, entidades y cardinalidades; 32 tablas V001–V009 y fronteras de identidad/Android |
 | [Entrega E2/E3 del expediente](entrega-expediente-e2-e3.md) | Implementación local, historia completa, 60 unitarias, 83 integraciones, perfiles anuales y límites |
-| [Tareas pendientes](TareasPendientes.md) | Resumen de las 17 tareas abiertas, prioridades, dependencias y trabajo disponible; incluye entrega de la prueba móvil a otro desarrollador |
+| [Tareas pendientes](TareasPendientes.md) | Corte verificado del 28: E1–E3 integradas, siguiente desarrollo E4/E5, verificación E6 y 17 tareas globales con dependencias; incluye entrega de la prueba móvil a otro desarrollador |
 | [Verificación E2–E5 del 27 de octubre](verificacion-e2-e5-2026-10-27.md) | Corte previo a implementar E2/E3; evidencia de integración E1, pendientes y orden de trabajo |
 | [Desarrollo disponible al 26 de octubre](tareas-desarrollo-2026-10-26.md) | Corte anterior de código/GitHub/CI, criterios E1–E6, QA Android y bloqueos externos |
 | [Contrato y formato del expediente E1](contrato-expediente-e1.md) | Diseño y evidencia originales; actualización E2/E3 con cinco operaciones implementadas y descarga pendiente de E4 |
@@ -76,7 +76,7 @@ contradice al contrato, manda el contrato.
 
 | Pieza | Carpeta | Estado |
 | --- | --- | --- |
-| Backend | `backend/` | Atiende las 62 operaciones del contrato, con pruebas contra PostgreSQL real. Incluye el simulador de dispositivo. Detrás del borde toma la dirección real del visitante |
+| Backend | `backend/` | API 0.14.0 con 67 operaciones y pruebas contra PostgreSQL real. E2/E3 integradas: permiso y preparación del expediente; descarga E4 pendiente. Incluye simulador de dispositivo y dirección real del visitante detrás del borde |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
 | Portal web | `web/` | PKCE, catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, usuarios y configuración de empresa; A5 local 33/33 y horarios/CSV en navegador local 17/17 aprobados. Aceptación pública/del usuario pendiente |
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Captura simulada comprobada contra backend local/HTTPS; semana/acuse visual aprobados en teléfono contra backend real local el 21. Faltan aceptación pública/del usuario, expediente y tarjeta autenticada |

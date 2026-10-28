@@ -1,5 +1,52 @@
 # Tareas pendientes
 
+**Corte verificado: 28 de octubre de 2026.** E1–E3 integradas en
+`main/fa2396d`, coincidente con GitHub. La
+[PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) está integrada
+y los cuatro trabajos del [CI de main](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464)
+aprobaron. Se recontaron los XML locales E2/E3: 60 unitarias y 83
+integraciones, sin fallos, errores u omisiones; no son pruebas nuevas.
+La descarga y el portal del expediente siguen pendientes. Docker no
+responde actualmente; no se comprobaron teléfono ni servidor público.
+[Evidencia completa](bitacora-trabajo.md#28-de-octubre-de-2026--avance-verificado-y-pendientes-priorizados).
+Se mantienen 17 tareas globales abiertas y seis P0. Los cortes anteriores
+que siguen al listado conservan su valor histórico.
+
+## Trabajo priorizado con el contexto del 28 de octubre
+
+Este orden prioriza desarrollo con contrato, código y datos ficticios ya
+disponibles. No rebaja los P0 necesarios antes de usar datos reales ni
+constituye autorización para desplegar. No hay que rehacer E1–E3.
+
+| Secuencia | Pendiente | Qué permite avanzar ahora | Entrega y comprobación para cerrarlo |
+| --- | --- | --- | --- |
+| 1 | **E4 — MFA y autorización por descarga** | E1–E3 integradas; contrato candidato con desafío de 300 s y autorización de 60 s como máximos, ensayo `infra/keycloak/dossier-mfa.test.mjs` y versiones de permiso/cuenta ya disponibles. No depende de SMTP, dictamen ni elección de proveedor | Implementar desafío ligado a usuario/empresa/expediente, canje OIDC con PKCE/state/nonce y OTP nuevo, autorización opaca de un uso y descarga por flujo de los bloques existentes. Consumir atómicamente y revalidar cuenta/permiso; no aceptar un JWT renovado con ACR 2 como prueba nueva. Versionar configuración efectiva de identidad y activar las tres operaciones candidatas en contrato/seguridad. Probar SSO, OTP incorrecto/consumido, firma/emisor/audiencia/sujeto, revocación/cambio de cuenta, vencimiento, desafío ajeno, reutilización, dos descargas concurrentes, interrupción y regresión del acceso normal/CSV |
+| 2 | **E5 — Solicitud y descarga en el portal** | Componentes, autenticación y cliente API existentes; requiere E4 para completar el recorrido | Administrar el permiso explícito, mostrar la acción sólo al autorizado, solicitar y consultar preparación, conservar correlación de PKCE/state/nonce al volver de identidad y descargar. Manejar cancelación, vencimiento, errores, respuesta perdida y cambio de cuenta sin reusar autorizaciones. Pruebas por rol, aislamiento, accesibilidad y regresión CSV; aceptación local con identidad real |
+| 3 | **E6 — Verificación técnica fuera de Zenit** | Puede comenzar con `contracts/examples/dossier-v1/`, esquema e instrucciones y pruebas de archivo E3. La prueba de una descarga real depende de E4/E5 | Reutilizar el formato y las herramientas existentes para comprobar ZIP/NDJSON, inventario, conteos, SHA-256, referencias, empresa e históricos sin conexión al servicio. Rechazar truncamiento, alteración de datos/manifiesto y mezcla de empresas; documentar objeciones, reaperturas y evidencia ausente. Conservar una referencia de integridad obtenida por un canal confiable: un manifiesto modificado junto con sus datos no acredita autenticidad. Registrar versión/entorno y repetir con una entrega real. Q07/Q14 y aceptación siguen pendientes para el cierre integral; no habilitar purga |
+| 4 | **QA de la interfaz Android integrada el 26** | Código y guiones existentes; necesita motor Docker, backend/identidad locales y teléfono autorizado. Su disponibilidad no se comprobó en este corte | Repetir navegación Inicio/Mi semana/Actividad/Dispositivo, captura, cola/sincronización y semana/acuse en personal; comprobar límites de terminal, permisos y acceso administrativo. Registrar APK/commit, resultados y restauración del teléfono. La evidencia visual del 21 no acepta automáticamente la interfaz nueva |
+
+**Requisito de ejecución local:** restablecer Docker Desktop y comprobar el
+motor antes de construir o probar; el host sigue limitado a Git/editor y
+Docker según el flujo del proyecto. Revisar los cambios existentes de
+`backend/bin/` antes de preparar otra entrega, sin borrarlos ni incluirlos
+automáticamente. La documentación de este corte queda actualizada; la
+[issue #18](https://github.com/Alsegurarp/fs_asistencias/issues/18) aún requiere
+conciliar sus casillas E1–E3 con las PR #19/#20. No se publicó ese ajuste.
+
+### Pendientes que conservan dependencias externas
+
+| Tareas globales | Qué falta antes de ejecutarlas o cerrarlas |
+| --- | --- |
+| 1 y 6 — Respaldo externo y producción | Destino/proveedor/región/cuenta, custodia y responsables; automatizar copia externa y ensayar recuperación completa en el destino. Los ensayos locales/CI no cierran operación |
+| 2 — Identidad operativa | Q03/Q04: recuperación de contraseña olvidada, SMTP/remitente, cuentas personales/OTP y recuperación del operador; A4 sólo implementa cambio obligatorio |
+| 3, 5 y 17 — Jornada, acuse y reglas | Dictamen/criterios y decisiones Q06/Q07/Q10–Q13; conservar históricos y aprobar casos esperados antes de cambiar cálculo o comportamiento |
+| 4 — Tarjetas reales | Tecnología, tarjetas/teléfono físicos y custodia de claves; MF1K de ejemplo no implementa autenticación del backend |
+| 10 y cierre integral E6 — Retención | Q14 y conservación/recuperación de evidencia local; no elegir plazos ni purgar pendientes por inferencia |
+| 8, 9, 12, 13, 15 y 16 — Validación pública/usuario | Inventario, versión y accesos al ambiente cuando se retome. La prueba de dos IP con datos móviles sigue asignada a otro desarrollador por indicación del usuario |
+| 18, 19 y 20 — Operación, nómina y contrato 1.0 | Objetivos Q19 y entorno destino, sistema/formato del primer cliente y aceptación de consumidores; no congelar 1.0 antes de cerrar recorridos y decisiones |
+
+## Cortes anteriores
+
 **Avance local del 27 de octubre: E2/E3 completadas en alcance técnico.**
 [Permiso y preparación del expediente](entrega-expediente-e2-e3.md), con
 60 unitarias y 83 integraciones aprobadas, incluidos historia completa,

@@ -1,5 +1,14 @@
 # Expediente recuperable por empresa
 
+**Seguimiento verificado el 28 de octubre:** E1–E3 integradas en
+`main/fa2396d` mediante PR #19/#20; cuatro trabajos del
+[CI de main aprobados](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464).
+E4–E6 siguen pendientes; la descarga permanece cerrada. La tabla E1–E6
+conserva sus criterios de cierre; las declaraciones antiguas de E2/E3
+pendientes corresponden a cortes anteriores. Consultar el
+[orden de trabajo actual](TareasPendientes.md#trabajo-priorizado-con-el-contexto-del-28-de-octubre).
+Sin despliegue acreditado ni autorización de purga.
+
 **Entrega local del 27 de octubre:** [E2/E3 implementadas y probadas](entrega-expediente-e2-e3.md).
 Permiso explícito y preparación íntegra por bloques en API 0.14.0; 60
 unitarias y 83 integraciones aprobadas, con concurrencia y perfiles 50/300.
