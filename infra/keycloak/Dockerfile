@@ -21,6 +21,9 @@ FROM java-${TARGETARCH} AS java
 RUN mkdir /opt/java && tar -xzf /tmp/java.tar.gz -C /opt/java --strip-components=1
 
 FROM quay.io/keycloak/keycloak:26.8.1@sha256:79c623a22abacf3fe6c00a5fb30f5b7843d717b234033b80995891c06116d244 AS keycloak
+# GHSA-xxph-c9ww-hj94: retirar el reemplazo cuando Keycloak incluya Guava >=33.7.2.
+# Se conserva el nombre referenciado por Quarkus; los metadatos del JAR declaran 33.7.2-jre.
+ADD --chown=1000:0 --chmod=0644 --checksum=sha256:b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c https://repo.maven.apache.org/maven2/com/google/guava/guava/33.7.2-jre/guava-33.7.2-jre.jar /opt/keycloak/lib/lib/main/com.google.guava.guava-33.6.0-jre.jar
 
 FROM base AS runtime
 ENV JAVA_HOME=/opt/java \

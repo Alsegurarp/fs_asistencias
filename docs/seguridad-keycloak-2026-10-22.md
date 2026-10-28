@@ -1,5 +1,15 @@
 # Corrección de la imagen de identidad — 22 de octubre de 2026
 
+**Corrección posterior del 28 de octubre, PR #22:** los controles de imágenes
+de push/PR detectaron Guava 33.6.0-jre con `GHSA-xxph-c9ww-hj94`
+(`CVE-2026-102554`). El Dockerfile reemplaza ese JAR por **33.7.2-jre**
+desde Maven Central con SHA-256 fijado, conservando el nombre requerido por
+Quarkus antes de optimizar Keycloak. El SBOM confirma la versión nueva y
+el análisis local aprueba sin críticas/altas ni excepciones. La prueba de
+runtime comprueba huella y copia única. La
+[bitácora](bitacora-trabajo.md#28-de-octubre-de-2026--corrección-de-los-dos-fallos-de-actions-en-pr-22)
+registra evidencia y validaciones; el corte del 22 que sigue es histórico.
+
 La [ejecución 39863661586](https://github.com/Alsegurarp/fs_asistencias/actions/runs/39863661586)
 de la PR #14 falló en el inventario de cinco imágenes: Keycloak incluía
 `CVE-2026-114406` crítica en `ca-certificates` y `CVE-2026-91415` alta en

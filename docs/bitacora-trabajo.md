@@ -6,6 +6,37 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 28 de octubre de 2026 — Corrección de los dos fallos de Actions en PR #22
+
+Se revisaron las ejecuciones de
+[push 40777656642](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40777656642)
+y [PR 40777662875](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40777662875),
+ambas sobre `b1d67bd`. En las dos aprobaron backend, portal y Android; falló
+el mismo trabajo `contrato-y-seguridad`, al analizar las imágenes. Backend,
+portal, PostgreSQL y respaldo aprobaron sus análisis; sólo Keycloak falló
+por Guava 33.6.0-jre, `GHSA-xxph-c9ww-hj94` / `CVE-2026-102554` alta.
+
+Se sustituye únicamente ese JAR por **33.7.2-jre**, versión corregida de la
+[publicación oficial de Guava](https://github.com/google/guava/releases/tag/v33.7.2),
+en la etapa Keycloak, antes de la construcción optimizada. Descarga Maven
+Central fijada por SHA-256
+`b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c`.
+Se conserva el nombre de archivo que referencia Quarkus; los metadatos y
+el inventario identifican 33.7.2-jre. La prueba de runtime ahora exige la
+huella corregida y un único JAR Guava, además de UID, Java y certificados.
+
+La imagen reconstruida aprobó el mismo análisis local que falló en CI:
+**0 críticas, 0 altas, 22 medias, 11 bajas y 0 desconocidas**, sin hallazgos
+aceptados. `.grype.yaml` conserva `ignore: []` y el umbral `high` no cambia.
+UID 1000, Java/certificados y readiness 200/503 comprobados sobre esa imagen.
+La regresión real de identidad aprobó **8/8, sin omisiones**, incluidos OTP
+nuevo con SSO, mínimo ACR y permisos del cliente técnico. Se ejecutó en un
+proyecto Docker nuevo, sin puertos publicados, tras descartar el entorno de
+ensayo que conservaba credenciales de base anteriores. La nueva ejecución
+remota se comprueba después de publicar en la misma PR. No hay despliegue público
+ni cambios de datos o cuentas de operación; `backend/bin/` se preserva.
+Evidencia local: `build/keycloak-guava-fix/` y `build/security/`.
+
 ## 28 de octubre de 2026 — E4/E5, recuperación E6 y QA Android
 
 **Publicación:** [PR #22](https://github.com/Alsegurarp/fs_asistencias/pull/22)
