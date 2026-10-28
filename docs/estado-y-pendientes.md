@@ -3,6 +3,19 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
+**Entrega posterior del 28 de octubre — E4/E5 y E6 técnica.** La rama
+`feat/expediente-e4-e6-qa` incorpora E4/E5 desde la PR #21, integrada en E2/E3
+después de que #20 llegara a main. API 0.15.0, 70 operaciones, desafío OIDC
+con MFA nuevo, autorización/descarga de un uso y portal. [E6](entrega-expediente-e6.md)
+añade verificación y consulta independientes sin red; su aceptación integral
+conserva Q07/Q14. Backend: 67 unitarias/88 integraciones aprobadas; portal:
+189; identidad real: ocho sin omisiones; Android: 13 unitarias, lint y APK.
+Docker se restableció y la [QA técnica local en Samsung](qa-android-2026-10-28.md)
+aprobó con almacén separado: captura personal/terminal, sincronización,
+objeción, recuperación, reapertura/conformidad y 403 para terminal. El acta
+declara los límites visuales/públicos. Publicación en bitácora. Sin despliegue público ni purga;
+se mantienen 17 tareas globales y seis P0. Los cortes siguientes son históricos.
+
 **Estado verificado al 28 de octubre de 2026.** `main` local y GitHub
 coinciden en `fa2396d`; la [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20)
 ya está integrada. E1–E3 entregadas técnicamente: API 0.14.0, 67 operaciones,
@@ -21,7 +34,17 @@ se preservan. Continúan 17 tareas globales abiertas y seis P0. Consultar la
 y el [trabajo priorizado con dependencias y criterios](TareasPendientes.md#trabajo-priorizado-con-el-contexto-del-28-de-octubre).
 Los cortes siguientes son históricos y no sustituyen este estado.
 
-**Entrega local posterior del 27 de octubre: E2/E3 implementadas y probadas.**
+
+**Estado local vigente del 27 de octubre: E2–E5 implementadas y probadas.**
+[E4/E5](entrega-expediente-e4-e5.md) completan MFA nuevo, autorización de un
+uso y portal; API 0.15.0, formato 1. Aprobaron 64 unitarias, 88 integraciones,
+189 pruebas web, 11 de identidad real y la historia en Chrome con ZIP íntegro.
+Ambos contratos y modelos PlantUML V010 comprobados. E6, Q07/Q14 y aceptación
+siguen pendientes; no hay despliegue público de esta entrega.
+[PR #21](https://github.com/Alsegurarp/fs_asistencias/pull/21) abierta sobre
+la rama de #20; CI remoto en curso al publicar. Ambas siguen sin integrar.
+
+**Corte anterior del 27 de octubre: E2/E3 implementadas y probadas.**
 [Acta y pruebas](entrega-expediente-e2-e3.md): permiso explícito/aislamiento y
 preparación íntegra por bloques, API 0.14.0, 60 unitarias y 83 integraciones
 aprobadas sin omisiones, perfiles anuales 50/300 y ambos contratos válidos.

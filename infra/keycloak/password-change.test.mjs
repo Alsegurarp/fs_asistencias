@@ -7,7 +7,7 @@ import { test } from 'node:test'
 test('cliente técnico de contraseña conserva OTP y otras acciones, sin privilegios de realm ni clientes', {
   skip: !process.env.IDENTITY_TEST_SECRETOS,
 }, async () => {
-  const base = 'http://localhost:38082'
+  const base = process.env.IDENTITY_TEST_URL || 'http://localhost:38082'
   async function request(method, path, token, body, expected = 200) {
     const response = await fetch(`${base}${path}`, {
       method, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { 'Content-Type': body instanceof URLSearchParams ? 'application/x-www-form-urlencoded' : 'application/json' } : {}) },

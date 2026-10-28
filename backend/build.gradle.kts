@@ -98,3 +98,26 @@ tasks.register<JavaExec>("simulate") {
 tasks.bootJar {
     archiveFileName.set("backend.jar")
 }
+
+// Herramienta independiente: sólo Jackson/JSON Schema, sin Spring, base ni red.
+val dossierVerifier: SourceSet by sourceSets.creating
+dependencies {
+    add(dossierVerifier.implementationConfigurationName, "com.networknt:json-schema-validator:3.0.8")
+    add(dossierVerifier.implementationConfigurationName, "tools.jackson.dataformat:jackson-dataformat-yaml")
+}
+tasks.named<ProcessResources>(dossierVerifier.processResourcesTaskName) {
+    from(rootProject.file("contracts/dossier-format.schema.yaml"))
+}
+sourceSets.test {
+    compileClasspath += dossierVerifier.output
+    runtimeClasspath += dossierVerifier.output + dossierVerifier.runtimeClasspath
+}
+tasks.register<Jar>("dossierVerifierJar") {
+    dependsOn(dossierVerifier.classesTaskName)
+    archiveFileName.set("verificar-expediente.jar")
+    manifest { attributes["Main-Class"] = "mx.fastsolution.zenit.dossier.DossierVerifierKt" }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(dossierVerifier.output)
+    from({ dossierVerifier.runtimeClasspath.filter { it.isFile }.map { zipTree(it) } })
+    exclude("META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA", "module-info.class")
+}

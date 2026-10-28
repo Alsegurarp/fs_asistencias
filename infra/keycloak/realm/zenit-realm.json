@@ -883,6 +883,47 @@
         "organization",
         "microprofile-jwt"
       ]
+    },
+    {
+      "clientId": "zenit-dossier",
+      "name": "Verificación por descarga del expediente",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
+      "redirectUris": [
+        "${ZENIT_PORTAL_URL}/dossier/callback"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "minimum.acr.value": "2",
+        "acr.loa.map": "{\"1\":1,\"2\":2}"
+      },
+      "authenticationFlowBindingOverrides": {
+        "browser": "9af6d750-7c2e-4f43-9f65-717770a4e405"
+      },
+      "defaultClientScopes": [
+        "basic",
+        "acr"
+      ],
+      "optionalClientScopes": [],
+      "protocolMappers": [
+        {
+          "name": "audiencia-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "zenit-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
     }
   ],
   "clientScopes": [
@@ -2423,6 +2464,89 @@
           "userSetupAllowed": false
         }
       ]
+    },
+    {
+      "alias": "dossier-browser",
+      "topLevel": true,
+      "providerId": "basic-flow",
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "priority": 10,
+          "requirement": "ALTERNATIVE",
+          "authenticatorFlow": false
+        },
+        {
+          "flowAlias": "dossier-auth",
+          "authenticatorFlow": true,
+          "priority": 20,
+          "requirement": "ALTERNATIVE"
+        }
+      ],
+      "id": "9af6d750-7c2e-4f43-9f65-717770a4e405"
+    },
+    {
+      "alias": "dossier-auth",
+      "topLevel": false,
+      "providerId": "basic-flow",
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "flowAlias": "dossier-password",
+          "authenticatorFlow": true,
+          "priority": 10,
+          "requirement": "CONDITIONAL"
+        },
+        {
+          "flowAlias": "dossier-otp",
+          "authenticatorFlow": true,
+          "priority": 20,
+          "requirement": "CONDITIONAL"
+        }
+      ]
+    },
+    {
+      "alias": "dossier-password",
+      "topLevel": false,
+      "providerId": "basic-flow",
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-level-of-authentication",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorConfig": "dossier-level-1"
+        },
+        {
+          "authenticator": "auth-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20
+        }
+      ]
+    },
+    {
+      "alias": "dossier-otp",
+      "topLevel": false,
+      "providerId": "basic-flow",
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-level-of-authentication",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorConfig": "dossier-level-2"
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20
+        }
+      ]
     }
   ],
   "authenticatorConfig": [
@@ -2458,6 +2582,20 @@
       "alias": "review profile config",
       "config": {
         "update.profile.on.first.login": "missing"
+      }
+    },
+    {
+      "alias": "dossier-level-1",
+      "config": {
+        "loa-condition-level": "1",
+        "loa-max-age": "36000"
+      }
+    },
+    {
+      "alias": "dossier-level-2",
+      "config": {
+        "loa-condition-level": "2",
+        "loa-max-age": "0"
       }
     }
   ],

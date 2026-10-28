@@ -1,5 +1,12 @@
 # Expediente recuperable por empresa
 
+**Entrega posterior del 28:** E4/E5 incorporadas desde la PR #21 y
+[E6 técnica entregada](entrega-expediente-e6.md) en la rama
+`feat/expediente-e4-e6-qa` para integrar contra main. MFA nuevo y descarga de
+un uso, portal y verificación/consulta sin conexión implementados y probados.
+E6 conserva aceptación del responsable, Q07/Q14 y límites de evidencia;
+descargar/verificar no autoriza purga. El seguimiento siguiente es histórico.
+
 **Seguimiento verificado el 28 de octubre:** E1–E3 integradas en
 `main/fa2396d` mediante PR #19/#20; cuatro trabajos del
 [CI de main aprobados](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464).
@@ -9,7 +16,15 @@ pendientes corresponden a cortes anteriores. Consultar el
 [orden de trabajo actual](TareasPendientes.md#trabajo-priorizado-con-el-contexto-del-28-de-octubre).
 Sin despliegue acreditado ni autorización de purga.
 
-**Entrega local del 27 de octubre:** [E2/E3 implementadas y probadas](entrega-expediente-e2-e3.md).
+
+**Entrega local vigente del 27 de octubre:** [E4/E5 implementadas y probadas](entrega-expediente-e4-e5.md).
+MFA nuevo, autorización de un uso y portal completan las ocho operaciones en
+API 0.15.0. Aprobaron 64 unitarias, 88 integraciones, 189 pruebas web, 11 de
+identidad real y la historia en Chrome. E6 conserva consulta/recuperación
+independiente, Q07/Q14 y aceptación. No hay despliegue ni autorización de purga.
+Los cortes siguientes conservan su evidencia histórica.
+
+**Entrega anterior del 27 de octubre:** [E2/E3 implementadas y probadas](entrega-expediente-e2-e3.md).
 Permiso explícito y preparación íntegra por bloques en API 0.14.0; 60
 unitarias y 83 integraciones aprobadas, con concurrencia y perfiles 50/300.
 La descarga permanece cerrada hasta E4; portal E5 y recuperación/aceptación E6

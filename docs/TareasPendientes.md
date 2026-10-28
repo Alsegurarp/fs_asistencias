@@ -1,5 +1,18 @@
 # Tareas pendientes
 
+**Entrega posterior del 28 de octubre:** E4/E5 incorporadas a la rama
+`feat/expediente-e4-e6-qa`, junto con [E6 técnica](entrega-expediente-e6.md).
+La PR #21 se había integrado en E2/E3 después de #20; esta entrega reúne
+el trabajo contra main. Ya no corresponde desarrollar esas capacidades
+desde cero. Backend 67/88, portal 189 e identidad real ocho aprobadas;
+Android 13 unitarias/lint/APK y [QA técnica en teléfono aprobada](qa-android-2026-10-28.md),
+con los límites visuales/públicos declarados en el acta.
+El cierre de E6 sigue condicionado a aceptación/Q07/Q14; los 17 pendientes
+globales y seis P0 conservan sus criterios. La bitácora registra la evidencia
+final y la PR. La prioridad siguiente es aceptar la recuperación/conservación,
+resolver las decisiones externas y retomar validación pública cuando se indique.
+La secuencia de desarrollo que sigue se conserva como corte inicial de la sesión.
+
 **Corte verificado: 28 de octubre de 2026.** E1–E3 integradas en
 `main/fa2396d`, coincidente con GitHub. La
 [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) está integrada
@@ -47,7 +60,17 @@ conciliar sus casillas E1–E3 con las PR #19/#20. No se publicó ese ajuste.
 
 ## Cortes anteriores
 
-**Avance local del 27 de octubre: E2/E3 completadas en alcance técnico.**
+
+**Avance vigente del 27 de octubre: E2–E5 completadas en alcance técnico.**
+[E4/E5 verificadas](entrega-expediente-e4-e5.md): autorización con OTP nuevo,
+descarga de un uso y portal. API 0.15.0; 64 unitarias, 88 integraciones,
+189 pruebas web y 11 de identidad, además de historia real en Chrome.
+Continúa E6: consulta/recuperación independiente, Q07/Q14 y aceptación.
+No se habilitan borrado/purga ni se acredita despliegue público.
+[PR #21](https://github.com/Alsegurarp/fs_asistencias/pull/21) abierta sobre
+E2/E3 (#20), todavía sin integrar y con CI remoto en curso al publicar.
+
+**Corte anterior del 27 de octubre: E2/E3 completadas en alcance técnico.**
 [Permiso y preparación del expediente](entrega-expediente-e2-e3.md), con
 60 unitarias y 83 integraciones aprobadas, incluidos historia completa,
 concurrencia y perfiles anuales 50/300. Continúan E4 → E5 y después E6.

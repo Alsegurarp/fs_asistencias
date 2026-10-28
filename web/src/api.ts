@@ -35,8 +35,8 @@ export async function api<T>(path: string, method = 'GET', body?: unknown, idemp
   return response.status === 204 ? undefined as T : response.json()
 }
 
-export async function apiDownload(path: string): Promise<{ blob: Blob; filename: string }> {
-  const response = await request(path)
+export async function apiDownload(path: string, method = 'GET', body?: unknown): Promise<{ blob: Blob; filename: string }> {
+  const response = await request(path, method, body)
   const filename = /filename="([^"]+)"/i.exec(response.headers.get('Content-Disposition') || '')?.[1]
     .replace(/[\\/\u0000-\u001f\u007f]/g, '_') || 'zenit.csv'
   return { blob: await response.blob(), filename }

@@ -8,7 +8,7 @@ import { dateInZone, showTime } from './incidentModel'
 export type ExportRecord = { id: string; status: 'queued' | 'ready' | 'expired' | 'failed'; weekStart: string; rowCount: number | null; expiresAt: string | null; fileHash: string | null }
 const statuses = { queued: 'Preparando', ready: 'Listo', expired: 'No disponible (usado o vencido)', failed: 'Fallido' }
 
-function saveFile(blob: Blob, filename: string) {
+export function saveFile(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url; link.download = filename

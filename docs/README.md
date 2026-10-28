@@ -51,12 +51,15 @@ contradice al contrato, manda el contrato.
 | [Recorrido completo](recorrido-completo.md) | De una empresa nueva a un exporte, petición por petición |
 | [Continuar el backend](continuar-el-backend.md) | Cómo está hecho el código y cómo se agrega una ruta, una tabla o un trabajo |
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |
-| [Jerarquía general PlantUML](dbFlow/01-jerarquia.puml) y [relaciones PlantUML](dbFlow/02-relaciones.puml) | Conceptos, entidades y cardinalidades; 32 tablas V001–V009 y fronteras de identidad/Android |
+| [Jerarquía general PlantUML](dbFlow/01-jerarquia.puml) y [relaciones PlantUML](dbFlow/02-relaciones.puml) | Conceptos, entidades y cardinalidades; 34 tablas V001–V010 y fronteras de identidad/Android |
 | [Entrega E2/E3 del expediente](entrega-expediente-e2-e3.md) | Implementación local, historia completa, 60 unitarias, 83 integraciones, perfiles anuales y límites |
-| [Tareas pendientes](TareasPendientes.md) | Corte verificado del 28: E1–E3 integradas, siguiente desarrollo E4/E5, verificación E6 y 17 tareas globales con dependencias; incluye entrega de la prueba móvil a otro desarrollador |
+| [Entrega E4/E5 del expediente](entrega-expediente-e4-e5.md) | MFA por operación, autorización de un uso, portal, configuración efectiva e historia con navegador real |
+| [Verificación independiente E6](entrega-expediente-e6.md) | JAR sin conexión a Zenit, integridad/relaciones, consulta de históricos y procedimiento de salida; aceptación pendiente |
+| [QA Android del 28](qa-android-2026-10-28.md) | Navegación, captura personal/terminal, cola/sincronización, acuses reales locales, limpieza y límites |
+| [Tareas pendientes](TareasPendientes.md) | Resumen de las 17 tareas abiertas, prioridades, dependencias y trabajo disponible; incluye entrega de la prueba móvil a otro desarrollador |
 | [Verificación E2–E5 del 27 de octubre](verificacion-e2-e5-2026-10-27.md) | Corte previo a implementar E2/E3; evidencia de integración E1, pendientes y orden de trabajo |
 | [Desarrollo disponible al 26 de octubre](tareas-desarrollo-2026-10-26.md) | Corte anterior de código/GitHub/CI, criterios E1–E6, QA Android y bloqueos externos |
-| [Contrato y formato del expediente E1](contrato-expediente-e1.md) | Diseño y evidencia originales; actualización E2/E3 con cinco operaciones implementadas y descarga pendiente de E4 |
+| [Contrato y formato del expediente E1](contrato-expediente-e1.md) | Diseño y evidencia originales; actualización E2–E5 con ocho operaciones implementadas en API 0.15.0 |
 | [Tareas críticas primero](tareas-criticas-primero.md) | Declaración de las 20 tareas priorizadas, dependencias, criterios de cierre y primer trabajo técnico |
 | [Verificaciones automáticas](verificaciones-automaticas.md) | Workflow de GitHub Actions, pruebas por cambio, análisis de imágenes y comprobación del servidor |
 | [Validación de cierres](validacion-cierres.md) | Pruebas ejecutadas y guion de aceptación de cierres semanales |
@@ -76,7 +79,7 @@ contradice al contrato, manda el contrato.
 
 | Pieza | Carpeta | Estado |
 | --- | --- | --- |
-| Backend | `backend/` | API 0.14.0 con 67 operaciones y pruebas contra PostgreSQL real. E2/E3 integradas: permiso y preparación del expediente; descarga E4 pendiente. Incluye simulador de dispositivo y dirección real del visitante detrás del borde |
+| Backend | `backend/` | API 0.15.0 con 70 operaciones en la entrega E4–E6: permiso, preparación, MFA nuevo y descarga de un uso. 67 unitarias/88 integraciones PostgreSQL aprobadas; incluye simulador y dirección real del visitante detrás del borde |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
 | Portal web | `web/` | PKCE, catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, usuarios y configuración de empresa; A5 local 33/33 y horarios/CSV en navegador local 17/17 aprobados. Aceptación pública/del usuario pendiente |
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Captura simulada comprobada contra backend local/HTTPS; semana/acuse visual aprobados en teléfono contra backend real local el 21. Faltan aceptación pública/del usuario, expediente y tarjeta autenticada |

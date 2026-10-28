@@ -1,5 +1,12 @@
 # Tareas críticas primero
 
+**Entrega posterior del 28:** E4/E5 y [E6 técnica](entrega-expediente-e6.md)
+preparadas en `feat/expediente-e4-e6-qa`; no reiniciar ese desarrollo.
+Continuar aceptación de conservación/recuperación y decisiones externas,
+manteniendo los seis P0 y 17 tareas globales. El
+[estado vigente](estado-y-pendientes.md) y la bitácora registran QA/PR;
+las secuencias anteriores de desarrollo se conservan a continuación.
+
 **Prioridad de desarrollo revisada el 28 de octubre:** E1–E3 integradas en
 `main/fa2396d`, con los cuatro trabajos de
 [CI de main aprobados](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464).

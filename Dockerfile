@@ -12,7 +12,7 @@ RUN gradle :backend:dependencies --no-daemon
 COPY contracts contracts
 COPY backend backend
 # El simulador de dispositivo se compila aquí para que su error, si lo hay, salga al construir.
-RUN gradle :backend:test :backend:bootJar :backend:simulatorClasses --no-daemon
+RUN gradle :backend:test :backend:bootJar :backend:simulatorClasses :backend:dossierVerifierJar --no-daemon
 
 # Pruebas contra PostgreSQL real. No forma parte de la imagen que se ejecuta:
 # la usa docker compose con el perfil test.

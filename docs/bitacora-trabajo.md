@@ -6,6 +6,50 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 28 de octubre de 2026 — E4/E5, recuperación E6 y QA Android
+
+Por instrucción del usuario se completa la entrega E4–E6 y se ejecuta QA
+Android antes de preparar una PR. Se crea `feat/expediente-e4-e6-qa` desde
+main/fa2396d y se incorpora `feat/expediente-e4-e5` (`5cc975d`). La consulta
+remota confirmó que la PR #21 ya se integró en la rama E2/E3 después de que
+#20 llegara a main: ese código no estaba en el árbol main revisado al inicio.
+Se conserva también el corte documental inicial, sin rehacer E4/E5.
+
+- **E4/E5:** API 0.15.0, 70 operaciones; V010, desafío correlacionado,
+  PKCE/OIDC/OTP nuevo, autorización y descarga de un uso, invalidación por
+  cambios de cuenta/permiso/empresa y portal con gestión de permiso/retorno.
+  [Acta y configuración efectiva](entrega-expediente-e4-e5.md).
+- **E6 técnica:** [JAR independiente y procedimiento de salida](entrega-expediente-e6.md),
+  esquema incorporado, huellas externas obligatorias, ZIP/NDJSON por flujo,
+  conteos, empresa, IDs/referencias y snapshots; consulta sin servicio/red.
+  No restaura una instalación ni habilita borrado. Q07/Q14 y aceptación del
+  responsable/jurídica mantienen pendiente el cierre integral de E6.
+- **QA Android:** [acta del 28](qa-android-2026-10-28.md), APK actualizado sin
+  borrar datos, navegación visual y autoensayo; captura personal/terminal,
+  cola y sincronización, renovación/idempotencia, objeción, recuperación sin
+  copia local, reapertura y conformidad contra backend real ficticio. Terminal
+  rechazada con 403 en consulta personal. Nueva fase `week` de instrumentación.
+
+Validación final: **67 unitarias y 88 integraciones PostgreSQL**, sin fallos,
+errores ni omisiones; **189 pruebas web** y compilación; **ocho pruebas de
+identidad real**, ninguna omitida; **13 unitarias Android**, lint y APK; ambos
+contratos válidos. Se ejecutó el JAR final sin red y en sólo lectura sobre el
+ZIP descargado el 27, contrastado con su huella conservada. Los casos E6 de
+alteración/truncamiento/empresa/referencias y los perfiles anuales 50/300
+aprobaron en backend. La historia de Chrome del 27 conserva su fecha; el
+host de acceso del navegador no estuvo disponible para repetirla en esta sesión.
+
+Docker Desktop se restableció. ADB perdió/reanudó la conexión; se repuso el
+túnel y la cola terminal conservada se sincronizó. La empresa ficticia quedó
+suspendida, sus dispositivos revocados y el cliente temporal eliminado, con
+históricos/acuse comprobados. No se cambió el vínculo original del teléfono
+ni se modificaron datos o identidad públicos. Se preserva `backend/bin/`.
+
+Fuera de la PR quedan secretos, binarios, logs y capturas locales. El análisis
+del historial disponible antes del commit final recorrió 85 commits sin
+hallazgos; se repetirá sobre el commit publicado. No se cierra ninguno de
+los 17 pendientes globales ni los seis P0 por esta entrega técnica.
+
 ## 28 de octubre de 2026 — Avance verificado y pendientes priorizados
 
 Se revisaron historial, árbol de trabajo, fuentes, contratos, migraciones,
@@ -76,6 +120,38 @@ No modifica producto, datos, realm activo ni `backend/bin/`;
 no hace commit, publicación o despliegue. Servidor público, teléfono y
 aceptación del usuario/jurídica no comprobados. Los cortes anteriores
 conservan su fecha y resultados originales.
+
+## 27 de octubre de 2026 — E4/E5: MFA por operación y portal
+
+Publicada en la [PR #21](https://github.com/Alsegurarp/fs_asistencias/pull/21),
+abierta y sin integrar; commit funcional `ba95304`. La base es
+`feat/expediente-e2-e3` porque #20 sigue abierta. Tras integrar #20, cambiar
+la base de #21 a `main`. CI remoto en curso al publicar, sin atribuirle las
+pruebas locales. El conector devolvió 403; la publicación terminó mediante
+la credencial Git configurada, sin exponerla.
+
+Implementación en `feat/expediente-e4-e5`, sobre E2/E3. V010 añade
+desafíos/autorizaciones ligados a empresa, expediente y solicitante, versiones
+de acceso y consumo antes de transmitir. Se versionan el cliente dedicado,
+retorno exacto, mapa/mínimo ACR 2 y OTP con edad cero. El portal administra
+el permiso explícito y completa solicitud, estado, callback PKCE y descarga.
+OpenAPI 0.15.0 publica las ocho operaciones; formato 1 y CSV se conservan.
+
+[Acta y límites](entrega-expediente-e4-e5.md): 64 unitarias, 88 integraciones,
+189 pruebas web y 11 de identidad real aprobadas, sin omisiones. Historia en
+Chrome con permiso, OTP incorrecto/nuevo, ZIP íntegro, segunda descarga 410 y
+revocación; evidencia ficticia y capturas locales. Ambos contratos válidos;
+modelos V010 con 34 entidades/55 relaciones renderizados en PlantUML
+1.2025.10 y 1.2026.8. Se corrigieron durante el ensayo el perfil `migrate`,
+la configuración mínima ACR y una sección duplicada del contrato YAML.
+
+E6 y Q07/Q14 siguen pendientes. No se despliega, elimina evidencia ni purga
+Android; no se modifica el realm público. Un realm ya existente requiere
+aplicar administrativamente la configuración nueva: reiniciar no la importa.
+Se conservan los cambios previos/generados de `backend/bin/`.
+Los 96 archivos de fuentes/recursos coinciden con el contenedor final aprobado;
+el diff preparado pasó el análisis de secretos sin hallazgos. Entorno aislado
+y contenedores de pruebas retirados, con XML/capturas/evidencia local guardados.
 
 ## 27 de octubre de 2026 — Publicación de E2/E3, PR #20
 

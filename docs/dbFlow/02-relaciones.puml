@@ -1,7 +1,7 @@
 @startuml
 !pragma layout smetana
 ' La orientación vertical evita IllegalStateException de Smetana en PlantUML 1.2025.10.
-title Zenit — entidades y relaciones por dominio (32 tablas, V001–V009)
+title Zenit — entidades y relaciones por dominio (34 tablas, V001–V010)
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName SansSerif
@@ -50,6 +50,8 @@ package "Trabajos y salidas" #E8F5F5 {
   entity export
   entity dossier
   entity dossier_chunk
+  entity dossier_challenge
+  entity dossier_authorization
 }
 
 tenant ||--o{ tenant_user : pertenece
@@ -105,6 +107,9 @@ site |o--o{ export : alcance opcional
 rule_set ||--o{ export : versión
 tenant_user ||--o{ dossier : sólo su solicitante
 dossier ||--o{ dossier_chunk : bloques ordenados del ZIP
+dossier ||--o{ dossier_challenge : desafío del solicitante
+tenant_user ||--o{ dossier_challenge : usuario de la misma empresa
+dossier_challenge ||--o| dossier_authorization : un canje; mismo expediente / usuario
 job ..> export : type=export; reference_id
 job ..> week_closure_run : type=week_closure; reference_id
 job ..> dossier : type=dossier; reference_id
@@ -113,7 +118,8 @@ note bottom of dossier_permission
 enabled + subject + linked_at: concesión ligada a la cuenta.
 version cambia al conceder/revocar, sin herencia de roles.
 El usuario también tiene dossier_access_version para
-invalidar futuras pruebas E4 ante cambios de cuenta/vínculo.
+invalidar pruebas ante cambios de cuenta/vínculo.
+tenant.dossier_access_version cambia al suspender/reactivar.
 end note
 
 note bottom of dossier
@@ -122,7 +128,21 @@ Idempotencia única (tenant_id, requested_by, idempotency_key).
 Guarda subject y linked_at originales; no se exportan.
 24 h desde creación. Vencido: conserva manifiesto/huellas,
 limpia bloques; no elimina evidencia de origen.
-La descarga continúa cerrada hasta E4.
+Descarga de un uso; limpia bloques conservando manifiesto/huellas.
+end note
+
+note bottom of dossier_challenge
+State/nonce se guardan como SHA-256; PKCE S256.
+Hasta 5 min. Versiones de permiso, cuenta y empresa
+impiden revivir pruebas al restaurar accesos.
+Otro desafío invalida los anteriores del expediente.
+end note
+
+note bottom of dossier_authorization
+FK compuesta: empresa, desafío, expediente y usuario.
+Una autorización por desafío; sólo se guarda su huella.
+Hasta 60 s; se consume antes de transmitir el ZIP.
+Archivo temporal privado evita truncamiento por limpieza SQL.
 end note
 
 legend bottom
@@ -134,6 +154,6 @@ Cuenta Keycloak → tenant_user.subject: vínculo lógico con una base separada.
 Actores/objetivos de auditoría y autores de texto son referencias históricas, sin FK.
 La modalidad de device y device_enrollment exige empleado o sede, nunca ambos.
 schedule exige días al crearse; el diagrama muestra la cardinalidad permitida por FK.
-Identidad Keycloak, Room Android e historial Flyway quedan fuera de estas 32 tablas.
+Identidad Keycloak, Room Android e historial Flyway quedan fuera de estas 34 tablas.
 endlegend
 @enduml
