@@ -1,5 +1,22 @@
 # Tareas críticas primero
 
+**Entrega posterior del 28:** E4/E5 y [E6 técnica](entrega-expediente-e6.md)
+preparadas en `feat/expediente-e4-e6-qa`; no reiniciar ese desarrollo.
+Continuar aceptación de conservación/recuperación y decisiones externas,
+manteniendo los seis P0 y 17 tareas globales. El
+[estado vigente](estado-y-pendientes.md) y la bitácora registran QA/PR;
+las secuencias anteriores de desarrollo se conservan a continuación.
+
+**Prioridad de desarrollo revisada el 28 de octubre:** E1–E3 integradas en
+`main/fa2396d`, con los cuatro trabajos de
+[CI de main aprobados](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464).
+Continuar **E4 → E5** e iniciar la verificación técnica E6 con los ejemplos
+existentes. El [listado vigente](TareasPendientes.md#trabajo-priorizado-con-el-contexto-del-28-de-octubre)
+separa trabajo disponible, requisitos de entorno y decisiones externas.
+Permanecen 17 tareas globales abiertas y seis P0; Docker no responde en
+este corte. Las prioridades globales y los cortes históricos siguientes
+conservan sus criterios; no hay descarga ni despliegue acreditados.
+
 **Avance local del 27 de octubre:** [E2/E3 implementadas y probadas](entrega-expediente-e2-e3.md),
 con 60 unitarias, 83 integraciones y perfiles anuales 50/300 aprobados.
 El modelo `.puml` conserva 32 entidades/52 relaciones y renderiza con

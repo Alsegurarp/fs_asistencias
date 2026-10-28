@@ -55,6 +55,9 @@ zenit:
   exports:
     # Minutos durante los que un exporte listo se puede descargar.
     ttl-minutes: ${EXPORTS_TTL_MINUTES:15}
+  dossier:
+    redirect-uri: ${DOSSIER_REDIRECT_URI:http://localhost:8081/dossier/callback}
+    token-uri: ${DOSSIER_TOKEN_URI:}
   api:
     # Peticiones por minuto que se le aceptan a una persona, sumando sus sesiones.
     person-requests-per-minute: ${API_PERSON_REQUESTS_PER_MINUTE:600}

@@ -87,6 +87,10 @@ petición manual. Tiene cuatro trabajos independientes:
 | Android | Unitarias, lint y construcción de APK de app e instrumentación |
 | Contrato y seguridad | Contrato y ejemplos, secretos en todo el historial, construcción de las cinco imágenes, autoensayo de respaldo concurrente y restauración sin red, SBOM y análisis de vulnerabilidades |
 
+El análisis de secretos usa `--full-history --diff-merges=first-parent`:
+también revisa los cambios creados al integrar ramas, que el log ordinario
+puede omitir. Se comprobó localmente con los cambios E4–E6 incluidos.
+
 Los trabajos usan `contents: read` y checkout fijado a un SHA de
 [la versión 7.0.1 oficial](https://github.com/actions/checkout/releases/tag/v7.0.1),
 sin conservar credenciales en Git. El runner

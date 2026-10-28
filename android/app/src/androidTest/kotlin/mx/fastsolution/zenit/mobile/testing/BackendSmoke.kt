@@ -41,7 +41,7 @@ internal suspend fun backendSmoke(context: Context, arguments: Bundle, reportDev
     val mode = arguments.getString("mode")
     require(mode in setOf("personal", "terminal")) { "Indica mode=personal o terminal" }
     val phase = arguments.getString("phase")
-    require(phase in setOf("activate", "queue", "sync")) { "Indica phase=activate, queue o sync" }
+    require(phase in setOf("activate", "queue", "sync", "week")) { "Indica phase=activate, queue, sync o week" }
     val isolated = object : ContextWrapper(context.createDeviceProtectedStorageContext()) {
         override fun getApplicationContext(): Context = this
     }
@@ -69,6 +69,32 @@ internal suspend fun backendSmoke(context: Context, arguments: Bundle, reportDev
         check(reused is CaptureApiException && reused.status == 410 && reused.code == "enrollment_gone") { "El código debe ser de un uso" }
         check(repository.store.registration()?.getString("deviceId") == registration.getString("deviceId"))
         check(dao.pendingCount() == 0)
+    } else if (phase == "week") {
+        val registration = checkNotNull(repository.store.registration())
+        val date = requireNotNull(arguments.getString("date"))
+        if (mode == "terminal") {
+            check(runCatching { repository.personalWeek(date) }.exceptionOrNull() is IllegalStateException)
+            val rejected = runCatching { CaptureApi(baseUrl).get("/me/attendance?week=$date", DeviceSigner(registration.getString("keyAlias")).assertion(registration)) }.exceptionOrNull()
+            check(rejected is CaptureApiException && rejected.status == 403)
+        } else {
+            val week = repository.personalWeek(date)
+            java.util.UUID.fromString(week.getString("employeeId"))
+            java.time.LocalDate.parse(week.getString("weekStart"))
+            check(week.getJSONObject("totals").getInt("workedMinutes") >= 0)
+            week.getJSONArray("segments")
+            arguments.getString("closureId")?.let { closure ->
+                check(week.getJSONObject("closure").getString("id") == closure)
+                val type = requireNotNull(arguments.getString("ackType"))
+                require(type in setOf("objected", "agreed"))
+                val ack = repository.acknowledgeWeek(closure, type, if (type == "objected") "Objeción ficticia para QA Android" else "")
+                check(ack.getString("type") == type && ack.getString("evidenceHash").matches(Regex("^[a-f0-9]{64}$")))
+                check(isolated.getSharedPreferences("capture_device", 0).edit().remove("ack:${registration.getString("deviceId")}:$closure").commit())
+                val recovered = AttendanceRepository(isolated).personalWeek(date).getJSONObject("acknowledgement")
+                check(recovered.getString("id") == ack.getString("id"))
+                val duplicate = runCatching { repository.acknowledgeWeek(closure, type, "") }.exceptionOrNull()
+                check(duplicate is CaptureApiException && duplicate.status == 409)
+            }
+        }
     } else {
         val registration = checkNotNull(repository.store.registration()) { "Ejecuta primero la fase activate" }
         check(registration.getString("baseUrl") == baseUrl && registration.getString("mode") == mode)

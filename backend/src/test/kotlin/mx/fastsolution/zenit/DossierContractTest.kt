@@ -86,16 +86,15 @@ class DossierContractTest {
     }
 
     @Test
-    fun `E2 E3 publish only implemented routes and preserve CSV permissions`() {
+    fun `E4 E5 publish all implemented routes and preserve CSV permissions`() {
         val live = mapper.readTree(documents.getValue("openapi.yaml"))
-        assertEquals("0.14.0", live.at("/info/version").asString())
-        assertEquals("partial", api.get("x-implementation").asString())
+        assertEquals("0.15.0", live.at("/info/version").asString())
+        assertEquals("implemented", api.get("x-implementation").asString())
         assertEquals(8, operations.size)
         assertEquals(8, operations.map { it.third.get("operationId").asString() }.toSet().size)
         for ((path, _, operation) in operations) {
-            val implemented = !path.endsWith("/challenges") && !path.endsWith("/authorizations") && !path.endsWith("/download")
-            assertEquals(implemented, live.get("paths").has(path), path)
-            if (implemented) assertEquals(operation.get("operationId"), live.get("paths").get(path).get(operations.first { it.first == path }.second).get("operationId"))
+            assertTrue(live.get("paths").has(path), path)
+            assertEquals(operation.get("operationId"), live.get("paths").get(path).get(operations.first { it.first == path }.second).get("operationId"))
             val roles = operation.get("x-roles").asSequence().map { it.asString() }.toSet()
             assertFalse("operador_saas" in roles || "conector" in roles)
             assertEquals("userToken", api.get("security")[0].propertyNames().single())

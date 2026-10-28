@@ -434,9 +434,10 @@ entre el backend, el portal y la app. Cada cuerpo lleva un ejemplo ficticio.
 
 El [contrato candidato del expediente E1](contracts/dossier.openapi.yaml) se
 valida junto al vigente, con su [formato y límites](docs/contrato-expediente-e1.md).
-E2/E3 incorporan cinco operaciones al API 0.14.0: permiso explícito, solicitud,
-estado y manifiesto. Desafío, autorización y descarga siguen pendientes de E4;
-el portal del expediente corresponde a E5. El
+E2–E5 incorporan las ocho operaciones al API 0.15.0: permiso explícito,
+solicitud, estado, manifiesto, desafío, autorización y descarga de un uso.
+El portal exige OTP nuevo por operación; [pruebas y configuración](docs/entrega-expediente-e4-e5.md).
+E6 conserva consulta/recuperación independiente y aceptación. El
 [modelo jerárquico PlantUML](docs/dbFlow/01-jerarquia.puml) y el
 [modelo de relaciones](docs/dbFlow/02-relaciones.puml) describen las entidades y conceptos.
 

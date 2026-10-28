@@ -1,6 +1,12 @@
 # Tareas disponibles para desarrollo — 26 de octubre de 2026
 
-**Entrega local posterior del 27:** [E2/E3 implementadas y verificadas](entrega-expediente-e2-e3.md),
+**Estado vigente del 27:** [E4/E5 implementadas y verificadas](entrega-expediente-e4-e5.md)
+completan el recorrido local de E2–E5. API 0.15.0; 64 unitarias,
+88 integraciones, 189 pruebas web, 11 de identidad y navegador real aprobados.
+El siguiente trabajo es E6, con Q07/Q14 y aceptación aún pendientes.
+Las secuencias/estados siguientes pertenecen a sus cortes históricos.
+
+**Entrega local anterior del 27:** [E2/E3 implementadas y verificadas](entrega-expediente-e2-e3.md),
 con 60 unitarias, 83 integraciones y perfiles 50/300 aprobados; API 0.14.0.
 Publicada en la [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20),
 abierta y sin integrar/desplegar. E4/E5/E6 siguen pendientes. El texto siguiente

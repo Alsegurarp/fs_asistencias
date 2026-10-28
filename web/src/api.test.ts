@@ -99,6 +99,15 @@ describe('Cliente del API', () => {
     })
   })
 
+  it('descarga el expediente mediante POST sin incluir la autorización en la URL', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response('zip'))
+    vi.stubGlobal('fetch', fetch)
+    await apiDownload('/dossiers/expediente/download', 'POST', { authorization: 'opaca' })
+    expect(fetch).toHaveBeenCalledExactlyOnceWith('/api/v1/dossiers/expediente/download', {
+      method: 'POST', redirect: 'error', cache: 'no-store', headers: { Authorization: 'Bearer token-renovado', 'Content-Type': 'application/json' }, body: JSON.stringify({ authorization: 'opaca' }),
+    })
+  })
+
   it('devuelve el error y la referencia cuando el archivo venció; no reintenta la descarga', async () => {
     const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ code: 'export_expired', detail: 'El archivo venció.', correlationId: 'ref-exporte' }), { status: 410 }))
     vi.stubGlobal('fetch', fetch)

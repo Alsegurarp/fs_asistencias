@@ -8,7 +8,7 @@ import { showTime } from './incidentModel'
 
 const roles: Record<string, string> = { admin_empresa: 'Administración', rh: 'RH', supervisor: 'Supervisión', trabajador: 'Trabajador', auditor: 'Auditoría' }
 const statuses = { invited: 'Invitado', active: 'Activo', disabled: 'Deshabilitado' }
-type Action = { kind: 'invite' } | { kind: 'edit' | 'unlink'; user: TenantUser } | { kind: 'password'; user: TenantUser }
+type Action = { kind: 'invite' } | { kind: 'edit' | 'unlink'; user: TenantUser } | { kind: 'password'; user: TenantUser } | { kind: 'dossier'; user: TenantUser }
 
 export function Users({ me }: { me: Me }) {
   const cache = useQueryClient()
@@ -26,17 +26,38 @@ export function Users({ me }: { me: Me }) {
     <ErrorNotice error={list.error} />{list.isError && <Button onClick={() => void list.refetch()}>Reintentar usuarios</Button>}
     {list.isPending && <Typography role="status">Cargando usuarios…</Typography>}
     {list.isSuccess && !rows.length && <Alert severity="info">Todavía no hay usuarios.</Alert>}
-    {!!rows.length && <TableContainer><Table aria-label="Usuarios de la empresa"><TableHead><TableRow>{['Usuario', 'Roles', 'Estado', 'Empleado', 'Acciones'].map(label => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>
+    {!!rows.length && <TableContainer><Table aria-label="Usuarios de la empresa"><TableHead><TableRow>{['Usuario', 'Roles', 'Estado', 'Empleado', 'Acciones', 'Expediente'].map(label => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>
       {rows.map(user => <TableRow key={user.id}>
         <TableCell>{user.displayName || user.email}{user.id === me.userId && ' (Tu cuenta)'}<br />{user.email}</TableCell>
         <TableCell>{user.roles.map(role => roles[role] || role).join(', ')}</TableCell><TableCell>{statuses[user.status]}</TableCell>
         <TableCell>{user.employeeId ? <RecordName kind="employee" id={user.employeeId} me={me} /> : 'Sin vínculo'}</TableCell>
         <TableCell><Button onClick={() => setAction({ kind: 'edit', user })}>Editar {user.email}</Button>{user.linkedAt && <Button onClick={() => setAction({ kind: 'unlink', user })}>Desvincular {user.email}</Button>}{user.linkedAt && user.status === 'active' && <Button onClick={() => setAction({ kind: 'password', user })}>Exigir cambio de contraseña a {user.email}</Button>}</TableCell>
+        <TableCell><Button onClick={() => setAction({ kind: 'dossier', user })}>Permiso de expediente de {user.email}</Button></TableCell>
       </TableRow>)}
     </TableBody></Table></TableContainer>}
     {list.hasNextPage && <Button disabled={list.isFetchingNextPage} onClick={() => void list.fetchNextPage()}>Cargar más usuarios</Button>}
-    {action?.kind === 'password' ? <PasswordChangeDialog user={action.user} me={me} onClose={() => setAction(null)} /> : action && <UserForm key={action.kind + ('user' in action ? action.user.id : '')} action={action} me={me} onClose={() => setAction(null)} />}
+    {action?.kind === 'password' ? <PasswordChangeDialog user={action.user} me={me} onClose={() => setAction(null)} /> : action?.kind === 'dossier' ? <DossierPermissionDialog user={action.user} onClose={() => setAction(null)} /> : action && <UserForm key={action.kind + ('user' in action ? action.user.id : '')} action={action} me={me} onClose={() => setAction(null)} />}
   </Stack>
+}
+
+function DossierPermissionDialog({ user, onClose }: { user: TenantUser; onClose: () => void }) {
+  const cache = useQueryClient()
+  const [confirmed, setConfirmed] = useState(false)
+  const save = useMutation({ mutationFn: (enabled: boolean) => api(`/users/${user.id}/dossier-permission`, 'PUT', { enabled }),
+    onSuccess: async () => { onClose(); await cache.invalidateQueries({ queryKey: ['dossier-permission'] }) } })
+  return <Dialog open fullWidth maxWidth="sm" onClose={() => { if (!save.isPending) onClose() }} aria-labelledby="dossier-permission-title">
+    <DialogTitle id="dossier-permission-title">Permiso de expediente empresarial</DialogTitle>
+    <DialogContent><Stack spacing={2}>
+      <Typography>{user.displayName || user.email} · {user.email}</Typography>
+      <Alert severity="warning">Este permiso permite obtener todos los datos conservados de la empresa. Es independiente de los roles y cada descarga exige OTP nuevo. Conceder o revocar queda registrado.</Alert>
+      <FormControlLabel label="Confirmo gestionar el permiso explícito de esta cuenta" control={<Checkbox name="confirmDossierPermission" checked={confirmed} disabled={save.isPending} onChange={(_, value) => setConfirmed(value)} />} />
+      <ErrorNotice error={save.error} />
+    </Stack></DialogContent>
+    <DialogActions><Button disabled={save.isPending} onClick={onClose}>Cancelar</Button>
+      <Button disabled={!confirmed || save.isPending} onClick={() => save.mutate(false)}>Revocar permiso</Button>
+      <Button variant="contained" disabled={!confirmed || save.isPending || user.status !== 'active' || !user.linkedAt} onClick={() => save.mutate(true)}>Conceder permiso</Button>
+    </DialogActions>
+  </Dialog>
 }
 
 function PasswordChangeDialog({ user, me, onClose }: { user: TenantUser; me: Me; onClose: () => void }) {
@@ -58,7 +79,7 @@ function PasswordChangeDialog({ user, me, onClose }: { user: TenantUser; me: Me;
   </Dialog>
 }
 
-function UserForm({ action, me, onClose }: { action: Exclude<Action, { kind: 'password' }>; me: Me; onClose: () => void }) {
+function UserForm({ action, me, onClose }: { action: Exclude<Action, { kind: 'password' | 'dossier' }>; me: Me; onClose: () => void }) {
   const cache = useQueryClient()
   const user = 'user' in action ? action.user : undefined
   const [selected, setSelected] = useState(user?.roles || [])

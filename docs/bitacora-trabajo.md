@@ -6,6 +6,194 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 28 de octubre de 2026 — Corrección de los dos fallos de Actions en PR #22
+
+Se revisaron las ejecuciones de
+[push 40777656642](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40777656642)
+y [PR 40777662875](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40777662875),
+ambas sobre `b1d67bd`. En las dos aprobaron backend, portal y Android; falló
+el mismo trabajo `contrato-y-seguridad`, al analizar las imágenes. Backend,
+portal, PostgreSQL y respaldo aprobaron sus análisis; sólo Keycloak falló
+por Guava 33.6.0-jre, `GHSA-xxph-c9ww-hj94` / `CVE-2026-102554` alta.
+
+Se sustituye únicamente ese JAR por **33.7.2-jre**, versión corregida de la
+[publicación oficial de Guava](https://github.com/google/guava/releases/tag/v33.7.2),
+en la etapa Keycloak, antes de la construcción optimizada. Descarga Maven
+Central fijada por SHA-256
+`b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c`.
+Se conserva el nombre de archivo que referencia Quarkus; los metadatos y
+el inventario identifican 33.7.2-jre. La prueba de runtime ahora exige la
+huella corregida y un único JAR Guava, además de UID, Java y certificados.
+
+La imagen reconstruida aprobó el mismo análisis local que falló en CI:
+**0 críticas, 0 altas, 22 medias, 11 bajas y 0 desconocidas**, sin hallazgos
+aceptados. `.grype.yaml` conserva `ignore: []` y el umbral `high` no cambia.
+UID 1000, Java/certificados y readiness 200/503 comprobados sobre esa imagen.
+La regresión real de identidad aprobó **8/8, sin omisiones**, incluidos OTP
+nuevo con SSO, mínimo ACR y permisos del cliente técnico. Se ejecutó en un
+proyecto Docker nuevo, sin puertos publicados, tras descartar el entorno de
+ensayo que conservaba credenciales de base anteriores. La nueva ejecución
+remota se comprueba después de publicar en la misma PR. No hay despliegue público
+ni cambios de datos o cuentas de operación; `backend/bin/` se preserva.
+Evidencia local: `build/keycloak-guava-fix/` y `build/security/`.
+
+## 28 de octubre de 2026 — E4/E5, recuperación E6 y QA Android
+
+**Publicación:** [PR #22](https://github.com/Alsegurarp/fs_asistencias/pull/22)
+abierta, sin borrador, contra `main`; commit funcional `0a1f9a2` y ajuste del
+análisis de secretos en `606362c`. Se verificaron base, rama remota y head
+esperado. El conector rechazó crearla con 403; se publicó con la credencial
+Git ya configurada sin exponerla. CI remoto en curso al publicar; las
+validaciones locales siguientes no se atribuyen a una ejecución remota.
+No se integra ni despliega. La actualización de publicación sólo toca docs.
+
+Por instrucción del usuario se completa la entrega E4–E6 y se ejecuta QA
+Android antes de preparar una PR. Se crea `feat/expediente-e4-e6-qa` desde
+main/fa2396d y se incorpora `feat/expediente-e4-e5` (`5cc975d`). La consulta
+remota confirmó que la PR #21 ya se integró en la rama E2/E3 después de que
+#20 llegara a main: ese código no estaba en el árbol main revisado al inicio.
+Se conserva también el corte documental inicial, sin rehacer E4/E5.
+
+- **E4/E5:** API 0.15.0, 70 operaciones; V010, desafío correlacionado,
+  PKCE/OIDC/OTP nuevo, autorización y descarga de un uso, invalidación por
+  cambios de cuenta/permiso/empresa y portal con gestión de permiso/retorno.
+  [Acta y configuración efectiva](entrega-expediente-e4-e5.md).
+- **E6 técnica:** [JAR independiente y procedimiento de salida](entrega-expediente-e6.md),
+  esquema incorporado, huellas externas obligatorias, ZIP/NDJSON por flujo,
+  conteos, empresa, IDs/referencias y snapshots; consulta sin servicio/red.
+  No restaura una instalación ni habilita borrado. Q07/Q14 y aceptación del
+  responsable/jurídica mantienen pendiente el cierre integral de E6.
+- **QA Android:** [acta del 28](qa-android-2026-10-28.md), APK actualizado sin
+  borrar datos, navegación visual y autoensayo; captura personal/terminal,
+  cola y sincronización, renovación/idempotencia, objeción, recuperación sin
+  copia local, reapertura y conformidad contra backend real ficticio. Terminal
+  rechazada con 403 en consulta personal. Nueva fase `week` de instrumentación.
+
+Validación final: **67 unitarias y 88 integraciones PostgreSQL**, sin fallos,
+errores ni omisiones; **189 pruebas web** y compilación; **ocho pruebas de
+identidad real**, ninguna omitida; **13 unitarias Android**, lint y APK; ambos
+contratos válidos. Se ejecutó el JAR final sin red y en sólo lectura sobre el
+ZIP descargado el 27, contrastado con su huella conservada. Los casos E6 de
+alteración/truncamiento/empresa/referencias y los perfiles anuales 50/300
+aprobaron en backend. La historia de Chrome del 27 conserva su fecha; el
+host de acceso del navegador no estuvo disponible para repetirla en esta sesión.
+
+Docker Desktop se restableció. ADB perdió/reanudó la conexión; se repuso el
+túnel y la cola terminal conservada se sincronizó. La empresa ficticia quedó
+suspendida, sus dispositivos revocados y el cliente temporal eliminado, con
+históricos/acuse comprobados. No se cambió el vínculo original del teléfono
+ni se modificaron datos o identidad públicos. Se preserva `backend/bin/`.
+
+Fuera de la PR quedan secretos, binarios, logs y capturas locales. El análisis
+explícito de historial e integraciones recorrió **110 commits sin hallazgos**,
+incluido el código propio del merge `0a1f9a2`. Se añadió a `secret-scan`
+`--full-history --diff-merges=first-parent` para que CI tampoco omita esos
+cambios. El análisis ordinario previo había recorrido 85 commits. No se cierra ninguno de
+los 17 pendientes globales ni los seis P0 por esta entrega técnica.
+
+## 28 de octubre de 2026 — Avance verificado y pendientes priorizados
+
+Se revisaron historial, árbol de trabajo, fuentes, contratos, migraciones,
+workflow, documentación y GitHub mediante consultas de lectura. `main` local
+y la rama remota consultada coinciden en
+`fa2396d6d77ccef63a4dac2589c62a300e622727`. La
+[PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) se integró el
+27 de octubre a las 11:50 de Ciudad de México; sustituye el estado «abierta»
+del corte anterior. E1–E3 están integradas; E4–E6 siguen pendientes.
+
+### Cambios que ya tiene el proyecto
+
+- Backend/contrato: API 0.14.0 con **67 operaciones**. E2/E3 añaden permiso
+  explícito por cuenta/empresa, concesión y revocación auditadas, solicitud
+  idempotente, estado y manifiesto. V009 incorpora permiso, expediente y
+  bloques. La preparación conserva históricos y evidencia disponible en
+  ZIP/NDJSON, con instantánea coherente y bloques de hasta 64 KiB; caduca a
+  las 24 horas sin borrar la evidencia de origen. La descarga sigue cerrada.
+- Portal: están integrados catálogos, horarios/importación, dispositivos,
+  incidencias, cierres, CSV, usuarios, configuración, semana y acuse personal
+  y las entregas A1–A5. Las actas previas acreditan 33 casos A5 locales y
+  17 casos locales de horarios/CSV; no se repitieron en esta sesión.
+  La interfaz del expediente E5 todavía no existe.
+- Android: captura y cola cifrada, sincronización, semana/acuse y navegación
+  operativa simplificada del 26 están integradas. El recorrido visual del
+  21 es evidencia de aquella versión; falta QA visual de la interfaz del 26.
+  Las herramientas MF1K no acreditan captura autenticada de asistencia.
+- Infraestructura: CI para backend/identidad, portal, Android y
+  contrato/seguridad; ensayo de respaldo cifrado/restauración y revisión de
+  imágenes integrados. No equivalen a un respaldo externo operativo.
+- Modelos: V001–V009 representadas en PlantUML, con 32 entidades y 52
+  relaciones; la entrega anterior verificó compatibilidad con 1.2025.10 y
+  1.2026.8. No se volvieron a renderizar en esta revisión.
+
+### Evidencia comprobada en esta sesión
+
+| Comprobación | Resultado y límite |
+| --- | --- |
+| Integración | Git local y consulta de `main` en GitHub coinciden; PR #20 cerrada e integrada |
+| CI de la PR #20 | [Ejecución 40541212345](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40541212345): cuatro trabajos aprobados |
+| CI del merge en `main/fa2396d` | [Ejecución 40554372464](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464): backend, portal, Android y contrato/seguridad aprobados; incluidos identidad/OTP, respaldo y análisis de imágenes |
+| Resultados locales E2/E3 conservados | Recuento de 22 XML unitarios: **60 pruebas**; 14 XML de integración: **83 pruebas**. Cero fallos, errores u omisiones en ambos grupos. Es lectura de resultados anteriores, no otra ejecución |
+| Implementación del expediente | Cinco operaciones activas verificadas en contrato/controlador; desafío, autorización y descarga sólo en contrato candidato. Sin pantalla de expediente en el portal |
+| Entorno local | `docker compose ps --all` no conecta: no existe la tubería del motor Docker Desktop. No se arrancaron servicios ni se ejecutaron pruebas nuevas |
+| Árbol de trabajo recibido | Cambios previos exclusivamente en `backend/bin/`, incluidos archivos sin seguimiento; se preservan y no se contabilizan como una entrega funcional nueva |
+| Seguimiento remoto | [Issue #18](https://github.com/Alsegurarp/fs_asistencias/issues/18) abierta y sin actualizar sus casillas E1–E3; no refleja las integraciones ya confirmadas. No se modificó GitHub |
+
+### Trabajo pendiente y orden recomendado
+
+El [listado priorizado](TareasPendientes.md#trabajo-priorizado-con-el-contexto-del-28-de-octubre)
+declara alcance, dependencias y criterios verificables. Primero **E4**
+(MFA nuevo, autorización y descarga de un uso), después **E5** (portal).
+La verificación técnica de **E6** puede iniciarse con el ejemplo existente;
+su aceptación completa requiere la descarga implementada, Q07/Q14 y las
+decisiones de conservación. La QA Android del 26 necesita teléfono y backend
+disponibles. Para ejecutar pruebas locales, primero restablecer Docker.
+
+Se mantienen **17 tareas globales abiertas total o parcialmente y seis P0**:
+respaldo externo, identidad operativa/SMTP, jornada/acuse, tarjetas reales,
+reglas de negocio y producción administrada. E1–E6 son subtareas de ese
+inventario. No se fija un porcentaje global sin criterios de aceptación
+equivalentes, ni se cierran tareas por integración o por CI solamente.
+
+Esta sesión actualiza bitácora, estado, lista de tareas y referencias de
+seguimiento. Se comprobaron 229 enlaces/anclas locales en los ocho documentos
+modificados, las 67 operaciones del contrato y `git diff --check`, sin errores.
+No modifica producto, datos, realm activo ni `backend/bin/`;
+no hace commit, publicación o despliegue. Servidor público, teléfono y
+aceptación del usuario/jurídica no comprobados. Los cortes anteriores
+conservan su fecha y resultados originales.
+
+## 27 de octubre de 2026 — E4/E5: MFA por operación y portal
+
+Publicada en la [PR #21](https://github.com/Alsegurarp/fs_asistencias/pull/21),
+abierta y sin integrar; commit funcional `ba95304`. La base es
+`feat/expediente-e2-e3` porque #20 sigue abierta. Tras integrar #20, cambiar
+la base de #21 a `main`. CI remoto en curso al publicar, sin atribuirle las
+pruebas locales. El conector devolvió 403; la publicación terminó mediante
+la credencial Git configurada, sin exponerla.
+
+Implementación en `feat/expediente-e4-e5`, sobre E2/E3. V010 añade
+desafíos/autorizaciones ligados a empresa, expediente y solicitante, versiones
+de acceso y consumo antes de transmitir. Se versionan el cliente dedicado,
+retorno exacto, mapa/mínimo ACR 2 y OTP con edad cero. El portal administra
+el permiso explícito y completa solicitud, estado, callback PKCE y descarga.
+OpenAPI 0.15.0 publica las ocho operaciones; formato 1 y CSV se conservan.
+
+[Acta y límites](entrega-expediente-e4-e5.md): 64 unitarias, 88 integraciones,
+189 pruebas web y 11 de identidad real aprobadas, sin omisiones. Historia en
+Chrome con permiso, OTP incorrecto/nuevo, ZIP íntegro, segunda descarga 410 y
+revocación; evidencia ficticia y capturas locales. Ambos contratos válidos;
+modelos V010 con 34 entidades/55 relaciones renderizados en PlantUML
+1.2025.10 y 1.2026.8. Se corrigieron durante el ensayo el perfil `migrate`,
+la configuración mínima ACR y una sección duplicada del contrato YAML.
+
+E6 y Q07/Q14 siguen pendientes. No se despliega, elimina evidencia ni purga
+Android; no se modifica el realm público. Un realm ya existente requiere
+aplicar administrativamente la configuración nueva: reiniciar no la importa.
+Se conservan los cambios previos/generados de `backend/bin/`.
+Los 96 archivos de fuentes/recursos coinciden con el contenedor final aprobado;
+el diff preparado pasó el análisis de secretos sin hallazgos. Entorno aislado
+y contenedores de pruebas retirados, con XML/capturas/evidencia local guardados.
+
 ## 27 de octubre de 2026 — Publicación de E2/E3, PR #20
 
 La [PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) está abierta,

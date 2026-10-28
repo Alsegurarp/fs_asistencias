@@ -1,5 +1,14 @@
 # E2/E3 — Permiso y preparación del expediente empresarial
 
+**Seguimiento del 28 de octubre:** la
+[PR #20](https://github.com/Alsegurarp/fs_asistencias/pull/20) ya se integró
+en `main/fa2396d`; cuatro trabajos de CI aprobados tanto en la
+[PR](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40541212345)
+como en [main](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464).
+Se recontaron los XML locales: 60 unitarias y 83 integraciones sin fallos,
+errores u omisiones. No se repitieron pruebas ni se acredita despliegue.
+El acta siguiente conserva el estado y los límites del momento de entrega.
+
 Entrega local del 27 de octubre de 2026, en
 `feat/expediente-e2-e3`, sobre el árbol E1 integrado mediante PR #19.
 E2 y E3 quedan implementadas y verificadas en su alcance técnico.

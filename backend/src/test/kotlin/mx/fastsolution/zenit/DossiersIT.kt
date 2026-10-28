@@ -9,6 +9,7 @@ import com.networknt.schema.SchemaRegistry
 import com.networknt.schema.dialect.Dialects
 import mx.fastsolution.zenit.dossier.DossierArchive
 import mx.fastsolution.zenit.dossier.DossierJob
+import mx.fastsolution.zenit.dossier.DossierVerifier
 import mx.fastsolution.zenit.jobs.JobRow
 import org.junit.jupiter.api.Tag
 import org.springframework.beans.factory.annotation.Autowired
@@ -52,7 +53,11 @@ class DossiersIT : WorkdayTestBase() {
                 }
                 db.rollback()
             }
-            return ZipFile(file.toFile()).use { inspect(it, file) }
+            ZipFile(file.toFile()).use { zip ->
+                val manifestHash = zip.getInputStream(zip.getEntry("manifest.json")).use { sha256(it.readAllBytes()) }
+                DossierVerifier().verify(file, manifestHash, sha256(Files.readAllBytes(file)))
+                return inspect(zip, file)
+            }
         } finally { Files.deleteIfExists(file) }
     }
 
@@ -155,8 +160,8 @@ class DossiersIT : WorkdayTestBase() {
         assertEquals(200, grant(c, ana.id).status)
         assertEquals(3, count("select version from dossier_permission where tenant_id = ? and user_id = ?", uuid(c.id), uuid(ana.id)))
         assertEquals("ready", dossier(ana.token, id).at("status"))
-        // No se habilita descarga hasta que E4 vincule/consuma MFA nuevo.
-        assertProblem(403, "forbidden", call("POST", "/api/v1/dossiers/$id/download", ana.token, "{}"))
+        // Sin autorización de un uso no se permite la descarga.
+        assertProblem(422, "validation", call("POST", "/api/v1/dossiers/$id/download", ana.token, "{}"))
     }
 
     @Test

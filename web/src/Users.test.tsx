@@ -41,6 +41,22 @@ async function mount(role = 'admin_empresa', self = 'self') {
 async function check(selector: string) { await act(async () => (document.querySelector(selector) as HTMLInputElement).click()) }
 function writes() { return mocked.mock.calls.filter(([, method]) => method && method !== 'GET') }
 
+it.each([true, false])('administra el permiso explícito %s sólo después de confirmar', async enabled => {
+  await mount(); await click(`Permiso de expediente de ${user.email}`)
+  const action = enabled ? 'Conceder permiso' : 'Revocar permiso'
+  expect(button(action)?.disabled).toBe(true); expect(writes()).toHaveLength(0)
+  await check('[name="confirmDossierPermission"]'); await click(action)
+  await waitFor(() => writes().length === 1)
+  expect(writes()[0]).toEqual([`/users/${id}/dossier-permission`, 'PUT', { enabled }])
+})
+
+it('una cuenta sin vínculo no admite concesión pero conserva la revocación', async () => {
+  user.linkedAt = null; user.status = 'invited'
+  await mount(); await click(`Permiso de expediente de ${user.email}`); await check('[name="confirmDossierPermission"]')
+  expect(button('Conceder permiso')?.disabled).toBe(true)
+  expect(button('Revocar permiso')?.disabled).toBe(false)
+})
+
 it.each(['rh', 'supervisor', 'auditor', 'trabajador'])('no consulta ni modifica usuarios con el rol %s', async role => {
   await mount(role); expect(mocked).not.toHaveBeenCalled(); expect(button('Invitar usuario')).toBeUndefined()
 })

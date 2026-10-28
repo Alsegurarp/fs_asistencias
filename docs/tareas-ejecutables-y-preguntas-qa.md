@@ -1,5 +1,20 @@
 # Trabajo ejecutable y preguntas para QA
 
+**Entrega posterior del 28:** E4/E5 incorporadas desde la PR #21 y
+[E6 técnica](entrega-expediente-e6.md) disponible sin conexión, con pruebas
+de integridad/relaciones/consulta. QA Android retomada con teléfono real y
+backend local ficticio; evidencia y publicación en bitácora. Q07/Q14 conservan
+aceptación y conservación; las demás preguntas no se resuelven por esta entrega.
+Los cortes de planificación siguientes son históricos.
+
+**Corte del 28 de octubre:** E1–E3 integradas en `main/fa2396d`, PR #20
+integrada y cuatro trabajos de [CI de main aprobados](https://github.com/Alsegurarp/fs_asistencias/actions/runs/40554372464).
+El [listado priorizado vigente](TareasPendientes.md#trabajo-priorizado-con-el-contexto-del-28-de-octubre)
+declara E4, E5, verificación técnica E6 y QA Android condicionada al entorno.
+Q01–Q22 conservan sus decisiones/aceptación; E4 no necesita SMTP ni dictamen
+para desarrollarse con datos ficticios. Docker no responde actualmente y no
+se ejecutaron pruebas nuevas. Los cortes siguientes son históricos.
+
 **Avance local del 27 de octubre:** [E2/E3 completadas técnicamente](entrega-expediente-e2-e3.md),
 con historia HTTP/PostgreSQL real, 60 unitarias y 83 integraciones aprobadas.
 El siguiente trabajo es E4, seguido de E5 y E6 con sus decisiones/aceptación.

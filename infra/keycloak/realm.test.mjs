@@ -42,12 +42,29 @@ test('verificación y recuperación por correo requieren SMTP configurado', () =
   assert.ok(!realm.users?.length, 'El realm no debe distribuir cuentas ni contraseñas')
 })
 
+test('expediente usa cliente separado, retorno exacto y OTP sin reutilizar el nivel SSO', () => {
+  const client = realm.clients.find(item => item.clientId === 'zenit-dossier')
+  const flow = realm.authenticationFlows.find(item => item.id === client.authenticationFlowBindingOverrides.browser)
+  assert.equal(flow.alias, 'dossier-browser')
+  assert.deepEqual(client.redirectUris, ['${ZENIT_PORTAL_URL}/dossier/callback'])
+  assert.equal(client.directAccessGrantsEnabled, false)
+  assert.equal(client.attributes['pkce.code.challenge.method'], 'S256')
+  assert.equal(client.attributes['minimum.acr.value'], '2', 'El cliente no puede crear una sesión SSO sólo con contraseña')
+  assert.deepEqual(JSON.parse(client.attributes['acr.loa.map']), { '1': 1, '2': 2 })
+  assert.equal(realm.browserFlow, 'browser', 'El acceso normal conserva su flujo')
+  const steps = activeExecutions(flow.alias)
+  assert.ok(steps.some(item => item.authenticator === 'auth-otp-form' && item.requirement === 'REQUIRED'))
+  const level = realm.authenticatorConfig.find(item => item.alias === 'dossier-level-2')
+  assert.equal(level.config['loa-condition-level'], '2')
+  assert.equal(level.config['loa-max-age'], '0')
+})
+
 test('el login sirve sus estilos y scripts con el sistema de archivos de sólo lectura', {
   skip: !process.env.IDENTITY_TEST_SECRETOS,
 }, async () => {
-  const base = 'http://localhost:38082'
+  const base = process.env.IDENTITY_TEST_URL || 'http://localhost:38082'
   const login = new URL(`${base}/realms/zenit/protocol/openid-connect/auth`)
-  login.search = new URLSearchParams({ client_id: 'zenit-portal', redirect_uri: 'http://localhost:8081/',
+  login.search = new URLSearchParams({ client_id: 'zenit-portal', redirect_uri: process.env.IDENTITY_TEST_PORTAL_URL || 'http://localhost:8081/',
     response_type: 'code', scope: 'openid', code_challenge_method: 'S256',
     code_challenge: 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG' }).toString()
   const response = await fetch(login, { signal: AbortSignal.timeout(10000) })
@@ -67,7 +84,7 @@ test('el login sirve sus estilos y scripts con el sistema de archivos de sólo l
 test('Keycloak importa la protección del OTP y la reautenticación', {
   skip: !process.env.IDENTITY_TEST_SECRETOS,
 }, async () => {
-  const base = 'http://localhost:38082'
+  const base = process.env.IDENTITY_TEST_URL || 'http://localhost:38082'
   const password = readFileSync(join(process.env.IDENTITY_TEST_SECRETOS, 'keycloak_admin_password'), 'utf8').trim()
   const login = await fetch(`${base}/realms/master/protocol/openid-connect/token`, {
     method: 'POST',

@@ -32,6 +32,11 @@ data class DossierView(
 
 data class DossierRow(val view: DossierView, val subject: String, val linkedAt: OffsetDateTime, val requestSha256: String)
 
+internal fun ownedDossier(account: DossierAccount, row: DossierRow): DossierRow {
+    if (row.view.requestedBy != account.userId || row.subject != account.subject || row.linkedAt.toInstant() != account.linkedAt.toInstant()) throw Problems.notFound()
+    return row
+}
+
 @Repository
 class DossierRepository(private val dsl: DSLContext) {
     fun find(tenantId: UUID, id: UUID, lock: Boolean = false): DossierRow? =
@@ -98,7 +103,7 @@ class DossierService(
         val requestHash = sha256("{\"formatVersion\":1}".toByteArray())
         val inserted = dossiers.insert(account, idempotencyKey, requestHash)
         val row = dossiers.byKey(account, idempotencyKey)!!
-        own(account, row)
+        ownedDossier(account, row)
         if (row.requestSha256 != requestHash) throw Problems.conflict("idempotency_conflict", "La clave ya se usó con otro contenido.")
         if (inserted) {
             jobs.enqueue(account.tenantId, DossierJob.TYPE, row.view.id, properties.maxAttempts)
@@ -119,12 +124,7 @@ class DossierService(
 
     private fun owned(person: CurrentPerson, id: UUID): DossierRow {
         val account = access.require(person)
-        return own(account, dossiers.find(account.tenantId, id) ?: throw Problems.notFound())
-    }
-
-    private fun own(account: DossierAccount, row: DossierRow): DossierRow {
-        if (row.view.requestedBy != account.userId || row.subject != account.subject || row.linkedAt.toInstant() != account.linkedAt.toInstant()) throw Problems.notFound()
-        return row
+        return ownedDossier(account, dossiers.find(account.tenantId, id) ?: throw Problems.notFound())
     }
 }
 
