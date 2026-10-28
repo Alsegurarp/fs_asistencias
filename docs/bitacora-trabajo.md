@@ -46,8 +46,10 @@ históricos/acuse comprobados. No se cambió el vínculo original del teléfono
 ni se modificaron datos o identidad públicos. Se preserva `backend/bin/`.
 
 Fuera de la PR quedan secretos, binarios, logs y capturas locales. El análisis
-del historial disponible antes del commit final recorrió 85 commits sin
-hallazgos; se repetirá sobre el commit publicado. No se cierra ninguno de
+explícito de historial e integraciones recorrió **110 commits sin hallazgos**,
+incluido el código propio del merge `0a1f9a2`. Se añadió a `secret-scan`
+`--full-history --diff-merges=first-parent` para que CI tampoco omita esos
+cambios. El análisis ordinario previo había recorrido 85 commits. No se cierra ninguno de
 los 17 pendientes globales ni los seis P0 por esta entrega técnica.
 
 ## 28 de octubre de 2026 — Avance verificado y pendientes priorizados

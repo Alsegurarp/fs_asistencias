@@ -529,7 +529,7 @@ services:
       - ./.git:/repo/.git:ro
       # Exceptúa sólo los ejemplos ficticios del contrato.
       - ./.gitleaks.toml:/repo/.gitleaks.toml:ro
-    command: ["git", "/repo", "--redact", "--no-banner", "--config", "/repo/.gitleaks.toml"]
+    command: ["git", "/repo", "--redact", "--no-banner", "--config", "/repo/.gitleaks.toml", "--log-opts=--full-history --diff-merges=first-parent"]
 
 networks:
   datos:
