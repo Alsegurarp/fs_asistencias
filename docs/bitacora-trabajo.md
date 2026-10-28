@@ -8,6 +8,14 @@ originales para no atribuir pruebas de una versión a otra.
 
 ## 28 de octubre de 2026 — E4/E5, recuperación E6 y QA Android
 
+**Publicación:** [PR #22](https://github.com/Alsegurarp/fs_asistencias/pull/22)
+abierta, sin borrador, contra `main`; commit funcional `0a1f9a2` y ajuste del
+análisis de secretos en `606362c`. Se verificaron base, rama remota y head
+esperado. El conector rechazó crearla con 403; se publicó con la credencial
+Git ya configurada sin exponerla. CI remoto en curso al publicar; las
+validaciones locales siguientes no se atribuyen a una ejecución remota.
+No se integra ni despliega. La actualización de publicación sólo toca docs.
+
 Por instrucción del usuario se completa la entrega E4–E6 y se ejecuta QA
 Android antes de preparar una PR. Se crea `feat/expediente-e4-e6-qa` desde
 main/fa2396d y se incorpora `feat/expediente-e4-e5` (`5cc975d`). La consulta

@@ -4,6 +4,9 @@
 con backend real local aprobados en Samsung **SM-S928B**, Android 16/API 36,
 app debug **0.1.0/1**. No acredita NFC autenticado ni aceptación pública.
 La rama de entrega es `feat/expediente-e4-e6-qa`.
+Código funcional `0a1f9a2`, publicado en la
+[PR #22](https://github.com/Alsegurarp/fs_asistencias/pull/22) contra main;
+sin integrar ni desplegar al publicar.
 
 ## Entorno y conservación
 

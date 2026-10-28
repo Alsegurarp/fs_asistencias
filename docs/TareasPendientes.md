@@ -2,6 +2,8 @@
 
 **Entrega posterior del 28 de octubre:** E4/E5 incorporadas a la rama
 `feat/expediente-e4-e6-qa`, junto con [E6 técnica](entrega-expediente-e6.md).
+[PR #22 abierta contra main](https://github.com/Alsegurarp/fs_asistencias/pull/22),
+sin integrar; CI remoto en curso al publicar.
 La PR #21 se había integrado en E2/E3 después de #20; esta entrega reúne
 el trabajo contra main. Ya no corresponde desarrollar esas capacidades
 desde cero. Backend 67/88, portal 189 e identidad real ocho aprobadas;

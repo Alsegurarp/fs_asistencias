@@ -5,7 +5,8 @@ cambia alguna de las tres cosas.
 
 **Entrega posterior del 28 de octubre — E4/E5 y E6 técnica.** La rama
 `feat/expediente-e4-e6-qa` incorpora E4/E5 desde la PR #21, integrada en E2/E3
-después de que #20 llegara a main. API 0.15.0, 70 operaciones, desafío OIDC
+después de que #20 llegara a main. [PR #22 abierta contra main](https://github.com/Alsegurarp/fs_asistencias/pull/22),
+sin integrar; CI remoto en curso al publicar. API 0.15.0, 70 operaciones, desafío OIDC
 con MFA nuevo, autorización/descarga de un uso y portal. [E6](entrega-expediente-e6.md)
 añade verificación y consulta independientes sin red; su aceptación integral
 conserva Q07/Q14. Backend: 67 unitarias/88 integraciones aprobadas; portal:

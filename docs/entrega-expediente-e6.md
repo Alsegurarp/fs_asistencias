@@ -5,6 +5,10 @@ Entrega técnica del **28 de octubre de 2026**. Se incorpora E4/E5 desde
 después de que la PR #20 llegara a main. La nueva entrega reúne E4–E6 contra
 main; no presupone que la funcionalidad ya esté desplegada.
 
+[PR #22 abierta](https://github.com/Alsegurarp/fs_asistencias/pull/22) contra
+main, sin integrar ni desplegar; código funcional `0a1f9a2`. El CI remoto
+está en curso al publicar. Los resultados de esta acta son locales.
+
 E6 entrega `verificar-expediente.jar`, una herramienta independiente con el
 esquema del formato 1 incluido. No inicia Spring ni requiere PostgreSQL,
 Keycloak, cuenta, credenciales o conexión a Zenit. Utiliza las bibliotecas
