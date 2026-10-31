@@ -6,6 +6,15 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 30 de octubre de 2026 — Retiro de `backend/bin/` del repositorio
+
+`backend/bin/` tenía 78 archivos versionados desde el 17 de octubre: copias de
+fuentes Kotlin, migraciones SQL y `application.yml` que el editor genera al
+compilar. Ningún archivo de Gradle, Docker, CI ni guion lo usa: Gradle
+compila desde `src/` hacia `build/`, y el `Dockerfile` sólo lo copiaba al
+contexto. Sale de Git y queda en `.gitignore` y `.dockerignore`. La
+compilación y las pruebas del backend se repitieron sin él.
+
 ## 30 de octubre de 2026 — Medición para facturar y accesibilidad del portal
 
 Rama `feat/medicion-uso-y-accesibilidad`, sobre `main` en `ddab8dc`. Cubre

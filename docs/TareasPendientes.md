@@ -42,9 +42,11 @@ constituye autorización para desplegar. No hay que rehacer E1–E3.
 
 **Requisito de ejecución local:** restablecer Docker Desktop y comprobar el
 motor antes de construir o probar; el host sigue limitado a Git/editor y
-Docker según el flujo del proyecto. Revisar los cambios existentes de
-`backend/bin/` antes de preparar otra entrega, sin borrarlos ni incluirlos
-automáticamente. La documentación de este corte queda actualizada; la
+Docker según el flujo del proyecto. Desde el 30 de octubre `backend/bin/`,
+la salida que el editor compila junto a las fuentes, ya no está en Git y se
+ignora: Gradle compila en `build/` y nada lo usaba. Quien lo tenga en su clon
+puede borrarlo; el editor lo vuelve a generar. La documentación de este
+corte queda actualizada; la
 [issue #18](https://github.com/Alsegurarp/fs_asistencias/issues/18) aún requiere
 conciliar sus casillas E1–E3 con las PR #19/#20. No se publicó ese ajuste.
 
