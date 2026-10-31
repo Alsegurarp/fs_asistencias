@@ -3,6 +3,8 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { accessibilityViolations } from './accessibility'
+import { loaded } from './testUi'
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
 vi.mock('./api', async original => ({ ...await original<typeof import('./api')>(), api: vi.fn() }))
 import { api, ApiError } from './api'
@@ -64,4 +66,9 @@ it('no aplica un archivo con encabezados inválidos', async () => {
 })
 it.each([0, 1024 * 1024 + 1])('rechaza un archivo de %s bytes antes de enviarlo', async size => {
   await mount(); await file(size); expect(document.body.textContent).toContain('hasta 1 MB'); expect(button('Validar archivo')?.disabled).toBe(true); expect(mocked).not.toHaveBeenCalled()
+})
+
+it('cumple las reglas automáticas de accesibilidad', async () => {
+  await mount(); await loaded()
+  expect(await accessibilityViolations()).toEqual([])
 })

@@ -181,6 +181,7 @@ class ApiIT : ApiTestBase() {
         expect("GET", "/api/v1/audit-log", null, "admin_empresa", "auditor")
         expect("GET", "/api/v1/tenants", null)
         expect("POST", "/api/v1/tenants", tenantBody("no-debe-existir", email("x")))
+        expect("GET", "/api/v1/tenants/${c.id}/usage?month=2026-10", null)
         // Lo que no está abierto sigue cerrado, también para quien administra.
         expect("DELETE", "/api/v1/users/${c.adminId}", null)
         expect("GET", "/api/v1/jobs", null)

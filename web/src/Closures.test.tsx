@@ -3,6 +3,8 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { accessibilityViolations } from './accessibility'
+import { loaded } from './testUi'
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
 vi.mock('./api', async importOriginal => ({ ...await importOriginal<typeof import('./api')>(), api: vi.fn() }))
 import { api, ApiError, type Me } from './api'
@@ -248,4 +250,9 @@ it('una corrida fallida conserva los cierres y se solicita de nuevo con el mismo
   expect(document.body.textContent).toContain('Lo ya cerrado se conserva.')
   await click('Solicitar otra corrida con el mismo alcance'); await waitFor(() => posts().length === 1)
   expect(posts()[0][2]).toEqual({ weekStart: '2026-10-05', siteId })
+})
+
+it('cumple las reglas automáticas de accesibilidad', async () => {
+  await mount(); await loaded()
+  expect(await accessibilityViolations()).toEqual([])
 })

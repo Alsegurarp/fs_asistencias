@@ -79,6 +79,7 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.GET, "/api/v1/me").authenticated()
                 it.requestMatchers(HttpMethod.GET, "/api/v1/tenants").hasRole(operator)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/tenants").hasRole(operator)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/tenants/{tenantId}/usage").hasRole(operator)
                 it.requestMatchers(
                     HttpMethod.POST,
                     "/api/v1/tenants/{tenantId}/suspension",

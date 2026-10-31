@@ -7,6 +7,10 @@ export async function waitFor(predicate: () => boolean) {
   }
   throw new Error(`No se cumplió la condición. Pantalla: ${document.body.textContent}`)
 }
+/** Espera a que ninguna parte de la pantalla diga que sigue cargando. */
+export async function loaded() {
+  await waitFor(() => ![...document.querySelectorAll('[role="status"]')].some(item => item.textContent?.startsWith('Cargando')))
+}
 export function button(text: string) { return [...document.querySelectorAll<HTMLButtonElement>('button')].findLast(item => item.textContent?.trim() === text) }
 export async function click(text: string) {
   await waitFor(() => !!button(text))

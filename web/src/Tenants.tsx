@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError, type Me, type Page, type Tenant } from './api'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { api, ApiError, type Me, type Page, type Tenant, type TenantUsage } from './api'
 import { ErrorNotice } from './Directory'
 import { showTime } from './incidentModel'
 
@@ -14,6 +14,7 @@ export function Tenants({ me }: { me: Me }) {
   const cache = useQueryClient()
   const [creating, setCreating] = useState(false)
   const [reactivating, setReactivating] = useState<Tenant | null>(null)
+  const [usageOf, setUsageOf] = useState<Tenant | null>(null)
   const allowed = me.roles.includes('operador_saas')
   const list = useInfiniteQuery({ queryKey: ['tenants'], initialPageParam: '', enabled: allowed,
     queryFn: ({ pageParam }) => api<Page<Tenant>>(`/tenants${pageParam ? `?cursor=${encodeURIComponent(pageParam)}` : ''}`), getNextPageParam: page => page.nextCursor || undefined, retry: false })
@@ -32,13 +33,53 @@ export function Tenants({ me }: { me: Me }) {
         <TableCell>{tenant.name}<br />{tenant.slug}</TableCell><TableCell>{tenant.timeZone}</TableCell>
         <TableCell>Empieza en {days[tenant.weekStartsOn].toLowerCase()}</TableCell><TableCell>{breaks[tenant.breakPolicy]}</TableCell>
         <TableCell>{statuses[tenant.status] || tenant.status}</TableCell><TableCell>{showTime(tenant.createdAt, tenant.timeZone)}</TableCell>
-        <TableCell>{tenant.status === 'suspended' && <Button onClick={() => setReactivating(tenant)}>Reactivar {tenant.name}</Button>}</TableCell>
+        <TableCell><Button onClick={() => setUsageOf(tenant)}>Uso de {tenant.name}</Button>{tenant.status === 'suspended' && <Button onClick={() => setReactivating(tenant)}>Reactivar {tenant.name}</Button>}</TableCell>
       </TableRow>)}
     </TableBody></Table></TableContainer>}
     {list.hasNextPage && <Button disabled={list.isFetchingNextPage} onClick={() => void list.fetchNextPage()}>Cargar más empresas</Button>}
     {creating && <TenantForm me={me} onClose={() => setCreating(false)} />}
     {reactivating && <ReactivationForm tenant={reactivating} me={me} onClose={() => setReactivating(null)} />}
+    {usageOf && <UsageDialog tenant={usageOf} onClose={() => setUsageOf(null)} />}
   </Stack>
+}
+
+/** Mes en curso en la zona horaria de la empresa, como AAAA-MM. */
+export function currentMonth(timeZone: string, now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit' }).formatToParts(now)
+  return `${parts.find(part => part.type === 'year')?.value}-${parts.find(part => part.type === 'month')?.value}`
+}
+
+const usageRows: [keyof TenantUsage, string][] = [
+  ['employeesWithAttendance', 'Personas que marcaron en el mes'],
+  ['employeesInPeriod', 'Personas con relación laboral vigente en el mes'],
+  ['cardsAssigned', 'Tarjetas asignadas en el mes'],
+  ['devicesActive', 'Teléfonos y terminales activos en el mes'],
+  ['attendanceEvents', 'Marcajes del mes'],
+]
+
+/** Conteos de un mes para facturar fuera del servicio; nunca muestra datos de personas. */
+function UsageDialog({ tenant, onClose }: { tenant: Tenant; onClose: () => void }) {
+  const latest = currentMonth(tenant.timeZone)
+  const [month, setMonth] = useState(latest)
+  const valid = /^[0-9]{4}-(0[1-9]|1[0-2])$/.test(month)
+  const usage = useQuery({ queryKey: ['tenant-usage', tenant.id, month], enabled: valid, retry: false,
+    queryFn: () => api<TenantUsage>(`/tenants/${tenant.id}/usage?month=${encodeURIComponent(month)}`) })
+  return <Dialog open fullWidth maxWidth="sm" onClose={onClose} aria-labelledby="usage-title">
+    <DialogTitle id="usage-title">Uso de {tenant.name}</DialogTitle>
+    <DialogContent><Stack spacing={2} sx={{ pt: 1 }}>
+      <Typography>Conteos del mes en la zona horaria de la empresa ({tenant.timeZone}). No incluyen datos de personas; qué se cobra lo decide el precio.</Typography>
+      <TextField name="month" label="Mes" type="month" value={month} onChange={event => setMonth(event.target.value)} required helperText={valid ? 'Desde el alta de la empresa hasta el mes en curso.' : 'Elige un mes en la forma AAAA-MM.'} error={!valid} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: latest } }} />
+      <ErrorNotice error={usage.error} />
+      {usage.isFetching && <Typography role="status">Cargando uso…</Typography>}
+      {usage.data && <>
+        <Table aria-label={`Uso de ${tenant.name} en ${usage.data.month}`}><TableBody>
+          {usageRows.map(([key, label]) => <TableRow key={key}><TableCell component="th" scope="row">{label}</TableCell><TableCell align="right">{String(usage.data[key])}</TableCell></TableRow>)}
+        </TableBody></Table>
+        <Alert severity={usage.data.complete ? 'success' : 'info'}>{usage.data.complete ? 'Mes terminado: estos conteos ya no cambian.' : 'Mes en curso: los conteos siguen creciendo hasta que termine.'}</Alert>
+      </>}
+    </Stack></DialogContent>
+    <DialogActions><Button onClick={onClose}>Cerrar</Button></DialogActions>
+  </Dialog>
 }
 
 function ReactivationForm({ tenant, me, onClose }: { tenant: Tenant; me: Me; onClose: () => void }) {

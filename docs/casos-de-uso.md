@@ -23,6 +23,7 @@ y los roles salen de la base, nunca del token ni de la petición.
 | Qué | Operador | Administrador | RH | Supervisor | Auditor | Trabajador | Dispositivo |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Dar de alta, listar, suspender y reactivar empresas | Sí | | | | | | |
+| Consultar el uso mensual de una empresa, sólo conteos | Sí | | | | | | |
 | Soltar la liga de quien administra una empresa | Sí | | | | | | |
 | Ver la empresa | | Sí | Sí | Sí | Sí | | |
 | Cambiar la empresa y su cierre programado | | Sí | | | | | |
@@ -288,9 +289,29 @@ Actor: operador.
    como estaba.
 
 Las dos acciones quedan en la bitácora de la empresa, con su motivo. Junto
-con soltar la liga de quien administra, son las
+con soltar la liga de quien administra y consultar el uso del mes, son las
 únicas rutas que llevan la empresa en la dirección, porque quien opera el
 servicio no pertenece a ninguna.
 
 Puede salir mal: ya estaba suspendida (409 `tenant_not_active`), o no lo
 estaba al reactivarla (409 `tenant_not_suspended`).
+
+## 15. Consultar el uso de una empresa para facturar
+
+Actor: operador.
+
+1. `GET /tenants/{tenantId}/usage?month=AAAA-MM`. El mes se corta en la zona
+   horaria de la empresa.
+2. Responde sólo conteos, sin datos de personas: personas que marcaron,
+   personas con relación laboral vigente en el mes, tarjetas asignadas,
+   teléfonos y terminales activos, y marcajes.
+3. `complete` dice si el mes ya terminó. Un mes terminado da siempre lo mismo,
+   porque cada conteo sale de datos que guardan su historia; el mes en curso
+   va creciendo.
+
+Qué conteo se cobra lo decide el precio, no el servicio. En el portal está en
+Empresas → «Uso de …».
+
+Puede salir mal: el mes no tiene la forma `AAAA-MM` (422, error
+`invalid_month`) o todavía no empieza (422, `future_month`). Una persona dada
+de baja sin fecha de fin sigue contando como vigente.

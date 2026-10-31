@@ -6,6 +6,34 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 30 de octubre de 2026 — Medición para facturar y accesibilidad del portal
+
+Rama `feat/medicion-uso-y-accesibilidad`, sobre `main` en `ddab8dc`. Cubre
+dos requisitos del MVP que no tenían tarea ni ruta.
+
+- **Medición para facturar.** API 0.16.0, 71 operaciones.
+  `GET /tenants/{tenantId}/usage?month=AAAA-MM`, sólo para quien opera el
+  servicio, devuelve conteos del mes en la zona horaria de la empresa:
+  personas que marcaron, personas con relación laboral vigente, tarjetas
+  asignadas, dispositivos activos y marcajes. No devuelve datos de personas.
+  Cada conteo sale de datos con historia, así que un mes terminado no cambia.
+  El portal lo muestra en Empresas → «Uso de …». Qué se cobra lo decide el
+  precio.
+- **Accesibilidad.** axe-core 4.14.0 (dependencia sólo de pruebas) revisa las
+  reglas de WCAG 2.1 A y AA en las 11 pantallas con prueba y en los diálogos
+  de alta y uso de empresas; una prueba aparte mide el contraste de la paleta,
+  que salió del archivo de entrada a `web/src/theme.ts`. La revisión del
+  código no encontró fallas. Falta el recorrido manual por teclado, con lector
+  de pantalla y con zoom: [accesibilidad](accesibilidad.md).
+- `DossierContractTest` ya no fija la versión del contrato en 0.15.0: exige
+  0.15.0 o posterior, que es lo que garantiza que E4/E5 siguen publicadas.
+
+Comprobado en Docker: backend con 67 pruebas unitarias y 90 de integración,
+incluidas las dos nuevas de uso, la fila nueva de la matriz de roles y la
+cobertura del contrato; portal con compilación y 205 pruebas; contrato y
+ejemplos válidos; búsqueda de secretos sin hallazgos en los archivos
+cambiados. Sin despliegue: se despliega al integrarse la PR.
+
 ## 28 de octubre de 2026 — Corrección de los dos fallos de Actions en PR #22
 
 Se revisaron las ejecuciones de

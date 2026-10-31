@@ -88,7 +88,9 @@ class DossierContractTest {
     @Test
     fun `E4 E5 publish all implemented routes and preserve CSV permissions`() {
         val live = mapper.readTree(documents.getValue("openapi.yaml"))
-        assertEquals("0.15.0", live.at("/info/version").asString())
+        // Las rutas de E4/E5 entraron en 0.15.0; las versiones posteriores las conservan.
+        val (major, minor, patch) = live.at("/info/version").asString().split('.').map(String::toInt)
+        assertTrue(KotlinVersion(major, minor, patch) >= KotlinVersion(0, 15, 0), "versión ${live.at("/info/version").asString()}")
         assertEquals("implemented", api.get("x-implementation").asString())
         assertEquals(8, operations.size)
         assertEquals(8, operations.map { it.third.get("operationId").asString() }.toSet().size)

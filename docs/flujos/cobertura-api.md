@@ -13,6 +13,7 @@ la autorización efectiva también se aplica en SecurityConfig y los servicios.
 | POST /api/v1/tenants/{tenantId}/suspension | suspendTenant | [03](03-empresa-y-usuarios.puml) | operador_saas |
 | POST /api/v1/tenants/{tenantId}/reactivation | reactivateTenant | [03](03-empresa-y-usuarios.puml) | operador_saas |
 | POST /api/v1/tenants/{tenantId}/administrators/unlink | unlinkTenantAdministrator | [03](03-empresa-y-usuarios.puml) | operador_saas |
+| GET /api/v1/tenants/{tenantId}/usage | getTenantUsage (desde 0.16.0) | [03](03-empresa-y-usuarios.puml) | operador_saas |
 | GET /api/v1/tenant | getTenant | [03](03-empresa-y-usuarios.puml) | admin_empresa, rh, supervisor, auditor |
 | PATCH /api/v1/tenant | updateTenant | [03](03-empresa-y-usuarios.puml) | admin_empresa |
 | GET /api/v1/users | listUsers | [03](03-empresa-y-usuarios.puml) | admin_empresa |

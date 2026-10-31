@@ -3,6 +3,8 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { accessibilityViolations } from './accessibility'
+import { loaded } from './testUi'
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
 vi.mock('./api', async original => ({ ...await original<typeof import('./api')>(), api: vi.fn() }))
 import { api, ApiError, type Tenant } from './api'
@@ -76,4 +78,9 @@ it('conserva los valores del formulario tras un rechazo del servidor', async () 
   await mount(); await click('Editar configuración'); await setInput('timeZone', 'Marte/Olimpo'); await click('Guardar configuración')
   await waitFor(() => !!document.body.textContent?.includes('La zona horaria no es válida.'))
   expect(document.querySelector<HTMLInputElement>('[name="timeZone"]')!.value).toBe('Marte/Olimpo')
+})
+
+it('cumple las reglas automáticas de accesibilidad', async () => {
+  await mount(); await loaded()
+  expect(await accessibilityViolations()).toEqual([])
 })

@@ -43,6 +43,36 @@ data class TenantView(
     }
 }
 
+data class TenantUsageView(
+    val tenantId: String,
+    val month: String,
+    val timeZone: String,
+    val from: String,
+    val to: String,
+    val complete: Boolean,
+    val employeesWithAttendance: Int,
+    val employeesInPeriod: Int,
+    val cardsAssigned: Int,
+    val devicesActive: Int,
+    val attendanceEvents: Int,
+) {
+    companion object {
+        fun of(usage: TenantUsage) = TenantUsageView(
+            tenantId = usage.tenantId.toString(),
+            month = usage.month,
+            timeZone = usage.timeZone,
+            from = usage.from.toInstant().toString(),
+            to = usage.to.toInstant().toString(),
+            complete = usage.complete,
+            employeesWithAttendance = usage.counts.employeesWithAttendance,
+            employeesInPeriod = usage.counts.employeesInPeriod,
+            cardsAssigned = usage.counts.cardsAssigned,
+            devicesActive = usage.counts.devicesActive,
+            attendanceEvents = usage.counts.attendanceEvents,
+        )
+    }
+}
+
 /**
  * `/tenants` es de quien opera el servicio. `/tenant`, en singular, es la
  * empresa de quien llama: no recibe identificador, sale de su credencial.
@@ -84,6 +114,10 @@ class TenantController(private val service: TenantService) {
     ) {
         service.unlinkAdministrator(operator, tenantId, request)
     }
+
+    @GetMapping("/tenants/{tenantId}/usage")
+    fun usage(@PathVariable tenantId: UUID, @RequestParam month: String?): TenantUsageView =
+        TenantUsageView.of(service.usage(tenantId, month))
 
     @GetMapping("/tenant")
     fun current(@AuthenticationPrincipal person: CurrentPerson): TenantView = TenantView.of(service.current(person))
