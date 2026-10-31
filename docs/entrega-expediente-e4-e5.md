@@ -88,10 +88,13 @@ junto al issuer/JWKS de identidad; el cliente del portal y el retorno deben
 corresponder al mismo origen. El perfil `migrate` no inicializa OIDC ni sus rutas.
 
 **Realm existente:** Keycloak omite la importación si `zenit` ya existe.
-Reiniciar no actualiza clientes ni flujos. Antes de habilitar esta entrega en
-otro entorno, su administrador debe aplicar los cuatro flujos y sus dos
-configuraciones de autenticador desde el export, crear el cliente dedicado y
-vincular su override `browser` al ID real del flujo importado. Comprobar retorno
+Reiniciar no actualiza clientes ni flujos. En el servidor compartido lo hace
+el paso `identidad` del despliegue
+([despliegue](despliegue-en-servidor.md#desplegar-una-versión-nueva-de-zenit)).
+En cualquier otro entorno, su administrador debe aplicar los cuatro flujos y
+sus dos configuraciones de autenticador desde el export, crear el cliente
+dedicado y vincular su override `browser` al ID real del flujo importado.
+Comprobar retorno
 exacto, mapa/mínimo ACR, S256 y OTP edad cero mediante API administrativa y
 ejecutar el ensayo MFA. No sustituir el realm completo ni eliminar cuentas.
 El ensayo local aplicó la configuración sólo a su realm ficticio.

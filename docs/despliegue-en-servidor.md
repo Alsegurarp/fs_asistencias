@@ -121,20 +121,38 @@ find $F -type d -exec chmod 755 {} + ; find $F -type f -exec chmod 644 {} +
 find $F -name '*.sh' -exec chmod 755 {} +
 $Z build
 $Z up -d
+$Z --profile identidad run --rm identidad
 $Z ps
 ```
 
 `deploy/servidor/zenit/compose.yaml` se aplica encima de `compose.yaml`: no
 repite imágenes ni endurecimiento, sólo cambia lo del servidor. Las
 direcciones públicas están en `deploy/servidor/zenit/servidor.env`. Cambiar
-`IDENTITY_URL` exige reconstruir el portal.
+`IDENTITY_URL` exige reconstruir el portal. Ahí hay dos direcciones de la
+identidad que no se deben confundir: `IDENTITY_CONSOLE_URL` es la de la
+consola por túnel y `IDENTITY_ADMIN_URL` es la red interna por la que el
+backend usa la API de administración para el cambio obligatorio de
+contraseña. Si el backend recibe la de la consola, se llama a sí mismo.
 
 Los secretos se generaron una sola vez, en el servidor:
 `$Z --profile setup run --rm secrets-init`. Volver a correrlo no cambia los
 que ya existen.
 
-El realm `zenit` se importó al crear la base. Cambiar el JSON del realm no
-cambia el realm en marcha; se cambia en la consola.
+El realm `zenit` se importó al crear la base. Keycloak omite la importación
+de un realm que ya existe, así que cambiar el JSON del realm no cambia el
+realm en marcha. El servicio `identidad`
+(`deploy/servidor/zenit/identidad.mjs`), que el guion corre en cada
+despliegue, crea los clientes que se le indican con sus flujos y
+configuraciones tal como están en el JSON, más el cliente técnico
+`zenit-password-admin`, cuyo secreto guarda en
+`secretos/identity-admin/` para el backend. Lo que ya existe sólo lo
+comprueba: si difiere del JSON, se detiene sin sobrescribir y hay que
+resolverlo en la consola. Por omisión aplica `zenit-dossier`; un cliente
+nuevo del realm se agrega a su lista. Cambiar lo que ya existe sigue siendo
+trabajo de consola. El backend lee el secreto del cliente técnico al
+arrancar: si el paso lo cambió, el guion recrea el backend y vuelve a
+esperar a que responda. El paso entra con la cuenta de arranque; cuando se
+sustituya por cuentas personales, necesitará una credencial propia.
 
 ## Desplegar una versión nueva de la landing
 

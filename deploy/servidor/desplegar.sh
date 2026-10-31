@@ -167,6 +167,7 @@ paso_credencial() {
 paso_construir() { remoto construir "$objetivo" "$CORTO"; }
 paso_actualizar() { remoto actualizar "$objetivo" "$CORTO"; }
 paso_esperar() { remoto esperar "$objetivo" "$CORTO"; }
+paso_identidad() { remoto identidad "$objetivo" "$CORTO"; }
 paso_borde() { remoto borde "$objetivo" "$CORTO"; }
 
 paso_comprobar() {
@@ -198,6 +199,7 @@ if [ "$objetivo" = zenit ]; then
     "construir|Construyendo las imágenes|200"
     "actualizar|Actualizando los servicios|30"
     "esperar|Esperando a que Zenit responda|30"
+    "identidad|Aplicando la configuración de identidad|20"
     "borde|Revisando el borde|5"
     "comprobar|Comprobando por la dirección pública|10"
   )
