@@ -16,6 +16,8 @@ backups/
 !.vscode/extensions.json
 .DS_Store
 Thumbs.db
+# Salida que el editor compila junto a las fuentes; Gradle compila en build/.
+/backend/bin/
 
 # Dependencias y artefactos comunes
 node_modules/
