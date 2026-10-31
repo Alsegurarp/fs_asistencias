@@ -3,6 +3,8 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { accessibilityViolations } from './accessibility'
+import { loaded } from './testUi'
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
 vi.mock('./api', async original => ({ ...await original<typeof import('./api')>(), api: vi.fn() }))
 import { api, ApiError } from './api'
@@ -51,4 +53,9 @@ it('explica falta de vínculo y no conserva la semana de otro usuario en caché'
 })
 it('no consulta sin rol Trabajador', async () => {
   await mount(['rh']); expect(mocked).not.toHaveBeenCalled()
+})
+
+it('cumple las reglas automáticas de accesibilidad', async () => {
+  await mount(); await loaded()
+  expect(await accessibilityViolations()).toEqual([])
 })

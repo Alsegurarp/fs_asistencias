@@ -190,7 +190,7 @@ Lo primero es `GET /api/v1/me`:
 | Respuesta | Qué mostrar |
 | --- | --- |
 | `tenant` nulo y sin roles | La cuenta existe pero nadie la ha invitado: una pantalla que lo explique |
-| Rol `operador_saas` | Alta, lista y reactivación de empresas; sin datos internos |
+| Rol `operador_saas` | Alta, lista, reactivación y uso mensual de empresas; sin datos internos |
 | Roles de empresa | El menú que corresponde a sus roles, con el nombre de la empresa |
 
 Una persona puede tener varios roles: el menú es la unión de lo que cada uno
@@ -206,6 +206,11 @@ Las rutas van sin el prefijo `/api/v1`.
 | --- | --- |
 | Empresas | `GET /tenants`, `POST /tenants` |
 | Suspender y reactivar | `POST /tenants/{tenantId}/suspension`, `POST /tenants/{tenantId}/reactivation` |
+| Uso de una empresa | `GET /tenants/{tenantId}/usage?month=AAAA-MM` |
+
+El uso abre con el mes en curso en la zona horaria de la empresa y muestra sólo
+conteos: personas que marcaron, personas vigentes, tarjetas, dispositivos y
+marcajes. Avisa si el mes ya terminó o si sus conteos siguen creciendo.
 
 Suspender y reactivar piden un motivo, que queda en la bitácora de la empresa.
 Conviene pedir confirmación: al suspender, toda su gente y sus dispositivos

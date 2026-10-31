@@ -4,6 +4,7 @@ import mx.fastsolution.zenit.api.PageKey
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.stereotype.Repository
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -18,6 +19,14 @@ data class TenantRow(
     val createdAt: OffsetDateTime,
     /** Horas tras el fin de la semana a las que el sistema la cierra; nulo si sólo la cierra una persona. */
     val autoCloseAfterHours: Int? = null,
+)
+
+data class TenantUsageCounts(
+    val employeesWithAttendance: Int,
+    val employeesInPeriod: Int,
+    val cardsAssigned: Int,
+    val devicesActive: Int,
+    val attendanceEvents: Int,
 )
 
 @Repository
@@ -77,6 +86,40 @@ class TenantRepository(private val dsl: DSLContext) {
     /** Cambia el estado sólo si estaba en el que se espera; devuelve nulo si no. */
     fun setStatus(id: UUID, from: String, to: String): TenantRow? =
         dsl.fetchOne("update tenant set status = ? where id = ? and status = ? returning $COLUMNS", to, id, from)?.let(::row)
+
+    /**
+     * Conteos de uso entre dos instantes, para facturar. Cada uno se apoya en
+     * datos que guardan su historia: marcajes, vigencia laboral, asignaciones
+     * de tarjeta y activación o revocación de dispositivos.
+     */
+    fun usage(id: UUID, from: OffsetDateTime, to: OffsetDateTime, firstDay: LocalDate, lastDay: LocalDate): TenantUsageCounts {
+        val r = dsl.fetchOne(
+            "select " +
+                "(select count(distinct employee_id) from attendance_event where tenant_id = ? " +
+                "and observed_at >= cast(? as timestamptz) and observed_at < cast(? as timestamptz)) as people_marking, " +
+                "(select count(*) from attendance_event where tenant_id = ? " +
+                "and observed_at >= cast(? as timestamptz) and observed_at < cast(? as timestamptz)) as marks, " +
+                "(select count(*) from employee where tenant_id = ? and employment_start <= cast(? as date) " +
+                "and (employment_end is null or employment_end >= cast(? as date))) as people_employed, " +
+                "(select count(distinct card_id) from card_assignment where tenant_id = ? " +
+                "and since < cast(? as timestamptz) and (until is null or until > cast(? as timestamptz))) as cards, " +
+                "(select count(*) from device where tenant_id = ? " +
+                "and enrolled_at < cast(? as timestamptz) and (revoked_at is null or revoked_at > cast(? as timestamptz))) as devices",
+            id, from, to,
+            id, from, to,
+            id, lastDay.toString(), firstDay.toString(),
+            id, to, from,
+            id, to, from,
+        )!!
+        fun count(column: String) = r.get(column, Number::class.java).toInt()
+        return TenantUsageCounts(
+            employeesWithAttendance = count("people_marking"),
+            employeesInPeriod = count("people_employed"),
+            cardsAssigned = count("cards"),
+            devicesActive = count("devices"),
+            attendanceEvents = count("marks"),
+        )
+    }
 
     /** Empresas activas que pidieron que sus semanas se cierren solas. */
     fun autoClosing(): List<TenantRow> =

@@ -3,6 +3,8 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { accessibilityViolations } from './accessibility'
+import { loaded } from './testUi'
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
 vi.mock('./api', async original => ({ ...await original<typeof import('./api')>(), api: vi.fn(), apiDownload: vi.fn() }))
 import { api, apiDownload, ApiError } from './api'
@@ -59,3 +61,8 @@ it.each(['queued', 'failed', 'expired'] as const)('no permite descargar cuando e
   expect(button('Descargar CSV')).toBeUndefined()
 })
 it('no ofrece operaciones al supervisor', async () => { await mount('supervisor'); expect(button('Solicitar CSV')).toBeUndefined(); expect(document.body.textContent).toContain('Tu rol no permite exportar') })
+
+it('cumple las reglas automáticas de accesibilidad', async () => {
+  await mount(); await loaded()
+  expect(await accessibilityViolations()).toEqual([])
+})

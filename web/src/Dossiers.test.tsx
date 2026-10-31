@@ -3,6 +3,8 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { accessibilityViolations } from './accessibility'
+import { loaded } from './testUi'
 vi.mock('./auth',()=>({accessToken:vi.fn(),auth:{tokenParsed:{sub:'subject'},clearToken:vi.fn()},identityBase:'http://localhost:8082'}))
 vi.mock('./api',async original=>({...await original<typeof import('./api')>(),api:vi.fn(),apiDownload:vi.fn()}))
 import { api, apiDownload, ApiError, type Me } from './api'
@@ -56,4 +58,9 @@ it('no reintenta ni reutiliza autorización después de interrupción',async()=>
   await waitFor(()=>document.body.textContent?.includes('Conexión interrumpida')===true)
   expect(apiDownload).toHaveBeenCalledTimes(1);expect(sessionStorage.length).toBe(0);expect(button('Continuar con la descarga verificada')).toBeUndefined()
   expect(button('Verificar identidad para descargar')).toBeDefined()
+})
+
+it('cumple las reglas automáticas de accesibilidad', async () => {
+  await mount(); await loaded()
+  expect(await accessibilityViolations()).toEqual([])
 })

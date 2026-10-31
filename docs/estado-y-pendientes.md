@@ -3,6 +3,15 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
+**Avance del 30 de octubre — medición y accesibilidad.** `main` en `ddab8dc`
+está desplegado en el servidor compartido, con datos ficticios. La rama
+`feat/medicion-uso-y-accesibilidad` agrega el uso mensual por empresa para
+facturar (API 0.16.0, 71 operaciones, sólo conteos y sólo para quien opera) y
+la revisión automática de accesibilidad del portal, con axe-core y el
+contraste de la paleta. Falta el recorrido manual de accesibilidad
+([detalle](accesibilidad.md)). Backend: 67 pruebas unitarias y 90 de
+integración; portal: 205. Los cortes siguientes son históricos.
+
 **Entrega posterior del 28 de octubre — E4/E5 y E6 técnica.** La rama
 `feat/expediente-e4-e6-qa` incorpora E4/E5 desde la PR #21, integrada en E2/E3
 después de que #20 llegara a main. [PR #22 abierta contra main](https://github.com/Alsegurarp/fs_asistencias/pull/22),

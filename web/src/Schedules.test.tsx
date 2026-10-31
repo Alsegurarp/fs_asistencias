@@ -3,6 +3,8 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { accessibilityViolations } from './accessibility'
+import { loaded } from './testUi'
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
 vi.mock('./api', async original => ({ ...await original<typeof import('./api')>(), api: vi.fn() }))
 import { api, ApiError } from './api'
@@ -69,4 +71,9 @@ it('conserva empleado y fecha si la asignación anterior impide el cambio', asyn
   await waitFor(() => button('Confirmar asignación')?.disabled === false); await click('Confirmar asignación')
   await waitFor(() => document.body.textContent?.includes('Debe ser posterior') === true)
   expect(document.querySelector('[name="assignmentEmployee"]')?.getAttribute('value')).toBe(employeeId)
+})
+
+it('cumple las reglas automáticas de accesibilidad', async () => {
+  await mount(); await loaded()
+  expect(await accessibilityViolations()).toEqual([])
 })

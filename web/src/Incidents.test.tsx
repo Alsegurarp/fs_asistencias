@@ -3,6 +3,8 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { accessibilityViolations } from './accessibility'
+import { loaded } from './testUi'
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
 vi.mock('./api', async importOriginal => ({ ...await importOriginal<typeof import('./api')>(), api: vi.fn() }))
 import { api, ApiError, type Me } from './api'
@@ -203,4 +205,9 @@ it('el administrador asigna a otra persona con acceso vigente', async () => {
   await click('Guardar responsable')
   await waitFor(() => serverIncident.assigneeUserId === otherUser)
   expect(patches()[0][2]).toEqual({ assigneeUserId: otherUser })
+})
+
+it('cumple las reglas automáticas de accesibilidad', async () => {
+  await mount(); await loaded()
+  expect(await accessibilityViolations()).toEqual([])
 })

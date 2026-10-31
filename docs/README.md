@@ -38,6 +38,7 @@ contradice al contrato, manda el contrato.
 | [Guía de la app Android](guia-app-android.md) | Enrolar, firmar, marcar, trabajar sin conexión y mostrar la semana |
 | [Producto móvil](alcance-producto-movil.md) | Pantallas del producto, endpoints y qué funciones están conectadas |
 | [Guía del portal web](guia-portal-web.md) | Inicio de sesión, pantallas contra rutas, roles y exportes |
+| [Accesibilidad del portal](accesibilidad.md) | Qué se comprueba solo, qué se revisó a mano y qué falta para WCAG 2.1 AA |
 | [Diccionario](diccionario.md) | Glosario, catálogos de valores y diccionario de datos |
 | [Entorno local](entorno-local.md) | Levantar, crear cuentas, obtener un token, simular dispositivos, ensayar el respaldo, revisar vulnerabilidades y resolver problemas frecuentes |
 | [Verificación local del 20 de octubre](verificacion-local-2026-10-20.md) | Código comprobado, pruebas repetidas, servicios locales y límites de la aceptación |

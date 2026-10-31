@@ -11,6 +11,9 @@ import mx.fastsolution.zenit.identity.Role
 import mx.fastsolution.zenit.user.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.OffsetDateTime
+import java.time.YearMonth
+import java.time.ZoneId
 import java.util.UUID
 
 class TenantCreateRequest {
@@ -39,6 +42,16 @@ class TenantUpdateRequest {
 
     fun changesAutoClose(): Boolean = autoCloseGiven
 }
+
+class TenantUsage(
+    val tenantId: UUID,
+    val month: String,
+    val timeZone: String,
+    val from: OffsetDateTime,
+    val to: OffsetDateTime,
+    val complete: Boolean,
+    val counts: TenantUsageCounts,
+)
 
 class TenantStatusRequest {
     var reason: String? = null
@@ -167,6 +180,34 @@ class TenantService(
         audit.record(id, operator, "user.unlinked", "user", user.id, mapOf("by" to "operator", "reason" to reason!!))
     }
 
+    /**
+     * Lo que una empresa usó en un mes de su calendario, para facturar fuera
+     * del servicio. Sólo son conteos: ningún dato de una persona sale de aquí.
+     * Un mes terminado da siempre lo mismo; el mes en curso va creciendo.
+     */
+    @Transactional(readOnly = true)
+    fun usage(id: UUID, month: String?): TenantUsage {
+        val period = month?.takeIf { MONTH.matches(it) }?.let { runCatching { YearMonth.parse(it) }.getOrNull() }
+        if (period == null) Checks().apply { fail("month", "invalid_month", "El mes va en la forma AAAA-MM.") }.done()
+
+        val tenant = tenants.find(id) ?: throw Problems.notFound()
+        val zone = ZoneId.of(tenant.timeZone)
+        if (period!! > YearMonth.now(zone)) {
+            Checks().apply { fail("month", "future_month", "Ese mes todavía no empieza para la empresa.") }.done()
+        }
+        val from = period.atDay(1).atStartOfDay(zone).toOffsetDateTime()
+        val to = period.plusMonths(1).atDay(1).atStartOfDay(zone).toOffsetDateTime()
+        return TenantUsage(
+            tenantId = id,
+            month = period.toString(),
+            timeZone = tenant.timeZone,
+            from = from,
+            to = to,
+            complete = !OffsetDateTime.now().isBefore(to),
+            counts = tenants.usage(id, from, to, period.atDay(1), period.atEndOfMonth()),
+        )
+    }
+
     private fun changeStatus(
         operator: CurrentPerson,
         id: UUID,
@@ -194,5 +235,6 @@ class TenantService(
         const val MAX_AUTO_CLOSE = 168
         const val MIN_REASON = 10
         const val MAX_REASON = 500
+        val MONTH = Regex("[0-9]{4}-(0[1-9]|1[0-2])")
     }
 }

@@ -3,10 +3,12 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { accessibilityViolations } from './accessibility'
+import { loaded } from './testUi'
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
 vi.mock('./api', async original => ({ ...await original<typeof import('./api')>(), api: vi.fn() }))
 import { api, ApiError, type Tenant } from './api'
-import { Tenants } from './Tenants'
+import { currentMonth, Tenants } from './Tenants'
 import { button, choose, click, setInput, waitFor } from './testUi'
 
 let tenant: Tenant
@@ -23,6 +25,11 @@ beforeEach(() => {
   mocked.mockReset().mockImplementation(async (path, method = 'GET', body) => {
     if (method !== 'GET') { if (failure) throw failure; if (path.endsWith('/reactivation')) tenant.status = 'active'; return { ...tenant, ...(body as object) } }
     if (path === '/tenants') return { items: [{ ...tenant }], nextCursor: null }
+    if (path.startsWith(`/tenants/${tenant.id}/usage?month=`)) {
+      const month = path.split('=')[1]
+      return { tenantId: tenant.id, month, timeZone: tenant.timeZone, from: `${month}-01T06:00:00Z`, to: `${month}-28T06:00:00Z`, complete: month !== currentMonth(tenant.timeZone),
+        employeesWithAttendance: 3, employeesInPeriod: 5, cardsAssigned: 4, devicesActive: 2, attendanceEvents: 37 }
+    }
     throw new Error(`Ruta inesperada: ${path}`)
   })
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
@@ -73,7 +80,41 @@ it('conserva el motivo ante conflicto y permite cancelar sin escribir', async ()
   expect((document.querySelector('[name="reason"]') as HTMLInputElement).value).toBe('Revisado por operación')
   await click('Cancelar'); expect(writes()).toHaveLength(1)
 })
+it('muestra el uso del mes de una empresa sólo con conteos y sin escribir nada', async () => {
+  await mount(); await click('Uso de Empresa demo')
+  await waitFor(() => !!document.body.textContent?.includes('Personas que marcaron en el mes'))
+  expect(mocked).toHaveBeenCalledWith(`/tenants/${tenant.id}/usage?month=${currentMonth(tenant.timeZone)}`)
+  expect(document.body.textContent).toContain('37'); expect(document.body.textContent).toContain('Mes en curso')
+  await setInput('month', '2025-09')
+  await waitFor(() => !!document.body.textContent?.includes('Mes terminado'))
+  expect(mocked).toHaveBeenCalledWith(`/tenants/${tenant.id}/usage?month=2025-09`)
+  await click('Cerrar'); expect(writes()).toHaveLength(0)
+})
+it('no pide el uso con un mes vacío', async () => {
+  await mount(); await click('Uso de Empresa demo')
+  await waitFor(() => !!document.body.textContent?.includes('Personas que marcaron en el mes'))
+  const before = mocked.mock.calls.length
+  await setInput('month', '')
+  await waitFor(() => !!document.body.textContent?.includes('Elige un mes en la forma AAAA-MM.'))
+  expect(mocked.mock.calls.length).toBe(before)
+})
+it('calcula el mes en curso en la zona de la empresa', () => {
+  expect(currentMonth('America/Mexico_City', new Date('2026-11-01T05:30:00Z'))).toBe('2026-10')
+  expect(currentMonth('UTC', new Date('2026-11-01T05:30:00Z'))).toBe('2026-11')
+})
 it('no consulta empresas con un rol ajeno al operador', async () => {
   await act(async () => root.render(<QueryClientProvider client={cache}><Tenants me={{ userId: 'self', displayName: 'RH', roles: ['rh'], tenant: null }} /></QueryClientProvider>))
   expect(mocked).not.toHaveBeenCalled(); expect(button('Dar de alta empresa')).toBeUndefined()
+})
+
+it('cumple las reglas automáticas de accesibilidad', async () => {
+  await mount(); await loaded()
+  expect(await accessibilityViolations()).toEqual([])
+})
+it('los diálogos de alta y de uso cumplen las reglas automáticas de accesibilidad', async () => {
+  await mount(); await click('Dar de alta empresa')
+  expect(await accessibilityViolations()).toEqual([])
+  await click('Cancelar'); await click('Uso de Empresa demo')
+  await waitFor(() => !!document.body.textContent?.includes('Personas que marcaron en el mes'))
+  expect(await accessibilityViolations()).toEqual([])
 })

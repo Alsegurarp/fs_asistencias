@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.15.0
+  version: 0.16.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -694,6 +694,70 @@ paths:
         "422":
           $ref: "#/components/responses/Unprocessable"
 
+  /tenants/{tenantId}/usage:
+    parameters:
+      - $ref: "#/components/parameters/TenantId"
+    get:
+      tags: [empresa]
+      operationId: getTenantUsage
+      summary: Uso de una empresa en un mes, para facturar
+      description: |
+        Conteos del mes calendario en la zona horaria de la empresa, sin datos
+        de personas. Cada uno sale de datos que conservan su historia: un mes
+        terminado da siempre lo mismo, y el mes en curso va creciendo
+        (`complete` es falso). Qué conteo se cobra lo decide el precio, no el
+        servicio.
+
+        - `employeesWithAttendance`: personas distintas con al menos un
+          marcaje cuya hora cae en el mes.
+        - `employeesInPeriod`: personas cuya relación laboral toca algún día
+          del mes. Una baja sin fecha de fin cuenta como vigente.
+        - `cardsAssigned`: tarjetas distintas que estuvieron asignadas a
+          alguien en algún momento del mes.
+        - `devicesActive`: teléfonos y terminales activados antes del fin del
+          mes y no revocados ni reemplazados antes de su inicio.
+        - `attendanceEvents`: marcajes cuya hora cae en el mes.
+
+        Responde 422 con el error de `month` en `invalid_month` si el mes no
+        tiene la forma `AAAA-MM`, y en `future_month` si todavía no empieza en
+        la zona horaria de la empresa.
+      x-roles: [operador_saas]
+      parameters:
+        - name: month
+          in: query
+          required: true
+          description: Mes del calendario de la empresa, en la forma `AAAA-MM`.
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          example: "2026-10"
+      responses:
+        "200":
+          description: Uso de la empresa en el mes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantUsage"
+              example:
+                tenantId: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                month: "2026-10"
+                timeZone: America/Mexico_City
+                from: "2026-10-01T06:00:00Z"
+                to: "2026-11-01T06:00:00Z"
+                complete: true
+                employeesWithAttendance: 42
+                employeesInPeriod: 45
+                cardsAssigned: 44
+                devicesActive: 3
+                attendanceEvents: 3520
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
   /tenant:
     get:
       tags: [empresa]
@@ -3928,6 +3992,46 @@ components:
           minimum: 1
           maximum: 168
           description: Nulo apaga el cierre programado.
+    TenantUsage:
+      type: object
+      additionalProperties: false
+      required: [tenantId, month, timeZone, from, to, complete, employeesWithAttendance, employeesInPeriod, cardsAssigned, devicesActive, attendanceEvents]
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        month:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        timeZone:
+          type: string
+          description: Zona IANA de la empresa, con la que se cortó el mes.
+        from:
+          type: string
+          format: date-time
+          description: Inicio del mes en la zona de la empresa, incluido.
+        to:
+          type: string
+          format: date-time
+          description: Inicio del mes siguiente en la zona de la empresa, excluido.
+        complete:
+          type: boolean
+          description: Verdadero cuando el mes ya terminó; mientras no, los conteos crecen.
+        employeesWithAttendance:
+          type: integer
+          minimum: 0
+        employeesInPeriod:
+          type: integer
+          minimum: 0
+        cardsAssigned:
+          type: integer
+          minimum: 0
+        devicesActive:
+          type: integer
+          minimum: 0
+        attendanceEvents:
+          type: integer
+          minimum: 0
     TenantStatusChange:
       type: object
       additionalProperties: false
