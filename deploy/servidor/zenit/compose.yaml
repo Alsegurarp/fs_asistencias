@@ -38,7 +38,7 @@ services:
     <<: *servidor
     environment:
       # La consola no sale por el borde: se alcanza por túnel en esta dirección.
-      KC_HOSTNAME_ADMIN: ${IDENTITY_ADMIN_URL:?Defina IDENTITY_ADMIN_URL}
+      KC_HOSTNAME_ADMIN: ${IDENTITY_CONSOLE_URL:?Defina IDENTITY_CONSOLE_URL}
       # Sólo le cree las cabeceras X-Forwarded-* al borde, que las sobrescribe.
       KC_PROXY_HEADERS: xforwarded
       KC_PROXY_TRUSTED_ADDRESSES: 172.30.88.0/24
@@ -52,6 +52,10 @@ services:
   backend:
     <<: *servidor
     ports: !reset []
+    # El secreto del cliente técnico de contraseñas vive con los demás, fuera
+    # del árbol que reemplaza cada despliegue; lo escribe el servicio identidad.
+    volumes:
+      - ${ZENIT_SECRETOS:?Defina ZENIT_SECRETOS}/identity-admin:/run/identity-admin:ro
 
   web:
     <<: *servidor
@@ -65,6 +69,40 @@ services:
   secrets-init:
     volumes:
       - ${ZENIT_SECRETOS:?Defina ZENIT_SECRETOS}:/out
+
+  # Keycloak no importa el realm versionado sobre uno que ya existe: este
+  # servicio crea en el servidor los clientes y flujos que le falten, y el
+  # cliente técnico de contraseñas, sin sobrescribir nada. Lo corre remoto.sh
+  # en cada despliegue. Usa la imagen de Node con la que ya se construye el
+  # portal, sólo la red interna y sólo los dos archivos de secretos que necesita.
+  identidad:
+    profiles: ["identidad"]
+    image: node:24.21.0-alpine3.24@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Como secrets-init: escribe en la carpeta de secretos, que es de root.
+    user: root
+    read_only: true
+    tmpfs:
+      - /tmp
+    command: ["node", "/trabajo/identidad.mjs"]
+    environment:
+      KEYCLOAK_URL: http://keycloak:8082
+      PORTAL_URL: ${PORTAL_URL:?Defina PORTAL_URL}
+      REALM_FILE: /realm/zenit-realm.json
+      SECRETOS: /secretos
+    volumes:
+      - ./deploy/servidor/zenit/identidad.mjs:/trabajo/identidad.mjs:ro
+      - ./infra/keycloak/realm:/realm:ro
+      - ${ZENIT_SECRETOS}/keycloak_admin_password:/secretos/keycloak_admin_password:ro
+      - ${ZENIT_SECRETOS}/identity-admin:/secretos/identity-admin
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - datos
 
 networks:
   entrada:

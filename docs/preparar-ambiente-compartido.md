@@ -80,7 +80,10 @@ backend, portal e integración administrativa con Keycloak. Sólo administra
 cuentas de la misma empresa; conserva OTP y otras acciones requeridas. El
 cliente técnico se preparó sólo en local, con secreto fuera de Git y alcance
 explícito. [Implementación y evidencia](entregas-a1-a5.md).
-Faltan provisión/aceptación en servidor público y recorrido real de ingreso
+En el servidor lo crea el paso `identidad` del despliegue, con el mismo
+alcance, y guarda su secreto junto a los demás
+([despliegue](despliegue-en-servidor.md#desplegar-una-versión-nueva-de-zenit)).
+Faltan aceptación en servidor público y recorrido real de ingreso
 y contraseña/OTP en navegador; [guion](qa-a1-a5.md).
 
 Para un empleado sin cuenta vinculada hay que resolver primero esa vinculación.

@@ -104,10 +104,26 @@ borde() {
   echo "borde actualizado"
 }
 
+# Aplica al realm existente lo que agrega el versionado y prepara el cliente
+# técnico de contraseñas. El backend lee su secreto al arrancar: si cambió, se
+# recrea y se vuelve a esperar. Sólo compara huellas; el secreto no se muestra.
+identidad_zenit() {
+  local secreto=$BASE/zenit/secretos/identity-admin/identity_admin_client_secret antes despues
+  antes=$(sha256sum "$secreto" 2> /dev/null || true)
+  zenit --profile identidad run --rm identidad
+  despues=$(sha256sum "$secreto" 2> /dev/null || true)
+  if [ "$antes" != "$despues" ]; then
+    echo "el secreto del cliente técnico cambió: se recrea el backend"
+    zenit up -d --force-recreate --no-deps backend
+    esperar_zenit
+  fi
+}
+
 case "$accion:$objetivo" in
   construir:zenit) zenit build ;;
   actualizar:zenit) zenit up -d ;;
   esperar:zenit) esperar_zenit ;;
+  identidad:zenit) identidad_zenit ;;
   borde:zenit) borde ;;
   construir:landing) landing build ;;
   actualizar:landing) landing up -d ;;

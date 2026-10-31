@@ -117,6 +117,7 @@ después todo su registro. Para forzar la barra en ese caso:
 | Construir | `docker compose build` de las cinco imágenes | La imagen `fastsolution-landing:<commit>` |
 | Actualizar | `docker compose up -d`: sólo recrea lo que cambió | Recrea el contenedor |
 | Esperar | Hasta 240 s a que el estado del backend responda 200 a través del borde | Hasta 120 s a que el contenedor esté sano |
+| Identidad | Crea en el realm lo que agrega el versionado y el cliente técnico; si algo difiere, se detiene | No aplica |
 | Borde | Si cambió `deploy/servidor/borde`, prueba los bloques con `nginx -t` y recarga; si no, nada | No aplica |
 | Comprobar | Portal, estado del backend, emisor de la identidad, `401` sin token y `404` en la administración | Raíz `200` sin `X-Powered-By`, `www` `301` y contacto inválido `400` |
 
