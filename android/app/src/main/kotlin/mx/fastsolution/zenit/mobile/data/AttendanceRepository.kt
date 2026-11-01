@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import mx.fastsolution.zenit.mobile.BuildConfig
+import mx.fastsolution.zenit.mobile.capture.BreakPolicySchedule
 import mx.fastsolution.zenit.mobile.capture.SessionPolicy
 import mx.fastsolution.zenit.mobile.capture.TagEvidenceHasher
 import mx.fastsolution.zenit.mobile.location.CurrentLocationProvider
@@ -121,7 +122,7 @@ class AttendanceRepository(private val context: Context) {
             check(ContextCompat.getSystemService(context, KeyguardManager::class.java)?.isDeviceSecure == true) { "Active el bloqueo de pantalla para marcar." }
             val session = registration.getJSONObject("session")
             require(declaredType == null || declaredType in setOf("clock_in", "clock_out") ||
-                (session.getString("breakPolicy") == "marked" && declaredType in setOf("break_start", "break_end")))
+                (breakPolicyAt(session, observedAt) == "marked" && declaredType in setOf("break_start", "break_end")))
             val sequence = registration.getInt("nextSequence")
             // Reservar antes de insertar evita repetir un consecutivo tras un cierre inesperado.
             registration.put("nextSequence", sequence + 1)
@@ -223,7 +224,12 @@ class AttendanceRepository(private val context: Context) {
         UUID.fromString(session.getString("sessionId"))
         Instant.parse(session.getString("startedAt"))
         require(session.getInt("tokenMaxAgeSeconds") > 0)
-        require(session.getString("breakPolicy") in setOf("marked", "not_considered"))
+        require(session.getString("breakPolicy") in BreakPolicySchedule.POLICIES)
+        session.optJSONObject("upcomingBreakPolicy")?.let {
+            require(it.getString("breakPolicy") in BreakPolicySchedule.POLICIES)
+            java.time.LocalDate.parse(it.getString("effectiveOn"))
+            Instant.parse(it.getString("effectiveAt"))
+        }
         val policy = session.getJSONObject("offlinePolicy")
         require(policy.getLong("maxAgeHours") in 1..72 && policy.getInt("maxEvents") in 1..1000)
     }
@@ -231,6 +237,19 @@ class AttendanceRepository(private val context: Context) {
     companion object {
         private val lock = Mutex()
         private val syncLock = Mutex()
+
+        /** La política de comida de la sesión en ese instante: la programada, si ya entró. */
+        fun breakPolicyAt(session: JSONObject, instant: Instant = Instant.now()): String {
+            val upcoming = session.optJSONObject("upcomingBreakPolicy")
+            return BreakPolicySchedule.at(session.getString("breakPolicy"), upcoming?.getString("breakPolicy"),
+                upcoming?.let { Instant.parse(it.getString("effectiveAt")) }, instant)
+        }
+
+        fun breakPolicyNotice(session: JSONObject, now: Instant = Instant.now()): String? {
+            val upcoming = session.optJSONObject("upcomingBreakPolicy") ?: return null
+            return BreakPolicySchedule.notice(upcoming.getString("breakPolicy"), upcoming.getString("effectiveOn"),
+                Instant.parse(upcoming.getString("effectiveAt")), now)
+        }
         fun sessionUsable(registration: JSONObject, now: Instant = Instant.now()): Boolean {
             val session = registration.getJSONObject("session")
             val policy = session.getJSONObject("offlinePolicy")

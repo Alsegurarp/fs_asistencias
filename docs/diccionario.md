@@ -49,7 +49,8 @@ datos, tabla por tabla.
 | Fuente del padrón | `integration checkpoint` | `integration_source`, `integration_checkpoint` | De dónde viene el padrón y hasta dónde se sincronizó |
 | Bitácora | `audit log` | `audit_log` | Registro de acciones administrativas; sólo se agrega |
 | Correlación | `correlationId` | `correlation_id` | Identificador de una petición, para encontrarla en los registros |
-| Política de descanso | `breakPolicy` | `break_policy` | Si la empresa marca la comida o no la considera |
+| Política de descanso | `breakPolicy` | `tenant.break_policy` y `break_policy_change` | Si la empresa marca la comida o no la considera; la que vale en una fecha sale del último cambio programado que ya entró |
+| Cambio programado de comida | `breakPolicyChange`, `upcomingBreakPolicy` | `break_policy_change` | Cambio de la política de comida que entra el primer día de semana de la siguiente quincena, con al menos 7 días de aviso |
 
 ## Catálogos
 

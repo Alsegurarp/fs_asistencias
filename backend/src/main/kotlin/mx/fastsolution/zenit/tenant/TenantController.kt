@@ -27,18 +27,22 @@ data class TenantView(
     val status: String,
     val createdAt: String,
     val autoCloseAfterHours: Int?,
+    /** El cambio de la política de comida que todavía no entra, si hay uno. */
+    val breakPolicyChange: BreakPolicyChangeView?,
 ) {
     companion object {
-        fun of(row: TenantRow) = TenantView(
+        /** `breakPolicy` es la que vale hoy en la empresa, no la de su alta: la da `BreakPolicies`. */
+        fun of(row: TenantRow, breakPolicy: String, change: BreakPolicyChangeView?) = TenantView(
             id = row.id.toString(),
             name = row.name,
             slug = row.slug,
             timeZone = row.timeZone,
             weekStartsOn = row.weekStartsOn,
-            breakPolicy = row.breakPolicy,
+            breakPolicy = breakPolicy,
             status = row.status,
             createdAt = row.createdAt.toInstant().toString(),
             autoCloseAfterHours = row.autoCloseAfterHours,
+            breakPolicyChange = change,
         )
     }
 }
@@ -79,31 +83,31 @@ data class TenantUsageView(
  */
 @RestController
 @RequestMapping("/api/v1")
-class TenantController(private val service: TenantService) {
+class TenantController(private val service: TenantService, private val policies: BreakPolicies) {
     @GetMapping("/tenants")
     fun list(@RequestParam cursor: String?, @RequestParam limit: String?): Page<TenantView> {
         val size = Paging.limit(limit)
-        return Paging.page(service.page(Paging.decode(cursor), size), size, { PageKey(it.createdAt, it.id) }) { TenantView.of(it) }
+        return Paging.page(service.page(Paging.decode(cursor), size), size, { PageKey(it.createdAt, it.id) }) { policies.view(it) }
     }
 
     @PostMapping("/tenants")
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@AuthenticationPrincipal operator: CurrentPerson, @RequestBody request: TenantCreateRequest): TenantView =
-        TenantView.of(service.create(operator, request))
+        policies.view(service.create(operator, request))
 
     @PostMapping("/tenants/{tenantId}/suspension")
     fun suspend(
         @AuthenticationPrincipal operator: CurrentPerson,
         @PathVariable tenantId: UUID,
         @RequestBody request: TenantStatusRequest,
-    ): TenantView = TenantView.of(service.suspend(operator, tenantId, request))
+    ): TenantView = policies.view(service.suspend(operator, tenantId, request))
 
     @PostMapping("/tenants/{tenantId}/reactivation")
     fun reactivate(
         @AuthenticationPrincipal operator: CurrentPerson,
         @PathVariable tenantId: UUID,
         @RequestBody request: TenantStatusRequest,
-    ): TenantView = TenantView.of(service.reactivate(operator, tenantId, request))
+    ): TenantView = policies.view(service.reactivate(operator, tenantId, request))
 
     @PostMapping("/tenants/{tenantId}/administrators/unlink")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -120,9 +124,9 @@ class TenantController(private val service: TenantService) {
         TenantUsageView.of(service.usage(tenantId, month))
 
     @GetMapping("/tenant")
-    fun current(@AuthenticationPrincipal person: CurrentPerson): TenantView = TenantView.of(service.current(person))
+    fun current(@AuthenticationPrincipal person: CurrentPerson): TenantView = policies.view(service.current(person))
 
     @PatchMapping("/tenant")
     fun update(@AuthenticationPrincipal person: CurrentPerson, @RequestBody request: TenantUpdateRequest): TenantView =
-        TenantView.of(service.update(person, request))
+        policies.view(service.update(person, request))
 }

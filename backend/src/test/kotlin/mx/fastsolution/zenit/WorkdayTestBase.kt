@@ -32,10 +32,10 @@ abstract class WorkdayTestBase : CaptureTestBase() {
     protected fun before(hours: Long, minutes: Long = 0): Instant = midnight.minusSeconds(hours * 3600 + minutes * 60)
 
     protected fun companyWithFinishedWeek(breakPolicy: String = "not_considered"): Company {
-        val c = company()
+        val c = company(breakPolicy)
         val changed = call(
             "PATCH", "/api/v1/tenant", c.adminToken,
-            """{"weekStartsOn":"${today.dayOfWeek.name.lowercase()}","breakPolicy":"$breakPolicy"}""",
+            """{"weekStartsOn":"${today.dayOfWeek.name.lowercase()}"}""",
         )
         assertEquals(200, changed.status, changed.toString())
         return c

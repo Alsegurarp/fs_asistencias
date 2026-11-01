@@ -29,6 +29,8 @@ data class CaptureUiState(
     val deviceLabel: String = "",
     val serverUrl: String = "https://zenit.fastsolution.com.mx",
     val breakPolicy: String = "not_considered",
+    /** Aviso del cambio de la política de comida que viene; nulo si no hay uno. */
+    val breakPolicyNotice: String? = null,
     val sessionUsable: Boolean = false,
     val legacyCount: Int = 0,
     val receipts: List<String> = emptyList(),
@@ -52,7 +54,8 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
                 val label = it.optJSONObject("employee")?.optString("displayName") ?: it.optJSONObject("site")?.optString("name").orEmpty()
                 "${it.getJSONObject("tenant").getString("name")} · $label"
             }.orEmpty(),
-            breakPolicy = device?.getJSONObject("session")?.getString("breakPolicy") ?: "not_considered",
+            breakPolicy = device?.getJSONObject("session")?.let { AttendanceRepository.breakPolicyAt(it) } ?: "not_considered",
+            breakPolicyNotice = device?.getJSONObject("session")?.let { AttendanceRepository.breakPolicyNotice(it) },
             sessionUsable = device?.let { AttendanceRepository.sessionUsable(it) } ?: false,
             message = current.message.ifBlank { repository.store.notice() },
             receipts = receipts.filter { repository.belongsToDevice(it, device?.getString("deviceId")) }.map(repository::readReceipt),

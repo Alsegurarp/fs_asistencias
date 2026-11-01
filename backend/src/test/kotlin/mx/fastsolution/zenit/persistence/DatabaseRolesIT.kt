@@ -199,6 +199,16 @@ class DatabaseRolesIT {
     }
 
     @Test
+    fun `a scheduled break policy change is only cancelled, never rewritten or deleted`() {
+        asApp().use { db ->
+            assertEquals("42501", denied { db.createStatement().use { it.execute("DELETE FROM break_policy_change") } })
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE break_policy_change SET effective_on = current_date") } })
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE break_policy_change SET break_policy = 'marked'") } })
+            assertEquals("42501", denied { db.createStatement().use { it.execute("UPDATE break_policy_change SET reason = 'otro motivo cualquiera'") } })
+        }
+    }
+
+    @Test
     fun `capture evidence is only ever added`() {
         asApp().use { db ->
             val updates = mapOf(

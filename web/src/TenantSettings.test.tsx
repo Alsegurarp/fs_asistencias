@@ -20,9 +20,16 @@ const mocked = vi.mocked(api)
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 100, height: 30, x: 0, y: 0, top: 0, bottom: 30, left: 0, right: 100, toJSON: () => ({}) })
-  tenant = { id: 'empresa', name: 'Empresa demo', slug: 'empresa-demo', timeZone: 'America/Mexico_City', weekStartsOn: 'monday', breakPolicy: 'not_considered', status: 'active', createdAt: '2026-10-01T12:00:00Z', autoCloseAfterHours: 24 }
+  tenant = { id: 'empresa', name: 'Empresa demo', slug: 'empresa-demo', timeZone: 'America/Mexico_City', weekStartsOn: 'monday', breakPolicy: 'not_considered', status: 'active', createdAt: '2026-10-01T12:00:00Z', autoCloseAfterHours: 24, breakPolicyChange: null }
   failure = null
   mocked.mockReset().mockImplementation(async (path, method = 'GET', body) => {
+    if (path === '/tenant/break-policy-changes' && method === 'POST') {
+      if (failure) throw failure
+      const { breakPolicy, reason } = body as { breakPolicy: 'marked'; reason: string }
+      tenant = { ...tenant, breakPolicyChange: { id: 'cambio', breakPolicy, reason, effectiveOn: '2026-11-16', effectiveAt: '2026-11-16T06:00:00Z', scheduledAt: '2026-10-30T17:00:00Z' } }
+      return tenant.breakPolicyChange
+    }
+    if (path === '/tenant/break-policy-changes/cambio/cancellation' && method === 'POST') { tenant = { ...tenant, breakPolicyChange: null }; return undefined }
     if (path !== '/tenant') throw new Error(`Ruta inesperada: ${path}`)
     if (method === 'PATCH') { if (failure) throw failure; tenant = { ...tenant, ...(body as object) } }
     return { ...tenant }
@@ -36,6 +43,7 @@ async function mount(role = 'admin_empresa') {
   if (role !== 'trabajador') await waitFor(() => !!document.body.textContent?.includes('empresa-demo'))
 }
 function writes() { return mocked.mock.calls.filter(([, method]) => method === 'PATCH') }
+function posts() { return mocked.mock.calls.filter(([, method]) => method === 'POST') }
 
 it('no consulta la empresa con rol trabajador', async () => {
   await mount('trabajador'); expect(mocked).not.toHaveBeenCalled(); expect(button('Editar configuración')).toBeUndefined()
@@ -55,11 +63,36 @@ it('envía sólo campos cambiados y refresca la cuenta y consultas', async () =>
   expect(invalidate).toHaveBeenCalledWith()
   expect(document.body.textContent).toContain('Nuevo nombre')
 })
-it('guarda política y día elegidos y manda null al desactivar el cierre', async () => {
-  await mount(); await click('Editar configuración'); await choose('weekStartsOn', 'Domingo'); await choose('breakPolicy', 'Se marca')
+it('guarda el día elegido y manda null al desactivar el cierre, sin tocar la comida', async () => {
+  await mount(); await click('Editar configuración'); await choose('weekStartsOn', 'Domingo')
+  expect(document.querySelector('[name="breakPolicy"]')).toBeNull()
   await setInput('autoCloseAfterHours', ''); await click('Guardar configuración')
   await waitFor(() => writes().length === 1)
-  expect(writes()[0]).toEqual(['/tenant', 'PATCH', { weekStartsOn: 'sunday', breakPolicy: 'marked', autoCloseAfterHours: null }])
+  expect(writes()[0]).toEqual(['/tenant', 'PATCH', { weekStartsOn: 'sunday', autoCloseAfterHours: null }])
+})
+it('programa el cambio de comida con motivo, lo anuncia y lo cancela', async () => {
+  await mount(); await click('Programar cambio de comida')
+  expect(document.body.textContent).toContain('primer día de semana de la empresa dentro de la siguiente quincena')
+  expect(button('Programar cambio')!.disabled).toBe(true)
+  await setInput('reason', ' Desde noviembre se registra la comida. '); await click('Programar cambio')
+  await waitFor(() => posts().length === 1)
+  expect(posts()[0]).toEqual(['/tenant/break-policy-changes', 'POST', { breakPolicy: 'marked', reason: 'Desde noviembre se registra la comida.' }])
+  await waitFor(() => !!document.body.textContent?.includes('se marca desde el lunes 16 de noviembre de 2026'))
+  expect(document.body.textContent).toContain('Descanso o comida: No se marca')
+  // Con un cambio programado, el inicio de semana espera.
+  await click('Editar configuración')
+  expect(document.body.textContent).toContain('Cancela el cambio de comida programado')
+  await click('Cancelar'); await click('Cancelar cambio de comida')
+  await waitFor(() => posts().length === 2)
+  expect(posts()[1]).toEqual(['/tenant/break-policy-changes/cambio/cancellation', 'POST'])
+  await waitFor(() => !!button('Programar cambio de comida'))
+})
+it.each(['rh', 'auditor'])('%s ve el cambio programado sin poder cambiarlo', async role => {
+  tenant = { ...tenant, breakPolicyChange: { id: 'cambio', breakPolicy: 'marked', reason: 'Desde noviembre se registra la comida.', effectiveOn: '2026-11-16', effectiveAt: '2026-11-16T06:00:00Z', scheduledAt: '2026-10-30T17:00:00Z' } }
+  await mount(role)
+  expect(document.body.textContent).toContain('Desde noviembre se registra la comida.')
+  expect(button('Cancelar cambio de comida')).toBeUndefined()
+  expect(button('Programar cambio de comida')).toBeUndefined()
 })
 it('no pisa campos ajenos si la configuración se refresca mientras se edita', async () => {
   await mount(); await click('Editar configuración'); await setInput('name', 'Nombre editado')

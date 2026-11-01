@@ -4,9 +4,9 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { api, ApiError, type Me, type Page, type Tenant, type TenantUsage } from './api'
 import { ErrorNotice } from './Directory'
 import { showTime } from './incidentModel'
+import { BreakPolicySection, breaks, showDay } from './BreakPolicyChange'
 
 export const days = { monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles', thursday: 'Jueves', friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo' }
-export const breaks = { not_considered: 'No se marca', marked: 'Se marca' }
 const statuses: Record<string, string> = { active: 'Activa', suspended: 'Suspendida' }
 
 /** Pantalla de quien opera el servicio: da de alta empresas y deja invitada a quien las administra. */
@@ -15,6 +15,7 @@ export function Tenants({ me }: { me: Me }) {
   const [creating, setCreating] = useState(false)
   const [reactivating, setReactivating] = useState<Tenant | null>(null)
   const [usageOf, setUsageOf] = useState<Tenant | null>(null)
+  const [breaksOf, setBreaksOf] = useState<string | null>(null)
   const allowed = me.roles.includes('operador_saas')
   const list = useInfiniteQuery({ queryKey: ['tenants'], initialPageParam: '', enabled: allowed,
     queryFn: ({ pageParam }) => api<Page<Tenant>>(`/tenants${pageParam ? `?cursor=${encodeURIComponent(pageParam)}` : ''}`), getNextPageParam: page => page.nextCursor || undefined, retry: false })
@@ -31,16 +32,28 @@ export function Tenants({ me }: { me: Me }) {
     {!!rows.length && <TableContainer><Table aria-label="Empresas del servicio"><TableHead><TableRow>{['Empresa', 'Zona horaria', 'Semana', 'Descanso', 'Estado', 'Alta', 'Acciones'].map(label => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>
       {rows.map(tenant => <TableRow key={tenant.id}>
         <TableCell>{tenant.name}<br />{tenant.slug}</TableCell><TableCell>{tenant.timeZone}</TableCell>
-        <TableCell>Empieza en {days[tenant.weekStartsOn].toLowerCase()}</TableCell><TableCell>{breaks[tenant.breakPolicy]}</TableCell>
+        <TableCell>Empieza en {days[tenant.weekStartsOn].toLowerCase()}</TableCell><TableCell>{breaks[tenant.breakPolicy]}{tenant.breakPolicyChange && <><br />{`Pasa a «${breaks[tenant.breakPolicyChange.breakPolicy].toLowerCase()}» el ${showDay(tenant.breakPolicyChange.effectiveOn)}`}</>}</TableCell>
         <TableCell>{statuses[tenant.status] || tenant.status}</TableCell><TableCell>{showTime(tenant.createdAt, tenant.timeZone)}</TableCell>
-        <TableCell><Button onClick={() => setUsageOf(tenant)}>Uso de {tenant.name}</Button>{tenant.status === 'suspended' && <Button onClick={() => setReactivating(tenant)}>Reactivar {tenant.name}</Button>}</TableCell>
+        <TableCell><Button onClick={() => setUsageOf(tenant)}>Uso de {tenant.name}</Button><Button onClick={() => setBreaksOf(tenant.id)}>Comida de {tenant.name}</Button>{tenant.status === 'suspended' && <Button onClick={() => setReactivating(tenant)}>Reactivar {tenant.name}</Button>}</TableCell>
       </TableRow>)}
     </TableBody></Table></TableContainer>}
     {list.hasNextPage && <Button disabled={list.isFetchingNextPage} onClick={() => void list.fetchNextPage()}>Cargar más empresas</Button>}
     {creating && <TenantForm me={me} onClose={() => setCreating(false)} />}
     {reactivating && <ReactivationForm tenant={reactivating} me={me} onClose={() => setReactivating(null)} />}
     {usageOf && <UsageDialog tenant={usageOf} onClose={() => setUsageOf(null)} />}
+    {breaksOf && rows.some(row => row.id === breaksOf) && <BreaksDialog tenant={rows.find(row => row.id === breaksOf)!} onClose={() => setBreaksOf(null)} />}
   </Stack>
+}
+
+/** Política de comida de una empresa: quien opera programa o cancela el cambio cuando la empresa se lo pide. */
+function BreaksDialog({ tenant, onClose }: { tenant: Tenant; onClose: () => void }) {
+  const cache = useQueryClient()
+  return <Dialog open fullWidth maxWidth="sm" onClose={onClose} aria-labelledby="breaks-title">
+    <DialogTitle id="breaks-title">Comida de {tenant.name}</DialogTitle>
+    <DialogContent><BreakPolicySection current={tenant.breakPolicy} change={tenant.breakPolicyChange} basePath={`/tenants/${tenant.id}/break-policy-changes`} canChange
+      onChanged={() => void cache.invalidateQueries({ queryKey: ['tenants'] })} /></DialogContent>
+    <DialogActions><Button onClick={onClose}>Cerrar</Button></DialogActions>
+  </Dialog>
 }
 
 /** Mes en curso en la zona horaria de la empresa, como AAAA-MM. */

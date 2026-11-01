@@ -10,6 +10,7 @@ import { Closures } from './Closures'
 import { Exports } from './Exports'
 import { Users } from './Users'
 import { Schedules } from './Schedules'
+import { upcomingText } from './BreakPolicyChange'
 import { Imports } from './Imports'
 import { Devices } from './Devices'
 import { Tenants } from './Tenants'
@@ -32,6 +33,7 @@ export function Workspace({ me }: { me: Me }) {
   if (!active) return <Alert severity="info">Tu cuenta está activa. Las pantallas de tu rol se implementarán en una etapa posterior.</Alert>
 
   return <>
+    {me.tenant.upcomingBreakPolicy && <Alert severity="info" role="status" aria-live="polite">Aviso sobre la comida: {upcomingText(me.tenant.upcomingBreakPolicy)}</Alert>}
     {window.location.pathname === '/dossier/callback' && permission.isSuccess && !allowed.dossier && <Alert severity="error">La cuenta o el permiso del expediente cambió. La verificación fue descartada.</Alert>}
     <Tabs value={active} onChange={(_, value: string) => setSelected(value)} variant="scrollable" scrollButtons="auto" aria-label="Secciones de empresa">
       {tabs.map(key => <Tab key={key} value={key} label={labels[key]} id={`tab-${key}`} aria-controls={`panel-${key}`} />)}

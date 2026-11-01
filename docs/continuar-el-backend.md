@@ -112,6 +112,7 @@ docker compose --profile test down db-it backend-it
 | Traducir una violación de unicidad a un 409 | `Conflicts.uniqueConstraint(e)` |
 | Paginar | `Paging.limit`, `Paging.decode` y `Paging.page`, pidiendo una fila de más |
 | Saber quién llama | `@AuthenticationPrincipal CurrentPerson`, y `requireTenant()` |
+| Saber si la empresa marca la comida en una fecha | `BreakPolicies.on(empresa, fecha)`; `current`, `pending` y `upcoming` para hoy. Nunca `TenantRow.baseBreakPolicy`, que es la política anterior a cualquier cambio programado |
 | Dejar rastro | `AuditLog.record(...)`; hay una variante para lo que no hace una persona |
 | Evitar dos cambios simultáneos sobre lo mismo | Bloquear la fila al empezar: `lock(...)` con `for update` |
 | Hacer algo fuera de la petición | `JobRepository.enqueue` y un `JobHandler` |

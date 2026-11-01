@@ -20,10 +20,20 @@ const mocked = vi.mocked(api)
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 100, height: 30, x: 0, y: 0, top: 0, bottom: 30, left: 0, right: 100, toJSON: () => ({}) })
-  tenant = { id: '11111111-1111-4111-8111-111111111111', name: 'Empresa demo', slug: 'empresa-demo', timeZone: 'America/Mexico_City', weekStartsOn: 'monday', breakPolicy: 'not_considered', status: 'active', createdAt: '2026-10-01T12:00:00Z', autoCloseAfterHours: null }
+  tenant = { id: '11111111-1111-4111-8111-111111111111', name: 'Empresa demo', slug: 'empresa-demo', timeZone: 'America/Mexico_City', weekStartsOn: 'monday', breakPolicy: 'not_considered', status: 'active', createdAt: '2026-10-01T12:00:00Z', autoCloseAfterHours: null, breakPolicyChange: null }
   failure = null
   mocked.mockReset().mockImplementation(async (path, method = 'GET', body) => {
-    if (method !== 'GET') { if (failure) throw failure; if (path.endsWith('/reactivation')) tenant.status = 'active'; return { ...tenant, ...(body as object) } }
+    if (method !== 'GET') {
+      if (failure) throw failure
+      if (path === `/tenants/${tenant.id}/break-policy-changes`) {
+        const { breakPolicy, reason } = body as { breakPolicy: 'marked'; reason: string }
+        tenant.breakPolicyChange = { id: 'cambio', breakPolicy, reason, effectiveOn: '2026-11-16', effectiveAt: '2026-11-16T06:00:00Z', scheduledAt: '2026-10-30T17:00:00Z' }
+        return tenant.breakPolicyChange
+      }
+      if (path.endsWith('/cancellation')) { tenant.breakPolicyChange = null; return undefined }
+      if (path.endsWith('/reactivation')) tenant.status = 'active'
+      return { ...tenant, ...(body as object) }
+    }
     if (path === '/tenants') return { items: [{ ...tenant }], nextCursor: null }
     if (path.startsWith(`/tenants/${tenant.id}/usage?month=`)) {
       const month = path.split('=')[1]
@@ -105,6 +115,19 @@ it('calcula el mes en curso en la zona de la empresa', () => {
 it('no consulta empresas con un rol ajeno al operador', async () => {
   await act(async () => root.render(<QueryClientProvider client={cache}><Tenants me={{ userId: 'self', displayName: 'RH', roles: ['rh'], tenant: null }} /></QueryClientProvider>))
   expect(mocked).not.toHaveBeenCalled(); expect(button('Dar de alta empresa')).toBeUndefined()
+})
+
+it('programa y cancela el cambio de comida de una empresa', async () => {
+  await mount(); await click('Comida de Empresa demo'); await click('Programar cambio de comida')
+  await setInput('reason', 'La empresa pidió registrar la comida.'); await click('Programar cambio')
+  await waitFor(() => writes().length === 1)
+  expect(writes()[0]).toEqual([`/tenants/${tenant.id}/break-policy-changes`, 'POST', { breakPolicy: 'marked', reason: 'La empresa pidió registrar la comida.' }])
+  await waitFor(() => !!document.body.textContent?.includes('Pasa a «se marca» el lunes 16 de noviembre de 2026'))
+  expect(await accessibilityViolations()).toEqual([])
+  await click('Cancelar cambio de comida')
+  await waitFor(() => writes().length === 2)
+  expect(writes()[1]).toEqual([`/tenants/${tenant.id}/break-policy-changes/cambio/cancellation`, 'POST'])
+  await waitFor(() => !!button('Programar cambio de comida'))
 })
 
 it('cumple las reglas automáticas de accesibilidad', async () => {

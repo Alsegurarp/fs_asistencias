@@ -20,7 +20,8 @@ object Conflicts {
     const val IMPORT_IDEMPOTENCY = "employee_import_idempotency_key"
     const val USER_EMPLOYEE = "tenant_user_employee_key"
     const val EXPORT_IDEMPOTENCY = "export_idempotency_key"
-    private val KNOWN = listOf(TENANT_SLUG, USER_EMAIL, EMPLOYEE_EXTERNAL_ID, CARD_LABEL, CARD_FINGERPRINT, IMPORT_IDEMPOTENCY, USER_EMPLOYEE, EXPORT_IDEMPOTENCY)
+    const val BREAK_POLICY_CHANGE_DAY = "break_policy_change_one_per_day"
+    private val KNOWN = listOf(TENANT_SLUG, USER_EMAIL, EMPLOYEE_EXTERNAL_ID, CARD_LABEL, CARD_FINGERPRINT, IMPORT_IDEMPOTENCY, USER_EMPLOYEE, EXPORT_IDEMPOTENCY, BREAK_POLICY_CHANGE_DAY)
 
     fun employeeLinked() = Problems.conflict("employee_already_linked", "Esa persona del padrón ya está ligada a otra cuenta.")
 

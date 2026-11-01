@@ -179,6 +179,7 @@ La respuesta, 201:
     "startedAt": "2026-10-05T12:59:40Z",
     "serverTime": "2026-10-05T12:59:40Z",
     "breakPolicy": "not_considered",
+    "upcomingBreakPolicy": null,
     "tokenMaxAgeSeconds": 120,
     "locationReuseSeconds": 30,
     "offlinePolicy": { "maxAgeHours": 72, "maxEvents": 1000 }
@@ -245,9 +246,14 @@ Content-Type: application/json
 
 Devuelve una sesión como la de la activación. Abrir una cierra la anterior.
 
-- `breakPolicy` dice si la empresa marca la comida. Sólo con `marked` la app
-  ofrece inicio y fin de descanso; con `not_considered` sólo hay entrada y
-  salida.
+- `breakPolicy` dice si la empresa marca la comida al abrir la sesión. Sólo
+  con `marked` la app ofrece inicio y fin de descanso; con `not_considered`
+  sólo hay entrada y salida.
+- `upcomingBreakPolicy` trae el cambio programado que todavía no entra:
+  `breakPolicy`, `effectiveOn` (día de la empresa) y `effectiveAt` (instante).
+  Mientras no entra, la app muestra el aviso en Inicio; desde `effectiveAt`
+  usa la política nueva aunque no tenga red, como el servidor con cada marca
+  (`AttendanceRepository.breakPolicyAt`). Es nulo si no hay cambio.
 - `offlinePolicy` dice cuánto vale la sesión sin conexión: 72 horas o 1000
   marcajes. Pasado cualquiera de los dos, hay que abrir otra antes de seguir
   marcando.

@@ -1,6 +1,8 @@
 package mx.fastsolution.zenit.identity
 
+import mx.fastsolution.zenit.tenant.BreakPolicies
 import mx.fastsolution.zenit.tenant.TenantRepository
+import mx.fastsolution.zenit.tenant.UpcomingBreakPolicyView
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -12,6 +14,8 @@ data class TenantSummary(
     val timeZone: String,
     val weekStartsOn: String,
     val breakPolicy: String,
+    /** El cambio de la política de comida que viene, para avisar a la persona. */
+    val upcomingBreakPolicy: UpcomingBreakPolicyView?,
 )
 
 data class CurrentUser(
@@ -24,7 +28,7 @@ data class CurrentUser(
 
 @RestController
 @RequestMapping("/api/v1")
-class MeController(private val tenants: TenantRepository) {
+class MeController(private val tenants: TenantRepository, private val policies: BreakPolicies) {
     /**
      * Quién llama, con su empresa y sus roles. Una identidad válida a la que
      * nadie ha invitado, o cuyo acceso se deshabilitó, aparece sin empresa y
@@ -37,7 +41,9 @@ class MeController(private val tenants: TenantRepository) {
             userId = person.actorId,
             displayName = person.displayName,
             roles = person.roles.map { it.wire }.sorted(),
-            tenant = tenant?.let { TenantSummary(it.id.toString(), it.name, it.timeZone, it.weekStartsOn, it.breakPolicy) },
+            tenant = tenant?.let {
+                TenantSummary(it.id.toString(), it.name, it.timeZone, it.weekStartsOn, policies.current(it), policies.upcoming(it))
+            },
             employeeId = person.employeeId?.toString(),
         )
     }

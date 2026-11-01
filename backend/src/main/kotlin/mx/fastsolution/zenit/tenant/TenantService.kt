@@ -68,6 +68,7 @@ class TenantService(
     private val users: UserRepository,
     private val operators: OperatorProperties,
     private val audit: AuditLog,
+    private val policies: BreakPolicies,
 ) {
     /**
      * Da de alta una empresa y deja invitada a la persona que la administrará.
@@ -121,21 +122,32 @@ class TenantService(
         val name = checks.text("name", request.name, 120, required = false)
         val timeZone = checks.timeZone("timeZone", request.timeZone, required = false)
         val weekStartsOn = checks.oneOf("weekStartsOn", request.weekStartsOn, Checks.WEEK_DAYS, required = false)
-        val breakPolicy = checks.oneOf("breakPolicy", request.breakPolicy, Checks.BREAK_POLICIES, required = false)
+        // La política de comida ya no cambia al instante: reinterpretaría las semanas abiertas.
+        if (request.breakPolicy != null) {
+            checks.fail("breakPolicy", "scheduled_change_required", "La política de comida no cambia al instante; programa el cambio.")
+        }
         val autoClose = checks.whole("autoCloseAfterHours", request.autoCloseAfterHours, MIN_AUTO_CLOSE, MAX_AUTO_CLOSE, required = false)
-        if (name == null && timeZone == null && weekStartsOn == null && breakPolicy == null && !request.changesAutoClose()) {
+        if (name == null && timeZone == null && weekStartsOn == null && request.breakPolicy == null && !request.changesAutoClose()) {
             checks.fail("", "empty_update", "Hay que cambiar al menos un campo.")
         }
         checks.done()
 
+        tenants.lock(tenantId)
+        val before = tenants.find(tenantId) ?: throw Problems.notFound()
+        // El cambio programado entra en un inicio de semana: moverlo partiría una semana en dos.
+        if (weekStartsOn != null && weekStartsOn != before.weekStartsOn && policies.pending(before) != null) {
+            throw Problems.conflict(
+                "break_policy_change_pending",
+                "Hay un cambio de la política de comida programado; cancélalo antes de cambiar el inicio de semana.",
+            )
+        }
         val changed = listOfNotNull(
             name?.let { "name" },
             timeZone?.let { "timeZone" },
             weekStartsOn?.let { "weekStartsOn" },
-            breakPolicy?.let { "breakPolicy" },
             "autoCloseAfterHours".takeIf { request.changesAutoClose() },
         )
-        val tenant = tenants.update(tenantId, name, timeZone, weekStartsOn, breakPolicy, request.changesAutoClose(), autoClose)
+        val tenant = tenants.update(tenantId, name, timeZone, weekStartsOn, request.changesAutoClose(), autoClose)
             ?: throw Problems.notFound()
         audit.record(tenantId, person, "tenant.updated", "tenant", tenantId, mapOf("fields" to changed.joinToString(",")))
         return tenant

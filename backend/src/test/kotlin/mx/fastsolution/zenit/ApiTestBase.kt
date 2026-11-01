@@ -199,17 +199,17 @@ abstract class ApiTestBase {
 
     protected val operator: String get() = token("11111111-1111-4111-8111-111111111111", OPERATOR)
 
-    protected fun tenantBody(slug: String, adminEmail: String, extra: String = "") =
+    protected fun tenantBody(slug: String, adminEmail: String, extra: String = "", breakPolicy: String = "not_considered") =
         """{"name":"Empresa $slug","slug":"$slug","timeZone":"America/Mexico_City","weekStartsOn":"monday",""" +
-            """"breakPolicy":"not_considered","firstAdminEmail":"$adminEmail"$extra}"""
+            """"breakPolicy":"$breakPolicy","firstAdminEmail":"$adminEmail"$extra}"""
 
     protected class Company(val id: String, val adminEmail: String, val adminToken: String, val adminId: String)
 
     /** Empresa nueva, con su primera administradora ya ligada. */
-    protected fun company(): Company {
+    protected fun company(breakPolicy: String = "not_considered"): Company {
         val slug = "empresa-${UUID.randomUUID().toString().take(8)}"
         val adminEmail = email("admin")
-        val created = call("POST", "/api/v1/tenants", operator, tenantBody(slug, adminEmail))
+        val created = call("POST", "/api/v1/tenants", operator, tenantBody(slug, adminEmail, breakPolicy = breakPolicy))
         assertEquals(201, created.status, created.toString())
         val adminToken = token(subject(), adminEmail)
         val me = call("GET", "/api/v1/me", adminToken)

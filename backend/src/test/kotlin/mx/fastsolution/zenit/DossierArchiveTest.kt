@@ -30,7 +30,7 @@ class DossierArchiveTest {
 
     @Test
     fun `format field inventory matches every explicitly selected column without secrets`() {
-        assertEquals(23, dossierCollections.size)
+        assertEquals(24, dossierCollections.size)
         for (collection in dossierCollections) {
             val expected = format.at("/\$defs/${collection.kind}/properties/data/required").asSequence().map { it.asString() }.toSet()
             val selected = collection.columns.split(", ").map { it.substringAfterLast(" as ") }.toSet()

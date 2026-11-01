@@ -78,7 +78,8 @@ el portal después de iniciar sesión, y decide qué pantallas mostrar.
     "name": "Panificadora Ejemplo",
     "timeZone": "America/Mexico_City",
     "weekStartsOn": "monday",
-    "breakPolicy": "not_considered"
+    "breakPolicy": "not_considered",
+    "upcomingBreakPolicy": null
   },
   "employeeId": null
 }

@@ -15,7 +15,8 @@ data class TenantRow(
     val status: String,
     val timeZone: String,
     val weekStartsOn: String,
-    val breakPolicy: String,
+    /** La política anterior a cualquier cambio programado; la que vale en una fecha la da `BreakPolicies`. */
+    val baseBreakPolicy: String,
     val createdAt: OffsetDateTime,
     /** Horas tras el fin de la semana a las que el sistema la cierra; nulo si sólo la cierra una persona. */
     val autoCloseAfterHours: Int? = null,
@@ -69,7 +70,6 @@ class TenantRepository(private val dsl: DSLContext) {
         name: String?,
         timeZone: String?,
         weekStartsOn: String?,
-        breakPolicy: String?,
         changeAutoClose: Boolean,
         autoCloseAfterHours: Int?,
     ): TenantRow? =
@@ -77,10 +77,9 @@ class TenantRepository(private val dsl: DSLContext) {
             "update tenant set name = coalesce(cast(? as text), name), " +
                 "time_zone = coalesce(cast(? as text), time_zone), " +
                 "week_starts_on = coalesce(cast(? as text), week_starts_on), " +
-                "break_policy = coalesce(cast(? as text), break_policy), " +
                 "auto_close_after_hours = case when cast(? as boolean) then cast(? as integer) else auto_close_after_hours end " +
                 "where id = ? returning $COLUMNS",
-            name, timeZone, weekStartsOn, breakPolicy, changeAutoClose, autoCloseAfterHours, id,
+            name, timeZone, weekStartsOn, changeAutoClose, autoCloseAfterHours, id,
         )?.let(::row)
 
     /** Cambia el estado sólo si estaba en el que se espera; devuelve nulo si no. */
@@ -133,7 +132,7 @@ class TenantRepository(private val dsl: DSLContext) {
         status = r.get("status", String::class.java),
         timeZone = r.get("time_zone", String::class.java),
         weekStartsOn = r.get("week_starts_on", String::class.java),
-        breakPolicy = r.get("break_policy", String::class.java),
+        baseBreakPolicy = r.get("break_policy", String::class.java),
         createdAt = r.get("created_at", OffsetDateTime::class.java),
         autoCloseAfterHours = r.get("auto_close_after_hours", Number::class.java)?.toInt(),
     )

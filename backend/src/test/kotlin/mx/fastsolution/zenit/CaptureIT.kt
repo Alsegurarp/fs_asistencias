@@ -218,8 +218,7 @@ class CaptureIT : CaptureTestBase() {
 
     @Test
     fun `where the break is marked the server follows the day and a declaration corrects it`() {
-        val c = company()
-        assertEquals(200, call("PATCH", "/api/v1/tenant", c.adminToken, """{"breakPolicy":"marked"}""").status)
+        val c = company(breakPolicy = "marked")
         val employeeId = newEmployee(c)
         val card = newCard(c, employeeId)
         val p = phone(c, employeeId)
