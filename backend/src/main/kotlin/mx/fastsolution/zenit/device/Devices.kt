@@ -13,7 +13,10 @@ import mx.fastsolution.zenit.capture.FixedWindowLimiter
 import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.site.SiteRepository
+import mx.fastsolution.zenit.tenant.BreakPolicies
 import mx.fastsolution.zenit.tenant.TenantRepository
+import mx.fastsolution.zenit.tenant.TenantRow
+import mx.fastsolution.zenit.tenant.UpcomingBreakPolicyView
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.http.HttpStatus
@@ -142,6 +145,8 @@ data class DeviceSessionView(
     val tokenMaxAgeSeconds: Long,
     val locationReuseSeconds: Int,
     val breakPolicy: String,
+    /** El cambio de la política de comida que viene, para avisar a la persona y cambiar de regla al llegar la hora. */
+    val upcomingBreakPolicy: UpcomingBreakPolicyView?,
     val offlinePolicy: OfflinePolicyView,
 )
 
@@ -330,6 +335,7 @@ class DeviceService(
     private val tenants: TenantRepository,
     private val capture: CaptureProperties,
     private val audit: AuditLog,
+    private val policies: BreakPolicies,
 ) {
     private val activationFailures = FixedWindowLimiter(Duration.ofMinutes(1))
 
@@ -452,7 +458,7 @@ class DeviceService(
             employee = employee?.let { NamedEmployeeView(it.id.toString(), it.displayName) },
             site = site?.let { NamedSiteView(it.id.toString(), it.name) },
             audience = capture.audience,
-            session = sessionView(session, enrollment.mode, tenant.breakPolicy),
+            session = sessionView(session, enrollment.mode, tenant),
         )
     }
 
@@ -492,17 +498,18 @@ class DeviceService(
         devices.closeSessions(device.tenantId, device.id)
         val session = devices.openSession(device.tenantId, UUID.randomUUID(), device.id, appVersion!!)
         devices.touch(device.tenantId, device.id, appVersion)
-        return sessionView(session, device.mode, tenant.breakPolicy)
+        return sessionView(session, device.mode, tenant)
     }
 
-    private fun sessionView(session: SessionRow, mode: String, breakPolicy: String) = DeviceSessionView(
+    private fun sessionView(session: SessionRow, mode: String, tenant: TenantRow) = DeviceSessionView(
         sessionId = session.id.toString(),
         startedAt = session.startedAt.toInstant().toString(),
         serverTime = Instant.now().toString(),
         tokenMaxAgeSeconds = capture.tokenMaxAgeSeconds,
         // Sólo una terminal reutiliza la ubicación entre lecturas seguidas.
         locationReuseSeconds = if (mode == "terminal") capture.terminalLocationReuseSeconds else 0,
-        breakPolicy = breakPolicy,
+        breakPolicy = policies.current(tenant),
+        upcomingBreakPolicy = policies.upcoming(tenant),
         offlinePolicy = OfflinePolicyView(capture.offlineMaxAgeHours, capture.offlineMaxEvents),
     )
 

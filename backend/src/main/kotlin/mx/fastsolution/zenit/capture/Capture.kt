@@ -13,6 +13,7 @@ import mx.fastsolution.zenit.device.DeviceRepository
 import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.site.SiteRepository
+import mx.fastsolution.zenit.tenant.BreakPolicies
 import mx.fastsolution.zenit.tenant.TenantRepository
 import mx.fastsolution.zenit.workday.WeekCalculator
 import org.jooq.DSLContext
@@ -279,6 +280,7 @@ class CaptureProcessor(
     private val sites: SiteRepository,
     private val tenants: TenantRepository,
     private val capture: CaptureProperties,
+    private val policies: BreakPolicies,
 ) {
     @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = [IdempotencyConflict::class])
     fun process(device: CurrentDevice, envelope: String, headerKey: UUID?): Processed {
@@ -360,8 +362,10 @@ class CaptureProcessor(
         }
 
         val tenant = tenants.find(tenantId)!!
+        val markDate = payload.observedAt.atZoneSameInstant(ZoneId.of(tenant.timeZone)).toLocalDate()
+        // La política es la que valía el día de la marca, aunque llegue después sin red.
         val decision = MarkRules.decide(
-            tenant.breakPolicy, events.lastMark(tenantId, employee.id, payload.observedAt), payload.declaredType, payload.observedAt,
+            policies.on(tenant, markDate), events.lastMark(tenantId, employee.id, payload.observedAt), payload.declaredType, payload.observedAt,
             Duration.ofSeconds(capture.duplicateWindowSeconds), Duration.ofHours(capture.shiftGapHours),
         )
         // Una terminal se evalúa contra su sede; un teléfono personal, contra la sede de su titular.
@@ -373,7 +377,7 @@ class CaptureProcessor(
         if (device.mode == "terminal" && employee.siteId != null && employee.siteId != device.siteId) incidents += "foreign_site"
         if (Duration.between(payload.observedAt, receivedAt) > Duration.ofHours(capture.lateSyncHours)) incidents += "late_sync"
         // Un marcaje de una semana ya cerrada se guarda, pero el cierre no cambia solo: alguien tiene que verlo.
-        val week = WeekCalculator.weekStart(payload.observedAt.atZoneSameInstant(ZoneId.of(tenant.timeZone)).toLocalDate(), tenant.weekStartsOn)
+        val week = WeekCalculator.weekStart(markDate, tenant.weekStartsOn)
         if (events.weekClosed(tenantId, employee.id, week)) incidents += "late_sync"
         if (clockAnomaly(tenantId, payload, receivedAt)) incidents += "clock_anomaly"
 

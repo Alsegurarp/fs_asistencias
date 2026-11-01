@@ -13,7 +13,9 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -119,6 +121,12 @@ internal fun OperationalScreen(
                     when (tab) {
                         "Inicio" -> {
                             if (state.registered) {
+                                state.breakPolicyNotice?.let { notice ->
+                                    Surface(color = MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(12.dp)) {
+                                        Text(notice, Modifier.fillMaxWidth().padding(14.dp).semantics { liveRegion = LiveRegionMode.Polite },
+                                            style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                }
                                 SectionCard("Registro de asistencia", "Aproxime la tarjeta al lector ubicado en la parte posterior del dispositivo.") {
                                     val ready = nfcAvailable && locationGranted && state.sessionUsable
                                     Text(when {

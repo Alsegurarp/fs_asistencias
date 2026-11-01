@@ -20,7 +20,10 @@ class ApiIT : ApiTestBase() {
             "GET" to "/api/v1/me", "GET" to "/api/v1/tenants", "POST" to "/api/v1/tenants", "GET" to "/api/v1/tenant",
             "PATCH" to "/api/v1/tenant", "GET" to "/api/v1/users", "POST" to "/api/v1/users",
             "GET" to "/api/v1/users/${UUID.randomUUID()}", "PATCH" to "/api/v1/users/${UUID.randomUUID()}",
-            "GET" to "/api/v1/audit-log",
+            "GET" to "/api/v1/audit-log", "POST" to "/api/v1/tenant/break-policy-changes",
+            "POST" to "/api/v1/tenant/break-policy-changes/${UUID.randomUUID()}/cancellation",
+            "POST" to "/api/v1/tenants/${UUID.randomUUID()}/break-policy-changes",
+            "POST" to "/api/v1/tenants/${UUID.randomUUID()}/break-policy-changes/${UUID.randomUUID()}/cancellation",
         )
         for ((method, path) in routes) {
             assertProblem(401, "unauthorized", call(method, path, body = if (method == "GET") null else "{}"))
@@ -173,7 +176,12 @@ class ApiIT : ApiTestBase() {
         }
         expect("GET", "/api/v1/me", null, "admin_empresa", "rh", "supervisor", "auditor", "trabajador")
         expect("GET", "/api/v1/tenant", null, "admin_empresa", "rh", "supervisor", "auditor")
-        expect("PATCH", "/api/v1/tenant", """{"breakPolicy":"marked"}""", "admin_empresa")
+        expect("PATCH", "/api/v1/tenant", """{"name":"Empresa de la matriz"}""", "admin_empresa")
+        expect("POST", "/api/v1/tenant/break-policy-changes", """{"breakPolicy":"marked","reason":"Cambio de la matriz de roles"}""", "admin_empresa")
+        val changeId = call("GET", "/api/v1/tenant", c.adminToken).at<String>("breakPolicyChange.id")
+        expect("POST", "/api/v1/tenant/break-policy-changes/$changeId/cancellation", null, "admin_empresa")
+        expect("POST", "/api/v1/tenants/${c.id}/break-policy-changes", """{"breakPolicy":"marked","reason":"Cambio de la matriz de roles"}""")
+        expect("POST", "/api/v1/tenants/${c.id}/break-policy-changes/$changeId/cancellation", null)
         expect("GET", "/api/v1/users", null, "admin_empresa")
         expect("GET", "/api/v1/users/${c.adminId}", null, "admin_empresa")
         expect("POST", "/api/v1/users", """{"email":"${email("matriz")}","roles":["trabajador"]}""", "admin_empresa")

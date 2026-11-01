@@ -6,6 +6,7 @@ import mx.fastsolution.zenit.capture.CaptureProperties
 import mx.fastsolution.zenit.device.CurrentDevice
 import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.tenant.BreakPolicies
 import mx.fastsolution.zenit.tenant.TenantRepository
 import mx.fastsolution.zenit.tenant.TenantRow
 import org.jooq.DSLContext
@@ -181,6 +182,7 @@ class WeekService(
     private val capture: CaptureProperties,
     private val json: JsonMapper,
     private val closures: ClosureRepository,
+    private val policies: BreakPolicies,
 ) {
     @Transactional(readOnly = true)
     fun ruleSets(effectiveOn: String?): List<RuleSetRow> {
@@ -216,7 +218,10 @@ class WeekService(
         )
     }
 
-    /** Calcula la semana con las reglas vigentes en su último día: la reducción de un año nuevo aplica desde su primera semana. */
+    /**
+     * Calcula la semana con las reglas vigentes en su último día: la reducción de un año nuevo aplica desde su primera semana.
+     * La política de comida es la de su primer día: un cambio programado entra en un inicio de semana.
+     */
     fun compute(tenant: TenantRow, employeeId: UUID, weekStart: LocalDate): ComputedWeek {
         val zone = ZoneId.of(tenant.timeZone)
         val ruleSet = rules.effectiveOn(weekStart.plusDays(6))
@@ -227,7 +232,7 @@ class WeekService(
         val marks = weeks.marks(tenant.id, employeeId, from.minusDays(1), until.plusDays(1))
         val adjustments = weeks.adjustments(tenant.id, employeeId, from.minusDays(1), until.plusDays(1))
         val calculation = WeekCalculator.calculate(
-            marks, adjustments, tenant.breakPolicy, weekStart, zone, ruleSet.limits,
+            marks, adjustments, policies.on(tenant, weekStart), weekStart, zone, ruleSet.limits,
             Duration.ofSeconds(capture.duplicateWindowSeconds), Duration.ofHours(capture.shiftGapHours),
         )
         val core = WeekCore(

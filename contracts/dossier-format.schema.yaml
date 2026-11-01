@@ -89,6 +89,7 @@ $defs:
     additionalProperties: false
     required: [tenant, tenant_user, tenant_user_role, site, schedule, schedule_day, employee, schedule_assignment, card, card_assignment, device, device_session, attendance_event, location_evidence, attendance_rejection, incident, adjustment, rule_set, week_closure, closure_acknowledgement, week_closure_run, week_closure_run_blocked, audit_log]
     properties:
+      break_policy_change: { type: integer, minimum: 0, description: Ausente en los expedientes generados antes de que existiera el cambio programado. }
       tenant: { type: integer, minimum: 0 }
       tenant_user: { type: integer, minimum: 0 }
       tenant_user_role: { type: integer, minimum: 0 }
@@ -114,6 +115,7 @@ $defs:
       audit_log: { type: integer, minimum: 0 }
   Record:
     oneOf:
+      - { $ref: '#/$defs/break_policy_change' }
       - { $ref: '#/$defs/tenant' }
       - { $ref: '#/$defs/tenant_user' }
       - { $ref: '#/$defs/tenant_user_role' }
@@ -137,6 +139,24 @@ $defs:
       - { $ref: '#/$defs/week_closure_run' }
       - { $ref: '#/$defs/week_closure_run_blocked' }
       - { $ref: '#/$defs/audit_log' }
+  break_policy_change:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: break_policy_change }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [id, break_policy, effective_on, reason, scheduled_at, cancelled_at]
+        properties:
+          id: { type: string, format: uuid }
+          break_policy: { type: string, enum: [not_considered, marked] }
+          effective_on: { type: string, format: date }
+          reason: { type: string }
+          scheduled_at: { type: string, format: date-time }
+          cancelled_at: { type: [string, 'null'], format: date-time }
   tenant:
     type: object
     additionalProperties: false

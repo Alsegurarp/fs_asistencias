@@ -133,6 +133,33 @@ servidor lo deduce de la marca anterior de esa persona.
 - Lo que no cuadra con la secuencia se guarda con la incidencia
   `missing_pair`.
 
+### Cambio de la política de comida
+
+La política no cambia al instante: cambiarla a mitad de semana convertiría
+una entrada y una salida ya hechas en inicio y fin de comida, movería horas y
+abriría incidencias que nadie causó.
+
+- La programan quien administra la empresa o quien opera el servicio, con un
+  motivo de 10 a 500 caracteres. La fecha no se elige: entra el primer día de
+  semana de la empresa dentro de la siguiente quincena (del 1 al 15 o del 16
+  al fin de mes), con al menos 7 días de aviso contados hasta ese día; si no
+  alcanzan, pasa a la quincena que sigue. Con semana desde el lunes,
+  programada el viernes 30 de octubre de 2026 entra el lunes 16 de noviembre;
+  el martes 10 de noviembre, el lunes 7 de diciembre; el viernes 27 de
+  noviembre, el lunes 7 de diciembre.
+- Hay a lo más un cambio pendiente, y nunca hacia la política que ya tiene.
+  Se puede cancelar antes de que entre; uno que ya entró se corrige
+  programando otro.
+- La política de una fecha es la del último cambio no cancelado que ya entró;
+  sin ninguno, la del alta. Cada marca usa la del día en que se hizo, aunque
+  llegue después sin red, y cada semana la de su primer día. Como el cambio
+  entra en un inicio de semana, ninguna semana mezcla dos políticas.
+- Mientras está pendiente, el portal y la app avisan a las personas, y el
+  inicio de semana de la empresa no se puede cambiar (409
+  `break_policy_change_pending`).
+- Programar y cancelar quedan en la bitácora de la empresa, y el historial de
+  cambios viaja en el expediente de la empresa (`break_policy_change`).
+
 ### Ubicación
 
 Una terminal se evalúa contra su sede; un teléfono personal, contra la sede de

@@ -17,6 +17,7 @@ internal data class DossierCollection(val kind: String, val columns: String, val
 
 internal val dossierCollections = listOf(
     DossierCollection("tenant", "id, slug, name, status, created_at, time_zone, week_starts_on, break_policy, auto_close_after_hours"),
+    DossierCollection("break_policy_change", "id, break_policy, effective_on, reason, scheduled_at, cancelled_at"),
     DossierCollection("tenant_user", "id, display_name, status, employee_id, created_at, linked_at"),
     DossierCollection("tenant_user_role", "user_id, role, granted_at, granted_by", "user_id, role collate \"C\""),
     DossierCollection("site", "id, name, time_zone, latitude, longitude, radius_m, status, created_at"),

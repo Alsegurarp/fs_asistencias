@@ -3,6 +3,19 @@
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
 
+**Avance del 1 de noviembre — cambio programado de la comida.** `main` en
+`792ca5a` está desplegado en el servidor compartido, con datos ficticios. La
+rama `feat/cambio-programado-comida` quita el cambio inmediato de la política
+de comida: se programa con motivo, entra el primer día de semana de la empresa
+dentro de la siguiente quincena con al menos 7 días de aviso y se puede
+cancelar antes (API 0.17.0, 75 operaciones, migración V011). Cada marca y cada
+semana usan la política de su día; el portal y la app avisan del cambio y la
+app lo aplica al llegar la hora aunque no tenga red. El historial entra al
+expediente de la empresa. Backend: 72 pruebas unitarias y 95 de integración;
+portal: 214; Android: 15 unitarias, lint y APK. Sin verificar: el aviso en un
+teléfono real y el recorrido en el ambiente publicado, que espera la PR. Los
+cortes siguientes son históricos.
+
 **Avance del 30 de octubre — medición y accesibilidad.** `main` en `ddab8dc`
 está desplegado en el servidor compartido, con datos ficticios. La rama
 `feat/medicion-uso-y-accesibilidad` agrega el uso mensual por empresa para

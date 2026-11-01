@@ -85,10 +85,18 @@ class SecurityConfig {
                     "/api/v1/tenants/{tenantId}/suspension",
                     "/api/v1/tenants/{tenantId}/reactivation",
                     "/api/v1/tenants/{tenantId}/administrators/unlink",
+                    "/api/v1/tenants/{tenantId}/break-policy-changes",
+                    "/api/v1/tenants/{tenantId}/break-policy-changes/{changeId}/cancellation",
                 )
                     .hasRole(operator)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/tenant").hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/tenant").hasRole(admin)
+                it.requestMatchers(
+                    HttpMethod.POST,
+                    "/api/v1/tenant/break-policy-changes",
+                    "/api/v1/tenant/break-policy-changes/{changeId}/cancellation",
+                )
+                    .hasRole(admin)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/users", "/api/v1/users/{userId}").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole(admin)
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/users/{userId}").hasRole(admin)

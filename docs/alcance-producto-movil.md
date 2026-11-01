@@ -54,9 +54,11 @@ al backend. Sus datos sólo pertenecen a la vista de demostración.
 
 El contrato no autoriza una semana personal en dispositivos `terminal`.
 La navegación contempla esa restricción. El registro real de descansos se
-ofrece en `MainActivity` sólo cuando la sesión tiene `breakPolicy=marked`:
-muestra Inicio de descanso y Fin de descanso. Su aceptación visual contra
-backend real sigue pendiente.
+ofrece en `MainActivity` sólo cuando la política vigente en ese instante es
+`marked`: muestra Inicio de descanso y Fin de descanso. Si la sesión trae un
+cambio programado (`upcomingBreakPolicy`), Inicio muestra el aviso con la fecha
+y desde ese instante la app aplica la política nueva, también sin red. Su
+aceptación visual contra backend real sigue pendiente.
 
 Dispositivo muestra un teléfono personal vinculado y activo con información
 de presentación. No guarda esa vinculación en el repositorio de activaciones.

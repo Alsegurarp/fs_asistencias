@@ -21,6 +21,13 @@ it.each(['admin_empresa', 'rh', 'supervisor', 'auditor', 'trabajador'])('el expe
   expect(render([role], null, true)).not.toContain('id="tab-dossier"')
 })
 
+it.each(['admin_empresa', 'supervisor', 'trabajador'])('avisa a %s del cambio de comida que viene y sólo si hay uno', role => {
+  const upcomingBreakPolicy = { breakPolicy: 'marked' as const, effectiveOn: '2026-11-16', effectiveAt: '2026-11-16T06:00:00Z' }
+  expect(render([role], { name: 'Empresa', timeZone: 'America/Mexico_City', upcomingBreakPolicy }))
+    .toContain('Aviso sobre la comida: Desde el lunes 16 de noviembre de 2026 se marcarán el inicio y el fin de la comida.')
+  expect(render([role], { name: 'Empresa', timeZone: 'America/Mexico_City', upcomingBreakPolicy: null })).not.toContain('Aviso sobre la comida')
+})
+
 it.each(['admin_empresa', 'rh', 'auditor'])('muestra las tres secciones operativas a %s', role => {
   const html = render([role])
   for (const section of ['incidents', 'closures', 'exports']) expect(html).toContain(`id="tab-${section}"`)

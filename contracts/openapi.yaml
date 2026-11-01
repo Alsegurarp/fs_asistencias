@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.16.0
+  version: 0.17.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -426,6 +426,7 @@ paths:
                   timeZone: America/Mexico_City
                   weekStartsOn: monday
                   breakPolicy: not_considered
+                  upcomingBreakPolicy: null
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -457,6 +458,7 @@ paths:
                     status: active
                     createdAt: "2026-10-05T15:00:00Z"
                     autoCloseAfterHours: null
+                    breakPolicyChange: null
                 nextCursor: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -501,6 +503,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -555,6 +558,7 @@ paths:
                 status: suspended
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -615,6 +619,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -781,6 +786,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -796,6 +802,12 @@ paths:
         no cambia nada. Al encenderlo, la última semana terminada se cierra en
         la siguiente revisión si ya pasó ese plazo. Lo que hace está en
         `requestWeekClosureRun`.
+
+        La política de comida no cambia aquí: se programa con
+        `scheduleBreakPolicyChange`. Si la petición trae `breakPolicy`, responde
+        422 con su error en `scheduled_change_required`. Mientras haya un cambio
+        programado, cambiar `weekStartsOn` responde 409 con `code`
+        `break_policy_change_pending`: el cambio entra en un inicio de semana.
       x-roles: [admin_empresa]
       requestBody:
         required: true
@@ -805,7 +817,6 @@ paths:
               $ref: "#/components/schemas/TenantUpdate"
             example:
               weekStartsOn: sunday
-              breakPolicy: not_considered
       responses:
         "200":
           description: Empresa actualizada
@@ -823,12 +834,184 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Hay un cambio de la política de comida programado y se pidió cambiar el inicio de semana
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/conflict
+                title: Conflicto con el estado actual
+                status: 409
+                code: break_policy_change_pending
+                detail: Hay un cambio de la política de comida programado; cancélalo antes de cambiar el inicio de semana.
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
         "422":
           $ref: "#/components/responses/Unprocessable"
+
+  /tenant/break-policy-changes:
+    post:
+      tags: [empresa]
+      operationId: scheduleBreakPolicyChange
+      summary: Programa el cambio de la política de comida de la empresa
+      description: |
+        La política de comida no cambia al instante: cambiarla a mitad de
+        semana reinterpretaría las marcas ya hechas. Se programa, y entra el
+        primer día de semana de la empresa dentro de la siguiente quincena
+        (del 1 al 15 o del 16 al fin de mes), con al menos siete días de aviso
+        contados hasta ese día; si no alcanzan, pasa a la quincena que sigue.
+        La fecha la calcula el servicio en la zona horaria de la empresa y no
+        se elige. Por ejemplo, con semana desde el lunes, programado el
+        viernes 30 de octubre de 2026 entra el lunes 16 de noviembre, y
+        programado el martes 10 de noviembre, el lunes 7 de diciembre.
+
+        Desde ese día la captura, el cálculo de la semana, la app y el portal
+        usan la política nueva; las semanas anteriores conservan la suya. Una
+        marca que llega después sin red se interpreta con la política del día
+        en que se hizo. Mientras no entra, `getTenant`, `getCurrentUser` y la
+        sesión del dispositivo lo muestran para avisar a las personas.
+
+        Responde 409 con `code` `break_policy_change_pending` si ya hay un
+        cambio programado; hay que cancelarlo para programar otro. Responde
+        422 con el error de `breakPolicy` en `same_break_policy` si la
+        empresa ya tiene esa política.
+      x-roles: [admin_empresa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BreakPolicyChangeCreate"
+            example:
+              breakPolicy: marked
+              reason: Desde noviembre el personal toma la comida en horario fijo y se registrará.
+      responses:
+        "201":
+          description: Cambio programado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BreakPolicyChange"
+              example:
+                id: 5b7d9f1a-3c5e-4a7b-9d1f-3a5c7e9b1d3f
+                breakPolicy: marked
+                effectiveOn: "2026-11-16"
+                effectiveAt: "2026-11-16T06:00:00Z"
+                reason: Desde noviembre el personal toma la comida en horario fijo y se registrará.
+                scheduledAt: "2026-10-30T17:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/BreakPolicyChangePending"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /tenant/break-policy-changes/{changeId}/cancellation:
+    parameters:
+      - $ref: "#/components/parameters/BreakPolicyChangeId"
+    post:
+      tags: [empresa]
+      operationId: cancelBreakPolicyChange
+      summary: Cancela el cambio de la política de comida que todavía no entra
+      description: |
+        Sólo se cancela un cambio que no ha entrado; uno que ya entró se
+        corrige programando otro. Queda en la bitácora de la empresa.
+
+        Responde 404 si el cambio no existe o es de otra empresa. Responde
+        409 con `code` `break_policy_change_not_pending` si ya entró o ya
+        estaba cancelado.
+      x-roles: [admin_empresa]
+      responses:
+        "204":
+          description: Cambio cancelado
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/BreakPolicyChangeNotPending"
+
+  /tenants/{tenantId}/break-policy-changes:
+    parameters:
+      - $ref: "#/components/parameters/TenantId"
+    post:
+      tags: [empresa]
+      operationId: scheduleTenantBreakPolicyChange
+      summary: Programa el cambio de la política de comida de una empresa, desde la operación del servicio
+      description: |
+        Lo mismo que `scheduleBreakPolicyChange`, para quien opera el servicio
+        cuando la empresa se lo pide. Queda en la bitácora de la empresa.
+
+        Responde 404 si la empresa no existe.
+      x-roles: [operador_saas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BreakPolicyChangeCreate"
+            example:
+              breakPolicy: not_considered
+              reason: La empresa pidió dejar de registrar la comida desde la siguiente quincena.
+      responses:
+        "201":
+          description: Cambio programado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BreakPolicyChange"
+              example:
+                id: 6c8e0a2b-4d6f-4b8c-8e0a-4b6d8f0a2c4e
+                breakPolicy: not_considered
+                effectiveOn: "2026-12-07"
+                effectiveAt: "2026-12-07T06:00:00Z"
+                reason: La empresa pidió dejar de registrar la comida desde la siguiente quincena.
+                scheduledAt: "2026-11-10T17:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/BreakPolicyChangePending"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /tenants/{tenantId}/break-policy-changes/{changeId}/cancellation:
+    parameters:
+      - $ref: "#/components/parameters/TenantId"
+      - $ref: "#/components/parameters/BreakPolicyChangeId"
+    post:
+      tags: [empresa]
+      operationId: cancelTenantBreakPolicyChange
+      summary: Cancela el cambio de la política de comida de una empresa, desde la operación del servicio
+      description: |
+        Lo mismo que `cancelBreakPolicyChange`, para quien opera el servicio.
+        Responde 404 si la empresa o el cambio no existen, o si el cambio es
+        de otra empresa.
+      x-roles: [operador_saas]
+      responses:
+        "204":
+          description: Cambio cancelado
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/BreakPolicyChangeNotPending"
 
   /users:
     get:
@@ -2002,6 +2185,7 @@ paths:
                   tokenMaxAgeSeconds: 300
                   locationReuseSeconds: 0
                   breakPolicy: not_considered
+                  upcomingBreakPolicy: null
                   offlinePolicy:
                     maxAgeHours: 72
                     maxEvents: 1000
@@ -2146,6 +2330,10 @@ paths:
                 tokenMaxAgeSeconds: 300
                 locationReuseSeconds: 0
                 breakPolicy: not_considered
+                upcomingBreakPolicy:
+                  breakPolicy: marked
+                  effectiveOn: "2026-10-19"
+                  effectiveAt: "2026-10-19T06:00:00Z"
                 offlinePolicy:
                   maxAgeHours: 72
                   maxEvents: 1000
@@ -3506,6 +3694,13 @@ components:
       schema:
         type: string
         format: uuid
+    BreakPolicyChangeId:
+      name: changeId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     UserId:
       name: userId
       in: path
@@ -3627,6 +3822,32 @@ components:
             title: Permiso insuficiente
             status: 403
             code: forbidden
+            correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+    BreakPolicyChangePending:
+      description: Ya hay un cambio de la política de comida programado
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://zenit.invalid/problems/conflict
+            title: Conflicto con el estado actual
+            status: 409
+            code: break_policy_change_pending
+            detail: Ya hay un cambio de la política de comida programado; cancélalo para programar otro.
+            correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+    BreakPolicyChangeNotPending:
+      description: El cambio ya entró o ya estaba cancelado
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: https://zenit.invalid/problems/conflict
+            title: Conflicto con el estado actual
+            status: 409
+            code: break_policy_change_not_pending
+            detail: Ese cambio ya entró o ya estaba cancelado.
             correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
     NotFound:
       description: El recurso no existe en la empresa de quien llama
@@ -3899,7 +4120,7 @@ components:
         del descanso y ese tiempo se mide aparte.
     TenantSummary:
       type: object
-      required: [id, name, timeZone, weekStartsOn, breakPolicy]
+      required: [id, name, timeZone, weekStartsOn, breakPolicy, upcomingBreakPolicy]
       properties:
         id:
           type: string
@@ -3912,10 +4133,15 @@ components:
           $ref: "#/components/schemas/DayOfWeek"
         breakPolicy:
           $ref: "#/components/schemas/BreakPolicy"
+        upcomingBreakPolicy:
+          oneOf:
+            - $ref: "#/components/schemas/UpcomingBreakPolicy"
+            - type: "null"
+          description: El cambio de la política de comida que todavía no entra; nulo si no hay.
 
     Tenant:
       type: object
-      required: [id, name, slug, timeZone, weekStartsOn, breakPolicy, status, createdAt, autoCloseAfterHours]
+      required: [id, name, slug, timeZone, weekStartsOn, breakPolicy, status, createdAt, autoCloseAfterHours, breakPolicyChange]
       properties:
         id:
           type: string
@@ -3931,6 +4157,7 @@ components:
           $ref: "#/components/schemas/DayOfWeek"
         breakPolicy:
           $ref: "#/components/schemas/BreakPolicy"
+          description: La que vale hoy en la empresa. Cambia sólo con un cambio programado.
         status:
           type: string
           enum: [active, suspended]
@@ -3944,6 +4171,11 @@ components:
           description: >-
             Horas después del fin de la semana a las que el sistema la cierra
             por su cuenta. Nulo: sólo la cierra una persona.
+        breakPolicyChange:
+          oneOf:
+            - $ref: "#/components/schemas/BreakPolicyChange"
+            - type: "null"
+          description: El cambio de la política de comida que todavía no entra; nulo si no hay.
     TenantCreate:
       type: object
       additionalProperties: false
@@ -3984,14 +4216,60 @@ components:
           type: string
         weekStartsOn:
           $ref: "#/components/schemas/DayOfWeek"
-        breakPolicy:
-          $ref: "#/components/schemas/BreakPolicy"
-          description: El cambio no reescribe semanas ya cerradas.
         autoCloseAfterHours:
           type: [integer, "null"]
           minimum: 1
           maximum: 168
           description: Nulo apaga el cierre programado.
+    BreakPolicyChangeCreate:
+      type: object
+      additionalProperties: false
+      required: [breakPolicy, reason]
+      properties:
+        breakPolicy:
+          $ref: "#/components/schemas/BreakPolicy"
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+          description: Por qué cambia. Lo ven quienes administran la empresa.
+    BreakPolicyChange:
+      type: object
+      additionalProperties: false
+      required: [id, breakPolicy, effectiveOn, effectiveAt, reason, scheduledAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        breakPolicy:
+          $ref: "#/components/schemas/BreakPolicy"
+        effectiveOn:
+          type: string
+          format: date
+          description: Día del calendario de la empresa en que entra; es un inicio de su semana.
+        effectiveAt:
+          type: string
+          format: date-time
+          description: El inicio de ese día en la zona horaria de la empresa.
+        reason:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+    UpcomingBreakPolicy:
+      type: object
+      additionalProperties: false
+      required: [breakPolicy, effectiveOn, effectiveAt]
+      description: Lo que una persona o un dispositivo necesitan para avisar del cambio y aplicarlo al llegar la hora.
+      properties:
+        breakPolicy:
+          $ref: "#/components/schemas/BreakPolicy"
+        effectiveOn:
+          type: string
+          format: date
+        effectiveAt:
+          type: string
+          format: date-time
     TenantUsage:
       type: object
       additionalProperties: false
@@ -4778,7 +5056,7 @@ components:
           maxLength: 20
     DeviceSession:
       type: object
-      required: [sessionId, startedAt, serverTime, tokenMaxAgeSeconds, locationReuseSeconds, breakPolicy, offlinePolicy]
+      required: [sessionId, startedAt, serverTime, tokenMaxAgeSeconds, locationReuseSeconds, breakPolicy, upcomingBreakPolicy, offlinePolicy]
       properties:
         sessionId:
           type: string
@@ -4791,7 +5069,14 @@ components:
           format: date-time
         breakPolicy:
           $ref: "#/components/schemas/BreakPolicy"
-          description: Le dice a la app si debe ofrecer el marcaje de descanso.
+          description: La que vale al abrir la sesión. Le dice a la app si debe ofrecer el marcaje de descanso.
+        upcomingBreakPolicy:
+          oneOf:
+            - $ref: "#/components/schemas/UpcomingBreakPolicy"
+            - type: "null"
+          description: |
+            El cambio programado que todavía no entra. La app avisa a la persona
+            y, desde `effectiveAt`, usa esa política aunque no tenga red.
         tokenMaxAgeSeconds:
           type: integer
           description: Vida máxima de una aserción del dispositivo.

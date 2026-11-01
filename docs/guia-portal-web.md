@@ -195,6 +195,15 @@ Lo primero es `GET /api/v1/me`:
 
 Una persona puede tener varios roles: el menú es la unión de lo que cada uno
 permite. `tenant.breakPolicy` y `tenant.timeZone` se usan en todo el portal.
+Si `tenant.upcomingBreakPolicy` no es nulo, el portal avisa a todos los roles
+de la empresa qué cambia con la comida y desde qué día.
+
+La política de comida no se cambia en «Editar configuración»: quien administra
+la programa en Configuración con «Programar cambio de comida» y un motivo, y
+quien opera, desde «Comida de …» en Empresas. Entra el primer día de semana de
+la empresa dentro de la siguiente quincena, con al menos 7 días de aviso, y se
+puede cancelar antes. Mientras haya uno programado, el inicio de semana no se
+puede cambiar.
 
 ## Pantallas contra rutas
 

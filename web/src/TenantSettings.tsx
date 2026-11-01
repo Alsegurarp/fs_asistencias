@@ -3,7 +3,8 @@ import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuI
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, permissions, type Me, type Tenant } from './api'
 import { ErrorNotice } from './Directory'
-import { days, breaks } from './Tenants'
+import { days } from './Tenants'
+import { BreakPolicySection } from './BreakPolicyChange'
 
 export function TenantSettings({ me }: { me: Me }) {
   const cache = useQueryClient()
@@ -23,7 +24,8 @@ export function TenantSettings({ me }: { me: Me }) {
       <Typography>Identificador: {tenant.slug}</Typography>
       <Typography>Zona horaria: {tenant.timeZone}</Typography>
       <Typography>La semana empieza en {days[tenant.weekStartsOn].toLowerCase()}</Typography>
-      <Typography>Descanso o comida: {breaks[tenant.breakPolicy]}</Typography>
+      <BreakPolicySection current={tenant.breakPolicy} change={tenant.breakPolicyChange} basePath="/tenant/break-policy-changes" canChange={allowed.editSettings}
+        onChanged={() => { void cache.invalidateQueries({ queryKey: ['tenant'] }); void cache.invalidateQueries({ queryKey: ['me'] }) }} />
       <Typography>Cierre programado: {tenant.autoCloseAfterHours === null ? 'Desactivado' : `${tenant.autoCloseAfterHours} horas después del fin de la semana`}</Typography>
       {allowed.editSettings && <Button variant="contained" onClick={() => setEditing(true)}>Editar configuración</Button>}
       {editing && allowed.editSettings && <SettingsForm tenant={tenant} me={me} onClose={() => setEditing(false)} />}
@@ -43,7 +45,7 @@ function SettingsForm({ tenant: initialTenant, me, onClose }: { tenant: Tenant; 
     if (save.isPending || !permissions(me.roles).editSettings) return
     const data = new FormData(event.currentTarget)
     const text = (name: string) => String(data.get(name) || '').trim()
-    const values = { name: text('name'), timeZone: text('timeZone'), weekStartsOn: text('weekStartsOn'), breakPolicy: text('breakPolicy'), autoCloseAfterHours: text('autoCloseAfterHours') === '' ? null : Number(text('autoCloseAfterHours')) }
+    const values = { name: text('name'), timeZone: text('timeZone'), weekStartsOn: text('weekStartsOn') || tenant.weekStartsOn, autoCloseAfterHours: text('autoCloseAfterHours') === '' ? null : Number(text('autoCloseAfterHours')) }
     const body = Object.fromEntries(Object.entries(values).filter(([key, value]) => value !== tenant[key as keyof Tenant]))
     setUnchanged(!Object.keys(body).length)
     if (Object.keys(body).length) save.mutate(body)
@@ -51,14 +53,11 @@ function SettingsForm({ tenant: initialTenant, me, onClose }: { tenant: Tenant; 
   return <Dialog open fullWidth maxWidth="sm" onClose={() => { if (!save.isPending) onClose() }} aria-labelledby="settings-title"><form onSubmit={submit}>
     <DialogTitle id="settings-title">Editar configuración</DialogTitle>
     <DialogContent><Stack spacing={2} sx={{ pt: 1 }}>
-      <Alert severity="warning">Cambiar la zona horaria, el inicio de semana o los descansos afecta la operación de la empresa. Revisa los valores antes de guardar.</Alert>
+      <Alert severity="warning">Cambiar la zona horaria o el inicio de semana afecta la operación de la empresa. Revisa los valores antes de guardar. La comida se cambia aparte, con un cambio programado.</Alert>
       <TextField name="name" label="Nombre de la empresa" defaultValue={tenant.name} required disabled={save.isPending} slotProps={{ htmlInput: { maxLength: 120 } }} />
       <TextField name="timeZone" label="Zona horaria" defaultValue={tenant.timeZone} required disabled={save.isPending} />
-      <TextField select name="weekStartsOn" label="La semana empieza en" defaultValue={tenant.weekStartsOn} disabled={save.isPending}>
+      <TextField select name="weekStartsOn" label="La semana empieza en" defaultValue={tenant.weekStartsOn} disabled={save.isPending || !!tenant.breakPolicyChange} helperText={tenant.breakPolicyChange ? 'Cancela el cambio de comida programado para cambiar el inicio de semana.' : undefined}>
         {Object.entries(days).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
-      </TextField>
-      <TextField select name="breakPolicy" label="Descanso o comida" defaultValue={tenant.breakPolicy} disabled={save.isPending}>
-        {Object.entries(breaks).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
       </TextField>
       <TextField name="autoCloseAfterHours" label="Horas hasta el cierre programado" type="number" defaultValue={tenant.autoCloseAfterHours ?? ''} disabled={save.isPending} helperText="Desde el fin de la semana. Vacío desactiva el cierre programado; sólo se cierran semanas sin incidencias pendientes." slotProps={{ htmlInput: { min: 1, max: 168, step: 1 } }} />
       {unchanged && <Alert severity="info">No hay cambios para guardar.</Alert>}

@@ -1,5 +1,15 @@
 # Decisiones de negocio
 
+**Cambio programado de la política de comida, decidido por el equipo el 30 de
+octubre y el 1 de noviembre de 2026.** Deja de ser inmediato: entra el primer
+día de semana de la empresa dentro de la siguiente quincena, con al menos 7
+días de aviso; lo programan quien administra la empresa o quien opera el
+servicio, y las personas reciben un aviso. Tres detalles que el equipo no fijó
+se construyeron como propuesta y se confirman al revisar la PR: los 7 días se
+cuentan hasta el día en que entra, el cambio lleva motivo y se puede cancelar
+antes de entrar. Una empresa mal configurada en su alta también espera esa
+fecha. Las reglas están en [lógica de negocio](logica-de-negocio.md).
+
 **Acuerdo adicional del 23 de octubre de 2026:**
 [expediente empresarial y MFA por descarga](expediente-empresa.md): entrega
 legible con versiones/ajustes de una sola empresa, recuperación comprobada
