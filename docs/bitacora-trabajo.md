@@ -6,12 +6,15 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
-## 5 de noviembre de 2026 — Preparación de PR de jornada, operación y guía de demo
+## 5 de noviembre de 2026 — PR #27 de jornada, operación y guía de demo
 
-Por instrucción del usuario se prepara una PR hacia `main` desde
-`feat/jornada-operacion-y-guia-demo`, incluyendo todos los cambios actuales
-del producto y la documentación previa preservada. Base remota comprobada:
-`645174d`, sin divergencia respecto de `main` local.
+Por instrucción del usuario se abrió la
+[PR #27](https://github.com/Alsegurarp/fs_asistencias/pull/27), lista para
+revisión hacia `main` desde `feat/jornada-operacion-y-guia-demo`, con todos
+los cambios actuales del producto y la documentación previa preservada.
+Commit de implementación: `985a520`; base remota comprobada: `645174d`, sin
+divergencia respecto de `main` local antes de crear la rama. Se añade después
+este registro del enlace en un commit documental de la misma PR.
 
 Alcance: candidato 0.18.0 y migraciones V012/V013; supervisores por sedes,
 baja con fecha y suspensión aprobadas; cálculo diario/semanal de jornada;
@@ -34,7 +37,11 @@ No se repiten las suites por el único cambio documental de preparación.
 La PR reúne avances implementados y límites expresos; no declara terminadas
 las 17 tareas ni habilita datos reales. No incluye integración automática a
 `main`, despliegue, captura física release, purga Android o aceptación jurídica
-integral. El enlace y el estado remoto se registrarán tras crear la PR.
+integral. GitHub confirmó PR abierta, no borrador y base `main`; el CI remoto
+se inicia al publicar y queda pendiente de concluir. No se presenta su estado
+como aprobado por los resultados locales. El conector GitHub devolvió 403
+por permisos de la integración; se publicó con la autenticación Git ya
+disponible, sin copiar credenciales al repositorio.
 
 ## 5 de noviembre de 2026 — Ejecución de las 17 tareas por necesidad inmediata
 
