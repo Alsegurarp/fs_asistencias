@@ -7,6 +7,7 @@ import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.identity.SiteScope
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.http.HttpStatus
@@ -108,20 +109,27 @@ class ScheduleRepository(private val dsl: DSLContext) {
     }
 
     fun find(tenantId: UUID, id: UUID): ScheduleRow? =
-        dsl.fetchOne("select $COLUMNS from schedule where tenant_id = ? and id = ?", tenantId, id)?.let { row(tenantId, it) }
+        dsl.fetchOne("select $COLUMNS from schedule where tenant_id = ? and id = ?${scope()}", tenantId, id)?.let { row(tenantId, it) }
 
     fun page(tenantId: UUID, after: PageKey?, limit: Int): List<ScheduleRow> {
         val rows = if (after == null) {
-            dsl.fetch("select $COLUMNS from schedule where tenant_id = ? order by created_at, id limit ?", tenantId, limit)
+            dsl.fetch("select $COLUMNS from schedule where tenant_id = ?${scope()} order by created_at, id limit ?", tenantId, limit)
         } else {
             dsl.fetch(
-                "select $COLUMNS from schedule where tenant_id = ? and (created_at, id) > " +
+                "select $COLUMNS from schedule where tenant_id = ?${scope()} and (created_at, id) > " +
                     "(cast(? as timestamptz), cast(? as uuid)) order by created_at, id limit ?",
                 tenantId, after.at, after.id, limit,
             )
         }
         return rows.map { row(tenantId, it) }
     }
+
+    private fun scope(): String = SiteScope.current()?.let {
+        " and exists (select 1 from schedule_assignment scope_assignment join employee scope_employee " +
+            "on scope_employee.tenant_id = scope_assignment.tenant_id and scope_employee.id = scope_assignment.employee_id " +
+            "where scope_assignment.tenant_id = schedule.tenant_id and scope_assignment.schedule_id = schedule.id" +
+            SiteScope.clause("scope_employee.site_id") + ")"
+    } ?: ""
 
     private fun row(tenantId: UUID, r: Record): ScheduleRow {
         val id = r.get("id", UUID::class.java)

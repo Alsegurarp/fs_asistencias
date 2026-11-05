@@ -9,8 +9,9 @@ cambiar cuando el equipo o la asesoría jurídica lo decidan. Está reunido al
 final.
 
 Las propuestas de suspensión, baja, alcance del supervisor y tipo de marcaje
-se registran en [Decisiones de negocio](decisiones-de-negocio.md). Están
-pendientes de aprobación y no sustituyen las reglas vigentes descritas aquí.
+fueron aprobadas durante la ejecución del 5 de noviembre de 2026 y están
+implementadas en el repositorio (API candidata 0.18.0, V012/V013).
+Se registran en [Decisiones de negocio](decisiones-de-negocio.md).
 
 ## Principios
 
@@ -40,9 +41,10 @@ pendientes de aprobación y no sustituyen las reglas vigentes descritas aquí.
   servidor. Mientras esté vacía, nadie puede dar de alta una empresa.
 - Una empresa no puede quedarse sin nadie que la administre: quitar el rol o
   el acceso a su último administrador responde 409 `last_admin`.
-- Una empresa suspendida queda cerrada para su propia gente y para sus
-  dispositivos: sus personas dejan de tener roles, sus dispositivos dejan de
-  autenticarse, sus códigos de enrolamiento dejan de canjearse, el cierre
+- Una empresa suspendida queda cerrada para gestión, consultas personales,
+  acuses y nuevas vinculaciones: sus personas dejan de tener roles y sus
+  códigos de enrolamiento dejan de canjearse. Sus dispositivos activos ya
+  vinculados conservan renovación de sesión, captura y sincronización. El cierre
   programado deja de pasar y una corrida de cierre pendiente termina como
   fallida. No se borra ni se cambia nada más: al reactivarla, todo sigue como
   estaba. La suspende y la reactiva quien opera el servicio, con un motivo
@@ -73,8 +75,18 @@ pendientes de aprobación y no sustituyen las reglas vigentes descritas aquí.
 - Sólo se asigna una tarjeta del inventario. La que ya tuvo titular no pasa a
   otra persona. Asignar una segunda tarjeta a alguien reemplaza la anterior en
   la misma operación.
-- **Provisional:** dar de baja a una persona no revoca su tarjeta ni cierra su
-  horario. Su tarjeta sí deja de marcar.
+- Dar de baja exige fecha efectiva no futura, revoca la tarjeta y termina el
+  horario aplicable; conserva las asignaciones históricas y futuras. No se
+  puede borrar la fecha mientras siga inactiva. Reactivar no recupera tarjeta
+  revocada ni horarios terminados: requieren nuevas asignaciones.
+- Una evidencia offline anterior a la baja puede sincronizar si su asignación
+  histórica de tarjeta y fecha eran válidas; la revocación no autoriza marcas
+  nuevas. Se conserva también el recibo de un rechazo.
+- El supervisor sólo consulta/atiende sedes asignadas por administración; sin
+  asignaciones no obtiene datos de supervisión. Una semana que mezcla evidencia
+  ajena a esas sedes se deniega completa, sin entregar totales parciales.
+  Administración/RH conservan su alcance; combinar auditor y supervisor permite
+  lectura global de auditor, pero no amplía escrituras de supervisión.
 
 ## Dispositivos
 
@@ -223,28 +235,38 @@ nace con el calendario de reducción de la jornada en México.
 
 El máximo diario combinado, ordinario más extraordinario, es de 12 horas.
 
-El calendario se contrastó con el DOF el 14 de octubre de 2026, pero el cálculo
-**no tiene dictamen jurídico**. La [revisión documental](revision-juridica-jornada-acuse.md)
-identifica límites diarios, descansos y otras reglas que el código todavía
-no aplica. No debe usarse como cálculo legal de nómina.
+La implementación del 5 de noviembre carga topes diarios diurno/nocturno/mixto,
+clasifica el periodo nocturno real (desde 3.5 h nocturnas se trata como nocturno)
+y cuenta extra diaria y semanal sin duplicar minutos. V013 agrega versiones
+de regla desde el 1 de mayo de 2026 para los límites de distribución: cuatro
+horas extra diarias y cuatro días semanales. Los cierres previos conservan
+sus reglas y snapshot. Siguen pendientes horario contractual, computabilidad
+de comida, menores y transiciones de vigencia; no es liquidación de nómina.
 
 ### Totales y alertas
 
 - `workedMinutes`: suma de los tramos de trabajo cerrados.
-- `overtimeMinutes`: lo que excede el tope semanal ordinario.
+- `overtimeMinutes`: exceso por máximo diario según el tipo de jornada más
+  exceso semanal de tiempo ordinario, sin volver a contar la extra diaria.
 - `ordinaryMinutes`: lo trabajado menos lo extraordinario.
 - `breakMinutes`: suma de los tramos de descanso.
 
 | Alerta | Gravedad | Cuándo |
 | --- | --- | --- |
 | `open_segment` | `warning` | Hay un tramo sin cerrar |
-| `weekly_overtime` | `info` | La semana pasa del tope ordinario |
+| `weekly_overtime` | `info` | Hay extra por máximo diario o semanal |
+| `daily_ordinary_limit_exceeded` | `info` | Jornada sobre su máximo diario ordinario |
+| `daily_overtime_limit_exceeded` | `critical` | Extra por encima del máximo diario de la regla vigente |
+| `overtime_days_limit_exceeded` | `critical` | Se supera el número de días con extra de la regla |
+| `weekly_total_overtime_limit_exceeded` | `critical` | Se supera el tope semanal y sus cuatro horas adicionales |
+| `break_computability_unverified` | `warning` | Falta acreditar si la pausa registrada debe contarse como trabajo |
 | `weekly_overtime_limit_exceeded` | `critical` | El tiempo extraordinario pasa de su tope semanal |
 | `daily_combined_limit_exceeded` | `critical` | Los turnos que empiezan un día suman más de 12 horas |
 
-**Provisional:** el cálculo todavía no distingue jornada diurna, nocturna ni
-mixta, y no se compara con el horario asignado: no hay retardos ni faltas. Las
-alertas pueden quedarse cortas, nunca de más.
+El cálculo distingue jornada diurna, nocturna y mixta. La comparación con
+horario asignado y la gestión de vacaciones/incapacidades siguen pendientes:
+no hay todavía retardos ni faltas operativas. Un descanso no reinicia la
+jornada ni cambia su atribución de día/semana al cruzar medianoche.
 
 ## Incidencias
 
@@ -349,15 +371,13 @@ reabrir un cierre y el de suspender o reactivar una empresa.
 
 | Regla | Qué podría cambiar |
 | --- | --- |
-| El tipo de marcaje se deduce y una declaración lo corrige | Que la persona siempre lo declare, o que nunca |
 | Reparto de incidencias de ubicación | Qué se considera fuera y qué dudoso |
 | Reglas del último día de la semana; turno del día en que empieza | Prorratear la semana que cruza de año o el turno que cruza la medianoche |
-| Sin tipo de jornada ni comparación con el horario | Topes diarios por tipo, retardos y faltas |
+| Sin comparación con el horario pactado | Retardos, faltas, vacaciones e incapacidades; el tipo y los máximos diarios ya se calculan |
+| Se descuenta una pausa registrada cuya computabilidad falta confirmar | Incorporar si la persona puede salir del lugar de trabajo conforme al artículo 64 |
 | Quien no marcó se cierra en ceros | Ausencias justificadas |
 | El cierre programado pasa una vez por semana y cierra sólo a quien no tiene pendientes | Que insista, que avise, o que no exista |
 | Cuota por persona de 600 peticiones por minuto | El número, según el uso real del portal |
 | Gravedad de la incidencia según su tipo | El orden de atención |
-| La baja no revoca la tarjeta | Que la baja lo haga todo |
-| Un supervisor ve toda su empresa | Que vea sólo sus sedes |
 | Plantilla del exporte | Lo que pida la nómina del cliente |
 | Tarjeta simulada | Se sustituye por la verificación de la tarjeta real |

@@ -55,7 +55,7 @@ export type BreakPolicyChange = { id: string; breakPolicy: BreakPolicy; effectiv
 export type UpcomingBreakPolicy = { breakPolicy: BreakPolicy; effectiveOn: string; effectiveAt: string }
 export type Device ={ id: string; mode: 'personal' | 'terminal'; status: 'active' | 'revoked' | 'replaced'; employeeId: string | null; siteId: string | null; label: string | null; model: string; appVersion: string; enrolledAt: string; lastSeenAt: string | null; revokedAt: string | null }
 export type DeviceEnrollment = { id: string; mode: 'personal' | 'terminal'; employeeId: string | null; siteId: string | null; label: string | null; code: string; status: string; expiresAt: string; createdAt: string }
-export type TenantUser ={ id: string; email: string; displayName: string; roles: string[]; status: 'invited' | 'active' | 'disabled'; createdAt: string; linkedAt: string | null; employeeId: string | null }
+export type TenantUser ={ id: string; email: string; displayName: string; roles: string[]; status: 'invited' | 'active' | 'disabled'; createdAt: string; linkedAt: string | null; employeeId: string | null; siteIds?: string[] }
 
 export function permissions(roles: string[]) {
   return {

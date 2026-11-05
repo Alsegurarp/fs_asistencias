@@ -1,7 +1,80 @@
 # Estado y pendientes
 
+**Corte técnico vigente del 5 de noviembre de 2026:** las 17 tareas se
+atendieron en orden de necesidad y su [resultado individual y condición de
+cierre están en la bitácora](bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).
+El usuario sustituyó Q01 por **VPS/instancia privada por cliente**, S3
+administrado por desarrolladores y custodia del administrador con relevo
+documentado; SMTP/remitente se anexarán después. Q10–Q13 fueron aprobadas e
+implementadas: suspensión mantiene dispositivos existentes, baja con fecha
+revoca tarjeta/termina horario y supervisores operan en sedes asignadas.
+
+Árbol local candidato **0.18.0, V012/V013**: 85 unitarias backend, 101
+integraciones PostgreSQL, 216 pruebas web y 14 de identidad aprobadas; sin
+omitidas. Contratos y compilación válidos. Cinco imágenes reconstruidas y
+analizadas sin críticas/altas; no acredita el servidor público. Respaldo S3
+automatizado y autoprueba sin red preparados, recuperación local ensayada;
+falta bucket/timer y recuperación en el destino real. Cálculo diario y semanal
+incorporado sin duplicar extra; quedan descanso computable, condiciones
+contractuales/regímenes especiales y evidencia del acuse. No se habilitó
+captura física release ni purga Android. Permanecen **17 tareas abiertas total
+o parcialmente y seis P0**; código local de la tarea 5 completo, aceptación
+desplegada pendiente. [Guía para el cliente](guia-demo-cliente.md) y
+[PDF paso a paso](../output/pdf/guia-demo-zenit-cliente.pdf).
+
+Los apartados anteriores a este corte son antecedentes, con sus pruebas y
+límites originales. No sustituyen estas decisiones ni requieren volver a
+preguntar Q01/Q10–Q13.
+
 Qué está hecho, qué falta y qué no se ha verificado. Se actualiza cuando
 cambia alguna de las tres cosas.
+
+**Criterio legal ampliado del 5 de noviembre:** las
+[respuestas que determina la reforma de 40 horas y la LFT](revision-juridica-jornada-acuse.md#respuestas-legales-aplicables--5-de-noviembre-de-2026)
+quedan como requisitos de desarrollo, sin otra elección del equipo. Q06/Q07/
+Q14/Q15 conservan sólo implementación, evidencia y las precisiones que la
+norma no resuelve por sí sola; no un bloqueo genérico por falta de dictamen.
+La documentación no acredita corrección del cálculo ni aceptación integral.
+
+**Resoluciones del 5 de noviembre:** Q01 ratifica producción exclusiva de
+Zenit administrada por fastSolution con aislamiento lógico; Q02 exige
+respaldo externo diario/30 días, RPO 24 h y RTO 4 h y descarta la propuesta
+semanal. Q03 elige correo verificado para contraseña, 12 códigos de Keycloak
+26.8.1 para pérdida de OTP y soporte con doble aprobación como último recurso.
+Q04 elige SMTP provisional y cuentas personales con MFA, turnos
+primario/respaldo y sin credenciales compartidas. Falta provisión y prueba;
+se sustituyen las preguntas de elección anteriores, no se cierran los P0.
+Q23 conserva ratificación de SUP-025 y aceptación desplegada de la PR #26.
+[Decisiones y pendientes por clave](dudas-producto-para-equipo.md).
+Esta actualización es documental; el corte técnico siguiente conserva su fecha.
+
+**Corte vigente del 4 de noviembre de 2026.** `main` local y `origin/main`
+coinciden en `645174d`, después de incorporar 16 commits sin conflictos.
+Las PR #22–#26 ya están integradas: E4/E5 y E6 técnica, aplicación de
+identidad en el despliegue, uso mensual/accesibilidad automática, retiro de
+`backend/bin/` y cambio programado de comida (API 0.17.0, V011). No queda
+trabajo propio de código para una PR; los 29 cambios recibidos eran copias
+generadas, preservadas con SHA-256 en respaldo local y stash.
+
+Verificado ahora: **72 unitarias backend, 214 pruebas del portal y
+compilación web**, sin fallos; identidad estática con cuatro aprobadas y
+dos omitidas. Gradle se ejecutó localmente con JDK 25, sin red. En la
+comprobación posterior Docker ya responde fuera del sandbox: el motor está
+disponible y los servicios de Zenit están detenidos. No se repitieron
+integración PostgreSQL ni identidad real. Tampoco Android, CI remoto o servidor público; no se infiere
+la versión desplegada a partir de la integración en Git.
+
+El [contexto para reanudar](TareasPendientes.md#contexto-para-reanudar--4-de-noviembre-de-2026)
+registra el entorno y las siguientes verificaciones: arranque aislado/integración,
+cambio de comida en portal/teléfono, accesibilidad manual y aceptación
+integral E6/Q07/Q14. Permanecen **17 tareas globales abiertas y seis P0**.
+[Evidencia del corte](bitacora-trabajo.md#4-de-noviembre-de-2026--sincronización-local-y-contexto-para-continuar).
+Los avances siguientes conservan su fecha y son históricos.
+
+El [flujo del producto y pendientes](flujo-del-producto-y-pendientes.md)
+explica el orden de uso. El bloqueo directo de captura Android en release
+está en `AttendanceRepository.capture()`, que exige debug hasta integrar
+autenticación real de tarjetas; no es sólo una prueba física pendiente.
 
 **Avance del 1 de noviembre — cambio programado de la comida.** `main` en
 `792ca5a` está desplegado en el servidor compartido, con datos ficticios. La

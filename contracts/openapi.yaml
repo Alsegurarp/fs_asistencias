@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.17.0
+  version: 0.18.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -521,9 +521,11 @@ paths:
       operationId: suspendTenant
       summary: Suspende una empresa
       description: |
-        Cierra la empresa para su propia gente y para sus dispositivos: sus
-        personas dejan de tener roles, sus dispositivos dejan de autenticarse
-        y sus códigos de enrolamiento dejan de canjearse. El cierre programado
+        Bloquea administración y cierres: sus personas dejan de tener roles
+        de empresa y sus códigos de enrolamiento dejan de canjearse. Los
+        dispositivos activos ya vinculados conservan sesiones y captura/
+        sincronización; no consulta personal ni acuses durante la suspensión.
+        El cierre programado
         deja de pasar y una corrida de cierre pendiente termina como fallida.
         No borra ni cambia nada más: al reactivarla, todo sigue como estaba.
 
@@ -1038,6 +1040,7 @@ paths:
                     status: active
                     createdAt: "2026-10-05T15:05:00Z"
                     linkedAt: "2026-10-05T16:20:00Z"
+                    siteIds: []
                     employeeId: null
                 nextCursor: null
         "401":
@@ -1083,6 +1086,7 @@ paths:
                 status: invited
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: null
+                siteIds: []
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1116,6 +1120,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: "2026-10-05T16:20:00Z"
+                siteIds: []
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1160,6 +1165,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: "2026-10-05T16:20:00Z"
+                siteIds: []
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1209,6 +1215,7 @@ paths:
                 status: invited
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: null
+                siteIds: []
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1647,8 +1654,12 @@ paths:
       description: |
         La baja es lógica. Nunca borra marcajes ni cierres. `siteId` en nulo
         quita la sede y `employmentEnd` en nulo borra la fecha de baja; un
-        campo que no se manda queda como estaba. La baja no toca la tarjeta
-        de la persona: revocarla es una operación aparte.
+        campo que no se manda queda como estaba. Pasar a `inactive` exige una
+        fecha efectiva de baja no futura; revoca la tarjeta y cierra la
+        asignación de horario aplicable a esa fecha, en la misma transacción.
+        No borra históricos ni asignaciones futuras; reactivar no devuelve
+        una tarjeta revocada. Una evidencia offline anterior a la baja sólo
+        puede aceptarse si su fecha estaba cubierta por la asignación de tarjeta.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -4352,8 +4363,8 @@ components:
       enum: [admin_empresa, rh, supervisor, trabajador, auditor]
     User:
       type: object
-      description: Persona con acceso al portal de la empresa.
-      required: [id, email, displayName, roles, status, createdAt, linkedAt, employeeId]
+      description: Persona con acceso al portal de la empresa. Supervisión se limita a sus siteIds, salvo roles adicionales de alcance empresa. El permiso explícito de expediente es una capacidad independiente.
+      required: [id, email, displayName, roles, status, createdAt, linkedAt, employeeId, siteIds]
       properties:
         id:
           type: string
@@ -4384,6 +4395,8 @@ components:
           type: [string, "null"]
           format: uuid
           description: Su fila del padrón, cuando la persona también es trabajadora.
+        siteIds:
+          $ref: "#/components/schemas/SupervisorSiteIds"
     UserCreate:
       type: object
       additionalProperties: false
@@ -4407,6 +4420,8 @@ components:
           type: string
           format: uuid
           description: Fila del padrón con la que se liga la cuenta.
+        siteIds:
+          $ref: "#/components/schemas/SupervisorSiteIds"
     UserUpdate:
       type: object
       additionalProperties: false
@@ -4428,6 +4443,16 @@ components:
           type: [string, "null"]
           format: uuid
           description: Fila del padrón con la que se liga la cuenta; nulo la suelta.
+        siteIds:
+          $ref: "#/components/schemas/SupervisorSiteIds"
+    SupervisorSiteIds:
+      type: array
+      maxItems: 100
+      uniqueItems: true
+      description: Sedes de la misma empresa para Supervisión; vacío no concede acceso a ninguna sede. Administración, RH y Auditoría conservan su alcance explícito de empresa.
+      items:
+        type: string
+        format: uuid
     UserList:
       type: object
       required: [items, nextCursor]
@@ -5458,6 +5483,7 @@ components:
           type: integer
         overtimeMinutes:
           type: integer
+          description: Tiempo extraordinario por exceso diario según clasificación diurna/nocturna/mixta y por exceso semanal, sin contar dos veces los mismos minutos.
     WorkSegment:
       type: object
       required: [id, kind, startAt, endAt, minutes, startEventId, endEventId, version]
@@ -5498,8 +5524,10 @@ components:
         code:
           type: string
           description: >-
-            `open_segment`, `daily_combined_limit_exceeded`, `weekly_overtime`
-            o `weekly_overtime_limit_exceeded`. Pueden agregarse más: un
+            `open_segment`, `daily_combined_limit_exceeded`, `daily_ordinary_limit_exceeded`,
+            `daily_overtime_limit_exceeded`, `overtime_days_limit_exceeded`,
+            `break_computability_unverified`, `weekly_overtime`,
+            `weekly_overtime_limit_exceeded` o `weekly_total_overtime_limit_exceeded`. Pueden agregarse más: un
             cliente debe tolerar un código que no conoce.
         severity:
           type: string

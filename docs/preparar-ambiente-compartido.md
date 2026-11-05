@@ -1,5 +1,40 @@
 # Preparar el ambiente compartido
 
+## Avance local del 5 de noviembre de 2026
+
+El realm versionado y el paso de despliegue habilitan códigos de recuperación
+como alternativa al OTP en el acceso normal; las cuentas nuevas deben guardar
+sus códigos. Se comprobó contra Keycloak 26.8.1 en un proyecto desechable:
+doce códigos, contraseña más segundo factor, rechazo de un código consumido,
+OTP conservado y configuración idempotente de un realm existente. El flujo
+de expediente conserva OTP nuevo por descarga. Las pruebas no usan correo
+ni cuentas de clientes y no acreditan cambios en el servidor publicado.
+
+El usuario difiere proveedor/remitente SMTP. Se conservan deshabilitadas
+verificación/recuperación por correo hasta proveer y probar recepción.
+La nueva topología es una VPS privada por cliente; los datos históricos de
+servidor compartido que siguen corresponden sólo al ambiente de pruebas.
+
+Para soporte de último recurso, abrir un caso que identifique instancia y
+cuenta sin registrar contraseñas/códigos; verificar identidad por el procedimiento
+acordado y obtener dos aprobaciones de personas distintas, con fecha, evidencia
+y ejecutor identificado. El ejecutor usa su cuenta personal con MFA en la
+consola autorizada, registra la intervención, comprueba la nueva vinculación
+del factor con el titular y revisa/revoca sesiones según el caso. No ejecutar
+el restablecimiento con una sola aprobación ni compartir la cuenta del cliente.
+Faltan personas/aprobadores, procedimiento concreto y ensayo de aceptación;
+esta política no equivale a un control automático de doble aprobación en Keycloak.
+
+**Decisión vigente del 5 de noviembre de 2026 (Q03/Q04):** contraseña mediante
+correo verificado; pérdida de OTP con los 12 códigos de recuperación de
+Keycloak 26.8.1 y soporte con doble aprobación como último recurso. SMTP
+provisional antes del nombre comercial. Operación con cuentas personales con
+MFA, turnos primario/respaldo y sin credenciales compartidas. Los códigos ya
+fueron configurados y probados en el entorno aislado indicado arriba. Falta
+proveer SMTP, asignar titulares/turnos/aprobadores y comprobar recuperación
+por correo y soporte excepcional en el destino. Los pasos y datos históricos
+siguientes no acreditan que esa configuración esté activa en producción.
+
 Estado al 18 de octubre de 2026: publicado en <https://zenit.fastsolution.com.mx>
 con datos ficticios. Cómo está montado y cómo se despliega está en
 [Despliegue en el servidor](despliegue-en-servidor.md); aquí queda lo que el
@@ -87,10 +122,10 @@ Faltan aceptación en servidor público y recorrido real de ingreso
 y contraseña/OTP en navegador; [guion](qa-a1-a5.md).
 
 Para un empleado sin cuenta vinculada hay que resolver primero esa vinculación.
-También queda por definir cómo obtiene acceso quien olvidó la contraseña:
-el cambio obligatorio al próximo login no resuelve por sí solo la autenticación
-previa. No se ha elegido contraseña temporal ni enlace por correo. Conservar
-OTP y no registrar contraseñas en bitácoras o registros técnicos.
+El 5 de noviembre se eligió recuperación mediante correo verificado para
+contraseña olvidada; el cambio obligatorio al próximo login no resuelve por
+sí solo la autenticación previa. Conservar OTP y no registrar contraseñas ni
+códigos de recuperación en bitácoras o registros técnicos.
 
 Esta implementación local no cierra los
 pendientes de cuentas personales, OTP o recuperación del operador. El
@@ -104,12 +139,11 @@ el túnel a la consola descrito en [Despliegue](despliegue-en-servidor.md).
 Las cuentas se crean en el realm activo, con las identidades que se confirmen.
 
 Los correos personales confirmados se conservan en
-`secrets/zenit-identity-plan.json`, excluido de Git. La contraseña temporal del
-operador está en `secrets/zenit-operator-credential.json`, protegido localmente;
-no está aplicada en Keycloak. La cuenta del operador **no tiene buzón**, por lo
-que no se le debe aplicar por inferencia la verificación/recuperación por correo
-del procedimiento general. El backend actual requiere correo verificado para
-operar; la adaptación de esa identidad interna queda por resolver antes del alta.
+`secrets/zenit-identity-plan.json`, excluido de Git. El plan previo incluía una
+credencial temporal en `secrets/zenit-operator-credential.json`, no aplicada en
+Keycloak, para un identificador sin buzón. Q04 lo sustituye para la operación
+humana por cuentas personales con MFA y correo verificado; no se habilita una
+credencial compartida. Falta provisionar y probar las cuentas de cada turno.
 
 La petición de acceso de superadmins a web/móvil y datos reales no se considera
 un permiso ya existente. Alexis indica revisar primero los

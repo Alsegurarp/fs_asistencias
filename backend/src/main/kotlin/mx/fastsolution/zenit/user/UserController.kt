@@ -26,6 +26,7 @@ data class UserView(
     val createdAt: String,
     val linkedAt: String?,
     val employeeId: String?,
+    val siteIds: List<String>,
 ) {
     companion object {
         fun of(row: UserRow) = UserView(
@@ -37,6 +38,7 @@ data class UserView(
             createdAt = row.createdAt.toInstant().toString(),
             linkedAt = row.linkedAt?.toInstant()?.toString(),
             employeeId = row.employeeId?.toString(),
+            siteIds = row.siteIds.map(UUID::toString).sorted(),
         )
     }
 }

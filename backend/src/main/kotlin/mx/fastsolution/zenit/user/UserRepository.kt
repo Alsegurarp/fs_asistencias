@@ -19,6 +19,7 @@ data class UserRow(
     val roles: Set<String>,
     /** Su fila del padrón, cuando la persona también es trabajadora. */
     val employeeId: UUID?,
+    val siteIds: Set<UUID> = emptySet(),
 )
 
 /**
@@ -94,6 +95,11 @@ class UserRepository(private val dsl: DSLContext) {
         dsl.execute("update tenant_user set status = ? where tenant_id = ? and id = ?", status, tenantId, id)
     }
 
+    fun setSites(tenantId: UUID, id: UUID, siteIds: Set<UUID>) {
+        dsl.execute("delete from tenant_user_site where tenant_id = ? and user_id = ?", tenantId, id)
+        siteIds.forEach { dsl.execute("insert into tenant_user_site (tenant_id, user_id, site_id) values (?, ?, ?)", tenantId, id, it) }
+    }
+
     fun grant(tenantId: UUID, id: UUID, role: String, grantedBy: String) {
         dsl.execute(
             "insert into tenant_user_role (tenant_id, user_id, role, granted_by) values (?, ?, ?, ?)",
@@ -125,11 +131,14 @@ class UserRepository(private val dsl: DSLContext) {
         linkedAt = r.get("linked_at", OffsetDateTime::class.java),
         roles = r.get("roles", String::class.java).split(',').filter { it.isNotEmpty() }.toSet(),
         employeeId = r.get("employee_id", UUID::class.java),
+        siteIds = r.get("site_ids", String::class.java).split(',').filter(String::isNotEmpty).map(UUID::fromString).toSet(),
     )
 
     private companion object {
         const val SELECT =
             "select u.tenant_id, u.id, u.email, u.subject, u.display_name, u.status, u.created_at, u.linked_at, u.employee_id, " +
+                "coalesce((select string_agg(s.site_id::text, ',' order by s.site_id) from tenant_user_site s " +
+                "where s.tenant_id = u.tenant_id and s.user_id = u.id), '') as site_ids, " +
                 "coalesce((select string_agg(r.role, ',' order by r.role) from tenant_user_role r " +
                 "where r.tenant_id = u.tenant_id and r.user_id = u.id), '') as roles from tenant_user u"
     }

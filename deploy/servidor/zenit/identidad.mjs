@@ -2,7 +2,8 @@
 // importa: con --import-realm, un realm que ya existe se omite completo. Crea
 // los clientes indicados con sus flujos y el cliente técnico del cambio
 // obligatorio de contraseña; lo que ya existe sólo se comprueba. Nunca
-// sobrescribe ni borra: ante una diferencia se detiene y la explica.
+// borra usuarios ni credenciales. Q03 habilita de forma explícita los códigos
+// en el flujo normal; los demás cambios inesperados detienen el despliegue.
 //
 //   node identidad.mjs [clientId ...]      # por omisión, zenit-dossier
 //
@@ -244,10 +245,37 @@ async function asegurarTecnico() {
   console.log(`cliente ${tecnico}: comprobado; secreto guardado para el backend`)
 }
 
+async function asegurarRecuperacion() {
+  const activo = await leer(prefijo)
+  assert.equal(activo.browserFlow, 'browser', 'Revisar el flujo normal personalizado antes de habilitar recuperación')
+  const ruta = `${prefijo}/authentication/flows/browser/executions`
+  const pasos = await leer(ruta)
+  const otp = pasos.find(paso => paso.providerId === 'auth-otp-form')
+  const recovery = pasos.find(paso => paso.providerId === 'auth-recovery-authn-code-form')
+  assert.equal(otp?.requirement, 'ALTERNATIVE', 'No modificar un requisito OTP inesperado')
+  assert.ok(recovery && ['DISABLED', 'ALTERNATIVE'].includes(recovery.requirement), 'Revisar el paso de recuperación inesperado')
+  const acciones = await leer(`${prefijo}/authentication/required-actions`)
+  const accion = acciones.find(item => item.alias === 'CONFIGURE_RECOVERY_AUTHN_CODES')
+  assert.ok(accion?.enabled, 'Debe existir la acción de recuperación habilitada')
+  if (!accion.defaultAction) {
+    await escribir('PUT', `${prefijo}/authentication/required-actions/${accion.alias}`,
+      { ...accion, defaultAction: true }, [204])
+  }
+  if (recovery.requirement === 'DISABLED') {
+    await escribir('PUT', ruta, { ...recovery, requirement: 'ALTERNATIVE' }, [202, 204])
+  }
+  const comprobados = await leer(ruta)
+  assert.equal(comprobados.find(paso => paso.id === recovery.id)?.requirement, 'ALTERNATIVE')
+  assert.equal((await leer(`${prefijo}/authentication/required-actions`))
+    .find(item => item.alias === accion.alias)?.defaultAction, true)
+  console.log('recuperación Q03: códigos habilitados en login; SMTP y aceptación operativa siguen siendo requisitos separados')
+}
+
 for (const clientId of clientes) {
   const cliente = await asegurarCliente(clientId)
   if (cliente.standardFlowEnabled && cliente.redirectUris?.length) await probarInicio(cliente)
   console.log(`cliente ${clientId}: comprobado`)
 }
 await asegurarTecnico()
+await asegurarRecuperacion()
 console.log('identidad lista: el realm del servidor tiene lo que agrega el versionado')

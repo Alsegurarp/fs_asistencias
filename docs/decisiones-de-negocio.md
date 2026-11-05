@@ -1,14 +1,87 @@
 # Decisiones de negocio
 
+## Decisión vigente de alojamiento y operación — 5 de noviembre de 2026
+
+Durante la ejecución el usuario sustituye expresamente el modelo compartido
+anterior por **una instancia de Zenit en VPS privada por cliente**. El equipo
+desarrollador administra y da soporte; el administrador del cliente conserva
+sus propias credenciales de administración. Se mantienen cuentas personales
+con MFA y permisos separados, sin compartir la contraseña del cliente.
+
+El respaldo externo será un **bucket compatible con S3 administrado por el
+equipo desarrollador**, con aislamiento de prefijos y credenciales técnicas
+por instancia. Continúan copia diaria/30 días, RPO 24 h y RTO 4 h. El custodio
+es el administrador del cliente; si no asume esa función, el equipo
+desarrollador, con entrega y aceptación documentadas. SMTP/remitente se
+proveerán después. Faltan proveedor/región/cuenta, dominios, bucket/endpoint,
+accesos, personas concretas y ensayo en el destino.
+
+El usuario también aprueba **aplicar las propuestas Q10–Q13**: mantener
+captura/sincronización de dispositivos ya enrolados durante suspensión y
+bloquear administración/cierres/nuevo enrolamiento; baja con revocación de
+tarjeta y fin de horario aplicable, conservando históricos; supervisor sólo
+en sedes asignadas; conservar deducción más declaración explícita validada.
+Las precisiones de fechas, reactivación e históricos se documentan en la
+implementación; no se destruye evidencia por una baja técnica.
+
+La [verificación legal de esta respuesta](revision-juridica-jornada-acuse.md#verificación-del-modelo-vps-por-cliente-y-s3--5-de-noviembre-de-2026)
+no identifica incompatibilidad de la topología con la reforma. Su ejecución
+debe cumplir registro, conservación y protección de datos; el servicio de
+soporte no transfiere automáticamente las obligaciones del empleador.
+Este apartado prevalece sobre Q01 y sobre el modelo del 19 de octubre que
+se conserva abajo como antecedente.
+
+## Criterio rector ampliado — 5 de noviembre de 2026
+
+Por instrucción del usuario, toda respuesta que pueda obtenerse de la reforma
+de 40 horas y la LFT aplicable se contesta con esa norma y su vigencia. Es el
+objetivo del proyecto. Los mandatos expresos quedan como requisitos de
+desarrollo, sin esperar una elección adicional del equipo. Las
+[respuestas legales por pregunta](revision-juridica-jornada-acuse.md#respuestas-legales-aplicables--5-de-noviembre-de-2026)
+resuelven los mínimos normativos y dejan identificados los casos de
+interpretación, datos del empleador y decisiones técnicas aún necesarios.
+No se vuelve a pedir aprobación para elegir si se cumplirá un mínimo legal;
+la revisión y aceptación comprobarán su aplicación. Este criterio sustituye
+los bloqueos genéricos por falta de dictamen de las notas anteriores y
+conserva la revisión específica donde sí exista incertidumbre.
+
+## Primeras resoluciones recibidas el 5 de noviembre de 2026
+
+- **Q01 — Alojamiento:** fastSolution administra una producción exclusiva de
+  Zenit con aislamiento lógico por empresa; el servicio estándar no crea una
+  VPS por cliente. **Sustituida después por la VPS privada por cliente arriba.**
+- **Q02 — Respaldo:** externo diario, retención de 30 días, RPO de 24 h y
+  RTO de 4 h. La propuesta semanal queda descartada por incompatibilidad con
+  estos objetivos. Faltan destino, custodia, responsables, automatización y
+  ensayo en el destino; los objetivos no se registran como comprobados.
+- **Q03 — Acceso perdido:** contraseña mediante correo verificado; pérdida
+  de OTP mediante los 12 códigos de recuperación de Keycloak y, como último
+  recurso, soporte con doble aprobación. Versión de referencia: Keycloak
+  26.8.1. Falta configurar, probar y documentar el procedimiento efectivo,
+  incluidos los responsables y la evidencia de la doble aprobación.
+- **Q04 — Operación:** SMTP provisional antes de definir el nombre comercial;
+  cuentas personales con MFA, turnos primario/respaldo y sin credenciales
+  compartidas. Faltan proveedor/remitente, provisión, asignación de personas
+  y comprobación de correo, acceso y recuperación.
+- **Q23 — Comida:** la PR #26 está integrada con motivo, cancelación y siete
+  días de aviso hasta la vigencia. Falta ratificar **SUP-025** y aceptar el
+  recorrido desplegado; la integración no acredita esas aceptaciones.
+
+Estas respuestas sustituyen las opciones anteriores de Q01–Q04 y precisan
+Q23. No cierran tareas operativas ni autorizan el primer uso con datos reales.
+El [cuestionario](dudas-producto-para-equipo.md) conserva los recursos y
+aceptaciones pendientes por clave.
+
 **Cambio programado de la política de comida, decidido por el equipo el 30 de
 octubre y el 1 de noviembre de 2026.** Deja de ser inmediato: entra el primer
 día de semana de la empresa dentro de la siguiente quincena, con al menos 7
 días de aviso; lo programan quien administra la empresa o quien opera el
 servicio, y las personas reciben un aviso. Tres detalles que el equipo no fijó
-se construyeron como propuesta y se confirman al revisar la PR: los 7 días se
+se construyeron como propuesta y ya están integrados en la PR #26: los 7 días se
 cuentan hasta el día en que entra, el cambio lleva motivo y se puede cancelar
 antes de entrar. Una empresa mal configurada en su alta también espera esa
-fecha. Las reglas están en [lógica de negocio](logica-de-negocio.md).
+fecha. Al 5 de noviembre faltan ratificación de SUP-025 y aceptación
+desplegada. Las reglas están en [lógica de negocio](logica-de-negocio.md).
 
 **Acuerdo adicional del 23 de octubre de 2026:**
 [expediente empresarial y MFA por descarga](expediente-empresa.md): entrega
@@ -55,6 +128,9 @@ la instalación no es el archivo que puede entregarse a un cliente: hace
 falta un expediente limitado a su empresa y comprobar su recuperación.
 
 ## Modelo de alojamiento aprobado
+
+**Antecedente del 19 de octubre, sustituido el 5 de noviembre por la decisión
+vigente de VPS privada por cliente.** No usarlo para aprovisionar nuevas instancias.
 
 Aprobado el 19 de octubre de 2026 por **Gabriel, Roberto Arregui y Alex
 Segura**:

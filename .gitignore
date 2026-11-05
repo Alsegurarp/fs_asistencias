@@ -34,6 +34,8 @@ out/
 target/
 coverage/
 .cache/
+.tools/
+tmp/pdfs/
 
 # Android
 .kotlin/

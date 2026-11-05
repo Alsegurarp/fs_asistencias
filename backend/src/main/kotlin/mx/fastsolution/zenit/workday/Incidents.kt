@@ -9,6 +9,7 @@ import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.capture.Envelopes
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.identity.SiteScope
 import mx.fastsolution.zenit.tenant.TenantRepository
 import mx.fastsolution.zenit.user.UserRepository
 import org.jooq.DSLContext
@@ -88,14 +89,14 @@ data class IncidentView(
 
 @Repository
 class IncidentRepository(private val dsl: DSLContext) {
-    fun find(tenantId: UUID, id: UUID): IncidentRow? = dsl.fetchOne("$SELECT where i.tenant_id = ? and i.id = ?", tenantId, id)?.let(::row)
+    fun find(tenantId: UUID, id: UUID): IncidentRow? = dsl.fetchOne("$SELECT where i.tenant_id = ? and i.id = ?${SiteScope.clause("i.site_id")}", tenantId, id)?.let(::row)
 
     /** Pone en fila los cambios sobre una misma incidencia. */
     fun lock(tenantId: UUID, id: UUID): Boolean =
         dsl.fetchOne("select id from incident where tenant_id = ? and id = ? for update", tenantId, id) != null
 
     fun page(tenantId: UUID, status: String?, type: String?, siteId: UUID?, week: Pair<OffsetDateTime, OffsetDateTime>?, after: PageKey?, limit: Int): List<IncidentRow> {
-        val sql = StringBuilder("$SELECT where i.tenant_id = ?")
+        val sql = StringBuilder("$SELECT where i.tenant_id = ?${SiteScope.clause("i.site_id")}")
         val binds = mutableListOf<Any>(tenantId)
         if (status != null) {
             sql.append(" and i.status = ?")
@@ -236,7 +237,7 @@ class IncidentService(
         checks.done()
 
         if (!incidents.lock(tenantId, id)) throw Problems.notFound()
-        val before = incidents.find(tenantId, id)!!
+        val before = incidents.find(tenantId, id) ?: throw Problems.notFound()
         if (before.status != "open") throw Problems.conflict("incident_already_resolved", "La incidencia ya está resuelta.")
 
         if ("assigneeUserId" in body) {

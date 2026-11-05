@@ -1,5 +1,13 @@
 # Retención Android: análisis y alcance mínimo
 
+**Ratificación del 5 de noviembre:** Q14 se contesta con los plazos de la
+legislación aplicable documentados en la [revisión legal vigente](revision-juridica-jornada-acuse.md#respuestas-legales-aplicables--5-de-noviembre-de-2026).
+No requiere elegir otra vez el mínimo de conservación laboral. Quedan
+archivo de evidencia local aún ausente, recuperación comprobada y
+disponibilidad de duplicados. E1–E5 y E6 técnica ya están integradas; las
+referencias anteriores a un expediente sin implementar son históricas.
+Esto no habilita purga ni cierra aceptación integral.
+
 ## Criterio recibido el 23 de octubre de 2026
 
 El usuario establece como base la legislación mexicana y la reforma de

@@ -1,0 +1,10 @@
+[Unit]
+Description=Respaldo diario de Zenit
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 UTC
+Persistent=true
+Unit=zenit-respaldo.service
+
+[Install]
+WantedBy=timers.target

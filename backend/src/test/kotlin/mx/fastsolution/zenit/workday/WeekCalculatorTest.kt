@@ -13,7 +13,8 @@ import kotlin.test.assertTrue
 class WeekCalculatorTest {
     private val zone = ZoneId.of("America/Mexico_City")
     private val monday = LocalDate.parse("2026-10-05")
-    private val limits = RuleLimits(weeklyOrdinaryMaxMinutes = 2880, weeklyOvertimeMaxMinutes = 540, dailyCombinedMaxMinutes = 720)
+    private val limits = RuleLimits(weeklyOrdinaryMaxMinutes = 2880, weeklyOvertimeMaxMinutes = 540, dailyCombinedMaxMinutes = 720,
+        dailyOrdinaryMaxMinutesDay = 480, dailyOrdinaryMaxMinutesNight = 420, dailyOrdinaryMaxMinutesMixed = 450)
 
     private fun at(day: Int, time: String): OffsetDateTime = monday.plusDays(day.toLong()).atTime(java.time.LocalTime.parse(time)).atZone(zone).toOffsetDateTime()
 
@@ -35,18 +36,19 @@ class WeekCalculatorTest {
 
         assertEquals(listOf(510, 240), result.segments.map { it.minutes })
         assertEquals(listOf("work", "work"), result.segments.map { it.kind })
-        assertEquals(Totals(750, 0, 750, 0), result.totals)
+        assertEquals(Totals(750, 0, 720, 30), result.totals)
         assertEquals(1, result.version)
         assertFalse(result.hasOpenSegment)
-        assertTrue(result.alerts.isEmpty())
+        assertEquals(listOf("daily_ordinary_limit_exceeded", "weekly_overtime"), result.alerts.map { it.code })
     }
 
     @Test
-    fun `a marked break is measured and never counts as work`() {
+    fun `a marked break is measured and its unverified computability is visible`() {
         val result = week(listOf(mark(0, "08:00"), mark(0, "12:00"), mark(0, "12:45"), mark(0, "17:00")), policy = "marked")
 
         assertEquals(listOf("work" to 240, "break" to 45, "work" to 255), result.segments.map { it.kind to it.minutes })
-        assertEquals(Totals(495, 45, 495, 0), result.totals)
+        assertEquals(Totals(495, 45, 480, 15), result.totals)
+        assertTrue(result.alerts.any { it.code == "break_computability_unverified" })
         // El descanso termina con el mismo marcaje con el que se reanuda el trabajo.
         assertEquals(result.segments[1].endEventId, result.segments[2].startEventId)
     }
@@ -60,12 +62,12 @@ class WeekCalculatorTest {
 
         assertEquals(Totals(4680, 0, 2880, 1800), result.totals)
         assertEquals(
-            listOf("daily_combined_limit_exceeded", "weekly_overtime", "weekly_overtime_limit_exceeded"),
+            listOf("daily_ordinary_limit_exceeded", "daily_combined_limit_exceeded", "weekly_overtime", "weekly_overtime_limit_exceeded"),
             result.alerts.map { it.code }.distinct(),
         )
         assertEquals(6, result.alerts.count { it.code == "daily_combined_limit_exceeded" })
         // Con el tope de 2030 la misma semana tiene más tiempo extraordinario.
-        assertEquals(2280, week(marks, rules = RuleLimits(2400, 720, 720)).totals.overtimeMinutes)
+        assertEquals(2280, week(marks, rules = limits.copy(weeklyOrdinaryMaxMinutes = 2400, weeklyOvertimeMaxMinutes = 720)).totals.overtimeMinutes)
     }
 
     @Test
@@ -133,5 +135,73 @@ class WeekCalculatorTest {
         val marks = listOf(mark(0, "08:00"), mark(0, "16:00"))
 
         assertEquals(week(marks).segments.map { it.id }, week(marks).segments.map { it.id })
+    }
+
+    @Test
+    fun `daily overtime exists even when the week is below its limit`() {
+        val result = week(listOf(mark(0, "08:00"), mark(0, "18:00")))
+
+        assertEquals(Totals(600, 0, 480, 120), result.totals)
+        assertEquals(listOf("daily_ordinary_limit_exceeded", "weekly_overtime"), result.alerts.map { it.code })
+    }
+
+    @Test
+    fun `night and mixed limits apply including the three and a half hour threshold`() {
+        val night = week(listOf(mark(0, "20:00"), mark(1, "04:00")))
+        val mixed = week(listOf(mark(0, "15:00"), mark(0, "23:00")))
+        val atThreshold = week(listOf(mark(0, "16:00"), mark(0, "23:30")))
+        val belowThreshold = week(listOf(mark(0, "16:00"), mark(0, "23:29")))
+
+        assertEquals(Totals(480, 0, 420, 60), night.totals)
+        assertEquals(Totals(480, 0, 450, 30), mixed.totals)
+        assertEquals(Totals(450, 0, 420, 30), atThreshold.totals)
+        assertEquals(Totals(449, 0, 449, 0), belowThreshold.totals)
+    }
+
+    @Test
+    fun `splitting a shift with a break across midnight preserves daily and weekly attribution`() {
+        val marks = listOf(mark(6, "20:00"), mark(6, "23:30"), mark(7, "00:00"), mark(7, "04:30"))
+        val result = week(marks, policy = "marked")
+
+        assertEquals(listOf(210, 30, 270), result.segments.map { it.minutes })
+        assertEquals(Totals(480, 30, 420, 60), result.totals)
+        val next = WeekCalculator.calculate(marks, emptyList(), "marked", monday.plusDays(7), zone, limits)
+        assertTrue(next.segments.isEmpty())
+    }
+
+    @Test
+    fun `multiple shifts on the same day do not reset the ordinary limit`() {
+        val result = week(listOf(mark(0, "08:00"), mark(0, "12:00"), mark(0, "14:00"), mark(0, "19:00")))
+
+        assertEquals(Totals(540, 0, 480, 60), result.totals)
+    }
+
+    @Test
+    fun `a night crossing a daylight saving change uses elapsed time in the company zone`() {
+        val border = ZoneId.of("America/Tijuana")
+        val start = LocalDate.parse("2026-10-31").atTime(20, 0).atZone(border).toOffsetDateTime()
+        val end = LocalDate.parse("2026-11-01").atTime(6, 0).atZone(border).toOffsetDateTime()
+        val result = WeekCalculator.calculate(
+            listOf(RawMark(UUID.randomUUID(), start, "clock_in"), RawMark(UUID.randomUUID(), end, "clock_out")),
+            emptyList(), "not_considered", LocalDate.parse("2026-10-26"), border, limits,
+        )
+
+        assertEquals(Totals(660, 0, 420, 240), result.totals)
+    }
+
+    @Test
+    fun `daily and weekly overtime count each minute once and distribution violations remain visible`() {
+        val rules = limits.copy(weeklyOrdinaryMaxMinutes = 2400, weeklyOvertimeMaxMinutes = 720,
+            dailyOvertimeMaxMinutes = 240, overtimeMaxDays = 4, weeklyExcessOvertimeMaxMinutes = 240)
+        val five = (0..4).flatMap { listOf(mark(it, "08:00"), mark(it, "18:00")) }
+        assertEquals(Totals(3000, 0, 2400, 600), week(five, rules = rules).totals)
+        val six = five + listOf(mark(5, "08:00"), mark(5, "18:00"))
+        val result = week(six, rules = rules)
+
+        assertEquals(Totals(3600, 0, 2400, 1200), result.totals)
+        assertTrue(result.alerts.any { it.code == "daily_overtime_limit_exceeded" })
+        assertTrue(result.alerts.any { it.code == "overtime_days_limit_exceeded" })
+        assertTrue(result.alerts.any { it.code == "weekly_total_overtime_limit_exceeded" })
+        assertEquals(1, result.alerts.count { it.code == "daily_overtime_limit_exceeded" })
     }
 }

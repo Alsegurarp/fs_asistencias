@@ -9,6 +9,7 @@ import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.capture.IncidentSeverity
 import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.identity.SiteScope
 import mx.fastsolution.zenit.identity.Role
 import mx.fastsolution.zenit.site.SiteRepository
 import mx.fastsolution.zenit.tenant.TenantRepository
@@ -99,7 +100,10 @@ class AcknowledgementRequest {
 
 @Repository
 class ClosureRepository(private val dsl: DSLContext) {
-    fun find(tenantId: UUID, id: UUID): ClosureRow? = dsl.fetchOne("$SELECT where c.tenant_id = ? and c.id = ?", tenantId, id)?.let(::row)
+    fun find(tenantId: UUID, id: UUID): ClosureRow? = dsl.fetchOne("$SELECT where c.tenant_id = ? and c.id = ?${scope()}", tenantId, id)?.let(::row)
+
+    fun findOwn(tenantId: UUID, id: UUID, employeeId: UUID): ClosureRow? =
+        dsl.fetchOne("$SELECT where c.tenant_id = ? and c.id = ? and c.employee_id = ?", tenantId, id, employeeId)?.let(::row)
 
     fun latest(tenantId: UUID, employeeId: UUID, weekStart: LocalDate): ClosureRow? =
         dsl.fetchOne(
@@ -108,7 +112,7 @@ class ClosureRepository(private val dsl: DSLContext) {
         )?.let(::row)
 
     fun page(tenantId: UUID, weekStart: LocalDate, employeeId: UUID?, after: PageKey?, limit: Int): List<ClosureRow> {
-        val sql = StringBuilder("$SELECT where c.tenant_id = ? and c.week_start = cast(? as date)")
+        val sql = StringBuilder("$SELECT where c.tenant_id = ?${scope()} and c.week_start = cast(? as date)")
         val binds = mutableListOf<Any>(tenantId, weekStart.toString())
         if (employeeId != null) {
             sql.append(" and c.employee_id = ?")
@@ -123,6 +127,16 @@ class ClosureRepository(private val dsl: DSLContext) {
         binds += limit
         return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { row(it) }
     }
+
+    /** Un cierre no se recorta: se oculta si mezcla evidencia fuera del alcance. */
+    private fun scope(): String = SiteScope.current()?.let {
+        SiteScope.employee("c.employee_id", "c.tenant_id") +
+            " and not exists (select 1 from attendance_event scope_event join tenant scope_tenant on scope_tenant.id = scope_event.tenant_id " +
+            "where scope_event.tenant_id = c.tenant_id and scope_event.employee_id = c.employee_id " +
+            "and scope_event.observed_at >= ((c.week_start - 1)::timestamp at time zone scope_tenant.time_zone) " +
+            "and scope_event.observed_at < ((c.week_start + 8)::timestamp at time zone scope_tenant.time_zone) " +
+            "and not coalesce((true${SiteScope.clause("scope_event.site_id")}), false))"
+    } ?: ""
 
     fun insert(tenantId: UUID, id: UUID, employeeId: UUID, weekStart: LocalDate, version: Int, rules: RuleSetRow, totals: Totals, snapshot: String, hash: String, closedBy: UUID?) {
         dsl.execute(
@@ -342,7 +356,9 @@ class ClosureService(
     /** Quien sólo es trabajador ve su propio cierre; los de otras personas no existen para él. */
     @Transactional(readOnly = true)
     fun get(person: CurrentPerson, id: UUID): ClosureRow {
-        val row = closures.find(person.requireTenant(), id) ?: throw Problems.notFound()
+        val tenantId = person.requireTenant()
+        val row = closures.find(tenantId, id) ?: person.employeeId?.takeIf { Role.TRABAJADOR in person.roles }
+            ?.let { closures.findOwn(tenantId, id, it) } ?: throw Problems.notFound()
         val staff = person.roles.any { it in STAFF }
         if (!staff && row.employeeId != person.employeeId) throw Problems.notFound()
         return row

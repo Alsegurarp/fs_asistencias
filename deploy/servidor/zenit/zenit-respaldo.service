@@ -1,0 +1,11 @@
+[Unit]
+Description=Respaldo externo cifrado de Zenit
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/.fastsolution/zenit/secretos/respaldo.env
+ExecStart=/bin/bash /opt/.fastsolution/zenit/fuente/deploy/servidor/zenit/respaldo.sh
+TimeoutStartSec=4h

@@ -14,6 +14,9 @@ contradice al contrato, manda el contrato.
 
 | Si vas a… | Lee, en este orden |
 | --- | --- |
+| Preparar una demo sin conocimientos técnicos | [Guía del cliente](guia-demo-cliente.md) y [PDF paso a paso](../output/pdf/guia-demo-zenit-cliente.pdf) |
+| Entender el orden de uso y dónde falta terminar el producto | [Flujo del producto y pendientes](flujo-del-producto-y-pendientes.md) |
+| Consultar decisiones pendientes con el equipo | [Dudas del producto para el equipo](dudas-producto-para-equipo.md) |
 | Levantar el sistema en tu máquina | [Entorno local](entorno-local.md) y [Recorrido completo](recorrido-completo.md) |
 | Tener datos con qué probar el portal | El simulador de dispositivo, en [Entorno local](entorno-local.md#llenar-el-entorno-con-el-simulador-de-dispositivo) |
 | Construir la app Android | [Casos de uso](casos-de-uso.md), [Consumir el API](consumir-el-api.md) y [Guía de la app Android](guia-app-android.md) |
@@ -31,6 +34,7 @@ contradice al contrato, manda el contrato.
 
 | Documento | Qué responde |
 | --- | --- |
+| [Flujo del producto y pendientes](flujo-del-producto-y-pendientes.md) | Línea del tiempo de uso: alta, configuración, captura, revisión, cierre, acuse, CSV y expediente; funciones existentes y bloqueos en cada paso |
 | [Casos de uso](casos-de-uso.md) | Quién hace qué, con qué rutas y qué puede salir mal |
 | [Lógica de negocio](logica-de-negocio.md) | Las reglas que el servidor aplica y cuáles son provisionales |
 | [Flujos PlantUML](flujos/README.md) | 17 diagramas del estado actual, nacimiento de datos y cobertura de las 62 operaciones |

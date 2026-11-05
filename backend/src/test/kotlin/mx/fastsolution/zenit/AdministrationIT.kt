@@ -19,7 +19,7 @@ class AdministrationIT : WorkdayTestBase() {
         call("POST", "/api/v1/tenants/$id/reactivation", token, body)
 
     @Test
-    fun `the operator suspends a company for its people and its devices, and reactivating gives everything back`() {
+    fun `suspension blocks management and enrollments but keeps existing devices capturing`() {
         val c = company()
         val other = company()
         val rh = member(c, "rh")
@@ -54,8 +54,12 @@ class AdministrationIT : WorkdayTestBase() {
         assertProblem(403, "forbidden", call("GET", "/api/v1/tenant", c.adminToken))
         assertProblem(403, "forbidden", call("GET", "/api/v1/employees", rh.token))
         assertEquals(emptyList(), call("GET", "/api/v1/me", c.adminToken).list("roles"))
-        // ...para sus dispositivos...
-        assertProblem(401, "unauthorized", mark(phone, card, Instant.now().minusSeconds(300)))
+        // Los dispositivos ya vinculados conservan captura y sincronización.
+        assertEquals(201, mark(phone, card, Instant.now().minusSeconds(300)).status)
+        val renewed = call("POST", "/api/v1/device-sessions", assertion(phone), """{"appVersion":"0.1.0"}""")
+        assertEquals(201, renewed.status)
+        phone.session = renewed.at("sessionId")
+        phone.sequence = 0
         // ...y para los códigos que quedaron sin canjear.
         val key = newKey()
         assertProblem(410, "enrollment_gone", activation(pendingCode, key))
@@ -72,8 +76,8 @@ class AdministrationIT : WorkdayTestBase() {
         assertEquals(listOf("rh"), call("GET", "/api/v1/me", rh.token).list("roles"))
         assertEquals(201, mark(phone, card, Instant.now().minusSeconds(120)).status)
         assertEquals(201, activation(pendingCode, key).status)
-        // El marcaje rechazado durante la suspensión no se guardó.
-        assertEquals(2, count("select count(*) from attendance_event where tenant_id = ?", UUID.fromString(c.id)))
+        // El marcaje de la suspensión permanece registrado.
+        assertEquals(3, count("select count(*) from attendance_event where tenant_id = ?", UUID.fromString(c.id)))
 
         // Queda en la bitácora de la empresa, con el motivo, y no en la de la otra.
         val audit = call("GET", "/api/v1/audit-log?limit=200", c.adminToken)

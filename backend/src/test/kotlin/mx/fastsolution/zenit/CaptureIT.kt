@@ -271,7 +271,7 @@ class CaptureIT : CaptureTestBase() {
         val leavingCard = newCard(c, leavingId)
         val leaving = phone(c, leavingId)
         assertEquals(201, mark(leaving, leavingCard, ago(100)).status)
-        assertEquals(200, call("PATCH", "/api/v1/employees/$leavingId", c.adminToken, """{"status":"inactive"}""").status)
+        assertEquals(200, call("PATCH", "/api/v1/employees/$leavingId", c.adminToken, """{"status":"inactive","employmentEnd":"${java.time.LocalDate.now(java.time.ZoneId.of("America/Mexico_City"))}"}""").status)
         rejected("card_revoked", mark(leaving, leavingCard, ago(50)))
 
         // Nada de lo rechazado creó un marcaje, y cada rechazo quedó como rastro.

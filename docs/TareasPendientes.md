@@ -1,5 +1,114 @@
 # Tareas pendientes
 
+**Corte técnico vigente del 5 de noviembre de 2026:** las 17 tareas se
+atendieron en orden de necesidad y su [resultado individual y condición de
+cierre están en la bitácora](bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).
+El usuario sustituyó Q01 por **VPS/instancia privada por cliente**, S3
+administrado por desarrolladores y custodia del administrador con relevo
+documentado; SMTP/remitente se anexarán después. Q10–Q13 fueron aprobadas e
+implementadas: suspensión mantiene dispositivos existentes, baja con fecha
+revoca tarjeta/termina horario y supervisores operan en sedes asignadas.
+
+Árbol local candidato **0.18.0, V012/V013**: 85 unitarias backend, 101
+integraciones PostgreSQL, 216 pruebas web y 14 de identidad aprobadas; sin
+omitidas. Contratos y compilación válidos. Cinco imágenes reconstruidas y
+analizadas sin críticas/altas; no acredita el servidor público. Respaldo S3
+automatizado y autoprueba sin red preparados, recuperación local ensayada;
+falta bucket/timer y recuperación en el destino real. Cálculo diario y semanal
+incorporado sin duplicar extra; quedan descanso computable, condiciones
+contractuales/regímenes especiales y evidencia del acuse. No se habilitó
+captura física release ni purga Android. Permanecen **17 tareas abiertas total
+o parcialmente y seis P0**; código local de la tarea 5 completo, aceptación
+desplegada pendiente. [Guía para el cliente](guia-demo-cliente.md) y
+[PDF paso a paso](../output/pdf/guia-demo-zenit-cliente.pdf).
+
+Los apartados anteriores a este corte son antecedentes, con sus pruebas y
+límites originales. No sustituyen estas decisiones ni requieren volver a
+preguntar Q01/Q10–Q13.
+
+## Base legal para continuar — 5 de noviembre de 2026
+
+El usuario instruye contestar con la reforma de 40 horas y la LFT toda
+pregunta que éstas resuelvan. Las [respuestas legales por clave](revision-juridica-jornada-acuse.md#respuestas-legales-aplicables--5-de-noviembre-de-2026)
+son requisitos para el desarrollo: los mínimos normativos de Q06/Q07/Q14/Q15
+ya están documentados. No esperar una nueva elección de esos mínimos ni un
+dictamen genérico para avanzar. Quedan interpretación concreta de turnos y
+vigencias, condiciones del empleador, implementación, pruebas y aceptación.
+El cuestionario delimita también la parte legal de las demás preguntas.
+Se mantienen las 17 tareas y seis P0 hasta comprobar su cumplimiento.
+
+## Resoluciones para continuar — 5 de noviembre de 2026
+
+Q01–Q04 ya tienen [decisión registrada](decisiones-de-negocio.md#resoluciones-recibidas-el-5-de-noviembre-de-2026):
+producción exclusiva de Zenit con aislamiento lógico; copia externa diaria
+de 30 días, RPO 24 h/RTO 4 h (semanal descartada); contraseña por correo
+verificado, 12 códigos de Keycloak 26.8.1 para OTP y soporte con doble
+aprobación como último recurso; SMTP provisional y cuentas personales con
+MFA, turnos primario/respaldo y sin credenciales compartidas.
+
+El trabajo pendiente es proveer destino/custodia, automatizar y ensayar
+recuperación; provisionar SMTP/cuentas, asignar turnos/aprobadores y probar
+los flujos de acceso. Q23 conserva ratificación de SUP-025 y aceptación
+desplegada de la PR #26, ya integrada con motivo, cancelación y siete días
+hasta la vigencia. Permanecen 17 tareas abiertas y seis P0: estas respuestas
+no acreditan implementación, despliegue ni aceptación operativa nuevos.
+
+## Contexto para reanudar — 4 de noviembre de 2026
+
+Para consultar decisiones con el equipo, usar
+[el cuestionario consolidado Q01–Q25](dudas-producto-para-equipo.md):
+conserva las preguntas anteriores, descuenta lo ya aprobado y añade las
+precisiones documentadas de comida, ubicación y cierre automático.
+
+**Base verificada:** `main` y `origin/main` coinciden en `645174d`. Se
+incorporaron 16 commits por avance directo, sin conflictos. Las PR
+[#22](https://github.com/Alsegurarp/fs_asistencias/pull/22),
+[#23](https://github.com/Alsegurarp/fs_asistencias/pull/23),
+[#24](https://github.com/Alsegurarp/fs_asistencias/pull/24),
+[#25](https://github.com/Alsegurarp/fs_asistencias/pull/25) y
+[#26](https://github.com/Alsegurarp/fs_asistencias/pull/26) ya están integradas:
+E4/E5 y E6 técnica, aplicación de identidad al desplegar, medición de uso y
+accesibilidad automática, retiro de `backend/bin/` y cambio programado de
+comida. No hay que rehacer esas implementaciones ni abrir una PR para
+integrarlas. API 0.17.0, 75 operaciones y migraciones hasta V011.
+
+**Comprobado en esta sesión:** 72 pruebas unitarias del backend, 214 del
+portal y compilación web aprobadas; identidad estática: cuatro aprobadas y
+dos omitidas por requerir Keycloak real. Backend probado con Gradle local,
+JDK 25 y caché sin red; no fue una ejecución Docker. Integración PostgreSQL,
+identidad real, Android, servidor público y CI remoto no se revalidaron.
+Las cifras de 95 integraciones y 15 unitarias Android del 1 de noviembre
+son evidencia anterior, no resultados nuevos.
+
+**Estado local actualizado:** el motor Linux de Docker ya responde al
+consultarlo fuera del sandbox; cliente y servidor 29.9.2, Desktop 4.97.0.
+Los servicios de Zenit están detenidos (`Exited`); no se levantaron ni se
+repitió integración en esta comprobación. El
+[flujo del producto](flujo-del-producto-y-pendientes.md) sitúa lo existente
+y lo pendiente en su orden de uso. Los 29 cambios originales eran copias generadas de código
+existente: respaldo íntegro en `build/revision-local-20261104-092300/`, con
+`manifest.json`, `tracked.patch`, `backend-bin/` y `resultado.md`; también
+se guardaron en stash con el mensaje «Respaldo backend/bin antes de
+sincronizar main 2026-11-04». No aplicar ese stash sobre las fuentes:
+`backend/bin/` está ignorado y el editor puede regenerarlo. Git quedó limpio
+al terminar la sincronización; esta actualización sólo agrega documentación
+local, sin commit ni PR.
+
+| Siguiente trabajo | Dependencia y criterio para cerrarlo |
+| --- | --- |
+| Levantar un entorno aislado y repetir integración | Motor Docker comprobado; falta ejecutar backend/PostgreSQL e identidad real en el entorno de pruebas y registrar resultados de este commit sin sustituirlos por los del 1 de noviembre |
+| Validar el cambio programado de comida | Recorrer programación/cancelación en portal y comprobar aviso y aplicación sin red en teléfono real; la validación pública espera inventario, versión y accesos cuando se retome |
+| Completar accesibilidad manual | Teclado, lector de pantalla, zoom al 200 % y ancho de 320 px según [el alcance pendiente](accesibilidad.md#lo-que-falta-y-no-cubre-la-automatización) |
+| Aceptar recuperación y conservación E6 | La implementación técnica ya existe; faltan aceptación del responsable y decisiones Q07/Q14. No cerrar el alcance integral ni habilitar purga |
+| Resolver dependencias de los P0 y del piloto | Concretar respaldo externo/custodia, identidad/SMTP, criterios de jornada/acuse, tarjetas reales y producción administrada; conservar las preguntas y criterios del listado global |
+
+Se mantienen **17 tareas globales abiertas y seis P0**. La prueba pública
+con dos IP mediante datos móviles sigue asignada a otro desarrollador y
+diferida por el usuario. El usuario continuará los pendientes después de
+esta actualización; no se inicia otra tarea en esta sesión.
+[Evidencia y límites del corte](bitacora-trabajo.md#4-de-noviembre-de-2026--sincronización-local-y-contexto-para-continuar).
+Los cortes siguientes son históricos y no sustituyen este contexto.
+
 **Entrega posterior del 28 de octubre:** E4/E5 incorporadas a la rama
 `feat/expediente-e4-e6-qa`, junto con [E6 técnica](entrega-expediente-e6.md).
 [PR #22 abierta contra main](https://github.com/Alsegurarp/fs_asistencias/pull/22),
@@ -56,7 +165,7 @@ conciliar sus casillas E1–E3 con las PR #19/#20. No se publicó ese ajuste.
 | --- | --- |
 | 1 y 6 — Respaldo externo y producción | Destino/proveedor/región/cuenta, custodia y responsables; automatizar copia externa y ensayar recuperación completa en el destino. Los ensayos locales/CI no cierran operación |
 | 2 — Identidad operativa | Q03/Q04: recuperación de contraseña olvidada, SMTP/remitente, cuentas personales/OTP y recuperación del operador; A4 sólo implementa cambio obligatorio |
-| 3, 5 y 17 — Jornada, acuse y reglas | Dictamen/criterios y decisiones Q06/Q07/Q10–Q13; conservar históricos y aprobar casos esperados antes de cambiar cálculo o comportamiento |
+| 3, 5 y 17 — Jornada, acuse y reglas | Aplicar las respuestas legales documentadas de Q06/Q07/Q15 y preparar sus casos esperados; resolver interpretaciones concretas, condiciones del empleador y opciones operativas Q10–Q13, conservando históricos |
 | 4 — Tarjetas reales | Tecnología, tarjetas/teléfono físicos y custodia de claves; MF1K de ejemplo no implementa autenticación del backend |
 | 10 y cierre integral E6 — Retención | Q14 y conservación/recuperación de evidencia local; no elegir plazos ni purgar pendientes por inferencia |
 | 8, 9, 12, 13, 15 y 16 — Validación pública/usuario | Inventario, versión y accesos al ambiente cuando se retome. La prueba de dos IP con datos móviles sigue asignada a otro desarrollador por indicación del usuario |
@@ -186,18 +295,18 @@ piloto y siguiente trabajo técnico. **P2:** completar alcance y aceptación.
 | Orden | Prioridad | Tarea pendiente | Qué falta para completarla |
 | --- | --- | --- | --- |
 | 1 | P0 | Respaldo externo y recuperación completa | Modelo SaaS aprobado: backend/PostgreSQL compartidos con aislamiento lógico por empresa y respaldo externo de Zenit, cifrado y fuera del dominio de falla de producción. Perfiles de 50/300 empleados, cuatro marcajes diarios y un año consultable. Faltan destino, custodia, automatización y ensayo de recuperación; bases dedicadas sólo en modalidad Enterprise |
-| 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | A4 implementa y prueba el cambio obligatorio para cuentas activas vinculadas; cliente técnico preparado sólo en local. Falta provisión/aceptación pública, recuperación de acceso olvidado, cuentas personales, SMTP y recuperación del operador |
+| 2 | P0 | Identidad operativa, cuentas personales, OTP y SMTP | A4 implementa el cambio obligatorio y la PR #23 integra la aplicación de clientes/flujos al desplegar un realm existente. Falta verificar la configuración efectiva pública, recuperación de acceso olvidado, cuentas personales, SMTP y recuperación del operador |
 | 3 | P0 | Jornada y evidencia del acuse | Obtener dictamen profesional y criterios aprobados; implementar reglas, casos esperados y evidencia versionada conservando históricos |
-| 4 | P0 | Captura autenticada con tarjetas reales | Android ya incluye lectura, carga y borrado de credenciales MF1K de ejemplo. Falta validación física y autenticación integrada de asistencia: el backend sólo verifica el esquema simulado; definir tecnología y custodia de claves |
+| 4 | P0 | Captura autenticada con tarjetas reales | Android incluye herramientas MF1K de ejemplo, pero `AttendanceRepository.capture()` exige debug y bloquea captura en release. Falta integrar autenticación real con backend, definir tecnología/custodia de claves y validar con hardware; quitar la comprobación debug por sí solo no completa esta tarea |
 | 5 | P0 | Suspensión, baja, supervisor y tipo de marcaje | Elegir las reglas propuestas y después implementar sus efectos sobre permisos, captura e históricos |
 | 6 | P0 | Producción administrada para datos reales | El modelo está aprobado: producción exclusiva de Zenit bajo control de fastSolution y aislamiento lógico por empresa. Faltan proveedor, región, cuenta, contratos, respaldo externo, restauración y pruebas. El servidor compartido conserva sólo datos ficticios |
 | 8 | P1 | Dirección real y protocolo entre proxies | Comprobar que dos IP públicas reales conservan cuotas independientes en la misma ventana. Las pruebas públicas de HTTPS y cabeceras falsas ya pasaron |
 | 9 | P1 | Recorridos del portal con sesión real | A5 local aprobado el 21; horarios/importación y permisos en navegador local 17/17 el 22. Faltan inventario/versión, recorrido público y aceptación del usuario; API HTTPS del 19 conserva su evidencia |
 | 10 | P1 | Retención de sobres y recibos Android | Análisis de Room, acuses y evidencia en servidor entregado el 22. Definir plazo y conservación en Q14; después implementar purga acotada con protección de pendientes |
 | 12 | P1 | Imágenes y correcciones del servidor | Obtener IDs y versión desplegada mediante el interlocutor SSH, analizar esas imágenes, desplegar correcciones y verificar públicamente. El análisis local y el de CI ya aprobaron |
-| 13 | P2 | Configuración de empresa y dispositivos en portal | Pantallas y permisos aceptados técnicamente en A5 local el 21. Faltan inventario/despliegue y aceptación pública y del usuario |
-| 15 | P2 | Semana y acuse del trabajador | A2/A3, A5 local e instrumentación aprobados. Recorrido visual Android contra backend real local aprobado el 21, con objeción, recuperación, reapertura y conformidad. Faltan aceptación pública/del usuario y expediente; evidencia/reglas dependen del orden 3 |
-| 16 | P2 | Pantallas del operador del servicio | A1 y sesión real del operador comprobados en A5 local. Faltan aceptación pública/del usuario y suspensión, que depende de la decisión del orden 5 |
+| 13 | P2 | Configuración de empresa y dispositivos en portal | Pantallas y permisos aceptados técnicamente en A5 local el 21; cambio programado de comida integrado por PR #26. Faltan validación manual del cambio, inventario/despliegue y aceptación pública y del usuario |
+| 15 | P2 | Semana y acuse del trabajador | A2/A3, A5 local e instrumentación aprobados. Recorridos Android del 21 y 28 conservan sus actas y límites; E1–E5 y E6 técnica integradas. Faltan aceptación pública/del usuario y cierre integral E6/Q07/Q14; evidencia/reglas dependen del orden 3 |
+| 16 | P2 | Pantallas del operador del servicio | A1 y sesión real del operador comprobados en A5 local; uso mensual por empresa integrado por PR #24. Faltan aceptación pública/del usuario y suspensión, que depende de la decisión del orden 5 |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias | Aprobar criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar |
 | 18 | P2 | Carga, continuidad y operación | Línea base local 50/300 del 22: 1,400 marcajes, 350 cierres y seis exportes verificados. Faltan objetivos Q19, carga sostenida/destino, continuidad, DNS y renovación real de certificados |
 | 19 | P2 | Conector y formato de nómina | Identificar sistema y formato del primer cliente; implementar sincronización y obtener aceptación del archivo exportado |

@@ -136,6 +136,11 @@ class CardRepository(private val dsl: DSLContext) {
             "select id, card_id from card_assignment where tenant_id = ? and employee_id = ? and until is null", tenantId, employeeId,
         )?.let { OpenAssignment(it.get("id", UUID::class.java), it.get("card_id", UUID::class.java)) }
 
+    fun holderAt(tenantId: UUID, cardId: UUID, at: OffsetDateTime): UUID? =
+        dsl.fetchOne("select employee_id from card_assignment where tenant_id = ? and card_id = ? " +
+            "and since <= cast(? as timestamptz) and until >= cast(? as timestamptz) order by since desc limit 1",
+            tenantId, cardId, at, at)?.get("employee_id", UUID::class.java)
+
     fun closeAssignmentOfCard(tenantId: UUID, cardId: UUID) {
         dsl.execute("update card_assignment set until = now() where tenant_id = ? and card_id = ? and until is null", tenantId, cardId)
     }
@@ -228,6 +233,7 @@ class CardService(
         // Los cambios de tarjetas de una empresa pasan de uno en uno.
         tenants.lock(tenantId)
         val card = cards.find(tenantId, cardId) ?: throw Problems.notFound()
+        if (!employees.lock(tenantId, employeeId!!)) throw Problems.validation("employeeId", "employee_not_found", "La persona no existe.")
         val employee = employees.find(tenantId, employeeId!!)
             ?: throw Problems.validation("employeeId", "employee_not_found", "La persona no existe.")
         if (employee.status != "active") throw Problems.conflict("employee_inactive", "La persona está dada de baja.")
@@ -263,6 +269,7 @@ class CardService(
 
         tenants.lock(tenantId)
         val card = cards.find(tenantId, cardId) ?: throw Problems.notFound()
+        card.employeeId?.let { employees.lock(tenantId, it) }
         if (card.status !in REVOCABLE) {
             throw Problems.conflict("card_not_revocable", "La tarjeta ya no está en uso ni en inventario.")
         }

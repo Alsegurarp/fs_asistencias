@@ -3,3 +3,5 @@
 *.sh text eol=lf
 # Los ejemplos de expediente tienen huellas sobre sus bytes exactos.
 contracts/examples/dossier-v1/* -text
+# El PDF debe conservar sus bytes y tablas de offsets al clonarse en Windows.
+*.pdf binary

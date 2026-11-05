@@ -7,6 +7,7 @@ import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.identity.SiteScope
 import mx.fastsolution.zenit.jobs.JobHandler
 import mx.fastsolution.zenit.jobs.JobProperties
 import mx.fastsolution.zenit.jobs.JobRepository
@@ -112,7 +113,7 @@ class WeekClosureRunRequest {
 
 @Repository
 class ClosureRunRepository(private val dsl: DSLContext) {
-    fun find(tenantId: UUID, id: UUID): RunRow? = dsl.fetchOne("$SELECT where tenant_id = ? and id = ?", tenantId, id)?.let(::row)
+    fun find(tenantId: UUID, id: UUID): RunRow? = dsl.fetchOne("$SELECT where tenant_id = ? and id = ?${SiteScope.clause("site_id")}", tenantId, id)?.let(::row)
 
     fun recordBlocked(tenantId: UUID, runId: UUID, employeeId: UUID, outcome: CloseOutcome) {
         if (outcome is CloseOutcome.Blocked) {
@@ -128,7 +129,12 @@ class ClosureRunRepository(private val dsl: DSLContext) {
     }
 
     fun blocked(tenantId: UUID, runId: UUID, after: PageKey?, limit: Int): List<RunBlockedRow> {
-        val sql = StringBuilder("select employee_id, reason, incident_ids, created_at from week_closure_run_blocked where tenant_id = ? and run_id = ?")
+        val sql = StringBuilder("select b.employee_id, b.reason, b.incident_ids, b.created_at from week_closure_run_blocked b " +
+            "where b.tenant_id = ? and b.run_id = ?${SiteScope.employee("b.employee_id", "b.tenant_id")}")
+        if (SiteScope.current() != null) sql.append(
+            " and not exists (select 1 from incident scope_incident where scope_incident.tenant_id = b.tenant_id " +
+                "and scope_incident.id = any(b.incident_ids) and not coalesce((true${SiteScope.clause("scope_incident.site_id")}), false))",
+        )
         val binds = mutableListOf<Any>(tenantId, runId)
         if (after != null) {
             sql.append(" and (created_at, employee_id) > (cast(? as timestamptz), cast(? as uuid))")
@@ -152,7 +158,7 @@ class ClosureRunRepository(private val dsl: DSLContext) {
         )?.let(::row)
 
     fun page(tenantId: UUID, weekStart: LocalDate?, after: PageKey?, limit: Int): List<RunRow> {
-        val sql = StringBuilder("$SELECT where tenant_id = ?")
+        val sql = StringBuilder("$SELECT where tenant_id = ?${SiteScope.clause("site_id")}")
         val binds = mutableListOf<Any>(tenantId)
         if (weekStart != null) {
             sql.append(" and week_start = cast(? as date)")

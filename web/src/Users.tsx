@@ -84,6 +84,8 @@ function UserForm({ action, me, onClose }: { action: Exclude<Action, { kind: 'pa
   const user = 'user' in action ? action.user : undefined
   const [selected, setSelected] = useState(user?.roles || [])
   const [employeeId, setEmployee] = useState(user?.employeeId || '')
+  const [siteIds, setSiteIds] = useState(user?.siteIds || [])
+  const [siteId, setSiteId] = useState('')
   const [disabled, setDisabled] = useState(user?.status === 'disabled')
   const [confirmed, setConfirmed] = useState(false)
   const [error, setError] = useState<Error | null>(null)
@@ -105,10 +107,11 @@ function UserForm({ action, me, onClose }: { action: Exclude<Action, { kind: 'pa
     const displayName = String(data.get('displayName') || '').trim()
     if (user?.displayName && !displayName) { setError(new Error('El nombre existente no puede quedar vacío.')); return }
     if (action.kind === 'invite') {
-      save.mutate({ path: '/users', method: 'POST', body: { email: String(data.get('email') || '').trim().toLowerCase(), displayName, roles: selected, ...(employeeId ? { employeeId } : {}) } })
+      save.mutate({ path: '/users', method: 'POST', body: { email: String(data.get('email') || '').trim().toLowerCase(), displayName, roles: selected, ...(employeeId ? { employeeId } : {}), ...(siteIds.length ? { siteIds } : {}) } })
     } else {
       const body = { ...(displayName !== user!.displayName ? { displayName } : {}), ...(selected.slice().sort().join(',') !== user!.roles.slice().sort().join(',') ? { roles: selected } : {}),
-        ...(disabled !== (user!.status === 'disabled') ? { disabled } : {}), ...(employeeId !== (user!.employeeId || '') ? { employeeId: employeeId || null } : {}) }
+        ...(disabled !== (user!.status === 'disabled') ? { disabled } : {}), ...(employeeId !== (user!.employeeId || '') ? { employeeId: employeeId || null } : {}),
+        ...(siteIds.slice().sort().join(',') !== (user!.siteIds || []).slice().sort().join(',') ? { siteIds } : {}) }
       if (!Object.keys(body).length) { setError(new Error('Cambia al menos un campo.')); return }
       save.mutate({ path: `/users/${user!.id}`, method: 'PATCH', body })
     }
@@ -125,6 +128,12 @@ function UserForm({ action, me, onClose }: { action: Exclude<Action, { kind: 'pa
           <TextField name="displayName" label="Nombre visible" defaultValue={user?.displayName || ''} disabled={save.isPending} slotProps={{ htmlInput: { maxLength: 120 } }} />
           <Typography id="user-roles-label">Roles (selecciona al menos uno)</Typography>
           <FormGroup aria-labelledby="user-roles-label">{Object.entries(roles).map(([role, label]) => <FormControlLabel key={role} label={label} control={<Checkbox name="roles" value={role} checked={selected.includes(role)} disabled={save.isPending} onChange={(_, checked) => setSelected(current => checked ? [...current, role] : current.filter(value => value !== role))} />} />)}</FormGroup>
+          {selected.includes('supervisor') && <>
+            <Alert severity="info">Supervisión consulta sólo las sedes asignadas. Sin sedes no obtiene registros. Un rol adicional de Administración, RH o Auditoría conserva su alcance de empresa.</Alert>
+            <EntitySelect kind="sites" name="supervisorSiteId" label="Sede para supervisión" value={siteId} onChange={setSiteId} disabled={save.isPending} emptyLabel="Seleccionar sede" />
+            <Button disabled={save.isPending || !siteId || siteIds.includes(siteId) || siteIds.length >= 100} onClick={() => { setSiteIds(current => [...current, siteId]); setSiteId('') }}>Agregar sede de supervisión</Button>
+            {siteIds.map(id => <Stack key={id} direction="row" spacing={1} sx={{ alignItems: 'center' }}><RecordName kind="site" id={id} me={me} /><Button disabled={save.isPending} onClick={() => setSiteIds(current => current.filter(value => value !== id))}>Quitar sede {id}</Button></Stack>)}
+          </>}
           <EntitySelect kind="employees" name="userEmployeeId" label="Empleado vinculado (opcional)" value={employeeId} onChange={setEmployee} disabled={save.isPending} emptyLabel="Sin empleado vinculado" />
           <Typography>El vínculo identifica al empleado para el rol Trabajador; los roles se asignan por separado.</Typography>
           {user && <>

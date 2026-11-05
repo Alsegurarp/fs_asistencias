@@ -20,11 +20,15 @@ data class CurrentPerson(
     val roles: Set<Role>,
     /** Su fila del padrón, cuando la persona también es trabajadora. */
     val employeeId: UUID? = null,
+    val siteIds: Set<UUID> = emptySet(),
 ) : AuthenticatedPrincipal {
     override fun getName(): String = subject
 
     /** Con este identificador queda en la bitácora. */
     val actorId: String get() = userId?.toString() ?: subject
+
+    val siteLimited: Boolean get() = Role.SUPERVISOR in roles &&
+        roles.none { it in setOf(Role.ADMIN_EMPRESA, Role.RH) }
 
     /** Las rutas de empresa ya exigen un rol de empresa; esto lo vuelve a exigir. */
     fun requireTenant(): UUID = tenantId ?: throw Problems.forbidden()

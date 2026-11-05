@@ -37,7 +37,7 @@ datos, tabla por tabla.
 | Jornada | `attendance` | No se guarda | Lo trabajado por una persona, calculado de sus marcajes |
 | Tramo | `segment` | Dentro del cierre | Intervalo de trabajo o de descanso entre dos marcajes |
 | Reglas laborales | `rule set` | `rule_set` | Los topes de jornada, con vigencia y fuente |
-| Tiempo extraordinario | `overtimeMinutes` | `overtime_minutes` | Lo que excede el tope semanal ordinario |
+| Tiempo extraordinario | `overtimeMinutes` | `overtime_minutes` | Exceso diario según tipo de jornada más exceso semanal, sin duplicar minutos |
 | Cierre | `week closure` | `week_closure` | El cálculo de la semana de una persona, congelado |
 | Corrida de cierre | `week closure run` | `week_closure_run` | Trabajo que cierra la semana de toda la empresa o de una sede, persona por persona |
 | Cierre programado | `autoCloseAfterHours` | `tenant.auto_close_after_hours` | Que el sistema cierre la semana por su cuenta, cierto número de horas después de que termina |
