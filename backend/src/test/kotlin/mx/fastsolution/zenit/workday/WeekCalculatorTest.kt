@@ -204,4 +204,83 @@ class WeekCalculatorTest {
         assertTrue(result.alerts.any { it.code == "weekly_total_overtime_limit_exceeded" })
         assertEquals(1, result.alerts.count { it.code == "daily_overtime_limit_exceeded" })
     }
+
+    @Test
+    fun `a shift starting exactly at the week boundary belongs only to the new week`() {
+        val marks = listOf(mark(0, "00:00", "clock_in"), mark(0, "06:00", "clock_out"))
+
+        val previous = WeekCalculator.calculate(marks, emptyList(), "not_considered", monday.minusDays(7), zone, limits)
+        assertTrue(previous.segments.isEmpty())
+        assertEquals(Totals(360, 0, 360, 0), week(marks).totals)
+        assertFalse(week(marks).hasOpenSegment)
+    }
+
+    @Test
+    fun `a shift ending exactly at the week boundary does not open a shift in the new week`() {
+        val marks = listOf(mark(6, "20:00", "clock_in"), mark(7, "00:00", "clock_out"))
+
+        assertEquals(Totals(240, 0, 240, 0), week(marks).totals)
+        val next = WeekCalculator.calculate(marks, emptyList(), "not_considered", monday.plusDays(7), zone, limits)
+        assertTrue(next.segments.isEmpty())
+        assertFalse(next.hasOpenSegment)
+        assertEquals(Totals(0, 0, 0, 0), next.totals)
+    }
+
+    @Test
+    fun `new year does not split a night shift or move its daily limit to January`() {
+        val start = LocalDate.parse("2026-12-28")
+        val marks = listOf(
+            RawMark(UUID.randomUUID(), OffsetDateTime.parse("2026-12-31T20:00:00-06:00"), "clock_in"),
+            RawMark(UUID.randomUUID(), OffsetDateTime.parse("2027-01-01T04:00:00-06:00"), "clock_out"),
+        )
+        val result = WeekCalculator.calculate(marks, emptyList(), "not_considered", start, zone, limits)
+
+        assertEquals(start, WeekCalculator.weekStart(LocalDate.parse("2027-01-01"), "monday"))
+        assertEquals(Totals(480, 0, 420, 60), result.totals)
+        assertEquals(1, result.segments.size)
+        assertTrue(result.alerts.first { it.code == "daily_ordinary_limit_exceeded" }.message.contains("2026-12-31"))
+    }
+
+    @Test
+    fun `a cross year week uses the supplied rule without changing a previous result`() {
+        val start = LocalDate.parse("2026-12-28")
+        val marks = (0..5).flatMap { day ->
+            val date = start.plusDays(day.toLong())
+            listOf(
+                RawMark(UUID.randomUUID(), date.atTime(8, 0).atZone(zone).toOffsetDateTime(), "clock_in"),
+                RawMark(UUID.randomUUID(), date.atTime(16, 0).atZone(zone).toOffsetDateTime(), "clock_out"),
+            )
+        }
+        val original = WeekCalculator.calculate(marks, emptyList(), "not_considered", start, zone, limits)
+        val reduced = WeekCalculator.calculate(marks, emptyList(), "not_considered", start, zone,
+            limits.copy(weeklyOrdinaryMaxMinutes = 2760))
+
+        assertEquals(Totals(2880, 0, 2880, 0), original.totals)
+        assertEquals(Totals(2880, 0, 2760, 120), reduced.totals)
+        assertEquals(original.segments, reduced.segments)
+        assertEquals(original, WeekCalculator.calculate(marks, emptyList(), "not_considered", start, zone, limits))
+    }
+
+    @Test
+    fun `a night crossing the spring clock change counts elapsed hours instead of wall hours`() {
+        val border = ZoneId.of("America/Tijuana")
+        val start = LocalDate.parse("2026-03-07").atTime(20, 0).atZone(border).toOffsetDateTime()
+        val end = LocalDate.parse("2026-03-08").atTime(6, 0).atZone(border).toOffsetDateTime()
+        val result = WeekCalculator.calculate(
+            listOf(RawMark(UUID.randomUUID(), start, "clock_in"), RawMark(UUID.randomUUID(), end, "clock_out")),
+            emptyList(), "not_considered", LocalDate.parse("2026-03-02"), border, limits,
+        )
+
+        assertEquals(Totals(540, 0, 420, 120), result.totals)
+        assertFalse(result.hasOpenSegment)
+    }
+
+    @Test
+    fun `different offsets representing the same company times do not change night classification`() {
+        val marks = listOf(mark(0, "16:00", "clock_in"), mark(0, "23:30", "clock_out"))
+        val utc = marks.map { it.copy(at = it.at.withOffsetSameInstant(java.time.ZoneOffset.UTC)) }
+
+        assertEquals(week(marks), week(utc))
+        assertEquals(Totals(450, 0, 420, 30), week(utc).totals)
+    }
 }

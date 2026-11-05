@@ -6,6 +6,83 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 5 de noviembre de 2026 — Continuación de jornada, evidencia y accesibilidad
+
+Por instrucción del usuario se continuaron los frentes que no requieren
+proveedor, SMTP ni tarjetas. Fetch correcto y base `origin/main/2ab9745`;
+`main` local actualizado por avance directo y rama de trabajo
+`fix/jornada-evidencia-accesibilidad`. Se conservaron las dos notas locales
+de la verificación anterior. No se hizo commit, push, PR ni despliegue.
+
+**Jornada:** seis pruebas nuevas en `WeekCalculatorTest`: inicio y fin
+exactos de semana, turno que cruza Año Nuevo sin dividir su jornada, semana
+con distinta regla suministrada conservando el resultado previo, adelanto
+del reloj en Tijuana y equivalencia UTC/zona local. Las 21 del calculador
+y después las 91 unitarias backend aprobaron, sin fallos ni omisiones. No
+se modificó producción del calculador, migraciones ni reglas vigentes.
+El caso de año no decide qué regla debe elegir el servicio para esa semana.
+
+**Evidencia:** revisión de Room/DeviceStore, captura/recibos, acuse/consulta
+semanal y columnas/esquema/verificador del expediente. Se añadió la
+[matriz de recuperación](retencion-android.md#contraste-de-evidencia-para-continuar--5-de-noviembre-de-2026)
+con diferencias concretas y siguiente desarrollo delimitado. Un rechazo
+sin `echoKey` ni siquiera genera fila; copiar bases cifradas tampoco prueba
+recuperación sin la clave Keystore. Se conserva la protección de pendientes.
+No se implementó custodia nueva ni purga, ni se inventó el texto del acuse.
+
+**Portal:** [QA manual parcial](accesibilidad.md#revisión-manual-parcial--5-de-noviembre-de-2026)
+en Zen/Windows con componentes reales y respuestas simuladas. Un único
+cambio de producción: `overflowWrap: 'anywhere'` en el párrafo de encabezados
+CSV, cuyo desbordamiento y corrección se comprobaron a 320 px. El selector
+de archivos sí abre con teclado; se descartó el cambio provisional de ese
+control tras observar el diálogo nativo retrasado. No queda ese cambio ni
+su prueba provisional en el árbol final.
+
+**Validación final:** 91 unitarias backend y 216 pruebas web aprobadas, sin
+fallos ni omisiones; las 21 del calculador incluyen los seis casos nuevos.
+Se repitió la suite web completa sobre el árbol final después de restaurar
+el selector original. TypeScript, build normal de Vite y `git diff --check`
+aprobaron; persiste el aviso de paquete >500 kB.
+
+Entorno: JDK 25/Gradle 9.8.0 sin red, caché de dependencias anterior en lectura
+y caché de escritura dentro de `build/gradle-local`; Kotlin en proceso para
+evitar escribir fuera del workspace. Vitest en threads con configuración
+temporal de resolución/Oxc instalado para sortear `spawn EPERM` de Vite 7;
+no se cambió configuración del producto ni se agregaron dependencias.
+Informes temporales en `build/continuacion-qa/`. Fixture web retirada y
+servidor temporal detenido al finalizar. No se tocaron servicios ajenos.
+
+**Límites:** Docker sigue denegando acceso; no se repitieron PostgreSQL,
+identidad ni hardware. No se ejecutó lector de pantalla ni aceptación
+pública; las pantallas con datos simulados no prueban permisos/operaciones
+del backend. Issue #18 sin modificaciones remotas. Permanecen 17 tareas
+globales abiertas total o parcialmente y seis P0, con sus dependencias.
+
+## 5 de noviembre de 2026 — Verificación de pendientes después de integrar la PR #27
+
+Se contrastaron los pendientes con código, informes locales y GitHub.
+La [PR #27](https://github.com/Alsegurarp/fs_asistencias/pull/27) ya está
+integrada en `main/2ab9745` desde las 14:00 de Ciudad de México. Los cuatro
+trabajos del [CI de main](https://github.com/Alsegurarp/fs_asistencias/actions/runs/42099223401)
+aprobaron: backend/identidad, portal, Android y contrato/seguridad/respaldo.
+Esto sustituye el estado «CI por concluir» de la entrada de publicación;
+no acredita despliegue, hardware ni aceptación operativa.
+
+Antes de editar documentación, Git estaba limpio en la rama de #27,
+`3560d4f`; `main` local seguía en `645174d`. No se sincronizaron ramas ni se
+modificó código. Docker deniega acceso a la tubería desde esta sesión;
+no se declara detenido ni se infiere el estado de sus servicios. Se
+recontaron 186 pruebas backend existentes sin fallos/errores/omisiones y se
+consultaron los informes anteriores de 216 web, 14 identidad y S3 simulado;
+no se ejecutaron de nuevo.
+
+El [contexto para continuar](TareasPendientes.md#verificación-para-continuar--5-de-noviembre-de-2026-posterior-a-la-pr-27)
+ordena los 17 pendientes y sus dependencias, con seis P0. Ya no corresponde
+implementar Q10–Q13, códigos de recuperación ni automatización S3 otra vez.
+La issue #18 sigue abierta y desactualizada en GitHub; se registra su
+conciliación pendiente sin modificarla. SMTP y prueba de dos IP conservan
+el aplazamiento del usuario. No se desplegó, purgó ni habilitó captura release.
+
 ## 5 de noviembre de 2026 — PR #27 de jornada, operación y guía de demo
 
 Por instrucción del usuario se abrió la

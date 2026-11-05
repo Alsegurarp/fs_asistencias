@@ -1,5 +1,45 @@
 # Retención Android: análisis y alcance mínimo
 
+## Contraste de evidencia para continuar — 5 de noviembre de 2026
+
+Revisión sobre `main/2ab9745`, después de integrar la PR #27. No se añade
+purga ni se cambia la custodia. El archivo actual permite recuperar datos
+del servidor, pero no reproduce todo lo que conserva el teléfono.
+
+| Evidencia | Android | Servidor / expediente formato 1 | Falta para reemplazar la copia local |
+| --- | --- | --- | --- |
+| Marcaje aceptado o con incidencia | Sobre JWS original y recibo cifrados en Room | `attendance_event.envelope` y `payload_sha256`; ubicación, dispositivo/sesión y referencias incluidos en expediente | Comprobar recuperación del sobre exacto y sus relaciones. No confundir la consulta administrativa con restaurar el recibo local |
+| Recibo aceptado | Objeto JSON recibido, serializado y cifrado | El reenvío reconstruye el recibo con los nombres actuales del padrón/sede; no hay colección de recibos originales | Decidir si se exige el recibo original o una reconstrucción identificada como tal, y demostrar su disponibilidad sin credencial vigente del dispositivo anterior |
+| Rechazo con clave identificable | Sobre original y recibo, incluidos código/mensaje | `attendance_rejection` conserva clave, dispositivo, tiempos, hash y motivo; el expediente incluye esas columnas, sin sobre original | Archivo recuperable del sobre rechazado y su enlace al recibo. El hash no permite reconstruir el contenido |
+| Rechazo sin clave identificable | El lote puede asociar el recibo de clave cero por posición y conservarlo con el sobre local | `CaptureProcessor.process` sólo inserta rechazo si puede obtener `echoKey`; sin clave no se conserva esa fila | Resolver también este caso; añadir sólo una columna al rechazo existente no archivaría los rechazos sin fila |
+| Acuse de cierre | `DeviceStore` cifra la respuesta bajo `ack:<deviceId>:<closureId>` | `closure_acknowledgement` conserva tipo, nota, actor, fecha y huella; expediente conserva todas las versiones retenidas | Recuperación histórica comprobada. `/me/attendance` devuelve el cierre vigente, no todos los acuses que pudieron quedar en el teléfono |
+| Documento/texto mostrado al acusar | La copia local guarda la respuesta del API, no una versión del texto de la interfaz | No hay texto/documento versionado en el registro del acuse ni en el expediente | Instrumentar su conservación para los acuses futuros tras definir el documento; no inventar texto para acuses anteriores |
+| Cierre y reapertura | Consulta/copia correspondiente a la versión recibida | Snapshot textual, hash, versión de regla, totales y reapertura conservados en `week_closure`; el verificador comprueba la huella del snapshot | Aceptación de consulta fuera de Zenit con una entrega real y anclajes obtenidos por canal confiable |
+
+Referencias contrastadas: [cola y transición transaccional](../android/app/src/main/kotlin/mx/fastsolution/zenit/mobile/data/AttendanceRepository.kt),
+[DAO sin borrado](../android/app/src/main/kotlin/mx/fastsolution/zenit/mobile/data/PendingAttendanceDao.kt),
+[acuse local](../android/app/src/main/kotlin/mx/fastsolution/zenit/mobile/data/DeviceStore.kt),
+[captura y recibos](../backend/src/main/kotlin/mx/fastsolution/zenit/capture/Capture.kt),
+[consulta semanal](../backend/src/main/kotlin/mx/fastsolution/zenit/workday/Weeks.kt),
+[cierre y huella del acuse](../backend/src/main/kotlin/mx/fastsolution/zenit/workday/Closures.kt),
+[columnas y límites del archivo](../backend/src/main/kotlin/mx/fastsolution/zenit/dossier/DossierArchive.kt)
+y [verificador independiente](../backend/src/dossierVerifier/kotlin/mx/fastsolution/zenit/dossier/DossierVerifier.kt).
+
+**Siguiente desarrollo delimitado:** acordar el destino recuperable de sobres
+rechazados, incluidos los que carecen de clave, y la fidelidad requerida del
+recibo; definir el documento del acuse y guardar su versión para registros
+nuevos. Después probar recuperación con cierre reabierto, acuse antiguo,
+dispositivo revocado y acceso sin Zenit. Sólo tras esa garantía y la definición
+de disponibilidad de duplicados puede implementarse purga acotada. Los tres
+estados pendientes siguen excluidos; no se modifica ni migra Room por esta
+revisión. Las copias cifradas necesitan además su clave del Keystore: copiar
+los archivos de la app no demuestra que otra instalación pueda descifrarlos.
+
+La revisión es de código y formato. Las pruebas de archivo/verificador se
+ejecutan con fixtures ficticias; no acredita extracción de un teléfono,
+restauración Android ni aceptación integral E6. Los apartados siguientes
+conservan sus fechas y contexto originales.
+
 **Ratificación del 5 de noviembre:** Q14 se contesta con los plazos de la
 legislación aplicable documentados en la [revisión legal vigente](revision-juridica-jornada-acuse.md#respuestas-legales-aplicables--5-de-noviembre-de-2026).
 No requiere elegir otra vez el mínimo de conservación laboral. Quedan

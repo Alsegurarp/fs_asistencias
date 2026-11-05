@@ -34,7 +34,7 @@ export function Imports({ me }: { me: Me }) {
     <Typography variant="h5">Importación de empleados</Typography>
     <Alert severity="info">CSV en UTF-8, hasta 1 MB y 5.000 filas. Primero valida; después confirma la aplicación. Los identificadores existentes actualizan nombre, sede y fecha de alta; no se eliminan empleados ni se cambia su estado.</Alert>
     <Button component="a" href="/plantilla-empleados.csv" download>Descargar CSV de ejemplo</Button>
-    <Typography>Encabezados: external_id,display_name,employment_start,site_name. Usa fechas AAAA-MM-DD; la sede es su nombre exacto y debe estar activa. Sin sede en el CSV, el empleado queda sin sede, incluso si ya tenía una.</Typography>
+    <Typography sx={{ overflowWrap: 'anywhere' }}>Encabezados: external_id,display_name,employment_start,site_name. Usa fechas AAAA-MM-DD; la sede es su nombre exacto y debe estar activa. Sin sede en el CSV, el empleado queda sin sede, incluso si ya tenía una.</Typography>
     <Button component="label" variant="outlined" disabled={upload.isPending}>Seleccionar CSV<input aria-label="Archivo CSV" type="file" accept=".csv,text/csv" hidden disabled={upload.isPending} onChange={event => { selectFile(event.target.files?.[0] || null); event.target.value = '' }} /></Button>
     {file && <Typography>Archivo: {file.name} · {file.size} bytes</Typography>}
     <ErrorNotice error={error} /><ErrorNotice error={upload.error} />

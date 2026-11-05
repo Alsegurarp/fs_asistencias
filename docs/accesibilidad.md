@@ -4,6 +4,38 @@ El portal debe poder usarse con teclado, tener contraste suficiente y no
 depender sólo del color para decir algo. La referencia es WCAG 2.1, nivel AA.
 Este documento dice qué se comprueba solo, qué se revisó a mano y qué falta.
 
+## Revisión manual parcial — 5 de noviembre de 2026
+
+Sobre la base integrada `2ab9745`, navegador Zen en Windows y componentes
+reales del portal con cuentas/datos ficticios y respuestas del API simuladas
+en una fixture local. No se usaron cuentas, tokens ni registros de producción;
+no acredita sesión OIDC, permisos del backend ni el ambiente publicado.
+
+- Alta de sede: apertura del diálogo, foco visible, recorrido con Tab,
+  envío con teclado, error simulado visible conservando los campos y cierre
+  con Escape. Horarios y cierre de empleados: apertura y salida con Escape;
+  no se ejecutó una operación real.
+- Pestañas: navegación con flechas y Enter entre empleados, horarios,
+  importación, incidencias, cierres, exportes y expediente. Se inspeccionaron
+  sus controles/estados disponibles; no los detalles de registros ausentes.
+- Ancho 320 CSS px: inspección de sedes, formulario de horario e importación.
+  La línea de encabezados CSV se desbordaba por no tener espacios. Se añadió
+  `overflowWrap: 'anywhere'` en ese párrafo y se verificó visualmente que se
+  parte dentro del ancho, sin cambiar el texto que se copia.
+- Zoom 200 %: inspección del contenido de importación; luego se restauró
+  el zoom y se cerró el modo adaptable y la pestaña de QA.
+- El selector CSV sí abre desde el teclado. Una captura inicial no mostraba
+  todavía su diálogo nativo; la observación posterior y la implementación
+  de MUI confirman la activación. Se conserva el control original.
+
+La compilación y TypeScript aprobaron; se mantiene el aviso de paquete mayor
+de 500 kB. La suite automática y la repetición de importación se registran
+en la bitácora. **Sigue pendiente el lector de pantalla**: una inspección del
+árbol accesible no prueba el anuncio audible de errores/avisos. También falta
+completar teclado/zoom/320 px en todos los recorridos, roles y detalles con
+datos reales de ensayo contra backend, y la aceptación pública/del usuario.
+El apartado de pendientes de abajo conserva esos requisitos globales.
+
 ## Qué se comprueba en cada cambio
 
 Corre con las pruebas del portal (`pnpm test`) y, por lo tanto, en el CI.

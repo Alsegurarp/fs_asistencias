@@ -4,6 +4,12 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Continuación local posterior a la PR #27:** base integrada `2ab9745`,
+91 unitarias backend (21 de jornada), matriz de evidencia recuperable y
+corrección del texto CSV a 320 px. No cambia las reglas de cálculo ni cierra
+los P0. [Avance y pendientes para continuar](docs/TareasPendientes.md#avance-para-continuar--5-de-noviembre-de-2026-posterior-a-la-verificación).
+Los conteos del candidato siguiente corresponden a su entrega original.
+
 **Candidato local del 5 de noviembre de 2026:** contrato 0.18.0, migraciones
 V012/V013, supervisores por sedes, suspensión/baja aprobadas y cálculo de
 jornada diaria/semanal sin duplicar extra. Recuperación con 12 códigos de
