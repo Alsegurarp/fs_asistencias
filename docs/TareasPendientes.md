@@ -1,5 +1,82 @@
 # Tareas pendientes
 
+## Avance para continuar — 5 de noviembre de 2026, posterior a la verificación
+
+Trabajo local en `fix/jornada-evidencia-accesibilidad`, sobre `2ab9745`.
+Se hizo fetch y se actualizaron la base de trabajo y `main` local a
+`origin/main`, conservando las notas previas. No se publicó ni desplegó.
+
+- **Jornada / tarea 3:** seis casos nuevos aprobados; son 21 pruebas del
+  calculador y 91 unitarias backend. Cubren límites exactos de semana,
+  Año Nuevo, reglas suministradas sin alterar el resultado previo, cambio
+  de horario y equivalencia UTC/zona de empresa. No fue necesario cambiar
+  la fórmula. No resuelve la elección de reglas para el cruce anual ni las
+  condiciones contractuales o evidencia del acuse pendientes.
+- **Evidencia / tareas 10/15:** [matriz contrastada](retencion-android.md#contraste-de-evidencia-para-continuar--5-de-noviembre-de-2026)
+  de sobre, recibo, rechazo, acuse y cierre. Precisa además que los rechazos
+  sin clave identificable no generan fila y que el texto histórico mostrado
+  al acusar tampoco se guarda en la copia local. Custodia/documento y
+  recuperación demostrada siguen siendo previos a cualquier purga.
+- **Accesibilidad / tareas 9/13:** [revisión manual parcial](accesibilidad.md#revisión-manual-parcial--5-de-noviembre-de-2026)
+  con componentes reales y API simulado. Corregido y comprobado el
+  desbordamiento del párrafo CSV a 320 px. Navegación por teclado, algunos
+  diálogos y zoom inspeccionados; lector de pantalla y recorrido completo
+  contra backend/público siguen pendientes. Las 216 pruebas web, TypeScript
+  y build aprobaron sobre el árbol final.
+- **Seguimiento:** issue #18 sigue desactualizada en GitHub; E1–E5 y E6
+  técnica están integradas, E6 integral sigue abierta. La conciliación local
+  conserva esa distinción; no se editó ni comentó la issue.
+
+Permanecen **17 tareas globales abiertas total o parcialmente, seis P0**.
+No hubo pruebas nuevas PostgreSQL, identidad real ni teléfono: Docker deniega
+acceso desde esta sesión. Los cortes siguientes describen el estado anterior
+a este avance y conservan sus límites originales.
+
+## Verificación para continuar — 5 de noviembre de 2026, posterior a la PR #27
+
+La [PR #27](https://github.com/Alsegurarp/fs_asistencias/pull/27) **ya está
+integrada** desde las 14:00 de Ciudad de México. GitHub confirma `main` en
+`2ab97451a1561eaa8367f1537533c0a271d82b09` y los cuatro trabajos del
+[CI de main](https://github.com/Alsegurarp/fs_asistencias/actions/runs/42099223401)
+aprobados: backend/identidad, portal, Android y contrato/seguridad/respaldo.
+No queda pendiente integrar esa PR ni repetir sus implementaciones.
+
+Antes de esta actualización documental, el árbol local estaba limpio en
+`feat/jornada-operacion-y-guia-demo`, commit `3560d4f`; `main` local seguía en
+`645174d`. No se hizo fetch, cambio de rama ni sincronización en esta revisión.
+El siguiente desarrollo debe partir de `main` actualizado. Docker devuelve
+acceso denegado a su tubería desde esta sesión: no se puede concluir que el
+motor esté detenido ni determinar el estado de los servicios.
+
+Se mantienen **17 tareas abiertas total o parcialmente y seis P0**. Los IDs
+conservan la lista global; 7, 11 y 14 ya constan completadas técnicamente.
+El detalle del trabajo ejecutado y sus límites sigue en la
+[bitácora del día](bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).
+
+| Orden para continuar | Pendiente concreto | Dependencia / comprobación de cierre |
+| --- | --- | --- |
+| 1 — P0, tareas 1/6 | Operar VPS privada por cliente y respaldo S3 real | Proveedor/región/cuenta/dominio, bucket/rol y custodios; activar timer/monitorización y recuperar ambas bases desde S3 en el destino, midiendo RPO 24 h/RTO 4 h. Automatización y ensayo sin red ya existen |
+| 2 — P0, tarea 2 | Completar identidad operativa | SMTP/remitente expresamente diferidos; después probar recepción, correo verificado y contraseña. Asignar cuentas, turnos y dos aprobadores; ensayar soporte. Los 12 códigos de recuperación ya están implementados y probados |
+| 3 — P0, tarea 3 | Completar cálculo y evidencia del acuse | Descanso computable, condiciones contractuales, regímenes especiales y cruce anual; texto/evidencia versionados, representación del empleador y atención de objeciones. Los límites diarios/semanales ya están implementados; no reabrir decisiones normativas resueltas |
+| 4 — P0, tarea 4 | Integrar tarjeta auténtica | Tecnología/protocolo, tarjetas/teléfono y provisión/custodia de claves. Captura release sigue bloqueada por `BuildConfig.DEBUG`; retirar el control no resuelve la autenticación |
+| 5 — P0, tarea 5; aceptación 9/12/16 | Aceptar reglas y recorridos desplegados | Suspensión, baja y supervisores ya implementados; obtener inventario/commit e imágenes del destino, desplegar cuando corresponda y validar con roles/cliente. CI no acredita la versión pública |
+| 6 — P1/P2, tareas 9/13 | Completar QA manual del portal y teléfono | Teclado en todos los recorridos, lector de pantalla, zoom 200 % y ancho 320 px; ratificar SUP-025 y probar aviso/vigencia de comida sin red en teléfono real |
+| 7 — P1/P2, tareas 10/15 | Completar evidencia recuperable y aceptación E6 | Sobres rechazados, textos históricos y evidencia sólo local; comprobar archivo/recuperación y disponibilidad de duplicados antes de definir purga. Entregar verificador actualizado con expedientes nuevos |
+| 8 — P2, tareas 17/18/19/20 | Ausencias, capacidad, nómina y contrato 1.0 | Condiciones del empleador/casos esperados; objetivos Q19 y VPS; sistema/formato/ejemplo de nómina del cliente; aceptación de consumidores antes de congelar 1.0 |
+| Delegada — P1, tarea 8 | Dos IP públicas y cuotas | Sigue asignada a otro desarrollador y diferida por el usuario; no sustituirla con cabeceras falsas |
+
+La [issue #18](https://github.com/Alsegurarp/fs_asistencias/issues/18) sigue
+abierta con E1–E6 sin marcar, aunque E1–E5 y E6 técnica ya están integradas.
+Su checklist necesita conciliación; E6 integral conserva aceptación pendiente.
+No se modificó la issue ni se enviaron mensajes en GitHub.
+
+Se revisaron resultados locales existentes: 186 pruebas backend sin fallos,
+errores ni omisiones (85 unitarias + 101 integraciones), 216 web, 14 identidad
+y autoprueba S3 correcta. No son ejecuciones nuevas. El CI remoto sí confirma
+las comprobaciones del commit integrado, incluido Android; no sustituye
+tarjeta física, accesibilidad manual, S3 real ni aceptación pública.
+Los cortes siguientes conservan su fecha y no sustituyen esta verificación.
+
 **Corte técnico vigente del 5 de noviembre de 2026:** las 17 tareas se
 atendieron en orden de necesidad y su [resultado individual y condición de
 cierre están en la bitácora](bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).
