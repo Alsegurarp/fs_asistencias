@@ -30,6 +30,8 @@ beforeEach(() => {
     if (path.startsWith('/users?cursor=')) return { items: [{ ...user, id: employeeId, email: 'second@example.invalid' }], nextCursor: null }
     if (path === '/employees') return { items: [{ id: employeeId, displayName: 'Empleado demo', externalId: 'DEMO-001', status: 'active' }], nextCursor: null }
     if (path === `/employees/${employeeId}`) return { id: employeeId, displayName: 'Empleado demo' }
+    if (path === '/sites') return { items: [{ id: employeeId, name: 'Sede centro', status: 'active' }], nextCursor: null }
+    if (path === `/sites/${employeeId}`) return { id: employeeId, name: 'Sede centro' }
     throw new Error(`Ruta inesperada: ${path}`)
   })
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
@@ -77,6 +79,23 @@ it('invita con correo normalizado, varios roles y empleado opcional', async () =
 it('exige al menos un rol antes de invitar', async () => {
   await mount(); await click('Invitar usuario'); await setInput('email', 'new@example.invalid'); await click('Guardar usuario')
   expect(document.body.textContent).toContain('Selecciona al menos un rol'); expect(writes()).toHaveLength(0)
+})
+
+it('asigna y retira sedes del supervisor mediante la edición existente', async () => {
+  user.roles = ['supervisor']
+  await mount(); await click(`Editar ${user.email}`)
+  expect(document.body.textContent).toContain('Sin sedes no obtiene registros')
+  await choose('supervisorSiteId', 'Sede centro'); await click('Agregar sede de supervisión')
+  await click('Guardar usuario'); await waitFor(() => writes().length === 1)
+  expect(writes()[0]).toEqual([`/users/${id}`, 'PATCH', { siteIds: [employeeId] }])
+})
+
+it('envía una lista vacía al retirar la última sede del supervisor', async () => {
+  user.roles = ['supervisor']; user.siteIds = [employeeId]
+  await mount(); await click(`Editar ${user.email}`)
+  await click(`Quitar sede ${employeeId}`); await click('Guardar usuario')
+  await waitFor(() => writes().length === 1)
+  expect(writes()[0]).toEqual([`/users/${id}`, 'PATCH', { siteIds: [] }])
 })
 it('edita sólo campos cambiados y permite soltar el vínculo de empleado', async () => {
   user.employeeId = employeeId

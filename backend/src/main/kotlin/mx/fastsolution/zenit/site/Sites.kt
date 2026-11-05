@@ -7,6 +7,7 @@ import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.identity.SiteScope
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.http.HttpStatus
@@ -76,14 +77,14 @@ class SiteRepository(private val dsl: DSLContext) {
     }
 
     fun find(tenantId: UUID, id: UUID): SiteRow? =
-        dsl.fetchOne("select $COLUMNS from site where tenant_id = ? and id = ?", tenantId, id)?.let(::row)
+        dsl.fetchOne("select $COLUMNS from site where tenant_id = ? and id = ?${SiteScope.clause("id")}", tenantId, id)?.let(::row)
 
     fun page(tenantId: UUID, after: PageKey?, limit: Int): List<SiteRow> {
         val rows = if (after == null) {
-            dsl.fetch("select $COLUMNS from site where tenant_id = ? order by created_at, id limit ?", tenantId, limit)
+            dsl.fetch("select $COLUMNS from site where tenant_id = ?${SiteScope.clause("id")} order by created_at, id limit ?", tenantId, limit)
         } else {
             dsl.fetch(
-                "select $COLUMNS from site where tenant_id = ? and (created_at, id) > " +
+                "select $COLUMNS from site where tenant_id = ?${SiteScope.clause("id")} and (created_at, id) > " +
                     "(cast(? as timestamptz), cast(? as uuid)) order by created_at, id limit ?",
                 tenantId, after.at, after.id, limit,
             )

@@ -52,6 +52,7 @@ class IdentityResolver(
             tenantId = user.tenantId,
             roles = user.roles.mapNotNull(Role::ofTenant).toSet(),
             employeeId = user.employeeId,
+            siteIds = user.siteIds,
         )
     }
 

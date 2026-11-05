@@ -136,7 +136,7 @@ export function Directory({ kind, me }: { kind: Kind; me: Me }) {
             <EntitySelect kind="sites" name="siteId" label="Sede" value={employee?.siteId || ''} />
             {action?.mode === 'create' ? <TextField name="employmentStart" label="Fecha de alta" type="date" required slotProps={{ inputLabel: { shrink: true } }} /> : <>
               <TextField select name="status" label="Estado" defaultValue={employee?.status}>{['active', 'inactive'].map(value => <MenuItem key={value} value={value}>{statuses[value]}</MenuItem>)}</TextField>
-              <TextField name="employmentEnd" label="Fecha de baja (opcional)" type="date" defaultValue={employee?.employmentEnd || ''} slotProps={{ inputLabel: { shrink: true } }} />
+              <TextField name="employmentEnd" label="Fecha efectiva de baja" type="date" defaultValue={employee?.employmentEnd || ''} helperText="Obligatoria al dar de baja. Se revoca la tarjeta y termina el horario vigente; los históricos se conservan." slotProps={{ inputLabel: { shrink: true } }} />
             </>}
           </> : <>
             <TextField name="label" label="Número impreso" required slotProps={{ htmlInput: { maxLength: 40 } }} />

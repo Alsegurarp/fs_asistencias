@@ -1,5 +1,140 @@
 # Revisión documental de jornada y acuse
 
+**Implementación local del 5 de noviembre:** V013 y el calculador ya incorporan
+clasificación diurna/nocturna/mixta, máximos diarios, extra diaria/semanal sin
+duplicación y alertas de distribución/límite combinado. Quince casos del
+calculador y la integración del árbol (85 unitarias/101 integraciones)
+aprobaron, preservando reglas/cierres previos. Las tablas de brechas antiguas
+son antecedentes: no describen todas las capacidades del código actual.
+Siguen pendientes descanso computable según art. 64, contrato más favorable,
+menores/regímenes especiales, interpretación concreta de cruces anuales y
+evidencia versionada/acuerdo de ambas partes del acuse. No es certificación
+de nómina ni cumplimiento integral. [Resultado y límites](bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).
+
+## Verificación del modelo VPS por cliente y S3 — 5 de noviembre de 2026
+
+El usuario cambia a una instancia/VPS privada por cliente, soporte por el
+equipo desarrollador, administrador propio y copias en S3 manejadas por el
+equipo. Custodia: administrador del cliente o equipo desarrollador si aquél
+no la asume. SMTP se entregará después. Pide verificar estas respuestas ante
+la reforma de 40 horas.
+
+**Conclusión documental, no habilitación del servicio:** no se identifica
+en el [decreto de jornada](https://dof.gob.mx/nota_detalle_popup.php?codigo=5786537)
+una prohibición de esa topología ni una exigencia de VPS/bucket por cliente.
+Sus exigencias de registro y exhibición siguen aplicando. La conservación
+del empleador de la [LFT, artículo 804](https://www.diputados.gob.mx/LeyesBiblio/pdf/LFT.pdf)
+no desaparece al delegar la custodia técnica ni se sustituye por copias de
+30 días. La tecnología elegida es una decisión del servicio dentro de esos límites.
+
+Para la operación de datos se verificaron también las disposiciones de
+[seguridad y confidencialidad, artículos 18 y 20 de la LFPDPPP](https://www.te.gob.mx/legislacion/media/files/ef345aeb4da50ea.htm),
+y [encargado/nube, artículos 49–52 del Reglamento](https://www.diputados.gob.mx/LeyesBiblio/regley/Reg_LFPDPPP.pdf):
+documentar instrucciones y relación contractual, restringir acceso, proteger
+la información y permitir recuperación aplicable al terminar el servicio.
+Son requisitos adicionales a la reducción de jornada, no una certificación
+de que contratar una VPS o S3 baste para cumplirlos.
+
+Aplicación técnica: cuentas personales con MFA para cliente y soporte,
+secretos de cada instancia separados, bucket privado y rol/prefijo limitado,
+cifrado antes de subir, custodios concretos con entrega comprobada y ensayo
+de recuperación. Son controles de diseño elegidos para esas obligaciones,
+no marcas o tecnologías prescritas por la ley. Falta verificar proveedor,
+región, subcontratación, condiciones contractuales y ambiente real; mientras
+no haya SMTP funcional no se habilita recuperación de contraseña por correo.
+
+## Respuestas legales aplicables — 5 de noviembre de 2026
+
+El usuario instruye contestar con la reforma de 40 horas todas las dudas que
+ésta permita resolver: es el propósito del proyecto. Las reglas expresas se
+consideran requisitos de desarrollo, sin esperar otra elección del equipo.
+Se distinguen norma, aplicación técnica y datos particulares del empleador.
+La revisión profesional se reserva para interpretaciones concretas, contratos,
+regímenes especiales y disposiciones pendientes de localizar; no bloquea
+documentar ni implementar un mandato expreso. Las revisiones anteriores son
+antecedentes; esta sección rige la consulta actual.
+
+### Q06: jornada, horas extra y vigencias
+
+El [decreto del 1 de mayo de 2026](https://dof.gob.mx/nota_detalle_popup.php?codigo=5786537)
+fija los máximos semanales y su transición (transitorios segundo y cuarto):
+
+| Año, desde el 1 de enero correspondiente | Jornada ordinaria máxima, h/semana | Límite del artículo 66, h extra/semana |
+| --- | --- | --- |
+| 2026, con entrada en vigor del decreto el 1 de mayo | 48 | 9 |
+| 2027 | 46 | 9 |
+| 2028 | 44 | 10 |
+| 2029 | 42 | 11 |
+| 2030 | 40 | 12 |
+
+El mismo decreto exige máximos diarios ordinarios de 8/7/7.5 horas
+(diurna/nocturna/mixta, art. 61). El artículo 66 establece pago doble del
+extraordinario, hasta cuatro horas diarias en cuatro días semanales; el 68,
+hasta cuatro horas semanales adicionales con pago triple y máximo combinado
+de doce horas diarias. El exceso se registra: una infracción no elimina el
+tiempo trabajado. El artículo 69 exige un descanso pagado por seis días
+trabajados; el 71, prima dominical mínima del 25 %. No se presupone semana
+obligatoria de cinco días ni se aplica 40 h a todas las vigencias.
+
+### Q06/Q14/Q15/Q23: reglas complementarias de la LFT
+
+Base: [LFT vigente consultada](https://www.diputados.gob.mx/LeyesBiblio/pdf/LFT.pdf),
+última reforma indicada 14 de mayo de 2026:
+
+| Pregunta | Respuesta normativa |
+| --- | --- |
+| Q06: clasificación | Art. 60: diurna 06–20 h; nocturna 20–06 h; mixta con menos de 3.5 h nocturnas; con 3.5 h o más es nocturna |
+| Q06/Q23: comida | Arts. 63–64: descanso mínimo de 30 minutos en jornada continua; computable cuando la persona no puede salir del lugar de trabajo |
+| Q14: conservación | Art. 804 III: controles del último año y un año después de terminar la relación; comprobar otras obligaciones e impedimentos antes de suprimir |
+| Q07: acuse | Art. 33: la respuesta del trabajador no puede operar como renuncia a derechos |
+| Q15: vacaciones | Arts. 76–81: mínimo inicial de 12 días laborables tras el año de servicios, con incrementos legales; conservar antigüedad y periodo correspondiente |
+| Q15: incapacidad/ausencias | Arts. 42–43 y 47 X: distinguir causa y evidencia; ausencia de marcaje no demuestra por sí sola una falta injustificada |
+| Q15/Q23: horarios | Arts. 25 V y 423 I/IX/X: condiciones pactadas, horario, comidas, permisos y procedimiento disciplinario; no deducir tolerancias universales ni sanción automática |
+
+### Q07/Q13/Q16/Q17/Q24/Q25: registro y evidencia
+
+El [artículo 132 XXXIV del decreto](https://dof.gob.mx/nota_detalle_popup.php?codigo=5786537)
+exige registro electrónico con inicio/fin y entrega a la autoridad cuando lo
+requiera. Su condición de prueba plena requiere acreditar acuerdo de ambas
+partes. El transitorio quinto prevé las disposiciones generales desde el
+1 de enero de 2027. Se buscó de nuevo en DOF/STPS el 5 de noviembre: no se
+localizaron; esto no prueba su inexistencia. Verificar publicación y alcance
+antes de habilitar el servicio.
+
+Aplicación técnica para Zenit: mantener registros originales, correcciones,
+versiones y trazabilidad; probar su consulta y entrega. NFC, ubicación,
+deducción de marcaje, cierre o clic de acuse no acreditan por sí solos el
+cumplimiento del registro ni el acuerdo. Esta conclusión es un requisito de
+diseño derivado de las obligaciones anteriores, no una tecnología prescrita.
+
+### Qué queda por responder en cada frente
+
+| Preguntas | Pendiente después de aplicar la ley |
+| --- | --- |
+| Q06 | Casos de aceptación del algoritmo, horario pactado, agrupación de turnos y cruces de medianoche/semana/año; verificar brechas del código descritas abajo |
+| Q07 | Documento/texto versionado, acreditación de ambas partes, atención de objeciones y aceptación del recorrido; no volver a preguntar si se conservará la evidencia exigible |
+| Q14 | Archivo de evidencia local aún ausente, recuperación demostrada y disponibilidad de duplicados Android; el plazo de caché no se deduce del tope semanal |
+| Q15 | Calendario/condiciones del empleador, tolerancias válidas, evidencia, responsables y casos de nómina; desarrollar los mínimos ya determinados |
+| Q05/Q10/Q11 | Responsables, continuidad durante suspensión y baja técnica; preservar documentación exigible y no confundir estado del SaaS con estado laboral |
+| Q08/Q09/Q12/Q13/Q16/Q24 | Tarjetas, material de prueba, permisos, interacción y política de ubicación dentro de las obligaciones de registro y protección; sin atribuir estas elecciones a la reforma |
+| Q17/Q19/Q20/Q21/Q25 | Entorno, aceptación, capacidad, protocolo de nómina, alcance y reintentos del cierre; convertir requisitos legales en casos verificables, sin presentar automatización como certificación |
+| Q01–Q04/Q18/Q22/Q23 | Se conservan decisiones y pendientes operativos registrados; la reforma no aporta proveedor, credenciales, dos IP, protección de ramas ni ratificación de SUP-025 |
+
+La [reforma constitucional del 3 de marzo de 2026](https://dof.gob.mx/nota_detalle_popup.php?codigo=5781417)
+prohíbe tiempo extraordinario a menores de 18 años (art. 123 A XI) y reducir
+sueldos, salarios o prestaciones por esta reducción (transitorio cuarto).
+Aplicación al proyecto: una comparación con el máximo anual no sustituye el
+horario contractual ni autoriza recortar derechos. Esta actualización
+documenta requisitos; no acredita corrección del cálculo actual ni cierra
+las tareas de implementación, evidencia y aceptación.
+
+Casos de aceptación derivados para Q06: en 2027, 48 h ordinarias superan el
+máximo de 46 h; un turno diurno pactado de ocho horas prolongado a diez no
+puede reportar cero extra sólo porque la semana no excedió su tope; una pausa
+computable no resta tiempo efectivo; 3.5 h nocturnas exigen clasificación
+nocturna. Son casos para desarrollar/verificar, no resultados comprobados del
+algoritmo actual. Los cruces de vigencia conservan su interpretación pendiente.
+
 ## Actualización del 23 de octubre de 2026: conservación y uso de datos
 
 El usuario indica resolver retención y reglas tomando como base la LFT y la

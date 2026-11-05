@@ -87,7 +87,7 @@ class ExportsIT : WorkdayTestBase() {
             listOf("queued", lastWeek.toString(), "csv", "America/Mexico_City"),
             listOf<String>(asked.at("status"), asked.at("weekStart"), asked.at("format"), asked.at("timeZone")),
         )
-        assertEquals(1, asked.at<Int>("ruleSetVersion"))
+        assertEquals(2, asked.at<Int>("ruleSetVersion"))
         for (field in listOf("siteId", "manifestHash", "fileHash", "rowCount", "downloadUrl", "expiresAt")) assertNull(asked.at<Any?>(field), field)
         // La misma clave devuelve el mismo exporte, y cualquier fecha de la semana es la misma petición.
         assertEquals(id, request(c, """{"weekStart":"$lastWeek","format":"csv"}""", key).at("id"))
@@ -132,7 +132,7 @@ class ExportsIT : WorkdayTestBase() {
         assertEquals(4, lines.size)
         assertEquals("", lines[3])
         assertEquals(ExportCsv.HEADER.joinToString(","), lines[0])
-        val start = "\"${slug(c)}\",$lastWeek,\"America/Mexico_City\",\"MX-LFT\",1"
+        val start = "\"${slug(c)}\",$lastWeek,\"America/Mexico_City\",\"MX-LFT\",2"
         // Comillas dobladas, coma dentro de comillas y acentos intactos.
         assertEquals(
             "$start,\"A-001\",\"Ana \"\"La Güera\"\" Núñez, hija\",\"$siteName\",1,480,0,480,0,objected,${closureOfAna["closedAt"]},${closureOfAna["hash"]}",
@@ -140,7 +140,7 @@ class ExportsIT : WorkdayTestBase() {
         )
         // La fórmula sale como texto, con un apóstrofo delante.
         assertEquals(
-            "$start,\"A-002\",\"'=SUMA(1;1)\",\"\",1,540,0,540,0,,${closureOfFormula["closedAt"]},${closureOfFormula["hash"]}",
+            "$start,\"A-002\",\"'=SUMA(1;1)\",\"\",1,540,0,480,60,,${closureOfFormula["closedAt"]},${closureOfFormula["hash"]}",
             lines[2],
         )
         assertFalse("A-003" in file.body)

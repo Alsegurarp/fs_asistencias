@@ -32,7 +32,17 @@ data class Totals(val workedMinutes: Int, val breakMinutes: Int, val ordinaryMin
 
 data class Alert(val code: String, val severity: String, val message: String)
 
-data class RuleLimits(val weeklyOrdinaryMaxMinutes: Int, val weeklyOvertimeMaxMinutes: Int?, val dailyCombinedMaxMinutes: Int?)
+data class RuleLimits(
+    val weeklyOrdinaryMaxMinutes: Int,
+    val weeklyOvertimeMaxMinutes: Int?,
+    val dailyCombinedMaxMinutes: Int?,
+    val dailyOrdinaryMaxMinutesDay: Int,
+    val dailyOrdinaryMaxMinutesNight: Int,
+    val dailyOrdinaryMaxMinutesMixed: Int,
+    val dailyOvertimeMaxMinutes: Int? = null,
+    val overtimeMaxDays: Int? = null,
+    val weeklyExcessOvertimeMaxMinutes: Int? = null,
+)
 
 data class WeekCalculation(val segments: List<Segment>, val totals: Totals, val alerts: List<Alert>, val version: Int, val hasOpenSegment: Boolean)
 
@@ -66,11 +76,14 @@ object WeekCalculator {
         // El tipo se vuelve a deducir en orden de hora: una marca que llegó tarde
         // ya no deja incoherentes a las que se recibieron antes.
         val segments = mutableListOf<Segment>()
+        val segmentDays = mutableMapOf<String, LocalDate>()
         var open: Triple<String, OffsetDateTime, UUID>? = null
+        var shiftStart: OffsetDateTime? = null
         fun emit(end: Pair<OffsetDateTime, UUID>?) {
             val (kind, startAt, startId) = open ?: return
-            if (startAt >= from && startAt < until) {
-                segments += Segment(
+            val beganAt = shiftStart ?: startAt
+            if (beganAt >= from && beganAt < until) {
+                val segment = Segment(
                     id = UUID.nameUUIDFromBytes("$startId|$kind".toByteArray()).toString(),
                     kind = kind,
                     startAt = startAt.toInstant().toString(),
@@ -80,6 +93,8 @@ object WeekCalculator {
                     endEventId = end?.second?.toString(),
                     version = version,
                 )
+                segments += segment
+                segmentDays[segment.id] = beganAt.atZoneSameInstant(zone).toLocalDate()
             }
             open = null
         }
@@ -87,6 +102,7 @@ object WeekCalculator {
             when (type) {
                 "clock_in" -> {
                     emit(null)
+                    shiftStart = at
                     open = Triple("work", at, id)
                 }
                 "break_start" -> {
@@ -97,39 +113,98 @@ object WeekCalculator {
                     emit(at to id)
                     open = Triple("work", at, id)
                 } else if (open == null) {
+                    shiftStart = at
                     open = Triple("work", at, id)
                 }
-                else -> emit(at to id)
+                else -> {
+                    emit(at to id)
+                    shiftStart = null
+                }
             }
         }
         emit(null)
 
-        val worked = segments.filter { it.kind == "work" }.sumOf { it.minutes }
+        val work = segments.filter { it.kind == "work" }
+        val worked = work.sumOf { it.minutes }
         val paused = segments.filter { it.kind == "break" }.sumOf { it.minutes }
-        val overtime = (worked - limits.weeklyOrdinaryMaxMinutes).coerceAtLeast(0)
+        // Un descanso no crea otra jornada ni reinicia su máximo al cruzar medianoche.
+        val perDay = work.groupBy { segmentDays.getValue(it.id) }
+        val dailyMaximums = perDay.mapValues { (_, day) ->
+            val closed = day.filter { it.endAt != null }
+            val seconds = closed.sumOf { Duration.between(Instant.parse(it.startAt), Instant.parse(it.endAt)).seconds }
+            val night = closed.sumOf { nightSeconds(Instant.parse(it.startAt), Instant.parse(it.endAt), zone) }
+            when {
+                night == 0L -> limits.dailyOrdinaryMaxMinutesDay
+                night == seconds || night >= 210 * 60 -> limits.dailyOrdinaryMaxMinutesNight
+                else -> limits.dailyOrdinaryMaxMinutesMixed
+            }
+        }
+        var remainingOrdinary = limits.weeklyOrdinaryMaxMinutes
+        val overtimePerDay = perDay.keys.sorted().associateWith { date ->
+            val minutes = perDay.getValue(date).sumOf { it.minutes }
+            val ordinary = minOf(minutes, dailyMaximums.getValue(date), remainingOrdinary)
+            remainingOrdinary -= ordinary
+            minutes - ordinary
+        }
+        val ordinary = limits.weeklyOrdinaryMaxMinutes - remainingOrdinary
+        val overtime = worked - ordinary
         val hasOpen = segments.any { it.endAt == null }
         val alerts = mutableListOf<Alert>()
         if (hasOpen) alerts += Alert("open_segment", "warning", "Falta el marcaje que cierra un tramo; ese tramo no suma.")
-        val perDay = segments.filter { it.kind == "work" }
-            .groupBy { OffsetDateTime.parse(it.startAt).atZoneSameInstant(zone).toLocalDate() }
-            .mapValues { day -> day.value.sumOf { it.minutes } }
+        val workedPerDay = perDay.mapValues { (_, day) -> day.sumOf { it.minutes } }
+        workedPerDay.keys.sorted().forEach { date ->
+            val max = dailyMaximums.getValue(date)
+            if (workedPerDay.getValue(date) > max) {
+                alerts += Alert("daily_ordinary_limit_exceeded", "info", "La jornada del $date supera su máximo ordinario de $max minutos.")
+            }
+        }
+        if (paused > 0) {
+            // shortcut: no hay dato de salida libre del centro; incorporar esa condición antes de certificar nómina.
+            alerts += Alert("break_computability_unverified", "warning", "El descanso registrado se descuenta; falta confirmar si debe contar como tiempo efectivo conforme al artículo 64.")
+        }
         limits.dailyCombinedMaxMinutes?.let { max ->
-            perDay.filter { it.value > max }.keys.sorted().forEach {
+            workedPerDay.filter { it.value > max }.keys.sorted().forEach {
                 alerts += Alert("daily_combined_limit_exceeded", "critical", "El $it suma más de ${max / 60} horas entre jornada ordinaria y extraordinaria.")
             }
         }
-        if (overtime > 0) alerts += Alert("weekly_overtime", "info", "La semana tiene $overtime minutos sobre la jornada ordinaria.")
+        limits.dailyOvertimeMaxMinutes?.let { max ->
+            overtimePerDay.filterValues { it > max }.keys.forEach { date ->
+                alerts += Alert("daily_overtime_limit_exceeded", "critical", "La jornada del $date supera $max minutos extraordinarios.")
+            }
+        }
+        limits.overtimeMaxDays?.let { max ->
+            if (overtimePerDay.count { it.value > 0 } > max) {
+                alerts += Alert("overtime_days_limit_exceeded", "critical", "La semana tiene tiempo extraordinario en más de $max días.")
+            }
+        }
+        if (overtime > 0) alerts += Alert("weekly_overtime", "info", "La semana tiene $overtime minutos extraordinarios por límites diarios o semanales.")
         limits.weeklyOvertimeMaxMinutes?.let { max ->
             if (overtime > max) alerts += Alert("weekly_overtime_limit_exceeded", "critical", "El tiempo extraordinario excede las ${max / 60} horas semanales.")
+            limits.weeklyExcessOvertimeMaxMinutes?.let { excess ->
+                if (overtime > max + excess) alerts += Alert("weekly_total_overtime_limit_exceeded", "critical", "El tiempo extraordinario supera el límite semanal y sus $excess minutos adicionales.")
+            }
         }
         return WeekCalculation(
             // Por instante y no por texto: una fracción de segundo cambia el orden alfabético.
             segments.sortedBy { Instant.parse(it.startAt) },
-            Totals(worked, paused, worked - overtime, overtime),
+            Totals(worked, paused, ordinary, overtime),
             alerts,
             version,
             hasOpen,
         )
+    }
+
+    private fun nightSeconds(start: Instant, end: Instant, zone: ZoneId): Long {
+        var date = start.atZone(zone).toLocalDate().minusDays(1)
+        val last = end.atZone(zone).toLocalDate()
+        var seconds = 0L
+        while (date <= last) {
+            val from = maxOf(start, date.atTime(20, 0).atZone(zone).toInstant())
+            val until = minOf(end, date.plusDays(1).atTime(6, 0).atZone(zone).toInstant())
+            if (until > from) seconds += Duration.between(from, until).seconds
+            date = date.plusDays(1)
+        }
+        return seconds
     }
 
     /** Marcajes en orden, con los ajustes aplicados, el tipo que les toca y sin lecturas repetidas. */

@@ -30,7 +30,7 @@ class DossierArchiveTest {
 
     @Test
     fun `format field inventory matches every explicitly selected column without secrets`() {
-        assertEquals(24, dossierCollections.size)
+        assertEquals(25, dossierCollections.size)
         for (collection in dossierCollections) {
             val expected = format.at("/\$defs/${collection.kind}/properties/data/required").asSequence().map { it.asString() }.toSet()
             val selected = collection.columns.split(", ").map { it.substringAfterLast(" as ") }.toSet()
@@ -57,6 +57,8 @@ class DossierArchiveTest {
         assertEquals(result.fileSha256, sha256(output.toByteArray()))
         assertEquals(result.manifestSha256, sha256(files.getValue("manifest.json")))
         val manifest = json.readTree(result.manifest)
+        assertEquals(0, manifest.at("/counts/tenant_user_site").asInt())
+        assertTrue(manifest.get("counts").has("tenant_user_site"), "Un productor nuevo declara la colección incluso vacía")
         assertEquals(emptyList(), registry.getSchema(SchemaLocation.of("https://zenit.invalid/format.yaml#/\$defs/Manifest")).validate(result.manifest, InputFormat.JSON))
         for (file in manifest.get("files")) {
             val bytes = files.getValue(file.get("path").asString())

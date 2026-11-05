@@ -119,7 +119,7 @@ class DeviceAuthenticator(
     private val tenants: TenantRepository,
     private val capture: CaptureProperties,
 ) {
-    fun authenticate(authentication: Authentication): Authentication {
+    fun authenticate(authentication: Authentication, allowSuspended: Boolean = false): Authentication {
         val token = (authentication as? BearerTokenAuthenticationToken)?.token ?: throw invalid()
         val jwt = try {
             SignedJWT.parse(token)
@@ -139,7 +139,8 @@ class DeviceAuthenticator(
             jwt, DeviceKeys.parseStored(device.publicJwk), deviceId, capture.audience,
             Duration.ofSeconds(capture.tokenMaxAgeSeconds), Duration.ofSeconds(capture.clockSkewSeconds), Instant.now(),
         )
-        if (!valid || device.status != "active" || tenants.find(device.tenantId)?.status != "active") throw invalid()
+        val tenantStatus = tenants.find(device.tenantId)?.status
+        if (!valid || device.status != "active" || (tenantStatus != "active" && !(allowSuspended && tenantStatus == "suspended"))) throw invalid()
         return DeviceAuthentication(CurrentDevice(device.id, device.tenantId, device.mode, device.employeeId, device.siteId))
     }
 

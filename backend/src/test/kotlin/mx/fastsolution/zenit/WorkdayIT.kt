@@ -26,10 +26,12 @@ class WorkdayIT : WorkdayTestBase() {
         val flagged = staffed(c, siteId)
         shift(mine, 40, 32)
         val incidentId = marked(flagged, before(40), location = here(latitude = 19.44)).at<String>("incident.id")
+        val supervisor = member(c, "supervisor")
+        assertEquals(200, call("PATCH", "/api/v1/users/${supervisor.id}", c.adminToken, """{"siteIds":["$siteId"]}""").status)
         val people = linkedMapOf(
             "admin_empresa" to c.adminToken,
             "rh" to member(c, "rh").token,
-            "supervisor" to member(c, "supervisor").token,
+            "supervisor" to supervisor.token,
             "auditor" to member(c, "auditor").token,
             "trabajador" to linkedWorker(c, mine.employeeId).token,
         )
@@ -206,6 +208,7 @@ class WorkdayIT : WorkdayTestBase() {
         val one = staffed(c, siteId)
         val two = staffed(c)
         val supervisor = member(c, "supervisor")
+        assertEquals(200, call("PATCH", "/api/v1/users/${supervisor.id}", c.adminToken, """{"siteIds":["$siteId"]}""").status)
         // Entra fuera de la sede y sale bien; vuelve a entrar sin ubicación y no marca la salida.
         val outside = marked(one, before(40), location = here(latitude = 19.44))
         marked(one, before(32))
@@ -588,18 +591,23 @@ class WorkdayIT : WorkdayTestBase() {
         val c = company()
         val all = call("GET", "/api/v1/rule-sets", c.adminToken)
         assertEquals(200, all.status, all.toString())
-        assertEquals(listOf("2026-01-01", "2027-01-01", "2028-01-01", "2029-01-01", "2030-01-01"), all.list("items[*].validFrom"))
-        assertEquals(listOf("2026-12-31", "2027-12-31", "2028-12-31", "2029-12-31", null), all.at<List<String?>>("items[*].validTo"))
-        assertEquals(listOf(2880, 2760, 2640, 2520, 2400), all.at<List<Int>>("items[*].weeklyOrdinaryMaxMinutes"))
+        assertEquals(listOf("2026-01-01", "2026-05-01", "2027-01-01", "2027-01-01", "2028-01-01", "2028-01-01", "2029-01-01", "2029-01-01", "2030-01-01", "2030-01-01"), all.list("items[*].validFrom"))
+        assertEquals(listOf("2026-12-31", "2026-12-31", "2027-12-31", "2027-12-31", "2028-12-31", "2028-12-31", "2029-12-31", "2029-12-31", null, null), all.at<List<String?>>("items[*].validTo"))
+        assertEquals(listOf(2880, 2880, 2760, 2760, 2640, 2640, 2520, 2520, 2400, 2400), all.at<List<Int>>("items[*].weeklyOrdinaryMaxMinutes"))
         // Los demás topes van como texto, con la unidad en el nombre.
-        assertEquals(listOf("540", "540", "600", "660", "720"), all.list("items[*].parameters.weeklyOvertimeMaxMinutes"))
+        assertEquals(listOf("540", "540", "540", "540", "600", "600", "660", "660", "720", "720"), all.list("items[*].parameters.weeklyOvertimeMaxMinutes"))
         assertEquals(setOf("720"), all.list("items[*].parameters.dailyCombinedMaxMinutes").toSet())
         assertEquals(setOf("MX-LFT"), all.list("items[*].jurisdiction").toSet())
-        assertEquals(setOf(1), all.at<List<Int>>("items[*].version").toSet())
+        assertEquals(setOf(1, 2), all.at<List<Int>>("items[*].version").toSet())
         assertEquals(2, all.at<Int>("items[0].sources.length()"))
         assertTrue(all.at<String>("items[0].sources[0]").contains("dof.gob.mx"))
 
         fun effective(date: String) = call("GET", "/api/v1/rule-sets?effectiveOn=$date", c.adminToken)
+        assertEquals(1, effective("2026-04-30").at<Int>("items[0].version"))
+        val updated = effective("2026-05-01")
+        assertEquals(2, updated.at<Int>("items[0].version"))
+        assertEquals("240", updated.at<String>("items[0].parameters.dailyOvertimeMaxMinutes"))
+        assertEquals("4", updated.at<String>("items[0].parameters.overtimeMaxDays"))
         assertEquals(listOf(2760), effective("2027-06-15").at<List<Int>>("items[*].weeklyOrdinaryMaxMinutes"))
         assertEquals(listOf(2880), effective("2026-12-31").at<List<Int>>("items[*].weeklyOrdinaryMaxMinutes"))
         assertEquals(listOf(2760), effective("2027-01-01").at<List<Int>>("items[*].weeklyOrdinaryMaxMinutes"))
@@ -607,6 +615,22 @@ class WorkdayIT : WorkdayTestBase() {
         assertEquals(listOf(2400), effective("2034-03-01").at<List<Int>>("items[*].weeklyOrdinaryMaxMinutes"))
         assertEquals(0, effective("2025-12-31").at<Int>("items.length()"))
         assertProblem(422, "validation", effective("ayer"))
+    }
+
+    @Test
+    fun `database daily limits produce overtime below the weekly maximum`() {
+        val c = companyWithFinishedWeek()
+        val daytime = staffed(c)
+        shift(daytime, 40, 30)
+        val day = week(c, daytime.employeeId)
+        assertEquals(mapOf("workedMinutes" to 600, "breakMinutes" to 0, "ordinaryMinutes" to 480, "overtimeMinutes" to 120), day.at<Map<String, Int>>("totals"))
+        assertTrue("daily_ordinary_limit_exceeded" in day.list("alerts[*].code"))
+        assertEquals(2, day.at<Int>("ruleSet.version"))
+
+        val nighttime = staffed(c)
+        shift(nighttime, 28, 20)
+        val night = week(c, nighttime.employeeId)
+        assertEquals(mapOf("workedMinutes" to 480, "breakMinutes" to 0, "ordinaryMinutes" to 420, "overtimeMinutes" to 60), night.at<Map<String, Int>>("totals"))
     }
 
     @Test

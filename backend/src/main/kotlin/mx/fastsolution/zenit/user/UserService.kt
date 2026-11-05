@@ -11,6 +11,7 @@ import mx.fastsolution.zenit.identity.OperatorProperties
 import mx.fastsolution.zenit.identity.Role
 import mx.fastsolution.zenit.identity.IdentityAdministration
 import mx.fastsolution.zenit.tenant.TenantRepository
+import mx.fastsolution.zenit.site.SiteRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -20,12 +21,14 @@ class UserCreateRequest {
     var displayName: String? = null
     var roles: List<String>? = null
     var employeeId: String? = null
+    var siteIds: List<String>? = null
 }
 
 class UserUpdateRequest {
     var displayName: String? = null
     var roles: List<String>? = null
     var disabled: Boolean? = null
+    var siteIds: List<String>? = null
 
     // Aquí importa la diferencia entre no mandar el campo y mandarlo nulo: nulo
     // suelta a la persona de su fila del padrón.
@@ -52,6 +55,7 @@ class UserService(
     private val employees: EmployeeRepository,
     private val audit: AuditLog,
     private val identity: IdentityAdministration,
+    private val sites: SiteRepository,
 ) {
     @Transactional
     fun invite(admin: CurrentPerson, request: UserCreateRequest): UserRow {
@@ -61,6 +65,7 @@ class UserService(
         val displayName = checks.text("displayName", request.displayName, MAX_NAME, required = false) ?: ""
         val roles = parseRoles(checks, request.roles, required = true)
         val employeeId = checks.uuid("employeeId", request.employeeId, required = false)
+        val siteIds = parseSites(checks, tenantId, request.siteIds)
         // Una fila del padrón de otra empresa no existe para quien pregunta.
         if (employeeId != null && employees.find(tenantId, employeeId) == null) {
             checks.fail("employeeId", "employee_not_found", "La persona del padrón no existe.")
@@ -74,6 +79,7 @@ class UserService(
             users.insertInvited(tenantId, id, email, displayName)
             if (employeeId != null) users.setEmployee(tenantId, id, employeeId)
             roles!!.forEach { users.grant(tenantId, id, it, admin.actorId) }
+            if (siteIds != null) users.setSites(tenantId, id, siteIds)
         } catch (e: RuntimeException) {
             throw when (Conflicts.uniqueConstraint(e)) {
                 Conflicts.USER_EMAIL -> Conflicts.emailUnavailable()
@@ -99,10 +105,11 @@ class UserService(
         val displayName = checks.text("displayName", request.displayName, MAX_NAME, required = false)
         val roles = parseRoles(checks, request.roles, required = false)
         val employeeId = checks.uuid("employeeId", request.employeeId, required = false)
+        val siteIds = parseSites(checks, tenantId, request.siteIds)
         if (employeeId != null && employees.find(tenantId, employeeId) == null) {
             checks.fail("employeeId", "employee_not_found", "La persona del padrón no existe.")
         }
-        if (displayName == null && roles == null && request.disabled == null && !request.changesEmployee()) {
+        if (displayName == null && roles == null && request.disabled == null && siteIds == null && !request.changesEmployee()) {
             checks.fail("", "empty_update", "Hay que cambiar al menos un campo.")
         }
         checks.done()
@@ -150,6 +157,11 @@ class UserService(
             users.setStatus(tenantId, id, nextStatus)
             audit.record(tenantId, admin, if (nextStatus == "disabled") "user.disabled" else "user.enabled", "user", id)
         }
+        if (siteIds != null && siteIds != before.siteIds) {
+            users.setSites(tenantId, id, siteIds)
+            audit.record(tenantId, admin, "user.sites_changed", "user", id,
+                mapOf("siteIds" to siteIds.sorted().joinToString(",")))
+        }
         return users.find(tenantId, id)!!
     }
 
@@ -179,6 +191,16 @@ class UserService(
         if (user.status != "active") throw Problems.conflict("user_not_active", "La cuenta debe tener acceso activo a la empresa.")
         identity.requirePasswordChange(subject, user.email)
         audit.record(tenantId, admin, "user.password_change_required", "user", id)
+    }
+
+    private fun parseSites(checks: Checks, tenantId: UUID, raw: List<String>?): Set<UUID>? {
+        if (raw == null) return null
+        if (raw.size > 100) checks.fail("siteIds", "too_many", "Se admiten hasta 100 sedes.")
+        return raw.take(100).mapIndexedNotNull { index, value ->
+            checks.uuid("siteIds[$index]", value, required = true)?.also {
+                if (sites.find(tenantId, it) == null) checks.fail("siteIds[$index]", "site_not_found", "La sede no existe.")
+            }
+        }.toSet()
     }
 
     private fun parseRoles(checks: Checks, raw: List<String>?, required: Boolean): Set<String>? {

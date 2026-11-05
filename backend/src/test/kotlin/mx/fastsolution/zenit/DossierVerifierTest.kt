@@ -42,10 +42,43 @@ class DossierVerifierTest {
         archive { path, manifestHash, fileHash ->
             val manifest = verifier.verify(path, manifestHash, fileHash)
             assertEquals(1, manifest.get("formatVersion").asInt())
+            assertFalse(manifest.get("counts").has("tenant_user_site"), "El verificador mantiene expedientes anteriores a sedes por supervisor")
             val users = mutableListOf<String>()
             verifier.consult(path, "tenant_user", users::add)
             assertEquals(1, users.size)
             assertEquals(manifest.get("requestedBy"), json.readTree(users.single()).at("/data/id"))
+        }
+    }
+
+    @Test fun `supervisor sites preserve old format compatibility and reject foreign duplicate or missing references`() {
+        for (problem in listOf("valid", "foreign", "missing_user", "missing_site", "duplicate")) {
+            archive({ files ->
+                val manifest = json.readTree(files.getValue("manifest.json")) as ObjectNode
+                val tenant = manifest.get("tenantId").asString()
+                val user = manifest.get("requestedBy").asString()
+                val site = UUID.randomUUID().toString()
+                val siteRow = """{"kind":"site","tenantId":"$tenant","data":{"id":"$site","name":"Sede ficticia","time_zone":"America/Mexico_City","latitude":19.4,"longitude":-99.1,"radius_m":100,"status":"active","created_at":"2026-11-05T00:00:00Z"}}"""
+                val linkTenant = if (problem == "foreign") UUID.randomUUID().toString() else tenant
+                val linkUser = if (problem == "missing_user") UUID.randomUUID().toString() else user
+                val linkSite = if (problem == "missing_site") UUID.randomUUID().toString() else site
+                val link = """{"kind":"tenant_user_site","tenantId":"$linkTenant","data":{"user_id":"$linkUser","site_id":"$linkSite"}}"""
+                val copies = if (problem == "duplicate") 2 else 1
+                files["records.ndjson"] = files.getValue("records.ndjson") + (siteRow + "\n" + (1..copies).joinToString("\n") { link } + "\n").toByteArray()
+                (manifest.get("counts") as ObjectNode).put("site", 1).put("tenant_user_site", copies)
+                manifest.get("files").forEach { file -> if (file.get("path").asString() == "records.ndjson") {
+                    (file as ObjectNode).put("bytes", files.getValue("records.ndjson").size)
+                    file.put("sha256", sha256(files.getValue("records.ndjson")))
+                } }
+                files["manifest.json"] = (manifest.toString() + "\n").toByteArray()
+            }) { path, manifestHash, fileHash ->
+                if (problem == "valid") {
+                    val manifest = verifier.verify(path, manifestHash, fileHash)
+                    assertEquals(1, manifest.at("/counts/tenant_user_site").asInt())
+                    val links = mutableListOf<String>()
+                    verifier.consult(path, "tenant_user_site", links::add)
+                    assertEquals(1, links.size)
+                } else assertFailsWith<IllegalArgumentException>(problem) { verifier.verify(path, manifestHash, fileHash) }
+            }
         }
     }
 

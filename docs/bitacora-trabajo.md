@@ -6,6 +6,239 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 5 de noviembre de 2026 — Preparación de PR de jornada, operación y guía de demo
+
+Por instrucción del usuario se prepara una PR hacia `main` desde
+`feat/jornada-operacion-y-guia-demo`, incluyendo todos los cambios actuales
+del producto y la documentación previa preservada. Base remota comprobada:
+`645174d`, sin divergencia respecto de `main` local.
+
+Alcance: candidato 0.18.0 y migraciones V012/V013; supervisores por sedes,
+baja con fecha y suspensión aprobadas; cálculo diario/semanal de jornada;
+colección de sedes de supervisión en expediente/verificador; recuperación
+Keycloak con 12 códigos de un uso; automatización de respaldo externo S3 y
+su paso de CI; correcciones de imágenes; decisiones/revisión legal,
+seguimiento individual de las 17 tareas y guía de demo de 12 páginas con
+fuente reproducible e ilustración ficticia.
+
+Validación de esta entrega: se conservan los resultados del árbol integrado
+registrados abajo (85 unitarias backend, 101 integraciones PostgreSQL, 216 web,
+14 identidad, contratos, compilación, recuperación local y autoprueba S3,
+cinco imágenes sin críticas/altas y análisis de secretos sin hallazgos).
+Antes de publicar se comprobó `git diff --check` y el inventario de archivos;
+no se incluyeron secretos, dependencias locales ni resultados temporales.
+Se declara el PDF binario en `.gitattributes` para preservar sus bytes y
+evitar conversión de finales de línea al clonarlo desde Windows.
+No se repiten las suites por el único cambio documental de preparación.
+
+La PR reúne avances implementados y límites expresos; no declara terminadas
+las 17 tareas ni habilita datos reales. No incluye integración automática a
+`main`, despliegue, captura física release, purga Android o aceptación jurídica
+integral. El enlace y el estado remoto se registrarán tras crear la PR.
+
+## 5 de noviembre de 2026 — Ejecución de las 17 tareas por necesidad inmediata
+
+El usuario solicita ejecutar las 17 tareas abiertas, comenzar por necesidad
+inmediata y registrar aquí su avance. Se conservan los IDs de la lista global.
+Primero se atienden los seis P0 que impiden uso con datos reales; los frentes
+que requieren recursos externos continúan con preparación verificable mientras
+se obtienen esos recursos. Una implementación local no equivale a aceptación
+pública, prueba física, autorización jurídica ni contratación de infraestructura.
+
+| Secuencia | Tarea / necesidad | Resultado ejecutado | Pendiente para cierre integral |
+| --- | --- | --- | --- |
+| 1 | 1 — Respaldo, P0: evitar pérdida | Automatización diaria S3 cifrada por instancia, verificación descargando bytes, rotación local sólo tras éxito, regla S3 de 30 días/versiones, servicio/timer y autoprueba de fallos. Ensayo de restauración coherente de ambas bases sin origen aprobado | Proveer bucket/endpoint/rol y custodios; instalar/activar timer y monitorización; recuperar desde S3 real en el destino y medir RPO 24 h/RTO 4 h. No se activó un servicio ficticio |
+| 2 | 2 — Identidad, P0: recuperar acceso | Keycloak 26.8.1 admite contraseña + código de recuperación en el acceso normal; 12 códigos, consumo único y conservación de OTP comprobados. Aplicación al realm existente idempotente y alta nueva configuradas; 14 pruebas reales/estáticas aprobadas | SMTP/remitente diferidos expresamente por el usuario; correo verificado/recuperación efectiva, nombres de turnos/aprobadores y simulacro de soporte. Doble aprobación documentada es procedimiento humano, no control automático añadido a Keycloak |
+| 3 | 3 — Jornada/acuse, P0: resultados legales | V013: límites diarios diurno/nocturno/mixto, clasificación por tiempo nocturno, extra diaria/semanal sin doble conteo y alertas de distribución/límite combinado; se conservan versiones previas. 15 casos unitarios del cálculo e integración aprobados | Descanso computable según salida libre del centro, jornada contractual inferior, menores/regímenes especiales y criterio de cruce anual; texto/evidencia versionada y acuerdo de ambas partes para acuse, aceptación integral |
+| 4 | 4 — Tarjeta auténtica, P0: confianza de captura | Revisado el bloqueo de release y herramientas de ejemplo; se conserva la protección de captura y se documenta en la guía | Tecnología MF1K/DESFire, tarjetas/lector/teléfono, claves/provisión y protocolo de autenticación aún sin respuesta. No basta retirar DEBUG; integración física pendiente |
+| 5 | 5 — Reglas, P0: permisos e históricos | Q10–Q13 aprobadas e implementadas: suspensión conserva dispositivos existentes; baja exige fecha no futura, revoca tarjeta y termina horario aplicable; V012 limita supervisores por sedes antes de paginar. Portal/contrato/expediente actualizados y casos de seguridad aprobados, incluido auditor + supervisor | Aceptar la versión desplegada con el cliente. La implementación y regresión locales están completas; esa aceptación se comparte con 9/12/16 |
+| 6 | 6 — Producción, P0: separación y recuperación | Sustituido Q01 por VPS/instancia privada por cliente; S3 gestionado por desarrolladores y custodio cliente con relevo documentado. Compatibilidad legal revisada sin atribuir a la LFT una tecnología concreta | Proveedor/región/cuenta/dominio, contratos/privacidad, bucket/accesos y entrega de custodias concretos. No se contrató ni se desplegó producción sin esos recursos |
+| 7 | 12 — Imágenes, P1: versión y seguridad | Reconstruidas backend/web/Keycloak/backup/db. Detectadas y corregidas cuatro altas de libexpat en backend/web (2.10.0-r0); musl actualizado en backend. PostgreSQL antiguo sustituido por la construcción actual. Cinco análisis locales finales sin críticas/altas ni nuevas excepciones | IDs/commit reales del servidor por Gabriel, análisis de esas imágenes, despliegue y comprobación pública. Las etiquetas locales no prueban qué está publicado |
+| 8 | 9 — Portal, P1: recorridos y aislamiento | 216 pruebas/compilación. Sesión real contraseña/OTP contra runtime aislado con V012/V013; comprobados Configuración, diálogo de comida y Usuarios/Supervisión; Escape devuelve foco al botón. Datos exclusivamente ficticios | Recorrido completo de todos los roles, aceptación pública/del usuario y versión del destino. No se atribuye a esta inspección manual la cobertura de todas las pantallas |
+| 9 | 10 — Retención, P1: preservar evidencia | Revisión de DAO y expediente: no se purga ni pierde pendiente por antigüedad. Plazo laboral documentado; se preserva evidencia que sólo existe en Android | Archivo recuperable de sobres rechazados, textos históricos/evidencia local faltante y disponibilidad de duplicados. Sin ello no hay purga segura; no se inventó un plazo de caché con la ley |
+| 10 | 8 — Proxies, P1: cuotas independientes | Revisado guion/entrega anterior de HTTPS y cabeceras falsas; las pruebas históricas conservan su alcance | Dos conexiones con IP públicas distintas y destino operativo; prueba delegada anteriormente a otro desarrollador. No se simulan dos IP con cabeceras |
+| 11 | 13 — Empresa/dispositivos, P2 | PR #26 integrada sin rehacerla; formulario con motivo/aviso/cancelación y teclado inspeccionado en portal aislado. Recorridos automáticos de dispositivos/comida aprobados | Ratificar SUP-025, aceptación desplegada y aviso/vigencia offline en teléfono real; lector de pantalla, zoom y 320 px manuales completos pendientes |
+| 12 | 15 — Semana/acuse/expediente, P2 | Productor y verificador incluyen tenant_user_site con referencias/aislamiento; lector acepta ZIP anteriores sin esa colección. Pruebas de alteración, relaciones y exportación real aprobadas. JAR actual verifica ZIP histórico anclado, sin red | Aceptación integral Q07/Q14 y evidencia ausente declarada por el formato. Entregar verificador actualizado con ZIP nuevo; uno antiguo puede rechazarlo de forma segura. No habilita borrar origen |
+| 13 | 16 — Operador, P2 | Uso mensual/reactivación existentes preservados; suspensión elegida implementada y comprobada por integración, incluyendo captura existente y bloqueo de administración/nuevo enrolamiento | Aceptación de pantallas con sesión de operador actual y ambiente público. No presentar conteo de uso como facturación o nómina |
+| 14 | 17 — Horarios/ausencias, P2 | Aplicados mínimos de cálculo de jornada y documentados derechos/causas que resuelve LFT; horarios/asignaciones conservan sus pruebas | Capturar condiciones del empleador, antigüedad, vacaciones/incapacidad y evidencia, y desarrollar su gestión/clasificación. Horario asignado aún no genera retardos/faltas ni una sanción automática |
+| 15 | 18 — Capacidad/continuidad, P2 | Guion/línea base ficticia 50/300 del 22 revisados; ensayo actual de recuperación local aprobado | Volumen/objetivos Q19, VPS objetivo, carga sostenida, continuidad, DNS y renovación real de certificados. La línea base anterior no se convierte en SLA actual |
+| 16 | 19 — Nómina, P2 | Verificado que CSV genérico no constituye conector; flujo y límites aclarados en guía. Se solicitó especificación, sin respuesta | Sistema/versión, formato/API y ejemplo ficticio aceptado por el primer cliente; implementar y probar la integración concreta |
+| 17 | 20 — Contrato, P2: compatibilidad | Candidato 0.18.0 válido; contrato/ejemplos y esquema de expediente alineados con nuevas sedes y baja, sin alterar formato 1 ni cierres históricos | Congelar/publicar 1.0 tras funcionalidades, consumidores, recorridos y aceptación. Renombrar la versión no cierra esas dependencias |
+
+**Evidencia conjunta del árbol integrado:** 85 unitarias backend y 101
+integraciones PostgreSQL, sin fallos ni omitidas; 216 pruebas web y compilación;
+14 pruebas de identidad, sin omitidas; contratos principal/expediente válidos.
+Se corrigieron además las fixtures de versión de regla, supervisor con sede,
+renovación de sesión y CSV de extra diaria. Los resultados se conservan en
+`build/tasks17-it-results/`, `tasks17-integration-final.log`, `tasks17-web.log`,
+`tasks17-identity-final.log` y `tasks17-contract-final.log`. Gradle ejecutó el
+árbol actual dentro de Docker, con PostgreSQL aislado. Ninguna prueba usó datos
+de producción. La compilación web conserva un aviso de paquete >500 kB.
+
+Respaldos: `build/tasks17-backup.log` acredita instantáneas concurrentes de
+Zenit/Keycloak, recuperación sin origen, contraseñas nuevas y rechazo de
+destino ocupado/cifrado o contenido alterados. `build/tasks17-s3-final.log`
+acredita transporte simulado sin red, checksum, errores, retención, bloqueo
+concurrente y rechazo de prefijo/endpoint inseguros. No es un ensayo de S3 real.
+Seguridad: `build/security/summary.json` y SBOM/informes por imagen conservan
+IDs y fecha de los cinco análisis del día; hay hallazgos de menor severidad,
+no cero vulnerabilidades. El análisis anterior falló correctamente y no se
+suprimieron esas alertas mediante excepciones.
+
+| Imagen local analizada el 5 de noviembre | Identificador SHA-256 (no inventario público) |
+| --- | --- |
+| backend | `2d9ee33b7ba7d99bce68c9efe0d9047b02efb88df3519aa571bea046f19000dc` |
+| web | `36ed71588162ef5e8c9a0bd85815fc3219b73ca95a72ea59c40e29b7de277ef9` |
+| Keycloak | `741b3a13156d722f0727ef3a7a6a9770d49c9835b62ca4fb1ad64fd6f6d52167` |
+| backup | `d49be99b2e68b3f83247745e5aff1677c8b06f12f17d4742344bca5f1cce607e` |
+| PostgreSQL | `75f523f61e81ab148ccce8995c6f198751731cea1f8ee8b76a7910b9045ac3ef` |
+
+El análisis del árbol modificado/nuevo y del historial (122 commits) terminó
+sin secretos detectados (`build/tasks17-secrets-worktree.log` y
+`build/tasks17-secrets-history.log`); no se copiaron al ensayo los secretos
+privados ni los binarios del PDF.
+
+**Entrega adicional solicitada:** [guía de demo para el cliente](guia-demo-cliente.md)
+y [PDF de 12 páginas](../output/pdf/guia-demo-zenit-cliente.pdf), con pasos,
+responsables, rutas de pantalla, creación de cuenta, roles/sedes, dispositivos,
+cierre/acuse y descargas; se diferencia demo ficticia de producción. Se
+renderizaron e inspeccionaron las 12 páginas, con validación de texto, límites,
+folios y enlaces. Fuente reproducible en `docs/tools/generar-guia-demo.py`.
+
+**Cierre de sesión de trabajo, no cierre ficticio del proyecto:** las 17 tareas
+están atendidas y registradas arriba, pero permanecen abiertas total o
+parcialmente (seis P0) por las condiciones indicadas. La tarea 5 tiene código
+y pruebas locales completos. No se publicaron cambios, ni se ejecutó CI
+remoto, purga Android, ensayo físico o despliegue de producción. Los servicios
+de prueba creados son aislados y contienen sólo datos ficticios. Se preservan
+los cambios documentales locales previos. Las respuestas posteriores del
+usuario prevalecen sobre las decisiones históricas siguientes.
+
+## 5 de noviembre de 2026 — Reforma de 40 horas como respuesta normativa
+
+El usuario amplía el criterio rector: contestar con la reforma de 40 horas
+todas las preguntas que puedan resolverse con ella, por ser el objetivo del
+proyecto. Se contrastaron de nuevo el decreto de la LFT del 1 de mayo,
+la reforma constitucional del 3 de marzo y la LFT de la Cámara de Diputados.
+Se documentaron respuestas por clave y pendientes concretos: Q06, Q07,
+Q14 y Q15 tienen mínimos normativos, y las demás preguntas separan esos
+límites de recursos, condiciones del empleador y elecciones técnicas.
+
+Se actualizó el cuestionario y el seguimiento para no esperar otra elección
+de los mínimos expresos ni un dictamen genérico. Se conservan interpretaciones
+concretas, validación profesional cuando corresponda, implementación y
+aceptación. La búsqueda en DOF/STPS no localizó las disposiciones generales
+del registro; no prueba su inexistencia ni permite inventar requisitos.
+No se modificaron cálculos, migraciones, cierres, datos ni servicios; sin
+pruebas funcionales nuevas por tratarse de documentación. Las tareas globales
+siguen abiertas hasta implementar y comprobar los requisitos.
+
+## 5 de noviembre de 2026 — Respuestas Q01–Q04 y precisión Q23
+
+El usuario ratificó producción exclusiva de Zenit administrada por fastSolution
+con aislamiento lógico, sin VPS por cliente; respaldo externo diario/30 días,
+RPO 24 h y RTO 4 h, descartando la propuesta semanal por incompatibilidad.
+Eligió recuperación de contraseña por correo verificado, pérdida de OTP con
+los 12 códigos de Keycloak 26.8.1 y soporte con doble aprobación como último
+recurso. Se usará SMTP provisional antes del nombre comercial y cuentas
+personales con MFA, turnos primario/respaldo y sin credenciales compartidas.
+
+Q23 confirma #26 integrada con motivo, cancelación y siete días hasta la
+vigencia; mantiene pendientes ratificar SUP-025 y aceptar el recorrido
+desplegado. Se actualizaron decisiones, cuestionarios, guía de identidad y
+seguimiento vigente, preservando los cortes históricos y los cambios
+documentales locales previos. Siguen pendientes recursos, configuración,
+responsables, ensayos y aceptación: permanecen 17 tareas abiertas y seis P0.
+No se modificaron código, secretos, realms ni infraestructura; no se
+ejecutaron pruebas funcionales por tratarse de actualización documental.
+
+## 4 de noviembre de 2026 — Dudas consolidadas para consultar con el equipo
+
+Se cruzaron notas de producto, decisiones, preguntas Q01–Q22, tareas,
+bitácoras, reglas provisionales, retención/recuperación y alcance móvil.
+Se consultaron también la issue #18 y los comentarios de la PR #26:
+la primera conserva seguimiento anterior a E1–E5 y la segunda no tiene
+comentarios que aclaren los detalles de comida anotados como propuesta.
+No se reabre el modelo SaaS, la política diaria/30 días y objetivos 24 h/4 h,
+el alcance del expediente/MFA ni el CI ya implementado.
+
+Se preparó [el cuestionario Q01–Q25](dudas-producto-para-equipo.md), con
+opciones, responsables por función y dependencias. Q23–Q25 recogen detalles
+de comida, ubicación/incidencias y cierre automático; no agregan tres tareas
+globales ni aprueban cambios. La aceptación E6 se recoge en Q07/Q14/Q17.
+Se entrega para que el usuario lo consulte con los desarrolladores; no se
+enviaron mensajes ni se cambiaron reglas, infraestructura o datos. No hubo
+pruebas nuevas por tratarse de revisión/documentación.
+
+## 4 de noviembre de 2026 — Docker disponible y flujo de uso del producto
+
+Por indicación del usuario se volvió a consultar Docker ya inicializado.
+La primera consulta encontró acceso denegado a la tubería desde el sandbox;
+al repetir con permisos, `docker version` devolvió cliente y servidor
+29.9.2, contexto `desktop-linux` y Docker Desktop 4.97.0. El motor está
+disponible. `docker compose ps --all` mostró los servicios locales de Zenit
+detenidos, incluidos backend, PostgreSQL, Keycloak y portal. No se
+arrancaron ni modificaron servicios, bases o volúmenes; no se ejecutaron
+integraciones nuevas. Este resultado sustituye el bloqueo de motor del
+corte anterior, sin atribuir salud al producto sólo por tener Docker activo.
+
+Se creó [Flujo del producto y pendientes](flujo-del-producto-y-pendientes.md),
+con diagrama y pasos en orden de uso: preparación, alta de empresa, acceso,
+configuración, tarjetas/dispositivos, captura/sincronización, revisión,
+incidencias, cierre, acuse, CSV y expediente. Se contrastaron contrato,
+navegación web, entrada/repositorio Android, exportación y actas de alcance.
+La revisión hace explícito que `AttendanceRepository.capture()` exige
+`BuildConfig.DEBUG`: release no permite registrar asistencia hasta integrar
+tarjetas reales. También sitúa las reglas de jornada/ausencias, nómina,
+conservación y operación pendientes; distingue presentación debug, funciones
+conectadas y aceptación. Se actualizan el contexto y los índices para
+encontrarlo. Siguen 17 tareas globales y seis P0, sin commit, PR ni despliegue.
+
+## 4 de noviembre de 2026 — Sincronización local y contexto para continuar
+
+Se comparó `main/fa2396d` con `origin/main` después de `git fetch origin
+--prune`: cero commits locales propios y 16 remotos pendientes. Los únicos
+cambios del árbol estaban en `backend/bin/`: 29 archivos, todos copias
+exactas de fuentes presentes en HEAD, origin/main o las ramas E4/E5 y
+E4/E6. No había una entrega nueva que publicar. Las PR #22–#26 ya estaban
+integradas; `main` avanzó directamente a `645174d`, sin conflictos.
+
+Se preservó la carpeta completa en
+`build/revision-local-20261104-092300/backend-bin/`, con manifiesto SHA-256,
+diff original y `resultado.md`. Se creó además el stash «Respaldo
+backend/bin antes de sincronizar main 2026-11-04». Después de actualizar se
+repuso la copia local, ahora ignorada por la PR #25. Uno de sus archivos
+cambió durante las comprobaciones posteriores; se verificó que los 29
+originales del respaldo conservaran sus bytes. No trasladar estas copias a
+`src/` ni aplicar el stash como si fuera una función pendiente.
+
+| Comprobación nueva | Resultado |
+| --- | --- |
+| Git | HEAD = origin/main = `645174d`; árbol limpio al concluir sincronización y `git diff --check` aprobado |
+| Portal | Dependencias sincronizadas con `pnpm install --frozen-lockfile`; 214 pruebas en 20 archivos y `pnpm build` aprobados |
+| Backend | `gradle :backend:test --offline --no-daemon --console=plain`, con JDK 25 local: 72 pruebas, cero fallos, errores u omisiones |
+| Identidad estática | `node --test infra/keycloak/realm.test.mjs`: cuatro aprobadas y dos omitidas por requerir Keycloak real |
+| Docker/integración | Desktop informa que está iniciado, pero no existe la tubería del motor Linux; no se pudieron ejecutar PostgreSQL ni identidad real |
+
+Los primeros intentos de Git y Node encontraron restricciones del sandbox;
+se repitieron con permisos y finalizaron correctamente. Gradle se ejecutó
+en el host como comprobación puntual ante la falta del motor, no como
+cambio del flujo Docker del proyecto. Los avisos de React `act()`, tamaño
+del bundle y deprecaciones de Gradle no causaron fallos. No se repitieron
+Android, contrato, análisis de imágenes/secretos, CI remoto ni servidor
+público; no se acredita un despliegue. Las integraciones y pruebas Android
+del 1 de noviembre conservan su fecha.
+
+Por petición del usuario se actualizan tareas, estado y contexto de
+reanudación. E4/E5, E6 técnica, medición/accesibilidad automática y cambio
+programado de comida ya no se presentan como desarrollo por iniciar. Se
+conservan **17 tareas globales y seis P0**: faltan aceptación integral E6,
+Q07/Q14 y las decisiones/recursos externos. Primero comprobar Docker y
+retomar integración; después las validaciones manuales de comida y
+accesibilidad según recursos. La prueba de dos IP con datos móviles sigue
+asignada a otro desarrollador. Esta actualización queda local, sin commit
+ni PR; no se inicia otra tarea hasta continuar con el usuario.
+
 ## 30 de octubre de 2026 — Retiro de `backend/bin/` del repositorio
 
 `backend/bin/` tenía 78 archivos versionados desde el 17 de octubre: copias de

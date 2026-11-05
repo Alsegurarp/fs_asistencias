@@ -59,12 +59,13 @@ class SecurityConfig {
         // los dispositivos una aserción firmada con su propia clave. La ruta decide
         // con cuál se verifica; una credencial en la ruta equivocada no pasa.
         val users = ProviderManager(JwtAuthenticationProvider(decoder).apply { setJwtAuthenticationConverter(people) })
-        val devices = AuthenticationManager { deviceAuthenticator.authenticate(it) }
+        val devices = AuthenticationManager { deviceAuthenticator.authenticate(it, allowSuspended = true) }
+        val workerDevices = AuthenticationManager { deviceAuthenticator.authenticate(it) }
         val credentials = AuthenticationManagerResolver<HttpServletRequest> {
             when {
                 it.method == "POST" && it.requestURI in DEVICE_ROUTES -> devices
                 // Lo que es del propio trabajador se puede pedir con su cuenta o con su teléfono.
-                isWorkerRoute(it) && DeviceKeys.isDeviceToken(it.getHeader("Authorization")) -> devices
+                isWorkerRoute(it) && DeviceKeys.isDeviceToken(it.getHeader("Authorization")) -> workerDevices
                 else -> users
             }
         }

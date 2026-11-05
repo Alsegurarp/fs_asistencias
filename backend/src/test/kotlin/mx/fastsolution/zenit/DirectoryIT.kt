@@ -440,7 +440,7 @@ class DirectoryIT : ApiTestBase() {
         assertProblem(409, "card_not_assignable", assign(c, damaged, person))
 
         // A una persona dada de baja no se le asigna tarjeta.
-        call("PATCH", "/api/v1/employees/$someoneElse", c.adminToken, """{"status":"inactive"}""")
+        call("PATCH", "/api/v1/employees/$someoneElse", c.adminToken, """{"status":"inactive","employmentEnd":"$today"}""")
         assertProblem(409, "employee_inactive", assign(c, card(c), someoneElse))
 
         assertEquals(listOf(damaged), call("GET", "/api/v1/cards?status=damaged", c.adminToken).list("items[*].id"))

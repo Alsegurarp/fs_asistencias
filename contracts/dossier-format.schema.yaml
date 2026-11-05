@@ -90,6 +90,7 @@ $defs:
     required: [tenant, tenant_user, tenant_user_role, site, schedule, schedule_day, employee, schedule_assignment, card, card_assignment, device, device_session, attendance_event, location_evidence, attendance_rejection, incident, adjustment, rule_set, week_closure, closure_acknowledgement, week_closure_run, week_closure_run_blocked, audit_log]
     properties:
       break_policy_change: { type: integer, minimum: 0, description: Ausente en los expedientes generados antes de que existiera el cambio programado. }
+      tenant_user_site: { type: integer, minimum: 0, description: Ausente en expedientes anteriores al alcance del supervisor por sedes; los productores nuevos incluyen el conteo aunque sea cero. }
       tenant: { type: integer, minimum: 0 }
       tenant_user: { type: integer, minimum: 0 }
       tenant_user_role: { type: integer, minimum: 0 }
@@ -119,6 +120,7 @@ $defs:
       - { $ref: '#/$defs/tenant' }
       - { $ref: '#/$defs/tenant_user' }
       - { $ref: '#/$defs/tenant_user_role' }
+      - { $ref: '#/$defs/tenant_user_site' }
       - { $ref: '#/$defs/site' }
       - { $ref: '#/$defs/schedule' }
       - { $ref: '#/$defs/schedule_day' }
@@ -212,6 +214,20 @@ $defs:
           role: { type: string }
           granted_at: { type: string, format: date-time }
           granted_by: { type: string }
+  tenant_user_site:
+    type: object
+    additionalProperties: false
+    required: [kind, tenantId, data]
+    properties:
+      kind: { type: string, const: tenant_user_site }
+      tenantId: { type: string, format: uuid }
+      data:
+        type: object
+        additionalProperties: false
+        required: [user_id, site_id]
+        properties:
+          user_id: { type: string, format: uuid }
+          site_id: { type: string, format: uuid }
   site:
     type: object
     additionalProperties: false

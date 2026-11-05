@@ -20,6 +20,7 @@ internal val dossierCollections = listOf(
     DossierCollection("break_policy_change", "id, break_policy, effective_on, reason, scheduled_at, cancelled_at"),
     DossierCollection("tenant_user", "id, display_name, status, employee_id, created_at, linked_at"),
     DossierCollection("tenant_user_role", "user_id, role, granted_at, granted_by", "user_id, role collate \"C\""),
+    DossierCollection("tenant_user_site", "user_id, site_id", "user_id, site_id"),
     DossierCollection("site", "id, name, time_zone, latitude, longitude, radius_m, status, created_at"),
     DossierCollection("schedule", "id, name, time_zone, valid_from, valid_to, created_at"),
     DossierCollection("schedule_day", "schedule_id, day_of_week, start_time, end_time, break_minutes", "schedule_id, day_of_week collate \"C\""),
@@ -123,6 +124,8 @@ class DossierArchive(private val json: JsonMapper) {
             Comparar además manifestSha256 y fileSha256 con el canal autorizado del API.
             Contar filas por kind, comparar counts y comprobar tenantId, llaves y referencias.
             Las relaciones usan IDs de la misma empresa; rule_set contiene reglas públicas.
+            tenant_user_site conserva las sedes autorizadas del supervisor; no contiene credenciales.
+            Usar el verificador entregado con este ZIP; lectores anteriores pueden rechazar nuevas colecciones.
             Actores/objetivos históricos de auditoría pueden estar desvinculados: sus IDs se conservan.
             Se incluyen bajas y versiones reabiertas, ajustes, objeciones y acuses históricos.
             snapshot y envelope conservan su texto original: no reformatearlo ni recalcular evidencia.

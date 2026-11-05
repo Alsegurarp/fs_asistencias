@@ -4,6 +4,18 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Candidato local del 5 de noviembre de 2026:** contrato 0.18.0, migraciones
+V012/V013, supervisores por sedes, suspensión/baja aprobadas y cálculo de
+jornada diaria/semanal sin duplicar extra. Recuperación con 12 códigos de
+Keycloak probada. Aprobaron 85 unitarias backend, 101 integraciones,
+216 pruebas web y 14 de identidad; cinco imágenes locales sin críticas/altas.
+VPS privada por cliente y S3 sustituyen el modelo anterior; provisión, SMTP,
+autenticación física y aceptación siguen pendientes. [Estado por tarea](docs/bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).
+
+Para el cliente: [guía de demo sin programación](docs/guia-demo-cliente.md)
+y [PDF paso a paso](output/pdf/guia-demo-zenit-cliente.pdf).
+Los conteos del párrafo siguiente son antecedentes de octubre.
+
 Monorepo del producto. El backend atiende las 62 operaciones del contrato 0.13,
 con 75 pruebas de integración PostgreSQL. El portal implementa inicio de sesión, sedes,
 empleados, horarios y asignaciones, importación CSV, tarjetas, incidencias,
@@ -43,6 +55,7 @@ y cómo se continúa:
 
 | Para | Documento |
 | --- | --- |
+| Entender el flujo de uso y qué falta para terminar el producto | [Flujo del producto y pendientes](docs/flujo-del-producto-y-pendientes.md) |
 | Levantar el sistema y obtener un token | [Entorno local](docs/entorno-local.md) |
 | Llenarlo de datos simulados, ensayar el respaldo y revisar vulnerabilidades | [Entorno local](docs/entorno-local.md) |
 | Conocer el API de punta a punta | [Recorrido completo](docs/recorrido-completo.md) |

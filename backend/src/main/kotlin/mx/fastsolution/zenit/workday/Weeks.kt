@@ -6,6 +6,7 @@ import mx.fastsolution.zenit.capture.CaptureProperties
 import mx.fastsolution.zenit.device.CurrentDevice
 import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.identity.SiteScope
 import mx.fastsolution.zenit.tenant.BreakPolicies
 import mx.fastsolution.zenit.tenant.TenantRepository
 import mx.fastsolution.zenit.tenant.TenantRow
@@ -113,6 +114,12 @@ class RuleRepository(private val dsl: DSLContext) {
             r.get("weekly_ordinary_max_minutes", Number::class.java).toInt(),
             r.get("weekly_overtime", String::class.java)?.toIntOrNull(),
             r.get("daily_combined", String::class.java)?.toIntOrNull(),
+            r.get("daily_day", String::class.java).toInt(),
+            r.get("daily_night", String::class.java).toInt(),
+            r.get("daily_mixed", String::class.java).toInt(),
+            r.get("daily_overtime", String::class.java)?.toIntOrNull(),
+            r.get("overtime_days", String::class.java)?.toIntOrNull(),
+            r.get("weekly_excess", String::class.java)?.toIntOrNull(),
         ),
     )
 
@@ -121,18 +128,36 @@ class RuleRepository(private val dsl: DSLContext) {
             "select id, jurisdiction, version, cast(valid_from as text) as valid_from, cast(valid_to as text) as valid_to, " +
                 "weekly_ordinary_max_minutes, cast(parameters as text) as parameters, cast(sources as text) as sources, " +
                 "parameters ->> 'weeklyOvertimeMaxMinutes' as weekly_overtime, " +
-                "parameters ->> 'dailyCombinedMaxMinutes' as daily_combined from rule_set"
+                "parameters ->> 'dailyCombinedMaxMinutes' as daily_combined, " +
+                "parameters ->> 'dailyOrdinaryMaxMinutesDay' as daily_day, " +
+                "parameters ->> 'dailyOrdinaryMaxMinutesNight' as daily_night, " +
+                "parameters ->> 'dailyOrdinaryMaxMinutesMixed' as daily_mixed, " +
+                "parameters ->> 'dailyOvertimeMaxMinutes' as daily_overtime, " +
+                "parameters ->> 'overtimeMaxDays' as overtime_days, " +
+                "parameters ->> 'weeklyExcessOvertimeMaxMinutes' as weekly_excess from rule_set"
     }
 }
 
 @Repository
 class WeekRepository(private val dsl: DSLContext) {
-    fun marks(tenantId: UUID, employeeId: UUID, from: OffsetDateTime, until: OffsetDateTime): List<RawMark> =
-        dsl.fetch(
+    /** No entregar una semana parcial ni revelar marcajes de una sede ajena. */
+    fun requireSiteScope(tenantId: UUID, employeeId: UUID, from: OffsetDateTime, until: OffsetDateTime) {
+        if (SiteScope.current() != null && dsl.fetchOne(
+                "select 1 from attendance_event where tenant_id = ? and employee_id = ? " +
+                    "and observed_at >= cast(? as timestamptz) and observed_at < cast(? as timestamptz) " +
+                    "and not coalesce((true${SiteScope.clause("site_id")}), false) limit 1",
+                tenantId, employeeId, from, until,
+            ) != null) throw Problems.forbidden()
+    }
+
+    fun marks(tenantId: UUID, employeeId: UUID, from: OffsetDateTime, until: OffsetDateTime): List<RawMark> {
+        requireSiteScope(tenantId, employeeId, from, until)
+        return dsl.fetch(
             "select id, observed_at, declared_type from attendance_event where tenant_id = ? and employee_id = ? " +
                 "and observed_at >= cast(? as timestamptz) and observed_at < cast(? as timestamptz) order by observed_at, received_at",
             tenantId, employeeId, from, until,
         ).map { RawMark(it.get("id", UUID::class.java), it.get("observed_at", OffsetDateTime::class.java), it.get("declared_type", String::class.java)) }
+    }
 
     /** Ajustes cuyo efecto cae en ese periodo: por la hora que agregan o por la del marcaje que tocan. */
     fun adjustments(tenantId: UUID, employeeId: UUID, from: OffsetDateTime, until: OffsetDateTime): List<AdjustmentRow> =
@@ -202,6 +227,10 @@ class WeekService(
             // El cálculo es el que se congeló. Las incidencias abiertas sí son las de ahora:
             // un marcaje que llegó después del cierre deja una, y así se ve que hay algo por revisar.
             val zone = ZoneId.of(tenant.timeZone)
+            weeks.requireSiteScope(
+                tenantId, employeeId, weekStart.minusDays(1).atStartOfDay(zone).toOffsetDateTime(),
+                weekStart.plusDays(8).atStartOfDay(zone).toOffsetDateTime(),
+            )
             val open = weeks.openIncidents(
                 tenantId, employeeId, weekStart.atStartOfDay(zone).toOffsetDateTime(), weekStart.plusDays(7).atStartOfDay(zone).toOffsetDateTime(),
             )

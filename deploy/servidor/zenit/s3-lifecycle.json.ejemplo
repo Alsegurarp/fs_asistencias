@@ -1,0 +1,12 @@
+{
+  "Rules": [
+    {
+      "ID": "zenit-INSTANCE_ID-30-dias",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "zenit/INSTANCE_ID/" },
+      "Expiration": { "Days": 30 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 30 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    }
+  ]
+}

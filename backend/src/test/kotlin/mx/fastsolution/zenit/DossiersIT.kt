@@ -66,6 +66,11 @@ class DossiersIT : WorkdayTestBase() {
         val c = companyWithFinishedWeek()
         val other = company()
         val site = newSite(c)
+        val supervisor = member(c, "supervisor")
+        assertEquals(200, call("PATCH", "/api/v1/users/${supervisor.id}", c.adminToken, """{"siteIds":["$site"]}""").status)
+        val otherSite = newSite(other)
+        val otherSupervisor = member(other, "supervisor")
+        assertEquals(200, call("PATCH", "/api/v1/users/${otherSupervisor.id}", other.adminToken, """{"siteIds":["$otherSite"]}""").status)
         val one = staffed(c, site)
         val pending = staffed(c, site)
         val ana = member(c, "rh")
@@ -135,6 +140,10 @@ class DossiersIT : WorkdayTestBase() {
             rows
         }
         val kinds = records.groupBy { it.get("kind").asString() }
+        val supervisorSites = kinds.getValue("tenant_user_site")
+        assertEquals(1, supervisorSites.size)
+        assertEquals(supervisor.id, supervisorSites.single().at("/data/user_id").asString())
+        assertEquals(site, supervisorSites.single().at("/data/site_id").asString())
         assertEquals(setOf(firstClosure, secondClosure), kinds.getValue("week_closure").map { it.at("/data/id").asString() }.toSet())
         assertEquals(setOf("reopened", "closed"), kinds.getValue("week_closure").map { it.at("/data/status").asString() }.toSet())
         assertEquals(setOf("objected", "agreed"), kinds.getValue("closure_acknowledgement").map { it.at("/data/type").asString() }.toSet())

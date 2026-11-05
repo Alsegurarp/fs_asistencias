@@ -1,5 +1,14 @@
 # Expediente recuperable por empresa
 
+**Actualización del 5 de noviembre:** la colección `tenant_user_site` conserva
+las asignaciones de sedes del supervisor, con clave compuesta y referencias
+a usuario/sede de la misma empresa. El productor la incluye; es opcional para
+que el verificador nuevo conserve compatibilidad con expedientes anteriores.
+Entregar el JAR actualizado con cada ZIP nuevo: un verificador antiguo puede
+rechazar inventarios nuevos. No se reescriben los archivos ya entregados.
+E1–E5/E6 técnica están integradas; falta aceptación integral y evidencia local
+ausente según Q07/Q14, por lo que no se habilita purga Android.
+
 **Entrega posterior del 28:** E4/E5 incorporadas desde la PR #21 y
 [E6 técnica entregada](entrega-expediente-e6.md) en la rama
 `feat/expediente-e4-e6-qa` para integrar contra main. MFA nuevo y descarga de

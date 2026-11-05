@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { test } from 'node:test'
 
@@ -40,6 +42,19 @@ test('verificación y recuperación por correo requieren SMTP configurado', () =
   assert.equal(realm.registrationAllowed, false)
   assert.equal(realm.editUsernameAllowed, false)
   assert.ok(!realm.users?.length, 'El realm no debe distribuir cuentas ni contraseñas')
+})
+
+test('Q03 ofrece recuperación como segundo factor y las cuentas nuevas guardan sus códigos', () => {
+  const steps = activeExecutions(realm.browserFlow)
+  assert.equal(steps.find(step => step.authenticator === 'auth-recovery-authn-code-form')?.requirement, 'ALTERNATIVE')
+  assert.equal(steps.find(step => step.authenticator === 'auth-otp-form')?.requirement, 'ALTERNATIVE')
+  const recovery = realm.requiredActions.find(action => action.alias === 'CONFIGURE_RECOVERY_AUTHN_CODES')
+  assert.equal(recovery.enabled, true)
+  assert.equal(recovery.defaultAction, true)
+  const dossier = realm.authenticationFlows.find(flow => flow.alias === 'dossier-otp')
+  assert.equal(dossier.authenticationExecutions.find(step => step.authenticator === 'auth-otp-form')?.requirement, 'REQUIRED')
+  assert.ok(!dossier.authenticationExecutions.some(step => step.authenticator === 'auth-recovery-authn-code-form'),
+    'La recuperación de acceso no sustituye el OTP nuevo por descarga de expediente')
 })
 
 test('expediente usa cliente separado, retorno exacto y OTP sin reutilizar el nivel SSO', () => {
@@ -114,4 +129,47 @@ test('Keycloak importa la protección del OTP y la reautenticación', {
   assert.equal(config.config['force-login'], 'true')
   const actions = await get('/authentication/required-actions')
   assert.equal(actions.find(action => action.alias === 'CONFIGURE_TOTP')?.defaultAction, true)
+  assert.equal(actions.find(action => action.alias === 'CONFIGURE_RECOVERY_AUTHN_CODES')?.defaultAction, true)
+  const browser = await get('/authentication/flows/browser/executions')
+  assert.equal(browser.find(step => step.providerId === 'auth-recovery-authn-code-form')?.requirement, 'ALTERNATIVE')
+})
+
+test('despliegue Q03 actualiza un realm existente y repetirlo conserva clientes y credenciales', {
+  skip: !process.env.IDENTITY_TEST_SECRETOS, timeout: 120000,
+}, async () => {
+  const base = process.env.IDENTITY_TEST_URL || 'http://localhost:38082'
+  const secretos = process.env.IDENTITY_TEST_SECRETOS
+  const password = readFileSync(join(secretos, 'keycloak_admin_password'), 'utf8').trim()
+  const response = await fetch(`${base}/realms/master/protocol/openid-connect/token`, {
+    method: 'POST', body: new URLSearchParams({ grant_type: 'password', client_id: 'admin-cli', username: 'arranque', password }),
+    signal: AbortSignal.timeout(10000),
+  })
+  assert.equal(response.status, 200)
+  const { access_token } = await response.json()
+  const prefix = `${base}/admin/realms/zenit`
+  const headers = { Authorization: `Bearer ${access_token}`, 'Content-Type': 'application/json' }
+  const actions = await (await fetch(`${prefix}/authentication/required-actions`, { headers })).json()
+  const action = actions.find(item => item.alias === 'CONFIGURE_RECOVERY_AUTHN_CODES')
+  assert.equal((await fetch(`${prefix}/authentication/required-actions/${action.alias}`, {
+    method: 'PUT', headers, body: JSON.stringify({ ...action, defaultAction: false }),
+  })).status, 204)
+  const route = `${prefix}/authentication/flows/browser/executions`
+  const steps = await (await fetch(route, { headers })).json()
+  const recovery = steps.find(item => item.providerId === 'auth-recovery-authn-code-form')
+  assert.ok([202, 204].includes((await fetch(route, {
+    method: 'PUT', headers, body: JSON.stringify({ ...recovery, requirement: 'DISABLED' }),
+  })).status))
+  mkdirSync(join(secretos, 'identity-admin'), { recursive: true })
+  const env = { ...process.env, KEYCLOAK_URL: base, SECRETOS: secretos,
+    PORTAL_URL: process.env.IDENTITY_TEST_PORTAL_URL || 'http://localhost:8081',
+    REALM_FILE: fileURLToPath(new URL('./realm/zenit-realm.json', import.meta.url)) }
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const output = execFileSync(process.execPath, ['deploy/servidor/zenit/identidad.mjs'], {
+      env, encoding: 'utf8', timeout: 50000,
+    })
+    assert.match(output, /recuperación Q03: códigos habilitados/)
+  }
+  const after = await (await fetch(route, { headers })).json()
+  assert.equal(after.find(item => item.id === recovery.id)?.requirement, 'ALTERNATIVE')
+  assert.equal(after.find(item => item.providerId === 'auth-otp-form')?.requirement, 'ALTERNATIVE')
 })

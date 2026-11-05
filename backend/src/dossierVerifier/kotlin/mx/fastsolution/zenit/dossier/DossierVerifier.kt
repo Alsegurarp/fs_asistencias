@@ -93,9 +93,10 @@ class DossierVerifier {
     }
     companion object {
         private val primary = ("break_policy_change tenant tenant_user site schedule employee schedule_assignment card card_assignment device device_session attendance_event attendance_rejection incident adjustment rule_set week_closure closure_acknowledgement week_closure_run audit_log"
-            .split(' ').associateWith { listOf("id") } + mapOf("tenant_user_role" to listOf("user_id", "role"), "schedule_day" to listOf("schedule_id", "day_of_week"), "location_evidence" to listOf("event_id"), "week_closure_run_blocked" to listOf("run_id", "employee_id")))
+            .split(' ').associateWith { listOf("id") } + mapOf("tenant_user_role" to listOf("user_id", "role"), "tenant_user_site" to listOf("user_id", "site_id"), "schedule_day" to listOf("schedule_id", "day_of_week"), "location_evidence" to listOf("event_id"), "week_closure_run_blocked" to listOf("run_id", "employee_id")))
         private val references = mapOf(
             "tenant_user" to mapOf("employee_id" to "employee"), "tenant_user_role" to mapOf("user_id" to "tenant_user"),
+            "tenant_user_site" to mapOf("user_id" to "tenant_user", "site_id" to "site"),
             "schedule_day" to mapOf("schedule_id" to "schedule"), "employee" to mapOf("site_id" to "site"),
             "schedule_assignment" to mapOf("employee_id" to "employee", "schedule_id" to "schedule"),
             "card_assignment" to mapOf("card_id" to "card", "employee_id" to "employee", "replaced_card_id" to "card"),

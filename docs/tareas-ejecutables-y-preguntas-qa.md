@@ -1,5 +1,59 @@
 # Trabajo ejecutable y preguntas para QA
 
+**Corte técnico vigente del 5 de noviembre de 2026:** las 17 tareas se
+atendieron en orden de necesidad y su [resultado individual y condición de
+cierre están en la bitácora](bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).
+El usuario sustituyó Q01 por **VPS/instancia privada por cliente**, S3
+administrado por desarrolladores y custodia del administrador con relevo
+documentado; SMTP/remitente se anexarán después. Q10–Q13 fueron aprobadas e
+implementadas: suspensión mantiene dispositivos existentes, baja con fecha
+revoca tarjeta/termina horario y supervisores operan en sedes asignadas.
+
+Árbol local candidato **0.18.0, V012/V013**: 85 unitarias backend, 101
+integraciones PostgreSQL, 216 pruebas web y 14 de identidad aprobadas; sin
+omitidas. Contratos y compilación válidos. Cinco imágenes reconstruidas y
+analizadas sin críticas/altas; no acredita el servidor público. Respaldo S3
+automatizado y autoprueba sin red preparados, recuperación local ensayada;
+falta bucket/timer y recuperación en el destino real. Cálculo diario y semanal
+incorporado sin duplicar extra; quedan descanso computable, condiciones
+contractuales/regímenes especiales y evidencia del acuse. No se habilitó
+captura física release ni purga Android. Permanecen **17 tareas abiertas total
+o parcialmente y seis P0**; código local de la tarea 5 completo, aceptación
+desplegada pendiente. [Guía para el cliente](guia-demo-cliente.md) y
+[PDF paso a paso](../output/pdf/guia-demo-zenit-cliente.pdf).
+
+Los apartados anteriores a este corte son antecedentes, con sus pruebas y
+límites originales. No sustituyen estas decisiones ni requieren volver a
+preguntar Q01/Q10–Q13.
+
+**Base legal del 5 de noviembre:** las
+[respuestas obtenidas de la reforma de 40 horas y la LFT](revision-juridica-jornada-acuse.md#respuestas-legales-aplicables--5-de-noviembre-de-2026)
+son requisitos para el desarrollo; las preguntas de elección de mínimos
+normativos quedan sustituidas. La revisión profesional se reserva para
+interpretaciones concretas, no como bloqueo general. El cuestionario vigente
+delimita lo respondido y lo pendiente para cada frente.
+
+**Respuestas del 5 de noviembre:** Q01–Q04 y precisión Q23 incorporadas al
+[cuestionario vigente](dudas-producto-para-equipo.md). Las preguntas antiguas
+de elección quedan sustituidas por esas respuestas; provisión, pruebas y
+aceptación siguen pendientes. Q23 exige ratificar SUP-025 y aceptar #26
+desplegada, sin rehacer su implementación.
+
+**Consulta consolidada del 4 de noviembre:** el
+[cuestionario para el equipo](dudas-producto-para-equipo.md) conserva Q01–Q22
+y añade Q23–Q25 con opciones, responsables y lo que desbloquean. Descuenta
+las decisiones ya aprobadas y las implementaciones integradas; usarlo para
+recabar respuestas. El listado siguiente conserva el contexto de origen.
+
+**Corte vigente del 4 de noviembre:** las PR #22–#26 están integradas en
+`main/645174d`. E4/E5 y E6 técnica, uso mensual/accesibilidad automática y
+cambio programado de comida ya están implementados. El
+[contexto para reanudar](TareasPendientes.md#contexto-para-reanudar--4-de-noviembre-de-2026)
+sustituye las secuencias históricas siguientes: con Docker ya comprobado,
+levantar el entorno aislado para integración y retomar validaciones manuales
+y aceptación. Q01–Q22 mantienen
+las decisiones y recursos pendientes; no se resolvieron por sincronizar Git.
+
 **Entrega posterior del 28:** E4/E5 incorporadas desde la PR #21 y
 [E6 técnica](entrega-expediente-e6.md) disponible sin conexión, con pruebas
 de integridad/relaciones/consulta. QA Android retomada con teléfono real y
@@ -201,16 +255,16 @@ claves privadas en las respuestas.
    custodia la clave y su segunda copia, y quién habilita transferencia,
    programación y avisos? Ya están aprobados diario/30 días y objetivos
    24 h/4 h; falta probarlos en el modelo elegido.
-3. **Q03 — Acceso perdido (2).** Si el empleado olvidó su contraseña,
-   ¿recibirá enlace de recuperación o credencial temporal? ¿Cómo se verifica
-   su identidad, quién lo atiende y qué procedimiento aplica si perdió OTP?
-   El cambio obligatorio por sí solo no recupera acceso; el flujo actual
-   conserva OTP.
-4. **Q04 — Identidad operativa (2).** ¿Qué servicio SMTP/remitente estará
-   disponible y quién provisionará la credencial técnica de backend y las
-   cuentas personales de administración/operación? ¿Quién ejecutará y
-   registrará las pruebas de correo, contraseña y OTP antes de retirar la
-   cuenta temporal de arranque?
+3. **Q03 — Acceso perdido (2), decidido el 5 de noviembre.** Contraseña por
+   correo verificado; pérdida de OTP con los 12 códigos de Keycloak 26.8.1
+   y, como último recurso, soporte con doble aprobación. Falta configurar,
+   probar y asignar responsables/aprobadores. El cambio obligatorio por sí
+   solo no recupera acceso y conserva OTP.
+4. **Q04 — Identidad operativa (2), decidido el 5 de noviembre.** SMTP
+   provisional antes del nombre comercial; cuentas personales con MFA,
+   turnos primario/respaldo y sin credenciales compartidas. Faltan
+   proveedor/remitente, provisión de cuentas/credencial técnica, asignación
+   de turnos y pruebas de correo, contraseña y OTP antes de retirar arranque.
 5. **Q05 — Habilitación de producción (6).** El servidor compartido conserva
    sólo datos ficticios y se abandona antes del primer dato real. ¿Quiénes
    aprovisionarán producción bajo control de fastSolution y entregarán los
@@ -220,10 +274,10 @@ claves privadas en las respuestas.
 
 ### Producto, jornada y credenciales
 
-6. **Q06 — Jornada (3).** ¿Quién aportará el dictamen profesional y la tabla
-   aprobada de resultados esperados para jornadas, extras, descansos, turnos
-   nocturnos y cruces de día/semana? Los desarrolladores deben identificar
-   responsable y casos; su respuesta técnica no sustituye el dictamen.
+6. **Q06 — Jornada (3).** Límites, clasificación, descansos y vigencias
+   contestados por ley en la revisión vigente. Preparar tabla de casos
+   esperados; precisar horario pactado e interpretaciones de cruces de
+   día/semana/año. No volver a solicitar elección de los mínimos expresos.
 7. **Q07 — Acuse y expediente (3, 15).** ¿Qué texto/documento exacto revisa el
    trabajador, cómo se versiona, quién representa al empleador y cuánto se
    conserva? ¿Qué ve el trabajador de ajustes y objeciones, quién responde y
@@ -253,10 +307,10 @@ claves privadas en las respuestas.
     servidor junto con la declaración explícita validada, como funciona hoy?
     Si cambia, entregar la secuencia esperada para descansos y marcajes fuera
     de orden.
-14. **Q14 — Retención Android (10).** ¿Cuántos días se conservan sobres y
-    recibos procesados, incluidos rechazos y acuses? ¿El servidor conservará
-    la evidencia necesaria para permitir borrarlos del teléfono? Los marcajes
-    pendientes quedan fuera de la purga.
+14. **Q14 — Retención Android (10).** Conservación laboral contestada por ley;
+    falta completar/verificar archivo de la evidencia y definir disponibilidad
+    de duplicados locales, incluidos rechazos y acuses. El plazo de caché
+    no sustituye el archivo laboral; pendientes fuera de la purga.
 15. **Q15 — Horarios y ausencias (17).** ¿Qué tolerancias, redondeos y reglas
     se aprueban para retardo, falta, salida anticipada, vacaciones e
     incapacidad? ¿Quién solicita/aprueba, qué evidencia adjunta y cómo afecta

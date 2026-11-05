@@ -1,5 +1,56 @@
 # Tareas críticas primero
 
+**Corte técnico vigente del 5 de noviembre de 2026:** las 17 tareas se
+atendieron en orden de necesidad y su [resultado individual y condición de
+cierre están en la bitácora](bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).
+El usuario sustituyó Q01 por **VPS/instancia privada por cliente**, S3
+administrado por desarrolladores y custodia del administrador con relevo
+documentado; SMTP/remitente se anexarán después. Q10–Q13 fueron aprobadas e
+implementadas: suspensión mantiene dispositivos existentes, baja con fecha
+revoca tarjeta/termina horario y supervisores operan en sedes asignadas.
+
+Árbol local candidato **0.18.0, V012/V013**: 85 unitarias backend, 101
+integraciones PostgreSQL, 216 pruebas web y 14 de identidad aprobadas; sin
+omitidas. Contratos y compilación válidos. Cinco imágenes reconstruidas y
+analizadas sin críticas/altas; no acredita el servidor público. Respaldo S3
+automatizado y autoprueba sin red preparados, recuperación local ensayada;
+falta bucket/timer y recuperación en el destino real. Cálculo diario y semanal
+incorporado sin duplicar extra; quedan descanso computable, condiciones
+contractuales/regímenes especiales y evidencia del acuse. No se habilitó
+captura física release ni purga Android. Permanecen **17 tareas abiertas total
+o parcialmente y seis P0**; código local de la tarea 5 completo, aceptación
+desplegada pendiente. [Guía para el cliente](guia-demo-cliente.md) y
+[PDF paso a paso](../output/pdf/guia-demo-zenit-cliente.pdf).
+
+Los apartados anteriores a este corte son antecedentes, con sus pruebas y
+límites originales. No sustituyen estas decisiones ni requieren volver a
+preguntar Q01/Q10–Q13.
+
+**Criterio legal del 5 de noviembre:** desarrollar conforme a las
+[respuestas normativas de la reforma de 40 horas y la LFT](revision-juridica-jornada-acuse.md#respuestas-legales-aplicables--5-de-noviembre-de-2026).
+Los mandatos expresos no esperan otra elección ni dictamen genérico;
+Q06/Q07/Q14/Q15 conservan implementación, validación y definiciones concretas
+que la ley no aporta. El cuestionario separa esas partes de las demás dudas.
+
+**Actualización de decisiones del 5 de noviembre:** Q01–Q04 tienen
+[resolución](decisiones-de-negocio.md#resoluciones-recibidas-el-5-de-noviembre-de-2026).
+Para las tareas 1/6 falta provisión y ensayo del respaldo externo diario/30
+días (RPO 24 h/RTO 4 h; semanal descartada) y de producción exclusiva con
+aislamiento lógico. Para la tarea 2 falta configurar/probar correo verificado,
+los 12 códigos de recuperación de Keycloak 26.8.1 y soporte con doble
+aprobación; proveer SMTP provisional y cuentas personales con MFA, turnos
+primario/respaldo y sin credenciales compartidas. Q23/tarea 13 conserva
+ratificación de SUP-025 y aceptación desplegada de #26. Las elecciones
+anteriores de Q01–Q04 quedan sustituidas; siguen 17 tareas abiertas y seis P0.
+
+**Corte vigente del 4 de noviembre:** `main` sincronizado con `origin/main`
+en `645174d`; PR #22–#26 integradas. E4/E5 y E6 técnica ya existen; no
+reiniciar ese desarrollo. Consultar el
+[contexto para reanudar](TareasPendientes.md#contexto-para-reanudar--4-de-noviembre-de-2026)
+para comprobaciones pendientes y estado de Docker. Permanecen 17 tareas
+globales y seis P0; integración en Git no acredita aceptación ni despliegue.
+Los cortes siguientes son históricos.
+
 **Entrega posterior del 28:** E4/E5 y [E6 técnica](entrega-expediente-e6.md)
 preparadas en `feat/expediente-e4-e6-qa`; no reiniciar ese desarrollo.
 Continuar aceptación de conservación/recuperación y decisiones externas,
@@ -143,9 +194,9 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | Orden | Prioridad | Tarea | Posibilidad de resolver y criterio de cierre |
 | --- | --- | --- | --- |
 | 1 | P0 | Respaldo externo y recuperación completa (15) | SaaS administrado por fastSolution con aislamiento lógico por empresa. Mediano: 50 empleados; grande: 300, cuatro marcajes/día, un año consultable. Respaldo externo cifrado de Zenit, fuera del dominio de falla de producción. Se conservan copia diaria/30 días y objetivos 24 h/4 h. Faltan destino, custodia, automatización y recuperación pública; bases dedicadas sólo Enterprise. SSH mediante Gabriel |
-| 2 | P0 | Identidad operativa: cuentas personales, OTP, operador y SMTP (14) | A4 entrega cambio obligatorio para cuentas activas vinculadas y cliente técnico local, sin alterar OTP. Faltan Q03/Q04: recuperación, SMTP, cuentas personales y provisión/aceptación pública |
+| 2 | P0 | Identidad operativa: cuentas personales, OTP, operador y SMTP (14) | A4 entrega cambio obligatorio y la PR #23 integra clientes/flujos para desplegar un realm existente, sin alterar OTP. Faltan Q03/Q04: recuperación, SMTP, cuentas personales y verificación/aceptación pública de la configuración efectiva |
 | 3 | P0 | Aprobar e implementar jornada y evidencia del acuse (17) | Requiere dictamen profesional y criterios de producto. Después implementar casos esperados, texto/evidencia versionados y conservación de cierres históricos; la revisión documental existente no cierra la tarea |
-| 4 | P0 | Captura autenticada con tarjetas reales (16) | Herramientas Android MF1K implementadas para ejemplos; pendientes de prueba física. Falta autenticación integrada y custodia de claves: el backend sólo verifica captura simulada. Comprobar captura y rechazo con tarjetas/teléfonos reales |
+| 4 | P0 | Captura autenticada con tarjetas reales (16) | Herramientas MF1K de ejemplo implementadas; `AttendanceRepository.capture()` exige debug y bloquea captura en release. Falta autenticación integrada con backend y custodia de claves; comprobar captura/rechazo con tarjetas y teléfonos reales. No basta retirar la comprobación debug |
 | 5 | P0 | Resolver suspensión, baja, supervisor y tipo de marcaje (2) | Requiere elección del responsable del producto sobre las propuestas existentes. Implementar sólo cambios aprobados y probar permisos, históricos y captura. Hoy el supervisor abarca toda la empresa y la suspensión también detiene captura |
 | 6 | P0 | Aprovisionar producción administrada para datos reales | Modelo aprobado por Gabriel, Roberto Arregui y Alex Segura: producción exclusiva de Zenit, separada de pruebas y bajo control de fastSolution; aislamiento lógico por empresa. Faltan proveedor, región, cuenta, contratos, respaldo externo, restauración y pruebas. El servidor compartido conserva sólo datos ficticios |
 | 7 | P1 | Hacer reproducible Android contra backend y corregir la indicación de URL (7) | Completada el 19: `BackendSmoke.kt` y `infra/test-android-backend.ps1`, APK construidos juntos y hashes registrados. Personal y terminal pasaron contra backend local y HTTPS publicado, con datos ficticios y limpieza. Se corrigió la validación Android que rechazaba los códigos de cinco caracteres por grupo. El fallo de transporte se induce sólo en el almacén del ensayo; no acredita apagar radios ni NFC autenticado |
@@ -154,10 +205,10 @@ una prueba en servidor o teléfono conserva ese requisito para su cierre.
 | 10 | P1 | Retención de sobres y recibos Android (8) | Requiere plazo y criterio de conservación. Después implementar purga acotada con pruebas que preserven pendientes y evidencia necesaria; hoy crece sin purga |
 | 11 | P1 | Verificaciones automáticas por cambio (11) | Integrada en `main`. Los cuatro trabajos aprobaron en GitHub para `565dbdd` en la ejecución 39472077601 del 20 de octubre. La obligatoriedad de trabajos requiere una decisión adicional. [Procedimiento y resultados](verificaciones-automaticas.md) |
 | 12 | P1 | Actualizar análisis de imágenes y comprobar el despliegue (parte de 19) | Cinco imágenes locales analizadas el 22 sin críticas/altas ni excepciones, tras corregir Keycloak 26.8.1 con Java 25.0.5.0.2 y retirar las seis excepciones de identidad; [acta y límites](seguridad-keycloak-2026-10-22.md). Faltan IDs del servidor mediante Gabriel, análisis de esas imágenes, despliegue y comprobación pública, actualmente diferidos |
-| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación y aceptación técnica local por rol completadas en A5 el 21. Configuración GET/PATCH /tenant y permisos de dispositivos comprobados; faltan despliegue y aceptación pública/del usuario |
+| 13 | P2 | Configuración de empresa y administración de dispositivos en portal (9) | Implementación y aceptación técnica local por rol completadas en A5 el 21; cambio programado de comida integrado por PR #26. Faltan validación manual del cambio, despliegue y aceptación pública/del usuario |
 | 14 | P2 | Personas que no pudieron cerrar y sus causas (10) | Implementación completada el 19: contrato 0.12 y V008, con 74 integraciones/151 pruebas web en ese corte. A5 local del 21 comprueba detalle y paginación en navegador; falta despliegue y aceptación pública/del usuario. Históricos anteriores conservan conteos |
-| 15 | P2 | Semana y acuse del trabajador (12) | A2/A3, A5 e instrumentación aprobados; recorrido visual Android contra backend real local aprobado el 21. Faltan aceptación pública/del usuario, expediente y definiciones jurídicas/evidencia del orden 3 |
-| 16 | P2 | Pantallas de operador del servicio (13) | Reactivación y permisos/aislamiento comprobados con sesión real en A5 local del 21. Faltan suspensión según orden 5 y aceptación pública/del usuario |
+| 15 | P2 | Semana y acuse del trabajador (12) | A2/A3, A5 e instrumentación aprobados; recorridos Android del 21 y 28 conservan sus actas y límites. E1–E5 y E6 técnica integradas; faltan aceptación pública/del usuario, cierre integral E6/Q07/Q14 y definiciones jurídicas/evidencia del orden 3 |
+| 16 | P2 | Pantallas de operador del servicio (13) | Reactivación y permisos/aislamiento comprobados con sesión real en A5 local del 21; uso mensual por empresa integrado por PR #24. Faltan suspensión según orden 5 y aceptación pública/del usuario |
 | 17 | P2 | Horarios frente a asistencia y gestión de ausencias (18) | Requiere criterios de retardos, faltas, salidas anticipadas, vacaciones e incapacidades; después implementar y validar resultados |
 | 18 | P2 | Carga, continuidad y operación del despliegue (resto de 19) | Línea base local 50/300 aprobada el 22 con captura, consultas, cierres y exportes; no acredita capacidad sostenida ni nivel de servicio. Faltan Q19, pruebas en infraestructura objetivo, continuidad, actualización del DNS ante IP dinámica y renovación real de certificados. Cuotas compartidas sólo si habrá varias instancias |
 | 19 | P2 | Conector y formato de nómina (20) | Depende del sistema y formato del primer cliente. Cierre con sincronización y archivo aceptados por ese sistema |

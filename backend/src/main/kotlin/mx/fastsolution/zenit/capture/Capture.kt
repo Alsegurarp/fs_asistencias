@@ -12,6 +12,7 @@ import mx.fastsolution.zenit.device.DeviceKeys
 import mx.fastsolution.zenit.device.DeviceRepository
 import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.identity.SiteScope
 import mx.fastsolution.zenit.site.SiteRepository
 import mx.fastsolution.zenit.tenant.BreakPolicies
 import mx.fastsolution.zenit.tenant.TenantRepository
@@ -215,7 +216,7 @@ class CaptureRepository(private val dsl: DSLContext) {
     }
 
     fun page(tenantId: UUID, employeeId: UUID?, siteId: UUID?, from: OffsetDateTime, to: OffsetDateTime, after: PageKey?, limit: Int): List<EventRow> {
-        val sql = StringBuilder("$EVENT where e.tenant_id = ? and e.observed_at >= cast(? as timestamptz) and e.observed_at < cast(? as timestamptz)")
+        val sql = StringBuilder("$EVENT where e.tenant_id = ?${SiteScope.clause("e.site_id")} and e.observed_at >= cast(? as timestamptz) and e.observed_at < cast(? as timestamptz)")
         val binds = mutableListOf<Any>(tenantId, from, to)
         if (employeeId != null) {
             sql.append(" and e.employee_id = ?")
@@ -351,18 +352,30 @@ class CaptureProcessor(
         if (!capture.simulatedCards) return reject("card_unknown", "Este ambiente no acepta la tarjeta simulada.")
         val card = cards.findByFingerprint(tenantId, payload.cardProof) ?: return reject("card_unknown", "La tarjeta no está registrada.")
         if (card.status in NEVER_HELD) return reject("card_unknown", "La tarjeta no tiene titular.")
-        val holder = card.employeeId
-        if (card.status != "active" || holder == null) return reject("card_revoked", "La tarjeta ya no está activa.")
+        val holder = card.employeeId ?: if (card.status == "revoked") cards.holderAt(tenantId, card.id, payload.observedAt) else null
+        if (holder == null) return reject("card_revoked", "La tarjeta ya no está activa.")
         // Las marcas de una persona se procesan de una en una.
         if (!employees.lock(tenantId, holder)) return reject("card_unknown", "La tarjeta no tiene titular.")
+        // La baja pudo completarse mientras esperábamos el bloqueo de la persona.
+        val currentCard = cards.find(tenantId, card.id) ?: return reject("card_unknown", "La tarjeta no existe.")
+        val historical = currentCard.status == "revoked"
+        val currentHolder = if (historical) cards.holderAt(tenantId, card.id, payload.observedAt) else currentCard.employeeId
+        if ((currentCard.status != "active" && !historical) || currentHolder != holder) {
+            return reject("card_revoked", "La tarjeta ya no está activa.")
+        }
         val employee = employees.find(tenantId, holder)!!
-        if (employee.status != "active") return reject("card_revoked", "La persona titular está dada de baja.")
+        val tenant = tenants.find(tenantId)!!
+        val markDate = payload.observedAt.atZoneSameInstant(ZoneId.of(tenant.timeZone)).toLocalDate()
+        if (historical && (employee.status != "inactive" || employee.employmentEnd == null)) {
+            return reject("card_revoked", "La tarjeta ya no está activa.")
+        }
+        if (employee.status != "active" && (employee.employmentEnd == null || markDate > employee.employmentEnd)) {
+            return reject("card_revoked", "La persona titular está dada de baja.")
+        }
         if (device.mode == "personal" && device.employeeId != employee.id) {
             return reject("card_not_owner", "Este teléfono sólo acepta la tarjeta de su titular.")
         }
 
-        val tenant = tenants.find(tenantId)!!
-        val markDate = payload.observedAt.atZoneSameInstant(ZoneId.of(tenant.timeZone)).toLocalDate()
         // La política es la que valía el día de la marca, aunque llegue después sin red.
         val decision = MarkRules.decide(
             policies.on(tenant, markDate), events.lastMark(tenantId, employee.id, payload.observedAt), payload.declaredType, payload.observedAt,

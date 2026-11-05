@@ -7,9 +7,12 @@ import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
+import mx.fastsolution.zenit.card.CardRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
+import mx.fastsolution.zenit.identity.SiteScope
 import mx.fastsolution.zenit.schedule.ScheduleRepository
 import mx.fastsolution.zenit.site.SiteRepository
+import mx.fastsolution.zenit.tenant.TenantRepository
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.http.HttpStatus
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.UUID
 
 data class EmployeeRow(
@@ -104,7 +108,7 @@ class EmployeeRepository(private val dsl: DSLContext) {
     }
 
     fun find(tenantId: UUID, id: UUID): EmployeeRow? =
-        dsl.fetchOne("$SELECT where e.tenant_id = ? and e.id = ?", tenantId, id)?.let(::row)
+        dsl.fetchOne("$SELECT where e.tenant_id = ? and e.id = ?${SiteScope.clause("e.site_id")}", tenantId, id)?.let(::row)
 
     fun findByExternalId(tenantId: UUID, externalId: String): EmployeeRow? =
         dsl.fetchOne("$SELECT where e.tenant_id = ? and e.external_id = ?", tenantId, externalId)?.let(::row)
@@ -114,7 +118,7 @@ class EmployeeRepository(private val dsl: DSLContext) {
         dsl.fetchOne("select id from employee where tenant_id = ? and id = ? for update", tenantId, id) != null
 
     fun page(tenantId: UUID, status: String?, siteId: UUID?, after: PageKey?, limit: Int): List<EmployeeRow> {
-        val sql = StringBuilder("$SELECT where e.tenant_id = ?")
+        val sql = StringBuilder("$SELECT where e.tenant_id = ?${SiteScope.clause("e.site_id")}")
         val binds = mutableListOf<Any>(tenantId)
         if (status != null) {
             sql.append(" and e.status = ?")
@@ -152,6 +156,12 @@ class EmployeeRepository(private val dsl: DSLContext) {
             "update schedule_assignment set valid_to = cast(? as date) where tenant_id = ? and id = ?",
             validTo.toString(), tenantId, id,
         )
+    }
+
+    fun endAssignments(tenantId: UUID, employeeId: UUID, end: LocalDate) {
+        dsl.execute("update schedule_assignment set valid_to = cast(? as date) where tenant_id = ? and employee_id = ? " +
+            "and valid_from <= cast(? as date) and (valid_to is null or valid_to > cast(? as date))",
+            end.toString(), tenantId, employeeId, end.toString(), end.toString())
     }
 
     fun insertAssignment(tenantId: UUID, id: UUID, employeeId: UUID, scheduleId: UUID, from: LocalDate, to: LocalDate?): ScheduleAssignmentRow {
@@ -210,6 +220,8 @@ class EmployeeService(
     private val employees: EmployeeRepository,
     private val sites: SiteRepository,
     private val schedules: ScheduleRepository,
+    private val cards: CardRepository,
+    private val tenants: TenantRepository,
     private val audit: AuditLog,
 ) {
     @Transactional
@@ -262,6 +274,8 @@ class EmployeeService(
         }
         checks.done()
 
+        // Mismo orden que asignar/revocar tarjeta: ninguna asignación puede adelantarse a la baja.
+        tenants.lock(tenantId)
         if (!employees.lock(tenantId, id)) throw Problems.notFound()
         val before = employees.find(tenantId, id)!!
 
@@ -275,9 +289,26 @@ class EmployeeService(
         if (end != null && end < before.employmentStart) {
             checks.fail("employmentEnd", "before_start", "No puede ser anterior al inicio de la relación.")
         }
+        if (status == "inactive" && end == null) {
+            checks.fail("employmentEnd", "required", "La baja requiere su fecha efectiva; no se deduce de la fecha de edición.")
+        }
+        if (status == "inactive" && end != null &&
+            end > LocalDate.now(ZoneId.of(tenants.find(tenantId)!!.timeZone))) {
+            checks.fail("employmentEnd", "future_deactivation", "La baja inmediata no admite una fecha futura.")
+        }
         checks.done()
 
         employees.update(tenantId, id, displayName!!, siteId, status!!, before.employmentStart, end)
+        if (status == "inactive" && (before.status != "inactive" || end != before.employmentEnd)) {
+            val assignment = cards.openAssignmentOfEmployee(tenantId, id)
+            if (assignment != null) {
+                cards.setStatus(tenantId, assignment.cardId, "revoked")
+                cards.closeAssignmentOfCard(tenantId, assignment.cardId)
+                audit.record(tenantId, person, "card.revoked", "card", assignment.cardId,
+                    mapOf("reason" to "employee_deactivated", "effectiveOn" to end.toString()))
+            }
+            employees.endAssignments(tenantId, id, end!!)
+        }
         val action = when {
             status == before.status -> "employee.updated"
             status == "inactive" -> "employee.deactivated"
@@ -297,6 +328,9 @@ class EmployeeService(
         checks.done()
 
         if (!employees.lock(tenantId, employeeId)) throw Problems.notFound()
+        if (employees.find(tenantId, employeeId)?.status != "active") {
+            throw Problems.conflict("employee_inactive", "No se asignan horarios a una persona dada de baja.")
+        }
         val schedule = schedules.find(tenantId, scheduleId!!)
         if (schedule == null) {
             checks.fail("scheduleId", "schedule_not_found", "El horario no existe.")

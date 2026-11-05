@@ -70,6 +70,19 @@ services:
     volumes:
       - ${ZENIT_SECRETOS:?Defina ZENIT_SECRETOS}:/out
 
+  # Persisten fuera del árbol que sustituye el despliegue.
+  backup:
+    volumes: !override
+      - ./infra/postgres/backup/rehearse.sh:/opt/zenit/rehearse.sh:ro
+      - ${ZENIT_BACKUPS:?Defina ZENIT_BACKUPS}:/backups
+
+  backup-restore:
+    volumes: !override
+      - ./infra/postgres/backup/rehearse.sh:/opt/zenit/rehearse.sh:ro
+      - ${ZENIT_BACKUPS:?Defina ZENIT_BACKUPS}:/backups:ro
+      - ${ZENIT_SECRETOS}/backup-age.key:/run/secrets/backup-age.key:ro
+      - /work
+
   # Keycloak no importa el realm versionado sobre uno que ya existe: este
   # servicio crea en el servidor los clientes y flujos que le falten, y el
   # cliente técnico de contraseñas, sin sobrescribir nada. Lo corre remoto.sh

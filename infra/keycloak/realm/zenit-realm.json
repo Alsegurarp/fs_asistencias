@@ -1872,7 +1872,7 @@
         {
           "authenticator": "auth-recovery-authn-code-form",
           "authenticatorFlow": false,
-          "requirement": "DISABLED",
+          "requirement": "ALTERNATIVE",
           "priority": 50,
           "autheticatorFlow": false,
           "userSetupAllowed": false
@@ -2713,7 +2713,7 @@
       "name": "Recovery Authentication Codes",
       "providerId": "CONFIGURE_RECOVERY_AUTHN_CODES",
       "enabled": true,
-      "defaultAction": false,
+      "defaultAction": true,
       "priority": 130,
       "config": {}
     },

@@ -1,5 +1,60 @@
 # Respaldos cifrados y restauración aislada
 
+## Automatización externa preparada el 5 de noviembre de 2026
+
+`deploy/servidor/zenit/respaldo.sh` reutiliza el respaldo cifrado existente y
+lo envía al bucket compatible con S3 indicado por el usuario. Cada instancia
+de cliente usa un identificador estable y el prefijo `zenit/IDENTIFICADOR/`.
+Requiere AWS CLI v2 en el anfitrión, perfil o rol técnico con permisos mínimos
+y TLS; el endpoint de un proveedor compatible debe ser HTTPS. La privada age
+se conserva por separado y no viaja con la copia.
+
+Se vuelve a descargar el ciphertext por streaming y se compara SHA-256 con el
+archivo local, sin descifrarlo. Sólo después rota paquetes locales
+`zenit-*.tar.age` de 30 días o más, preservando el recién comprobado. Un fallo
+de respaldo, transporte o huella conserva las copias locales anteriores.
+La expiración S3 es independiente: se exige una regla activa de 30 días para
+el prefijo de esa instancia y sus versiones anteriores, sin reemplazar reglas
+de otros clientes. Hay exclusión mutua y registro local de la
+última copia externa en `.external-success`. Los respaldos del servidor viven
+en `ZENIT_BACKUPS`, fuera del árbol que reemplaza el despliegue.
+
+Para activar en la infraestructura elegida, el responsable debe:
+
+1. Completar `deploy/servidor/zenit/respaldo.env.ejemplo` en el archivo privado
+   `/opt/.fastsolution/zenit/secretos/respaldo.env`, permisos 0600. Preparar
+   `ZENIT_BACKUPS` escribible por UID 70 de PostgreSQL y por el servicio.
+2. Crear/configurar el bucket privado y el perfil técnico del cliente con
+   acceso al prefijo correspondiente (PutObject, GetObject y lectura de la
+   política de ciclo de vida; sin lectura de objetos de otros clientes).
+   Integrar la regla de `s3-lifecycle.json.ejemplo`, sustituyendo INSTANCE_ID,
+   con las reglas existentes: no aplicarla a ciegas sobre un bucket compartido.
+   Sus versiones previas expiran a los 30 días y los multipart incompletos
+   se limpian; validar ese comportamiento con el proveedor S3 elegido.
+3. Ejecutar una copia manual con esas variables y comprobar un paquete mediante
+   `backup-restore` en un entorno separado. Registrar antigüedad de la copia y
+   tiempos de recuperación completa, incluida identidad y aplicación.
+4. Instalar `zenit-respaldo.service` y `zenit-respaldo.timer` en systemd;
+   ejecutar `systemctl daemon-reload` y `systemctl enable --now zenit-respaldo.timer`.
+   El temporizador corre a las 02:00 UTC cada día y recupera una ejecución
+   omitida por apagado. Comprobar `systemctl list-timers zenit-respaldo.timer`
+   y `journalctl -u zenit-respaldo.service`.
+5. Asignar vigilancia primaria/respaldo sobre fallos y sobre una última copia
+   externa de más de 24 h. Un timer configurado no demuestra por sí solo RPO.
+
+La autoprueba `infra/postgres/backup/external-self-test.sh` pasó con transporte
+S3 simulado sin red: envío, corrupción, fallos, exigencia de retención,
+aislamiento de prefijos, rotación local y concurrencia. La [CLI oficial](https://docs.aws.amazon.com/cli/latest/reference/s3/cp.html)
+realiza el transporte, incluidos multipart; no se implementa firma S3 propia.
+Faltan proveedor/bucket/endpoint, acceso, activación del timer, monitorización operativa
+y ensayo RPO 24 h/RTO 4 h. No se presenta la tarea 1 como cerrada.
+
+El usuario asigna custodia al administrador del cliente y, si no la asume,
+al equipo desarrollador. Registrar entrega/aceptación, custodio titular y
+respaldo y probar recuperación de la privada; no deducir un traspaso de la
+obligación laboral del empleador. La expiración a 30 días corresponde a copias
+operativas, no elimina el archivo laboral sujeto a sus propios plazos.
+
 Los servicios `backup` y `backup-restore` usan el mismo procedimiento que el
 ensayo existente. El primero guarda las bases del producto y Keycloak en un
 paquete cifrado con [age](https://github.com/FiloSottile/age); sólo recibe la
@@ -132,7 +187,8 @@ mismo comando preparado para CI. [Registro y alcance](bitacora-trabajo.md#23-de-
 - El cifrado age detecta alteraciones y protege la confidencialidad, pero no
   autentica quién creó el respaldo. Restaurar únicamente paquetes procedentes
   del almacén controlado: un dump contiene SQL que se ejecuta con privilegios.
-- No hay borrado automático, retención ni copia remota. No colocar la privada
+- El procedimiento de cifrado por sí solo no rota ni envía copias; la
+  automatización externa anterior aún requiere activación. No colocar la privada
   junto al paquete en el mismo almacén. Ya están aprobados respaldo diario,
   retención de 30 días y objetivos de pérdida/recuperación de 24 h/4 h.
   Faltan concretar destino externo, custodia y responsables, automatizar y

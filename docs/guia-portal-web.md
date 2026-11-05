@@ -1,5 +1,16 @@
 # Guía del portal web
 
+**Actualización del 5 de noviembre, API candidata 0.18.0:** Usuarios permite
+asignar sedes a supervisores al invitar o editar. Sin sedes no reciben datos
+de supervisión. La restricción se aplica en servidor antes de paginar; las
+semanas con evidencia de sedes ajenas se deniegan completas. El rol auditor
+adicional permite leer toda la empresa, sin ampliar escrituras del supervisor.
+Una baja en Empleados exige fecha efectiva no futura, revoca tarjeta y termina
+el horario aplicable, conservando históricos. Suspender mantiene captura de
+dispositivos existentes y bloquea administración y nuevas vinculaciones.
+La jornada ya incluye clasificación y extra diaria/semanal sin duplicación;
+sus límites pendientes están en [lógica de negocio](logica-de-negocio.md).
+
 Actualización E4/E5 del 27 de octubre: **Expediente empresarial** aparece sólo
 con permiso explícito, incluso para administración. Desde **Usuarios**, una
 cuenta administradora puede conceder/revocar con confirmación. El expediente

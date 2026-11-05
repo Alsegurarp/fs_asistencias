@@ -235,7 +235,7 @@ class DatabaseRolesIT {
             db.createStatement().use { st ->
                 st.executeQuery("SELECT count(*) FROM rule_set").use {
                     it.next()
-                    assertEquals(5, it.getInt(1))
+                    assertEquals(10, it.getInt(1))
                 }
             }
             // Las reglas laborales las cambia una migración, no el backend.

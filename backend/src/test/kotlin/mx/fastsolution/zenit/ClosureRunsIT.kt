@@ -336,14 +336,17 @@ class ClosureRunsIT : WorkdayTestBase() {
     fun `closure runs admit only the roles the contract gives them and belong to one company`() {
         val a = companyWithFinishedWeek()
         val b = companyWithFinishedWeek()
-        val mine = staffed(a)
+        val site = newSite(a)
+        val mine = staffed(a, site)
         shift(mine, 40, 32)
-        val runOfA = request(a).at<String>("id")
+        val runOfA = request(a, """{"weekStart":"$yesterday","siteId":"$site"}""").at<String>("id")
         jobWorker.drain()
+        val supervisor = member(a, "supervisor")
+        assertEquals(200, call("PATCH", "/api/v1/users/${supervisor.id}", a.adminToken, """{"siteIds":["$site"]}""").status)
         val people = linkedMapOf(
             "admin_empresa" to a.adminToken,
             "rh" to member(a, "rh").token,
-            "supervisor" to member(a, "supervisor").token,
+            "supervisor" to supervisor.token,
             "auditor" to member(a, "auditor").token,
             "trabajador" to linkedWorker(a, mine.employeeId).token,
         )
