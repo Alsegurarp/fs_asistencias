@@ -6,6 +6,120 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 5 de noviembre de 2026 — Preparación de PR de integridad E6 y QA Android
+
+Por instrucción del usuario se prepara la entrega de
+`fix/verificacion-evidencia-expediente` contra `main/c63a9da`, que ya incluye
+la PR #28. Su árbol coincide con la base `4d8c6aa` de las pruebas registradas;
+el reflujo CSV y las seis pruebas de jornada quedan en la entrega anterior.
+Esta entrega agrega la comprobación de huella y empleado del acuse en E6,
+cinco regresiones y la evidencia de Android físico contra backend real.
+No publica secretos, códigos, APK, bases ni registros locales. Las 96
+unitarias backend y el JAR conservan su evidencia previa; Android conserva
+15 unitarias, lint y los resultados instrumentales descritos en su acta.
+La aceptación integral y los seis P0 conservan sus requisitos.
+
+## 5 de noviembre de 2026 — Android contra backend real tras arranque manual
+
+El usuario inició el proyecto aislado `zenit-android-check`: PostgreSQL,
+Keycloak y backend saludables, migración finalizada. Se resolvió la colisión
+de 38082 usando 48080/48082, sin detener servicios existentes. HTTP confirmó
+salud e issuer. Se reutilizó la instrumentación actual y su almacenamiento
+aislado, con empresa, padrón y tarjetas simuladas ficticios.
+
+Personal aprobó activación/código de un uso, cola cifrada con transporte
+interrumpido, persistencia entre procesos, sincronización, recibos,
+idempotencia y renovación de sesión. Consulta y objeción de cierre versión 1,
+recuperación sin copia local, duplicado 409, reapertura y conformidad versión 2
+aprobados. API confirmó dos marcajes sin duplicados y ambos acuses históricos;
+sus huellas SHA-256 se recalcularon y coincidieron. La semana cerrada anterior
+no tiene marcajes; no es prueba del cálculo sobre los eventos actuales.
+
+Terminal activó, pero el teléfono desapareció de ADB durante la fase de cola.
+Tras reconectar por indicación del usuario se confirmaron tres pendientes
+firmados en una copia de la base aislada y se continuó sin recapturar.
+Sincronización, recibos, idempotencia, renovación y restricción de semana
+personal (local y 403 real) aprobaron. No se recuperó la salida final de la
+fase de cola interrumpida. API confirmó dos marcajes por modo sin duplicados.
+Dispositivos ficticios revocados, empresa de ensayo suspendida y cuentas/
+cliente temporales eliminados; secretos de esas cuentas retirados del estado.
+Túnel ADB propio retirado y los tres archivos operativos del teléfono idénticos
+por SHA-256 al terminar. [Acta y evidencia](qa-android-2026-11-05.md).
+No acredita NFC autenticada, aceptación pública ni la suite completa de
+integración; no se cambió código Android ni se publicó este avance.
+
+## 5 de noviembre de 2026 — Android físico actual y nueva comprobación Docker
+
+El usuario indicó que hay un Android conectado y pidió repetir Docker y
+la prueba. ADB confirmó Samsung SM-S928B autorizado, ahora Android 17/API 37.
+Docker volvió a denegar acceso en ambas tuberías conocidas; tampoco hay
+backend/identidad escuchando en los puertos locales habituales revisados.
+No se presenta ese rechazo como motor apagado ni como integración aprobada.
+
+Se ejecutó la fixture instalada y luego se construyeron los APK actuales
+desde el árbol Android `16f8c58e4a047c1505bdece98f3d24b00fc3841c`, base
+`4d8c6aa`, sin fuentes Android modificadas. Gradle 9.6.0/JDK 25, cachés y SDK
+existentes sin red; salida aislada en `build/android-check/`. Aprobaron
+**15 unitarias, lint con 0 errores/7 advertencias y ambos APK**.
+
+APK instalados anteriores preservados; certificados coincidentes comprobados
+antes de actualizar con `adb install -r`. La fixture actual aprobó con
+`INSTRUMENTATION_CODE: -1`. Vinculación, base operativa y WAL conservaron
+exactamente sus SHA-256. Sin desinstalación, borrado operativo ni túnel ADB.
+La [nueva acta](qa-android-2026-11-05.md) contiene hashes de APK, cobertura,
+evidencia y límites. No se certifica NFC ni backend real con HTTP simulado.
+
+La mejora local E6 conserva sus 96 unitarias previas; no se atribuye a la
+fixture Android validación de ese JAR. Los servicios reales, teléfono con
+tarjeta autenticada, aviso visual de comida offline, identidad y aceptación
+pública siguen pendientes. No se publicó ni desplegó este avance.
+
+## 5 de noviembre de 2026 — Tareas disponibles e integridad del acuse en E6
+
+El usuario pidió verificar los frentes realizables y comenzar. Se confirmó
+el [CI de `4d8c6aa`](https://github.com/Alsegurarp/fs_asistencias/actions/runs/42116138374)
+con sus cuatro trabajos aprobados. La rama anterior está publicada, pero no
+se creó la PR: conector 403, credencial no disponible dentro del sandbox y
+solicitud de elevación rechazada por la política de la sesión. El navegador
+llegó al inicio de sesión de GitHub; se solicitó al usuario ese paso y no se
+automatizó. El control del escritorio dejó después de devolver un proceso
+de ventana. No se declara creada ni integrada una PR inexistente.
+
+Se abrió `fix/verificacion-evidencia-expediente` desde ese commit y se
+ejecutó el trabajo técnico de E6 que no requiere decisiones nuevas: el
+verificador sólo comprobaba la huella del snapshot del cierre y referencias
+existentes; ahora recalcula la del acuse y comprueba que su empleado coincida
+con el del cierre. La fórmula es la del backend desde `ae92c881`; se conserva
+la fecha como instante UTC, nota exacta, tipo y actor histórico. El archivo
+se recorre en dos pasadas; el índice agrega hash/empleado de cada cierre.
+
+**Prueba de regresión:** antes del cambio, tres pruebas nuevas fallaron al
+aceptar nota incoherente, empleado distinto y traslado a otra versión del
+cierre, aun con hashes externos/estructurales coherentes. Después aprobaron
+las nueve del verificador y las **96 unitarias backend**, sin fallos, errores
+ni omisiones. Los cinco casos nuevos abarcan además seis alteraciones de
+campos, conformidad sin nota, objeción con Unicode/separadores, microsegundos,
+zona distinta, actor de dispositivo ausente y cierre reabierto.
+
+**Artefacto:** `:backend:dossierVerifierJar` aprobado. El JAR nuevo aceptó el
+ZIP ficticio histórico de `build/e4-e5-qa/expediente.zip` usando sus huellas
+conservadas y rechazó una huella de manifiesto falsa con salida 1. El ZIP
+histórico no contiene acuses; los acuses se comprueban en las fixtures nuevas.
+No se sustituyen por este resultado una descarga nueva o aceptación integral.
+
+Gradle 9.8.0/JDK 25 sin red, caché de lectura y Kotlin en proceso. La salida
+habitual tenía escrituras concurrentes del editor; se aisló mediante init
+script temporal en `build/e6-check/`, sin detener procesos del usuario ni
+cambiar configuración versionada. Informes en `build/continuacion-qa/`:
+`e6-before-isolated.log`, `e6-final.log`, `e6-jar-historical.log` y
+`e6-jar-bad-anchor.log`. `git diff --check` correcto.
+
+Formato 1, contrato, API, base y productor del expediente sin cambios. No
+hay nueva custodia, texto jurídico, purga, autenticación de tarjeta ni
+despliegue. Docker vuelve a denegar acceso: no se repitieron PostgreSQL,
+identidad, Android, portal ni seguridad de imágenes para este cambio. Los
+17 pendientes y seis P0 conservan sus requisitos. Este avance queda local.
+
 ## 5 de noviembre de 2026 — Continuación de jornada, evidencia y accesibilidad
 
 Por instrucción del usuario se continuaron los frentes que no requieren

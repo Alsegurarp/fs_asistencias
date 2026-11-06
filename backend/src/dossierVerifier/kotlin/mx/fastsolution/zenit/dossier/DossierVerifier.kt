@@ -11,6 +11,7 @@ import tools.jackson.databind.json.JsonMapper
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.util.function.Consumer
 import java.util.zip.ZipFile
@@ -41,8 +42,9 @@ class DossierVerifier {
                 require(entry.size == file.get("bytes").asLong()) { "Tamaño declarado incorrecto." }
                 require(zip.getInputStream(entry).use { digest(it) } == file.get("sha256").asString()) { "Contenido alterado." }
             }
-            // shortcut: sólo los índices de IDs viven en memoria; pasar a índice en disco si el histórico excede la memoria disponible.
+            // shortcut: índices de IDs y evidencia de cierre en memoria; pasar a disco si el histórico excede la memoria disponible.
             val ids = mutableMapOf<String, MutableSet<String>>()
+            val closureEvidence = mutableMapOf<String, Pair<String, String>>()
             val counts = manifest.get("counts").properties().associate { it.key to 0L }.toMutableMap()
             records(zip) { row ->
                 val kind = row.get("kind")?.takeIf { it.isString }?.asString()
@@ -55,7 +57,11 @@ class DossierVerifier {
                 require(ids.getOrPut(kind) { mutableSetOf() }.add(key)) { "Identificador duplicado en $kind." }
                 counts[kind] = counts.getValue(kind) + 1
                 if (kind == "tenant") require(data.get("id") == manifest.get("tenantId")) { "Empresa incoherente." }
-                if (kind == "week_closure") require(hash(data.get("snapshot").asString().toByteArray(Charsets.UTF_8)) == data.get("hash").asString()) { "Snapshot de cierre alterado." }
+                if (kind == "week_closure") {
+                    val closureHash = data.get("hash").asString()
+                    require(hash(data.get("snapshot").asString().toByteArray(Charsets.UTF_8)) == closureHash) { "Snapshot de cierre alterado." }
+                    closureEvidence[key] = closureHash to data.get("employee_id").asString()
+                }
             }
             require(counts.all { (kind, n) -> n == manifest.get("counts").get(kind).asLong() } && counts["tenant"] == 1L) { "Conteos incompletos." }
             require(manifest.get("requestedBy").asString() in ids["tenant_user"].orEmpty()) { "Solicitante ausente." }
@@ -67,6 +73,15 @@ class DossierVerifier {
                     if (value != null && !value.isNull) require(value.asString() in ids[target].orEmpty()) { "Referencia ausente: $kind.$field." }
                 }
                 if (kind == "week_closure_run_blocked") for (id in data.get("incident_ids")) require(id.asString() in ids["incident"].orEmpty()) { "Incidencia bloqueada ausente." }
+                if (kind == "closure_acknowledgement") {
+                    val (closureHash, employeeId) = closureEvidence.getValue(data.get("closure_id").asString())
+                    require(data.get("employee_id").asString() == employeeId) { "El acuse no corresponde al empleado del cierre." }
+                    val note = data.get("note").takeUnless { it.isNull }?.asString() ?: ""
+                    val at = OffsetDateTime.parse(data.get("at").asString()).toInstant()
+                    // Misma fórmula que el backend, con la fecha normalizada a UTC y sin reformatear la nota.
+                    val evidence = "$closureHash|${data.get("type").asString()}|$note|$at|${data.get("actor_type").asString()}:${data.get("actor_id").asString()}"
+                    require(hash(evidence.toByteArray(Charsets.UTF_8)) == data.get("evidence_hash").asString()) { "Huella del acuse incoherente con su cierre o contenido." }
+                }
             }
             return manifest
         }

@@ -4,6 +4,18 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Android físico revisado el 5 de noviembre:** Samsung API 37, 15 unitarias,
+lint y autoensayo de los APK actuales aprobados; datos operativos conservados.
+Con Docker iniciado por el usuario, el modo personal contra backend real
+aprobó captura/sincronización, idempotencia y acuses de dos versiones.
+Terminal aprobó tras reconectar USB: cola conservada, sincronización y semana
+personal denegada con 403. Accesos ficticios retirados y datos del teléfono intactos.
+[Acta y límites](docs/qa-android-2026-11-05.md).
+
+**Avance local E6 del 5 de noviembre:** el verificador comprueba también la
+huella del acuse y su vínculo con empleado/cierre. 96 unitarias backend y
+JAR aprobados; formato 1 e históricos conservados. [Alcance y límites](docs/entrega-expediente-e6.md#avance-local-del-5-de-noviembre-de-2026--integridad-del-acuse).
+
 **Continuación local posterior a la PR #27:** base integrada `2ab9745`,
 91 unitarias backend (21 de jornada), matriz de evidencia recuperable y
 corrección del texto CSV a 320 px. No cambia las reglas de cálculo ni cierra

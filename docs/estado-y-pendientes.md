@@ -1,5 +1,13 @@
 # Estado y pendientes
 
+**QA Android del 5 de noviembre, posterior al corte siguiente:** APK actuales,
+15 unitarias, lint y autoensayo aprobados en Samsung API 37. Contra backend
+real local aprobaron personal (captura/sincronización y dos versiones/acuses)
+y terminal (cola conservada tras desconexión USB, sincronización y semana
+personal 403). Accesos ficticios retirados y tres archivos operativos intactos
+por SHA-256. [Acta y límites](qa-android-2026-11-05.md). No cierra los P0 ni
+acredita NFC autenticada o aceptación pública.
+
 **Corte técnico vigente del 5 de noviembre de 2026:** las 17 tareas se
 atendieron en orden de necesidad y su [resultado individual y condición de
 cierre están en la bitácora](bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).

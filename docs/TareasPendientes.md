@@ -1,5 +1,44 @@
 # Tareas pendientes
 
+## Android conectado y Docker revisado — 5 de noviembre de 2026
+
+Por instrucción del usuario se repitió la comprobación del entorno. El
+Samsung SM-S928B está autorizado, Android 17/API 37. **APK actuales,
+15 unitarias, lint y autoensayo físico aprobados**, conservando por SHA-256
+la vinculación y la base/WAL operativos. [Acta y límites](qa-android-2026-11-05.md).
+Después, el usuario inició Docker en puertos aislados 48080/48082:
+**personal contra backend real aprobado**, con cola, reintento sin duplicados,
+objeción, reapertura, conformidad y huellas de ambos acuses comprobadas.
+**Terminal también aprobado tras reconectar USB:** tres capturas conservadas,
+sincronización sin duplicados y semana personal denegada con 403. Dispositivos
+ficticios revocados, empresa de prueba suspendida, cuentas/cliente temporales
+eliminados y túnel propio retirado. Los tres archivos operativos conservan
+sus SHA-256 originales. No cierra NFC real, comida offline visual ni aceptación pública.
+
+## Trabajo disponible y ejecutado — 5 de noviembre de 2026, integridad E6
+
+Base de este avance: `4d8c6aa`, con los cambios anteriores ya publicados en
+`fix/jornada-evidencia-accesibilidad`. Sus cuatro trabajos de
+[CI remoto aprobaron](https://github.com/Alsegurarp/fs_asistencias/actions/runs/42116138374):
+backend/identidad, portal, Android y contrato/seguridad. La
+[PR #28](https://github.com/Alsegurarp/fs_asistencias/pull/28) **ya está
+integrada** en `main/c63a9da`. Sustituye el bloqueo de creación registrado
+durante el intento anterior; este avance E6 y el acta Android son posteriores.
+
+| Frente | Qué puede avanzar / estado actual | Qué sigue dependiendo de recursos externos |
+| --- | --- | --- |
+| Evidencia y E6, tareas 10/15 | **Ejecutado localmente:** recalcular la huella del acuse y validar su vínculo con empleado/cierre usando el formato y fórmula existentes. Cinco pruebas nuevas; 96 unitarias y JAR aprobados | Custodia de evidencia ausente, documento del acuse y aceptación integral. La comprobación no habilita purga |
+| Jornada, tarea 3 | Los casos de medianoche/semana/año anteriores ya están probados; pueden corregirse nuevos errores reproducibles con las reglas aprobadas | Condiciones contractuales, descanso computable y criterio concreto del cruce anual; no se inventan valores |
+| Accesibilidad y recorridos, tareas 9/13 | Corregir defectos reproducibles; la inspección manual anterior conserva su alcance parcial | Escritorio/control disponible, lector de pantalla, runtime y teléfono para completar recorridos. No se continuó UI tras fallar la captura del escritorio |
+| VPS/S3, identidad y tarjetas, tareas 1/2/4/6 | Automatización, recuperación OTP y protección de captura ya existen; identidad local real usada en el ensayo Android | Proveedor/bucket/accesos/custodios, SMTP diferido y protocolo/claves/hardware. Motor Docker inaccesible desde la sesión, operable por el usuario |
+| Capacidad, ausencias, nómina y 1.0, tareas 17/18/19/20 | Preparación según los requisitos ya registrados | Condiciones del empleador, objetivos de carga/VPS, especificación de nómina y aceptación de consumidores |
+
+Nuevo trabajo en `fix/verificacion-evidencia-expediente`, separado de la rama
+publicada. El verificador conserva formato 1, cierres reabiertos y actores
+históricos; no altera datos ni la fórmula del backend. [Alcance y pruebas](entrega-expediente-e6.md#avance-local-del-5-de-noviembre-de-2026--integridad-del-acuse).
+Se mantienen **17 tareas abiertas total o parcialmente y seis P0**. Los
+resultados del CI de `4d8c6aa` no se atribuyen a este código nuevo local.
+
 ## Avance para continuar — 5 de noviembre de 2026, posterior a la verificación
 
 Trabajo local en `fix/jornada-evidencia-accesibilidad`, sobre `2ab9745`.
