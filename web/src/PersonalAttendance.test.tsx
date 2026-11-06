@@ -35,9 +35,19 @@ it('consulta sólo la ruta personal y muestra la semana y sus tramos', async () 
 })
 it('muestra el acuse del servidor aunque no se haya enviado desde esta sesión', async () => {
   week.closure = { id: 'closure', version: 2, status: 'closed' }
-  week.acknowledgement = { id: 'receipt', closureId: 'closure', type: 'objected', note: 'Revisar salida', at: '2026-10-12T12:00:00Z', evidenceHash: 'hash' }
+  week.acknowledgement = { id: 'receipt', closureId: 'closure', type: 'objected', note: 'Revisar salida', at: '2026-10-12T12:00:00Z', evidenceHash: 'a'.repeat(64) }
   await mount(); await waitFor(() => !!document.body.textContent?.includes('Diferencia reportada'))
   expect(document.body.textContent).toContain('Revisar salida'); expect(document.body.textContent).toContain('receipt')
+  expect(document.body.textContent).toContain('a'.repeat(64))
+})
+it.each(['agreed', 'objected'] as const)('no presenta como vigente un acuse %s de otra versión del cierre', async type => {
+  week.closure = { id: 'current-closure', version: 2, status: 'closed' }
+  week.acknowledgement = { id: 'foreign-receipt', closureId: 'old-closure', type, note: 'Comentario de otra versión', at: '2026-10-12T12:00:00Z', evidenceHash: 'foreign-hash' }
+  await mount(); await waitFor(() => !!document.body.textContent?.includes('no corresponde al cierre vigente'))
+  expect(document.body.textContent).not.toContain('foreign-receipt')
+  expect(document.body.textContent).not.toContain('foreign-hash')
+  expect(document.body.textContent).not.toContain('Comentario de otra versión')
+  expect(document.body.textContent).not.toContain('Sin acuse registrado para este cierre.')
 })
 it('no presenta como vigente un acuse de una semana reabierta', async () => {
   week.closure = { id: 'closure', version: 1, status: 'reopened' }

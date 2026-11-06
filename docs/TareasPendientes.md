@@ -1,5 +1,119 @@
 # Tareas pendientes
 
+## Ejecución con tres agentes — 6 de noviembre de 2026
+
+Portal corregido para partir ID/huella largos del acuse: **218 pruebas,
+TypeScript y build aprobados**. IAM y retención preparados en archivos
+privados para `Cliente-demo`, sin aplicar. E6 revisada sin defecto nuevo;
+Android añade cobertura de cancelación y aprueba tres escenarios del helper;
+suite JUnit offline bloqueada por AGP, con la regresión nueva pendiente.
+DNS observado todavía apunta al servidor anterior, no a la VPS declarada.
+Docker/control visual siguen inaccesibles. [Resultados, límites y revisión
+de las 17 tareas](qa-continuacion-multiagente-2026-11-06.md).
+Continúan 17 tareas y seis P0; sin despliegue, cambios DNS, permisos ni purga.
+
+## Respuestas parciales incorporadas — 6 de noviembre de 2026
+
+Recibidos alias `Cliente-demo`, IP y responsables en el archivo privado de
+respuestas. IP aplicada al perfil SSH e identificador al respaldo. DNS y
+firewall: Gabriel o Alexis; administración con elevación: Alexis. El usuario
+de despliegue no tiene sudo; falta su nombre, puerto y acceso efectivo a Docker.
+Nginx ya está instalado y se preservará hasta inspeccionar su integración.
+
+**Ampliación recibida por chat:** dominio `https://zenit.fastsolution.com.mx`,
+2 CPU, 8 GB RAM y 50 GB de disco. Las URL existentes ya coinciden con el
+dominio; DNS/TLS y espacio libre aún no comprobados en la nueva VPS.
+Siguen faltando clave privada SSH y `known_hosts` verificado en el perfil
+local y nombre/versión de distribución; «Linux» y la cadena de kernel no
+completan la identificación de la distribución. Los bloques 2–13
+del [formulario actualizado](datos-para-finalizar-tareas.md) no recibieron
+otras respuestas. Se mantienen 17 tareas y seis P0, sin conexión remota.
+Los cortes anteriores conservan el estado previo a recibir estos datos.
+
+## Continuación comprobada — 6 de noviembre de 2026
+
+Portal: **218 pruebas en 20 archivos, TypeScript y build Vite 8.1.0
+aprobados** en esta continuación. Identidad estática: cinco aprobadas y seis
+casos de runtime omitidos. Docker deniega acceso; el control nativo y el
+navegador no están disponibles. No se repitieron identidad real, respaldo
+Linux ni accesibilidad manual. [Comandos y límites](bitacora-trabajo.md#6-de-noviembre-de-2026--continuación-y-verificación-del-portal).
+
+La configuración privada coincide con el bucket/región confirmados. El
+perfil SSH conserva `IP_VPS` y carece de `identity` y `known_hosts`; siguen
+vacíos `ZENIT_INSTANCE_ID` y `BACKUP_RECIPIENT`. Continúan las 17 tareas y
+seis P0: para avanzar en el destino se requieren esos datos, acceso AWS y
+custodios. No se conectó ni modificó infraestructura remota.
+
+## Resolución por frente — 6 de noviembre de 2026
+
+**Datos recibidos después del corte:** Hostinger en **United States -
+Phoenix**. IP pendiente de completar en `secrets/hostinger-ssh/config` y
+dominio en `deploy/servidor/zenit/servidor.env`, según
+[la guía de declaración](instructivo-de-despliegue.md#datos-de-hostinger--6-de-noviembre-de-2026).
+Se leyó `bucket.md` en el directorio padre y el usuario confirma **ese bucket
+AWS S3 en `us-east-2`**. Sustituye Firebase/GCS. El nombre y región ya están
+en `secrets/hostinger/respaldo.env`, ignorado por Git; falta completar
+instancia/clave pública age y el acceso AWS autorizado. No se contactó el bucket.
+
+El usuario autoriza continuar **todas las tareas** y confirma **Hostinger**
+para VPS y **AWS S3** para el respaldo. Esta decisión final sustituye la
+referencia intermedia a Firebase; no reabre diario/30 días, RPO 24 h/RTO 4 h
+ni VPS por cliente.
+Se conservan los IDs y las 17 tareas abiertas total o parcialmente, seis P0:
+los ensayos técnicos siguientes no equivalen a aceptación del destino.
+
+| ID | Resultado disponible / siguiente paso concreto |
+| --- | --- |
+| 1 | AWS S3/us-east-2 y bucket confirmados; transporte nativo y autoprueba final aprobados. Configuración local preparada con nombre/región; carga sin sobrescritura, límite de 5 GiB explícito y rotación sólo tras SHA-256 descargado. Faltan identidad autorizada, instancia/clave pública age, custodios y recuperación de ambas bases en destino con los objetivos medidos |
+| 2 | Identidad real comprobada: 11 casos distintos aprobados en Keycloak local, incluidos MFA, 12 códigos y aplicación idempotente. Faltan SMTP/remitente diferidos, personas/turnos y ensayo de soporte con doble aprobación |
+| 3 | Corregido el portal para rechazar visualmente un acuse cuyo cierre no es el vigente; dos regresiones aprobadas. Faltan condiciones de jornada/descanso/cruce anual, documento/texto y versión de acuse, representante y atención de objeciones |
+| 4 | Captura release sigue protegida. Faltan modelo/protocolo de tarjeta, provisión/custodia de claves y tarjetas auténticas para desarrollar/verificar la integración |
+| 5 | Reglas ya implementadas. Falta aceptación por roles en la instancia objetivo; no rehacer suspensión, baja ni sedes de supervisores |
+| 6 | Hostinger, United States - Phoenix, confirmado. Faltan completar IP/dominio en los archivos indicados, acceso SSH y responsables para preparar la instancia privada, desplegar y comprobar aislamiento/recuperación |
+| 8 | Conserva la delegación y aplazamiento previos de la prueba con dos IP públicas distintas |
+| 9 | 218 pruebas web y compilación aprobadas ahora. Control visual del navegador no disponible en la sesión: siguen recorrido completo con sesión/roles, accesibilidad manual y aceptación pública |
+| 10 | No se habilita purga. Falta destino recuperable de sobres rechazados —incluidos los sin clave—, fidelidad de recibos y evidencia/documento histórico sólo local |
+| 12 | Falta inventario efectivo y análisis de imágenes del destino Hostinger. Los análisis anteriores locales/CI conservan sus fechas; no son inventario nuevo del servidor |
+| 13 | **Comida visual offline aprobada** en Samsung: aviso/vigencia, selector y limpieza de selección en ambos sentidos; radios restauradas y datos intactos. Falta sesión integrada emitida por backend/reanudación, ratificación SUP-025, accesibilidad y aceptación desplegada |
+| 15 | **E6 con expediente nuevo y acuses aprobado:** descarga MFA/PKCE, dos versiones/acuses, JAR sin red, consultas y huellas. Falta custodia, documento histórico ausente y aceptación integral/pública |
+| 16 | Pantallas/uso del operador existentes. Falta aceptación con su sesión en la instancia objetivo |
+| 17 | Faltan horarios pactados, condiciones de ausencias y casos esperados del empleador para implementar retardos/faltas/salidas/vacaciones/incapacidades sin inventar reglas |
+| 18 | Faltan características de VPS, concurrencia/objetivos de carga y continuidad/DNS/certificados efectivos. La línea base 50/300 anterior no sustituye carga sostenida objetivo |
+| 19 | Falta sistema/versión de nómina y contrato de intercambio con ejemplo ficticio del cliente |
+| 20 | Congelar 1.0 después de completar funciones/recorridos y acordar compatibilidad con los consumidores |
+
+Evidencia nueva: [E6 real y sin red](qa-expediente-e6-2026-11-06.md),
+[comida visual offline](qa-android-visual-2026-11-06.md) y
+[corrección temporal Android](qa-android-2026-11-06.md); la
+[guía de respaldo AWS S3](respaldos-cifrados.md) incorpora configuración e IAM.
+Autoprueba AWS final: `build/qa-infra-20261106/s3-native-final.log`, aprobada;
+los ensayos anteriores de GCS/identidad conservan su fecha. No se ejecutaron
+CI remoto/Linux ni copia/recuperación en nube real.
+La fixture Android
+no entra a release. No se publicaron commits ni se desplegó o purgó nada.
+Los apartados siguientes son antecedentes con su fecha y límites.
+
+## Revisión y primera corrección — 6 de noviembre de 2026
+
+Base actualizada a `origin/main/5b0a66c`: PR #29 integrada; no queda pendiente
+su integridad E6. Dos agentes contrastaron E6 y comida Android. Se corrigió
+un defecto de la tarea 13: la pantalla no recibía actualización al llegar la
+vigencia de comida si no había otra operación. Ahora tiene una actualización
+programada local, cancelable al cambiar de sesión o salir de pantalla.
+
+**17 unitarias, lint y APK aprobados; autoensayo Samsung API 37 aprobado**
+para ambos sentidos del cambio sin servidor. Vinculación, base y WAL
+operativos intactos por SHA-256. El ensayo es instrumental; queda pendiente
+el recorrido visual. [Acta, alcance y evidencia](qa-android-2026-11-06.md).
+Docker ya responde y no hay contenedores activos; no se inició backend/identidad.
+
+Se mantienen **17 tareas abiertas total o parcialmente y seis P0**. Siguiente
+ensayo: expediente nuevo con dos versiones/acuses, descarga con MFA y JAR
+independiente; después recorrido visual de comida y accesibilidad con sesión
+real. VPS/S3/custodios, SMTP diferido, protocolo/claves de tarjetas, criterios
+concretos de jornada y aceptación conservan las dependencias de la bitácora.
+Los apartados siguientes conservan su fecha y evidencia original.
+
 ## Android conectado y Docker revisado — 5 de noviembre de 2026
 
 Por instrucción del usuario se repitió la comprobación del entorno. El

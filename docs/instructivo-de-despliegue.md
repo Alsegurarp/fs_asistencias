@@ -25,6 +25,50 @@ otra ruta.
 
 ## Configuración, una sola vez
 
+### Datos de Hostinger — 6 de noviembre de 2026
+
+Región confirmada: **United States - Phoenix**. La región de la VPS no fija
+la región del almacenamiento externo.
+
+**Respuestas posteriores del mismo día:** IP e instancia `Cliente-demo` ya
+están declaradas en la configuración privada local. Dominio confirmado por chat:
+`https://zenit.fastsolution.com.mx`, con 2 CPU, 8 GB RAM y 50 GB de disco.
+Las URL existentes ya coinciden; quedan comprobar DNS/TLS en la nueva VPS,
+distribución/versión, espacio libre y completar usuario/puerto SSH y archivos
+`identity`/`known_hosts`. El usuario de despliegue
+no tiene sudo; Alexis hará la preparación que requiera elevación. Nginx ya
+existe: se inspeccionará su integración antes de usar la configuración del borde
+compartido. [Datos recibidos y preparación pendiente](datos-para-finalizar-tareas.md#1-vps-dominio-y-acceso-ssh--tareas-6-y-12).
+
+| Dato | Dónde declararlo |
+| --- | --- |
+| IP pública de la VPS | Ya aplicada en `secrets/hostinger-ssh/config`. Falta completar el marcador de `User` y confirmar `Port` |
+| Perfil SSH local | `deploy/servidor/.env.despliegue`: `FS_SSH_PERFIL` apunta a esa carpeta y `FS_SSH_ALIAS=zenit-hostinger` |
+| Dominio público de Zenit | Confirmado y ya configurado en `deploy/servidor/zenit/servidor.env`: `PORTAL_URL=https://zenit.fastsolution.com.mx` e `IDENTITY_URL=https://zenit.fastsolution.com.mx/id`, sin barra final |
+
+El perfil privado debe recibir además `identity` (la clave SSH autorizada)
+y `known_hosts` (la clave pública del servidor verificada). Ambos se usan
+con los nombres exactos del guion; no se generan credenciales ficticias.
+`secrets/` y `.env.despliegue` están ignorados por Git.
+
+El dominio confirmado coincide con el del servidor compartido anterior. Esa
+coincidencia no demuestra que DNS apunte a la nueva VPS ni que allí existan
+certificados y una pasarela compatible. Revisar DNS, TLS y el nginx existente
+antes del primer despliegue; conservar los servicios del destino anterior.
+
+El archivo `bucket.md` del directorio padre identifica el bucket **AWS S3,
+`us-east-2`**, confirmado por el usuario. La copia local privada
+`secrets/hostinger/respaldo.env` ya contiene `BACKUP_S3_BUCKET` y
+`AWS_DEFAULT_REGION` tomados de ese archivo. `ZENIT_INSTANCE_ID=Cliente-demo`
+ya está aplicado desde las respuestas. Faltan `BACKUP_RECIPIENT` y configurar
+la identidad AWS del perfil `zenit-respaldo`.
+Al activar el servicio se instala como
+`/opt/.fastsolution/zenit/secretos/respaldo.env` (0600), según
+[la guía de respaldo](respaldos-cifrados.md). No poner claves AWS en el chat
+ni en archivos versionados.
+
+### Perfil usado por el guion
+
 1. Copia `deploy/servidor/despliegue.env.ejemplo` como
    `deploy/servidor/.env.despliegue`. Git ya lo ignora.
 2. Llena sus tres valores:

@@ -80,7 +80,8 @@ jobs:
         run: |
           docker build --target backup-tools --tag zenit-backup-check infra/postgres
           docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp --tmpfs /work:exec,uid=70,gid=70,mode=0700 --tmpfs /backups:uid=70,gid=70,mode=0700 --tmpfs /run/secrets:uid=70,gid=70,mode=0700 --entrypoint bash zenit-backup-check /opt/zenit/self-test.sh
-          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp:exec --volume "$PWD:/repo:ro" --entrypoint bash zenit-backup-check /repo/infra/postgres/backup/external-self-test.sh /repo/deploy/servidor/zenit/respaldo.sh
+          # Python estándar del runner analiza lifecycle; no se añade a la imagen PostgreSQL/age.
+          sudo unshare --net -- bash infra/postgres/backup/external-self-test.sh deploy/servidor/zenit/respaldo.sh
       - name: Inventario y vulnerabilidades de las cinco imágenes
         shell: pwsh
         run: ./infra/check-images.ps1

@@ -1,20 +1,37 @@
 # Respaldos cifrados y restauración aislada
 
-## Automatización externa preparada el 5 de noviembre de 2026
+## Automatización AWS S3 — decisión final del 6 de noviembre de 2026
 
 `deploy/servidor/zenit/respaldo.sh` reutiliza el respaldo cifrado existente y
-lo envía al bucket compatible con S3 indicado por el usuario. Cada instancia
+lo envía al bucket AWS S3 de `bucket.md`, región `us-east-2`, confirmado por
+el usuario después de la referencia intermedia a Firebase. Cada instancia
 de cliente usa un identificador estable y el prefijo `zenit/IDENTIFICADOR/`.
-Requiere AWS CLI v2 en el anfitrión, perfil o rol técnico con permisos mínimos
-y TLS; el endpoint de un proveedor compatible debe ser HTTPS. La privada age
-se conserva por separado y no viaja con la copia.
+Requiere AWS CLI v2, Bash y Python 3 estándar en el anfitrión;
+no añade bibliotecas ni Python a la imagen PostgreSQL/age. La privada age se
+conserva por separado y no viaja con la copia. Se mantiene diario/30 días,
+RPO 24 h y RTO 4 h, sin afirmar que se hayan comprobado en el destino.
+La configuración privada local preparada está en
+`secrets/hostinger/respaldo.env`; nombre del bucket y región ya están completos.
+
+**Preparación local de `Cliente-demo`, 6 de noviembre:** el identificador ya
+está declarado. `secrets/hostinger/s3-policy.json` contiene la propuesta IAM
+rellenada con el bucket confirmado y el prefijo de esa instancia;
+`secrets/hostinger/s3-lifecycle.json` contiene su regla propuesta de 30 días.
+Ambos son privados e ignorados por Git, sin credenciales ni acceso AWS nuevo.
+Se generaron desde los ejemplos versionados y se comprobaron sus campos.
+No se aplicaron: el administrador debe revisar los permisos efectivos y
+combinar la regla con la configuración existente antes de modificar lifecycle.
+No se debe enviar el archivo de una sola regla como reemplazo de un bucket
+compartido. Si hay SSE-KMS, faltará concretar los permisos de su clave.
 
 Se vuelve a descargar el ciphertext por streaming y se compara SHA-256 con el
 archivo local, sin descifrarlo. Sólo después rota paquetes locales
 `zenit-*.tar.age` de 30 días o más, preservando el recién comprobado. Un fallo
 de respaldo, transporte o huella conserva las copias locales anteriores.
-La expiración S3 es independiente: se exige una regla activa de 30 días para
-el prefijo de esa instancia y sus versiones anteriores, sin reemplazar reglas
+La expiración S3 es independiente: se exige una regla habilitada para el
+prefijo exacto con `Expiration.Days=30` y
+`NoncurrentVersionExpiration.NoncurrentDays=30`. Se rechazan reglas de
+expiración superpuestas que puedan eludir ese plazo y no se reemplazan reglas
 de otros clientes. Hay exclusión mutua y registro local de la
 última copia externa en `.external-success`. Los respaldos del servidor viven
 en `ZENIT_BACKUPS`, fuera del árbol que reemplaza el despliegue.
@@ -24,13 +41,28 @@ Para activar en la infraestructura elegida, el responsable debe:
 1. Completar `deploy/servidor/zenit/respaldo.env.ejemplo` en el archivo privado
    `/opt/.fastsolution/zenit/secretos/respaldo.env`, permisos 0600. Preparar
    `ZENIT_BACKUPS` escribible por UID 70 de PostgreSQL y por el servicio.
-2. Crear/configurar el bucket privado y el perfil técnico del cliente con
-   acceso al prefijo correspondiente (PutObject, GetObject y lectura de la
-   política de ciclo de vida; sin lectura de objetos de otros clientes).
-   Integrar la regla de `s3-lifecycle.json.ejemplo`, sustituyendo INSTANCE_ID,
-   con las reglas existentes: no aplicarla a ciegas sobre un bucket compartido.
-   Sus versiones previas expiran a los 30 días y los multipart incompletos
-   se limpian; validar ese comportamiento con el proveedor S3 elegido.
+   `BACKUP_S3_BUCKET` lleva el nombre real sin `s3://` y
+   `AWS_DEFAULT_REGION=us-east-2`. Completar `ZENIT_INSTANCE_ID` y la clave
+   pública `BACKUP_RECIPIENT`; no generar una privada antes de identificar
+   custodios. El perfil `AWS_PROFILE=zenit-respaldo` debe estar configurado
+   para el usuario que ejecuta systemd, con identidad técnica autorizada y
+   credenciales fuera del repositorio.
+2. Configurar el bucket existente como privado. Otorgar
+   `s3:GetLifecycleConfiguration` sobre el bucket y `s3:PutObject`/`s3:GetObject`
+   limitados a `zenit/INSTANCE_ID/*`; el proceso no necesita borrar objetos ni
+   cambiar la política del bucket. Usar `s3-policy.json.ejemplo`, sustituyendo
+   `BUCKET` e `INSTANCE_ID`, como política de identidad para esa función.
+   Si el bucket exige SSE-KMS, verificar
+   también los permisos de la clave aplicable. No usar cuentas humanas
+   compartidas ni ACL públicas.
+   [Permisos S3 por operación](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-with-s3-policy-actions.html).
+   Integrar `s3-lifecycle.json.ejemplo`, sustituyendo INSTANCE_ID, con las reglas
+   existentes; la actualización reemplaza la configuración completa, por lo que
+   no se aplica a ciegas sobre un bucket compartido. Revisar antes versionado
+   y Object Lock efectivos. Lifecycle se aplica de forma asíncrona; no promete
+   eliminación física al segundo de cumplir 30 días. La conservación mínima
+   de Object Lock no sustituye las reglas de expiración.
+   [Administrar lifecycle](https://docs.aws.amazon.com/cli/latest/reference/s3api/put-bucket-lifecycle-configuration.html).
 3. Ejecutar una copia manual con esas variables y comprobar un paquete mediante
    `backup-restore` en un entorno separado. Registrar antigüedad de la copia y
    tiempos de recuperación completa, incluida identidad y aplicación.
@@ -42,12 +74,29 @@ Para activar en la infraestructura elegida, el responsable debe:
 5. Asignar vigilancia primaria/respaldo sobre fallos y sobre una última copia
    externa de más de 24 h. Un timer configurado no demuestra por sí solo RPO.
 
-La autoprueba `infra/postgres/backup/external-self-test.sh` pasó con transporte
-S3 simulado sin red: envío, corrupción, fallos, exigencia de retención,
-aislamiento de prefijos, rotación local y concurrencia. La [CLI oficial](https://docs.aws.amazon.com/cli/latest/reference/s3/cp.html)
-realiza el transporte, incluidos multipart; no se implementa firma S3 propia.
-Faltan proveedor/bucket/endpoint, acceso, activación del timer, monitorización operativa
+La autoprueba final del 6 de noviembre **aprobó**, con registro en
+`build/qa-infra-20261106/s3-native-final.log`.
+`infra/postgres/backup/external-self-test.sh` usa transporte
+AWS simulado: envío, corrupción, fallos, reglas exactas de retención,
+aislamiento de prefijos, rotación local y concurrencia. En CI corre en el runner
+con Python estándar dentro de `sudo unshare --net`, sin red; las herramientas
+Docker/AWS del ensayo son ficticias. La [carga condicional](https://docs.aws.amazon.com/cli/latest/reference/s3api/put-object.html)
+usa `s3api put-object --if-none-match '*'` para no sobrescribir un objeto
+existente. El procedimiento rechaza paquetes mayores de 5 GiB conservando
+copias anteriores; cuando superen ese tamaño habrá que implementar multipart
+condicional. La descarga por flujo con `aws s3 cp s3://… -` se valida por
+SHA-256 antes de rotar las copias locales. El ensayo previo de GCS conserva
+su evidencia histórica y no sustituye la comprobación del transporte AWS.
+Faltan acceso IAM, activación del timer, monitorización operativa
 y ensayo RPO 24 h/RTO 4 h. No se presenta la tarea 1 como cerrada.
+
+La configuración intermedia GCS no fue desplegada. Este cambio la sustituye:
+`BACKUP_GCS_BUCKET` y `CLOUDSDK_*` ya no se consumen. Un archivo que sólo
+declare GCS falla al faltar `BACKUP_S3_BUCKET`, sin respaldar ni rotar.
+El servicio y timer mantienen sus rutas. Para recuperar, descargar el `.tar.age`
+privado con `aws s3 cp s3://BUCKET/zenit/INSTANCE_ID/ARCHIVO.tar.age DESTINO`
+y continuar con `backup-restore`/`backup-recover`; no compartir la privada age
+ni el paquete completo como si fuera un expediente de una sola empresa.
 
 El usuario asigna custodia al administrador del cliente y, si no la asume,
 al equipo desarrollador. Registrar entrega/aceptación, custodio titular y

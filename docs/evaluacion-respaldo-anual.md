@@ -1,5 +1,14 @@
 # Evaluación de respaldo anual por cliente
 
+**Destino final del 6 de noviembre de 2026:** VPS Hostinger en United States -
+Phoenix y bucket AWS S3 de `bucket.md`, `us-east-2`. El usuario confirma AWS
+y sustituye la referencia intermedia a Firebase/GCS; se conserva diario/30
+días y RPO 24 h/RTO 4 h. La [automatización vigente](respaldos-cifrados.md)
+usa AWS CLI, verifica la copia por SHA-256 y exige lifecycle por prefijo.
+Faltan IAM/custodios, acceso a la VPS y ensayo en destino. Los cálculos de precios y
+alternativas siguientes conservan su fecha original; no son una cotización
+actualizada ni una provisión realizada.
+
 Fecha: 19 de octubre de 2026. Evaluación técnica y de costos; no constituye
 contratación, despliegue ni aprobación de nuevas políticas de borrado.
 

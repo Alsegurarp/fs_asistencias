@@ -8,11 +8,13 @@ import android.os.SystemClock
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -20,6 +22,7 @@ import kotlinx.coroutines.withContext
 import mx.fastsolution.zenit.mobile.data.AttendanceRepository
 import mx.fastsolution.zenit.mobile.data.AttendanceSyncWorker
 import mx.fastsolution.zenit.mobile.data.CaptureApiException
+import mx.fastsolution.zenit.mobile.capture.BreakPolicySchedule
 
 data class CaptureUiState(
     val pendingCount: Int = 0,
@@ -41,7 +44,11 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
     private val repository = AttendanceRepository(application)
     private val captureState = MutableStateFlow(CaptureUiState(message = ""))
     private var declaredType: String? = null
-    private val registration = repository.store.changes.map { repository.store.registration() }.flowOn(Dispatchers.IO)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val registration = repository.store.changes.map { repository.store.registration() }.flatMapLatest { device ->
+        val effectiveAt = device?.getJSONObject("session")?.optJSONObject("upcomingBreakPolicy")?.getString("effectiveAt")?.let(Instant::parse)
+        BreakPolicySchedule.updates(effectiveAt).map { device }
+    }.flowOn(Dispatchers.IO)
 
     val state = combine(captureState, repository.pendingCount, repository.legacyCount, registration, repository.receipts) { current, pendingCount, legacyCount, device, receipts ->
         current.copy(
@@ -64,7 +71,7 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
         emit(CaptureUiState(message = "No se pudo leer la cola o las claves locales. Los datos se conservan; solicite revisión a Recursos Humanos."))
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
+        started = SharingStarted.WhileSubscribed(0),
         initialValue = CaptureUiState(),
     )
 

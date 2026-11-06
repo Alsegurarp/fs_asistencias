@@ -4,6 +4,12 @@ El portal debe poder usarse con teclado, tener contraste suficiente y no
 depender sólo del color para decir algo. La referencia es WCAG 2.1, nivel AA.
 Este documento dice qué se comprueba solo, qué se revisó a mano y qué falta.
 
+**Revisión de código del 6 de noviembre:** la referencia ID/SHA-256 del acuse
+en Mi asistencia adopta el ajuste de línea que ya usan expediente y exportes,
+sin truncar la huella. Las 218 pruebas y compilación aprueban. No sustituye
+comprobación visual a 320 px ni lector de pantalla; el control del navegador
+continúa indisponible. [Acta](qa-continuacion-multiagente-2026-11-06.md).
+
 ## Revisión manual parcial — 5 de noviembre de 2026
 
 Sobre la base integrada `2ab9745`, navegador Zen en Windows y componentes
