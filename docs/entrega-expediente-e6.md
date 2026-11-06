@@ -1,5 +1,33 @@
 # E6 — Verificación y consulta independiente del expediente
 
+## Avance local del 5 de noviembre de 2026 — integridad del acuse
+
+El verificador independiente ahora recalcula `evidence_hash` con la misma
+fórmula que usa el backend desde su primera versión: huella del cierre,
+tipo, nota exacta, instante UTC y actor. También exige que el empleado del
+acuse sea el del cierre al que apunta. Rechaza contenido incoherente aunque
+se hayan recalculado las huellas de NDJSON, manifiesto y ZIP; eso no elimina
+la necesidad de recibir las dos huellas externas por el canal autorizado.
+
+Conserva acuses de cierres reabiertos y actores históricos sin exigir que
+exista su cuenta o dispositivo actual. Normaliza sólo la fecha a instante
+UTC, manteniendo microsegundos, Unicode y separadores de la nota. El formato
+1 y la descarga no cambian. Un archivo incoherente que antes pasaba las
+comprobaciones internas ahora se rechaza; no se repara ni reescribe.
+
+Se añaden cinco pruebas (nueve del verificador, 96 unitarias backend), todas
+aprobadas sin omisiones. Los casos negativos fallaban antes de la corrección.
+Se generó el JAR actual y aceptó el ZIP histórico ficticio del 27 de octubre
+con sus anclajes conservados; ese ZIP no contiene acuses. Los acuses nuevos,
+reabiertos, alterados o asociados a otro empleado/cierre se cubren mediante
+fixtures unitarias. Una huella externa incorrecta produjo salida 1 del JAR.
+
+Se mantienen las dos pasadas por flujo: el índice de cierres guarda su
+huella y empleado, además de los IDs. No materializa todos sus snapshots.
+No se repitieron PostgreSQL, descarga real, Android ni aceptación integral;
+el lector actualizado debe entregarse con las nuevas comprobaciones.
+Los apartados siguientes son la entrega histórica y conservan sus fechas.
+
 Entrega técnica del **28 de octubre de 2026**. Se incorpora E4/E5 desde
 `feat/expediente-e4-e5` (`5cc975d`), cuya PR #21 se integró en la rama E2/E3
 después de que la PR #20 llegara a main. La nueva entrega reúne E4–E6 contra

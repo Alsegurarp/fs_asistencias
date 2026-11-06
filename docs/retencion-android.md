@@ -1,5 +1,13 @@
 # Retención Android: análisis y alcance mínimo
 
+**Avance técnico posterior del 5 de noviembre:** el
+[verificador E6](entrega-expediente-e6.md#avance-local-del-5-de-noviembre-de-2026--integridad-del-acuse)
+ya comprueba la huella del acuse contra su cierre y contenido y que ambos
+pertenezcan al mismo empleado. Esto detecta incoherencias en evidencia que
+el servidor sí conserva. No reconstruye sobres rechazados, recibos originales
+ni texto histórico ausentes; la matriz y los requisitos previos a purgar
+siguen vigentes.
+
 ## Contraste de evidencia para continuar — 5 de noviembre de 2026
 
 Revisión sobre `main/2ab9745`, después de integrar la PR #27. No se añade
