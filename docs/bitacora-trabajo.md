@@ -6,6 +6,24 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 6 de noviembre de 2026 — Corrección del análisis de imágenes de la PR #30
+
+La [PR #30](https://github.com/Alsegurarp/fs_asistencias/pull/30) está abierta
+contra `main`, sobre la rama publicada `fix/comida-acuses-respaldo-s3`.
+En el [CI de `7d9dd15`](https://github.com/Alsegurarp/fs_asistencias/actions/runs/42299368750)
+aprobaron backend/identidad, portal y Android. En contrato/seguridad también
+aprobaron contrato, secretos, construcción y las dos autopruebas de respaldo.
+El análisis final bloqueó `db` y `backup`: `CVE-2026-107891`, gravedad alta,
+en `musl` y `musl-utils` 1.2.6-r2. Las otras tres imágenes aprobaron.
+
+Se exige `musl>=1.2.6-r3` y `musl-utils>=1.2.6-r3` en la etapa `database`
+de `infra/postgres/Dockerfile`, heredada por `backup-tools`. Es el mismo
+patrón que ya usa el backend; no cambia PostgreSQL, age ni la política de
+análisis. [Alpine registra la corrección en esa revisión](https://security.alpinelinux.org/vuln/CVE-2026-107891).
+Comprobadas herencia, versiones mínimas y diff. Docker local sigue denegado;
+la reconstrucción, restauración y análisis del cambio quedan a la siguiente
+ejecución remota. Sin excepciones nuevas, merge ni despliegue.
+
 ## 6 de noviembre de 2026 — Ejecución con tres agentes
 
 Por instrucción del usuario trabajaron tres agentes en portal, Android y E6.
