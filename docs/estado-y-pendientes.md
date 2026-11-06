@@ -1,5 +1,64 @@
 # Estado y pendientes
 
+**Continuación con tres agentes, 6 de noviembre:** acuse del portal con ajuste
+de línea; 218 pruebas, TypeScript y build aprobados. Propuestas IAM/lifecycle
+privadas listas para `Cliente-demo`, sin aplicación. E6 revisada sin cambios
+redundantes; cobertura Android de cancelación añadida y tres escenarios del
+helper aprobados, con suite JUnit offline bloqueada y regresión nueva pendiente.
+DNS observado aún no apunta a Hostinger; no hubo migración ni conexión SSH.
+[Acta y estado de las 17 tareas](qa-continuacion-multiagente-2026-11-06.md).
+Se conservan 17 tareas abiertas y seis P0, sin purga ni despliegue.
+
+**Respuestas parciales del 6 de noviembre:** instancia `Cliente-demo` e IP
+incorporadas en la configuración privada local. Alexis administra las operaciones
+con elevación; Gabriel o Alexis atienden DNS/firewall. Hay nginx existente y
+usuario de despliegue sin sudo. Confirmados por chat el dominio
+`https://zenit.fastsolution.com.mx`, 2 CPU, 8 GB RAM y 50 GB de disco;
+las URL locales ya coinciden. Faltan usuario/puerto SSH, clave privada,
+host verificado, distribución/versión y confirmar Docker, DNS/TLS y espacio libre. El
+[formulario](datos-para-finalizar-tareas.md) recoge lo respondido y lo pendiente;
+el resto de bloques sigue abierto. No hubo conexión ni despliegue. Los cortes
+siguientes conservan su fecha; continúan 17 tareas abiertas y seis P0.
+
+**Continuación del 6 de noviembre:** 218 pruebas del portal, TypeScript y
+build Vite 8.1.0 aprobados ahora; identidad estática: cinco aprobadas y seis
+casos de runtime omitidos. Docker deniega acceso y el control del navegador
+está indisponible; no acredita nuevos ensayos reales ni accesibilidad manual.
+Bucket/región privados coinciden con lo confirmado; IP/SSH, instancia/clave
+pública age, IAM y custodios siguen pendientes. [Evidencia y comandos](bitacora-trabajo.md#6-de-noviembre-de-2026--continuación-y-verificación-del-portal).
+Se mantienen 17 tareas abiertas y seis P0, sin despliegue ni purga.
+
+**Decisión final del 6 de noviembre:** VPS Hostinger en **United States -
+Phoenix** y **bucket AWS S3 de `bucket.md`, `us-east-2`**, confirmado por el
+usuario en sustitución de Firebase/GCS. Perfil SSH local preparado para la
+IP; dominio pendiente en `servidor.env`. Configuración privada de respaldo
+preparada con bucket/región; transporte AWS nativo y autoprueba final
+aprobados, sin consultas remotas. Límite de 5 GiB explícito; faltan IAM,
+custodia y recuperación real. [Archivos y seguimiento](TareasPendientes.md#resolución-por-frente--6-de-noviembre-de-2026).
+
+**Corte anterior del 6 de noviembre, previo a confirmar AWS:** Hostinger y
+Firebase/GCS eran los destinos declarados. [Seguimiento de las
+17 tareas](TareasPendientes.md#resolución-por-frente--6-de-noviembre-de-2026).
+[E6 con ZIP nuevo/acuses, MFA y JAR sin red](qa-expediente-e6-2026-11-06.md)
+aprobado; [comida visual sin red en Samsung](qa-android-visual-2026-11-06.md)
+aprobada con datos intactos. Portal corrige un acuse ajeno a la versión del
+cierre: 218 pruebas y compilación aprobadas; identidad real, 11 casos
+distintos aprobados. Respaldo GCS adaptado y autoprueba final aprobada;
+falta destino real y CI Linux. Los seis P0
+mantienen provisión, condiciones concretas y aceptación que faltan; no hubo
+despliegue, purga ni aceptación pública. Los cortes siguientes son históricos.
+
+**Avance del 6 de noviembre:** base sincronizada con `origin/main/5b0a66c`,
+incluida PR #29. Revisión de pendientes con dos agentes y primera corrección
+Android: el aviso/política de comida se actualizan al llegar la vigencia sin
+otra operación ni red. 17 unitarias, lint y APK aprobados; autoensayo Samsung
+API 37 aprobado en ambos sentidos con servidor cerrado, preservando los tres
+SHA-256 operativos. [Acta y límites](qa-android-2026-11-06.md).
+Falta recorrido visual y expediente nuevo con acuses/MFA/JAR independiente.
+Docker responde sin contenedores activos; no se iniciaron backend/identidad.
+Se mantienen **17 tareas abiertas y seis P0**; sin publicación ni despliegue.
+Los cortes siguientes conservan sus fechas.
+
 **QA Android del 5 de noviembre, posterior al corte siguiente:** APK actuales,
 15 unitarias, lint y autoensayo aprobados en Samsung API 37. Contra backend
 real local aprobaron personal (captura/sincronización y dos versiones/acuses)

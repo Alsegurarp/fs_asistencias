@@ -1,5 +1,13 @@
 # Dudas del producto para resolver con el equipo
 
+**Proveedores resueltos el 6 de noviembre:** Q01 usa **Hostinger, United
+States - Phoenix** y Q02 **el bucket AWS S3 de `bucket.md`, `us-east-2`**.
+El usuario confirma AWS y sustituye la referencia intermedia a Firebase/GCS.
+Se conservan copia diaria/30 días, RPO 24 h/RTO 4 h y custodia. Faltan IP/
+dominio, acceso SSH e identidad AWS autorizada; no volver a preguntar por
+proveedores, regiones ni el identificador del bucket. Faltan también
+responsables y ensayo real. [Decisión vigente](decisiones-de-negocio.md#proveedores-confirmados--6-de-noviembre-de-2026).
+
 **Resultado de ejecución del 5 de noviembre:** Q10–Q13 ya no esperan elección:
 fueron aprobadas, implementadas y probadas en el árbol integrado. Q03 tiene
 recuperación real con 12 códigos de un uso probada en Keycloak local; falta
@@ -39,7 +47,8 @@ abiertos a elección. Su implementación y comprobación pueden seguir pendiente
   máxima de 24 horas y recuperación en 4 horas. fastSolution atiende fallos;
   falta concretar destino, custodia, personas y comprobar los objetivos.
   La copia externa debe ser diaria; la propuesta semanal queda descartada.
-  Destino elegido: bucket compatible con S3 manejado por el equipo desarrollador.
+  Destino final del 6 de noviembre: bucket AWS S3 de `bucket.md`, `us-east-2`,
+  manejado por el equipo desarrollador; sustituye la referencia a Firebase.
   Custodia: administrador del cliente o equipo desarrollador si no la asume;
   falta identificar personas, entrega, proveedor/bucket y ensayo.
 - Recuperación de contraseña por correo verificado; pérdida de OTP con los
@@ -69,7 +78,7 @@ con credenciales propias del administrador del cliente. Sustituye la respuesta
 anterior de producción compartida.
 **Pendiente de provisión:**
 
-Precisar proveedor, región, cuenta controlada por fastSolution, alojamiento
+Hostinger en United States - Phoenix está elegido. Precisar cuenta controlada por fastSolution, alojamiento
 de identidad, red y responsables. Opciones de operación: infraestructura
 autogestionada o componentes administrados, manteniendo la instancia privada.
 Se necesita un esquema objetivo y responsable de aprovisionamiento.
@@ -81,8 +90,8 @@ Se necesita un esquema objetivo y responsable de aprovisionamiento.
 RPO 24 h y RTO 4 h. La propuesta semanal queda descartada por incompatibilidad.
 **Pendiente de operación y ensayo:**
 
-El usuario elige bucket compatible con S3 manejado por el equipo desarrollador.
-Concretar proveedor, región, bucket/endpoint y credenciales por prefijo fuera
+El usuario confirma el bucket AWS S3 de `bucket.md`, región `us-east-2`,
+manejado por el equipo desarrollador. Falta identidad técnica por prefijo fuera
 del dominio de falla de la VPS. El administrador del cliente custodia las
 claves; si no lo asume, el equipo desarrollador. Identificar personas, segunda
 copia separada, responsable de avisos y ejecutor del ensayo. Mantener

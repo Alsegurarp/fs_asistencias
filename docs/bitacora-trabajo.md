@@ -6,6 +6,302 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 6 de noviembre de 2026 — Corrección del análisis de imágenes de la PR #30
+
+La [PR #30](https://github.com/Alsegurarp/fs_asistencias/pull/30) está abierta
+contra `main`, sobre la rama publicada `fix/comida-acuses-respaldo-s3`.
+En el [CI de `7d9dd15`](https://github.com/Alsegurarp/fs_asistencias/actions/runs/42299368750)
+aprobaron backend/identidad, portal y Android. En contrato/seguridad también
+aprobaron contrato, secretos, construcción y las dos autopruebas de respaldo.
+El análisis final bloqueó `db` y `backup`: `CVE-2026-107891`, gravedad alta,
+en `musl` y `musl-utils` 1.2.6-r2. Las otras tres imágenes aprobaron.
+
+Se exige `musl>=1.2.6-r3` y `musl-utils>=1.2.6-r3` en la etapa `database`
+de `infra/postgres/Dockerfile`, heredada por `backup-tools`. Es el mismo
+patrón que ya usa el backend; no cambia PostgreSQL, age ni la política de
+análisis. [Alpine registra la corrección en esa revisión](https://security.alpinelinux.org/vuln/CVE-2026-107891).
+Comprobadas herencia, versiones mínimas y diff. Docker local sigue denegado;
+la reconstrucción, restauración y análisis del cambio quedan a la siguiente
+ejecución remota. Sin excepciones nuevas, merge ni despliegue.
+
+## 6 de noviembre de 2026 — Ejecución con tres agentes
+
+Por instrucción del usuario trabajaron tres agentes en portal, Android y E6.
+Portal: ajuste mínimo de línea en ID/huella del acuse y fixture con SHA-256
+completo; 27 dirigidas y TypeScript aprobados por el agente, 218 globales y
+build Vite aprobados por coordinación. E6: revisión de código y autoensayo
+Jackson contra JSON adicional, sin defecto confirmado ni cambios redundantes.
+Android incorpora una regresión de cancelación y aprueba tres escenarios del
+helper de producción en autoensayo compilado localmente; la suite offline no
+resolvió AGP 9.4.1, por lo que la regresión JUnit nueva sigue sin ejecutarse.
+Los detalles de validación se conservan en el acta.
+
+Se preparan IAM y lifecycle en archivos privados para `Cliente-demo` desde
+ejemplos versionados; campos/aislamiento de prefijo comprobados, sin AWS real.
+DNS observado desde la estación mantiene CNAME al dominio raíz, con IP ajena
+a la VPS declarada. Consulta HTTPS rechazada desde esta sesión; Docker y
+control visual siguen inaccesibles. Sin SSH, aplicación de permisos, cambios
+DNS, despliegue ni purga. [Acta y condiciones restantes por tarea](qa-continuacion-multiagente-2026-11-06.md).
+
+## 6 de noviembre de 2026 — Dominio y recursos declarados
+
+Recibidos por chat `https://zenit.fastsolution.com.mx/`, 2 CPU, 8 GB RAM y
+50 GB de disco. El origen sin barra final y la identidad en `/id` ya coinciden
+con `servidor.env`; no fue necesario modificar las URL. Se actualiza el
+formulario y seguimiento. «Linux» confirma la familia del sistema; queda
+identificar distribución/versión, espacio libre y permisos efectivos al disponer
+de acceso. Sin consultas DNS, conexión SSH, cambios de nginx ni despliegue.
+
+## 6 de noviembre de 2026 — Incorporación de respuestas de infraestructura
+
+Leído `D:/Code/fs_asistencia/secrets-respuestas-cierre.md` sin modificarlo.
+Respuestas parciales del bloque 1: alias `Cliente-demo`, IP, responsables,
+nginx existente y usuario de despliegue sin sudo. Se completan `HostName` e
+identificador `ZENIT_INSTANCE_ID` en los archivos privados ignorados. Se
+retira `User root` del ejemplo y se deja un marcador de usuario pendiente;
+puerto 22 aún provisional. Comprobaciones locales de IP, formato del ID y
+contenido escrito aprobadas; no se ejecutaron suites funcionales ajenas a
+estos cambios de configuración/documentación.
+
+El archivo menciona `authorized_keys` y `known_hosts` sin ruta; el perfil
+local sólo contiene `config`. Faltan clave privada y host verificado. También
+dominio, nombre/puerto SSH, acceso Docker efectivo y recursos cuantificados;
+la cadena recibida es del kernel, no identificación completa de distribución.
+Se actualiza el formulario y se detalla la preparación administrativa por
+Alexis, preservando nginx y sin otorgar sudo/acceso adicional. No se conecta
+por SSH, modifica infraestructura ni habilita el despliegue. Las demás
+respuestas no se infieren: continúan 17 tareas y seis P0.
+
+## 6 de noviembre de 2026 — Continuación y verificación del portal
+
+Revisados el árbol local y los pendientes sin sustituir los cambios previos.
+**218 pruebas web en 20 archivos, TypeScript y build Vite 8.1.0 aprobados**.
+El comando habitual de pruebas falló antes de ejecutarlas con `spawn EPERM`
+al intentar iniciar esbuild. Se reutilizó la configuración de ensayo local
+existente, sin cambiar dependencias ni configuración de producción:
+
+```powershell
+node web/node_modules/vitest/vitest.mjs run --config build/continuacion-qa/vitest.config.mjs --configLoader native --pool threads --maxWorkers 2 --reporter dot
+# Desde web/:
+npm run lint
+node node_modules/vite/bin/vite.js build --configLoader native
+```
+
+La suite conserva avisos React de actualizaciones fuera de `act`; el build
+conserva el aviso de bundle mayor de 500 kB. Identidad estática, mediante
+`node --test infra/keycloak/realm.test.mjs infra/keycloak/health.test.mjs`:
+cinco aprobadas, cero fallos y seis casos de runtime omitidos.
+
+Docker devolvió acceso denegado a la tubería del motor. Git Bash tampoco
+pudo crear su signal pipe; no se ejecutó otra autoprueba externa. Computer
+Use devolvió tubería nativa inexistente y host del navegador indisponible;
+no hubo recorrido manual. Los ensayos reales anteriores conservan su fecha.
+
+Se comprobó sin red que el bucket privado y su región coinciden con
+`bucket.md`, sin mostrar valores ni modificar el archivo. El perfil SSH aún
+contiene `IP_VPS`, sin `identity` ni `known_hosts`; instancia y clave pública
+age siguen vacías. Se solicitaron los datos faltantes y custodios sin pedir
+secretos por el chat. No se contactó AWS/Hostinger, publicó, desplegó ni purgó.
+Se mantienen 17 tareas abiertas total o parcialmente y seis P0.
+
+## 6 de noviembre de 2026 — Confirmación definitiva del bucket AWS
+
+El usuario confirma usar el bucket AWS aportado en `bucket.md`, región
+`us-east-2`; queda sustituida la referencia intermedia a Firebase/GCS y no
+se mantiene como opción de transporte. Continúa VPS Hostinger en United
+States - Phoenix, diario/30 días, cifrado, RPO 24 h/RTO 4 h y custodia.
+
+Se prepara `secrets/hostinger/respaldo.env`, ignorado por Git, con el nombre
+exacto del archivo y su región. Faltan identificador de instancia, clave
+pública age e identidad técnica AWS del perfil `zenit-respaldo`; no se
+generaron claves ni credenciales. Transporte AWS nativo y **autoprueba final
+aprobados**: carga condicional sin sobrescritura, frontera de 5 GiB, descarga
+y SHA-256 antes de rotar, fallos, retención exacta por prefijo y concurrencia.
+Un paquete mayor de 5 GiB se conserva localmente y requiere multipart
+condicional. Se mantiene análisis JSON con Python estándar; no se agrega
+soporte para GCS ni endpoints alternativos. Workflow parseado y diff limpio.
+Evidencia: `build/qa-infra-20261106/s3-native-final.log`.
+
+Se actualizan guía y decisiones vigentes, conservando los ensayos anteriores
+con sus fechas. La configuración privada se comparó con el nombre y región
+de `bucket.md`; ignorada por Git. No se contacta ni modifica el bucket real,
+no se repiten suites Android/web ajenas al cambio y no se ejecuta CI Linux.
+
+## 6 de noviembre de 2026 — Región Hostinger y archivos para declarar el destino
+
+El usuario confirma **United States - Phoenix** y completará IP/dominio.
+Se prepara el perfil local ignorado `secrets/hostinger-ssh/config`, con
+`HostName IP_VPS`, y `deploy/servidor/.env.despliegue`, apuntado a ese perfil.
+El dominio se declara en las dos URL existentes de
+`deploy/servidor/zenit/servidor.env`; la guía identifica también DNS, borde,
+certificados y comprobaciones que deben adaptarse antes de desplegar con
+otro nombre. No se añadieron variables que el guion no consuma.
+
+Se encontró y leyó `bucket.md` en el directorio padre: nombre y enlace de
+AWS S3/us-east-2, distintos del destino Firebase indicado previamente. Se
+solicitó confirmar el proveedor; no se configuró como GCS ni se consultó la
+cuenta. Quedan por recibir la clave SSH autorizada/identidad Google o AWS
+según la aclaración, y la clave del host verificada. Sin conexiones remotas,
+credenciales nuevas, DNS ni despliegue en este paso.
+
+## 6 de noviembre de 2026 — Resolución general, E6 y comida visual offline
+
+El usuario autoriza continuar todas las tareas y confirma **Hostinger para
+VPS** y **Cloud Storage for Firebase/GCS para respaldo**, sustituyendo S3.
+Se conservan instancia por cliente, cifrado, copia diaria/30 días, RPO 24 h,
+RTO 4 h y custodia. Transporte externo adaptado y autoprueba final aprobada;
+no hay
+proyecto/bucket/acceso operativo ni configuración SSH local identificados.
+Se solicitó identificar esos recursos sin enviar secretos por el chat y se
+ofreció la integración Firebase disponible, aún sin instalación/conexión
+confirmadas. No se provisionó ni desplegó.
+
+Los frentes de trabajo completaron estas verificaciones locales:
+
+- **E6/tarea 15:** [ensayo aprobado](qa-expediente-e6-2026-11-06.md) con
+  PostgreSQL/Keycloak reales: cierre objetado/reabierto y nueva versión
+  conforme, descarga MFA/PKCE, OTP incorrecto y repetición rechazados, JAR
+  actualizado sin red y consulta de ambos históricos. Huellas de acuses
+  recalculadas; anclaje externo incorrecto rechazado. Accesos ficticios
+  retirados y empresa de ensayo suspendida. Semana sin marcajes: no prueba
+  cálculo. No sustituye custodia ni aceptación integral/pública.
+- **Portal/tareas 3/15:** corregido `PersonalAttendance` para no presentar
+  como vigente un acuse de otro cierre. Dos regresiones fallaron antes y
+  pasan después. **218 pruebas y build web aprobados**. Se conserva aviso
+  de tamaño del bundle; no se añadieron dependencias.
+- **Android/tarea 13:** [recorrido visual offline aprobado](qa-android-visual-2026-11-06.md)
+  de la pantalla real en Samsung API 37, con sesión ficticia en memoria:
+  aviso/vigencia en ambos sentidos, opciones de comida y limpieza de una
+  selección obsoleta. Nueve capturas; red activa ausente durante el ensayo,
+  radios restauradas y tres SHA-256 operativos intactos. 17 unitarias,
+  lint/APK y manifiesto release aprobados; fixture sólo debug/no exportada.
+  No se atribuye integración ViewModel/backend/reposo a esa fixture.
+- **Identidad/tarea 2:** 11 casos distintos reales aprobados, incluidos MFA,
+  12 códigos de recuperación y aplicación idempotente. Los primeros intentos
+  de idempotencia fallaron por slash de configuración de ensayo y rename
+  Windows sobre archivo montado; corregido el ensayo, resultado final 8/8
+  de realm, sin omisiones, más los tres casos de flujos aislados.
+- **Respaldo/tarea 1:** gcloud nativo, subida sin sobrescribir y descarga por
+  flujo con SHA-256 antes de rotar. Validador JSON exige dos reglas exactas
+  de 30 días por prefijo y rechaza borrados superpuestos o prefijos vacíos/
+  mal formados; autoprueba final aprobada con esas regresiones. Se adaptan
+  ejemplo/configuración/guía y CI con Python estándar del runner sin red,
+  sin añadirlo a PostgreSQL/age. Workflow parseado; no se ejecutó CI Linux ni
+  GCS real. [Guía vigente y migración del ejemplo AWS](respaldos-cifrados.md).
+
+Al cerrar, se sincronizó el archivo privado de identidad del entorno QA con
+su cliente técnico efectivo, restaurando el atributo de sólo lectura. Se
+reinició únicamente su backend para cargarlo: autenticación técnica, lectura
+administrativa sin cambios y salud `UP` aprobadas; copia temporal del secreto
+retirada sin mostrar valores. Backend/identidad locales quedan disponibles.
+Registros finales en `build/qa-infra-20261106/`.
+
+El navegador/control nativo no estuvo disponible: E6 usó el protocolo HTTP
+de prueba existente; no se presenta como aceptación visual del portal.
+El [listado vigente por las 17 tareas](TareasPendientes.md#resolución-por-frente--6-de-noviembre-de-2026)
+precisa lo resuelto técnicamente y recursos/decisiones restantes. Sin purga,
+captura release, publicación ni modificación de reglas contractuales.
+
+## 6 de noviembre de 2026 — Revisión de pendientes y vigencia de comida Android
+
+Por instrucción del usuario se revisaron los pendientes con dos agentes y se
+comprobó el Samsung conectado por ADB. Fetch y avance directo a
+`origin/main/5b0a66c`; se preserva la entrada de cierre anterior que ya estaba
+modificada localmente. PR #29 integrada, sin desarrollo E6 que repetir.
+Docker Desktop iniciado y motor accesible fuera del sandbox, sin contenedores
+en ejecución; backend/identidad no se levantaron en este ensayo.
+
+Se encontró y corrigió un defecto de la tarea 13: `AttendanceViewModel`
+mantenía aviso/política de comida obsoletos al llegar su vigencia sin otra
+operación. Se añade una emisión local al vencer, cancelada al cambiar la
+sesión o dejar de observar pantalla; al volver se relee el registro. Sin
+sondeo periódico, red, cambios de formato ni cambio a validación de captura.
+
+**Verificado ahora:** 17 unitarias Android sin fallos/omisiones, lint sin
+errores (11 avisos), APK y autoensayo físico aprobados. Con almacén aislado
+y servidor de fixture cerrado se comprobaron ambos sentidos de comida,
+transición al vencer y retirada del aviso sin otra escritura. Los APK
+conservan el certificado instalado; vinculación, base y WAL operativos
+conservan exactamente sus SHA-256. [Acta y evidencia](qa-android-2026-11-06.md).
+
+La prueba no acredita recorrido visual Compose, NFC autenticada ni aceptación
+pública. Se mantienen 17 tareas abiertas y seis P0. Sigue el ensayo E6 de
+expediente nuevo con dos versiones/acuses, MFA y JAR independiente, además
+de comida visual y accesibilidad con sesión real. Sin commit, publicación,
+despliegue ni purga; dependencias operativas externas sin cambios.
+
+## 5 de noviembre de 2026 — Cierre de sesión y pendientes para el 6 de noviembre
+
+Por instrucción del usuario se registra el trabajo para continuar mañana,
+**6 de noviembre**, sin iniciar nuevas tareas en este cierre. La
+[PR #29](https://github.com/Alsegurarp/fs_asistencias/pull/29) ya está integrada
+en `main/5b0a66c701e78bb59a01e8750d96dbab01131c88`: verificación de integridad
+del acuse en E6, cinco regresiones y acta Android real. El
+[CI de la PR](https://github.com/Alsegurarp/fs_asistencias/actions/runs/42149454777)
+aprobó sus cuatro trabajos, incluidos unitarias/integración PostgreSQL e
+identidad. El fallo del push anterior fue HTTP 429 de Maven Central al
+descargar JUnit/Objenesis antes de ejecutar pruebas; no requirió cambiar
+código. La repetición local sin caché de tareas aprobó **96 unitarias, cero
+fallos, errores u omisiones**. No queda pendiente corregir ese fallo ni
+integrar la PR.
+
+Android personal y terminal aprobaron contra backend local real. Se
+retiraron accesos ficticios y túnel ADB; los tres archivos operativos del
+teléfono conservaron sus SHA-256. El resultado y sus límites están en el
+[acta del teléfono](qa-android-2026-11-05.md). No equivale a NFC autenticada
+ni aceptación del entorno público.
+
+### Pendientes declarados
+
+Se conservan los IDs globales: **17 tareas abiertas total o parcialmente,
+seis P0**. Las tareas 7, 11 y 14 ya están completadas técnicamente; sus
+requisitos de aceptación pública relacionados siguen en los frentes de QA.
+
+| Tarea | Prioridad | Trabajo restante para cierre |
+| --- | --- | --- |
+| 1 — Respaldo externo | P0 | Proveer S3 y custodios; activar respaldo diario/30 días y probar recuperación en destino con RPO 24 h/RTO 4 h. Automatización y ensayo local ya existen |
+| 2 — Identidad operativa | P0 | Incorporar SMTP/remitente cuando se retome ese frente; cuentas personales, responsables/turnos y ensayo operativo de recuperación y doble aprobación. Los 12 códigos ya están implementados |
+| 3 — Jornada y evidencia del acuse | P0 | Completar condiciones concretas de jornada, descanso computable y cruce anual; documento/texto versionado del acuse y atención de objeciones, conservando históricos |
+| 4 — Tarjetas auténticas | P0 | Tecnología/protocolo, provisión y custodia de claves; integrar y probar captura/rechazo con tarjetas reales. Captura release continúa bloqueada |
+| 5 — Reglas operativas | P0 | Aceptar en el destino las reglas ya implementadas de suspensión, baja y supervisores por sede; no repetir su desarrollo |
+| 6 — Producción administrada | P0 | Proveer VPS/instancia privada por cliente, dominio y accesos; desplegar y comprobar aislamiento, operación y recuperación real |
+| 8 — Proxies y cuotas | P1 | Prueba con dos IP públicas distintas; conserva su delegación a otro desarrollador y el aplazamiento del usuario |
+| 9 — Recorridos del portal | P1 | Completar recorridos por roles con sesión real y aceptación del usuario en la versión desplegada |
+| 10 — Retención Android | P1 | Conservar y recuperar sobres rechazados, recibos y evidencia sólo local antes de implementar purga acotada que preserve pendientes |
+| 12 — Imágenes y despliegue | P1 | Obtener inventario efectivo del destino, comprobar imágenes y aceptar el despliegue; los análisis locales/CI no acreditan ese servidor |
+| 13 — Empresa y dispositivos | P2 | Ratificar SUP-025; comprobar aviso/vigencia del cambio de comida sin red en teléfono, accesibilidad manual y aceptación desplegada |
+| 15 — Semana, acuse y expediente | P2 | Verificar un expediente nuevo con acuses mediante el JAR actualizado y completar recuperación/aceptación integral E6 y pública |
+| 16 — Operador | P2 | Aceptar pantallas y operaciones con sesión de operador en el ambiente objetivo; implementación local ya probada |
+| 17 — Horarios y ausencias | P2 | Recabar condiciones del empleador y casos esperados; implementar retardos, faltas, salidas anticipadas, vacaciones e incapacidades con su evidencia |
+| 18 — Capacidad y continuidad | P2 | Definir objetivos de carga y VPS; medir carga sostenida y continuidad, DNS y renovación real de certificados |
+| 19 — Nómina | P2 | Recibir sistema/versión, formato o API y ejemplo ficticio del cliente; implementar y validar el conector concreto |
+| 20 — Contrato 1.0 | P2 | Acordar compatibilidad con consumidores y congelar/publicar tras completar funcionalidades, recorridos y aceptación |
+
+### Orden para retomar mañana
+
+1. Sincronizar la base con `main` integrado y comprobar cambios posteriores,
+   backend/identidad locales y autorización ADB. Este cierre conserva la rama
+   local `fix/verificacion-evidencia-expediente/0e17805`; no la sincroniza.
+2. **Expediente nuevo con acuses:** generar/descargar con MFA un ZIP ficticio,
+   usar sus dos huellas del canal autorizado y ejecutar el JAR actualizado.
+   Incluir versiones reabierta/vigente y verificar su consulta independiente;
+   el ZIP histórico probado no contiene acuses.
+3. **Comida sin red en Android:** comprobar visualmente aviso y vigencia
+   programada con datos ficticios y almacén aislado; preservar los datos
+   operativos y registrar condiciones de red, versión y restauración.
+4. **Accesibilidad del portal:** completar teclado, foco, zoom 200 %, ancho
+   320 px y lector de pantalla con sesión real; registrar pantallas/roles
+   comprobados y defectos reproducibles.
+
+Los tres ensayos técnicos anteriores pueden avanzar con el entorno de
+pruebas disponible; la aceptación integral conserva sus requisitos. No se
+inician provisión, despliegue, purga ni captura NFC release por esta nota.
+El control del navegador terminó al no poder verificar su URL; comprobar
+disponibilidad de control visual antes de los recorridos y no sustituirlos
+por resultados de API o instrumentación. Provisión, SMTP diferido, claves de
+tarjetas, especificación de nómina y aceptación de responsables continúan
+según las dependencias registradas en [Tareas pendientes](TareasPendientes.md).
+
 ## 5 de noviembre de 2026 — Preparación de PR de integridad E6 y QA Android
 
 Por instrucción del usuario se prepara la entrega de

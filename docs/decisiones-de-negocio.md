@@ -1,5 +1,39 @@
 # Decisiones de negocio
 
+## Datos operativos recibidos — 6 de noviembre de 2026
+
+Primer destino: `Cliente-demo`, con IP recibida en el archivo privado de
+respuestas. Alexis administra el servidor y es quien realiza operaciones con
+elevación; el usuario de despliegue no tiene sudo. Gabriel o Alexis gestionan
+DNS y firewall. Se declara la VPS sin aplicaciones/datos, con nginx instalado
+y puertos abiertos; conservar nginx hasta inspeccionar cómo integrar Zenit.
+
+IP e identificador ya están aplicados en la configuración privada. Por chat se
+confirman `https://zenit.fastsolution.com.mx`, 2 CPU, 8 GB RAM y 50 GB de disco;
+las URL existentes ya coinciden con el dominio. Faltan usuario/puerto y acceso
+SSH completo, distribución/versión, espacio libre y comprobación del destino,
+además de las respuestas de respaldo/identidad/negocio todavía no recibidas.
+No se infiere acceso Docker, custodia, permisos adicionales ni otra decisión
+de las respuestas de infraestructura. [Recopilación actualizada](datos-para-finalizar-tareas.md).
+
+## Proveedores confirmados — 6 de noviembre de 2026
+
+**Decisión final del usuario:** VPS Hostinger en **United States - Phoenix**
+y **el bucket AWS S3 de `bucket.md`, región `us-east-2`**, para respaldo.
+Sustituye la referencia intermedia a Firebase/GCS y resuelve la discrepancia
+del archivo. El nombre del bucket queda en la configuración local privada;
+no se deduce de él ninguna credencial ni autorización de acceso.
+
+Se conserva una instancia privada por cliente,
+administración del equipo desarrollador, cifrado, copia diaria, retención de
+30 días, RPO 24 h/RTO 4 h y custodia/relevo documentados. VPS y bucket están
+en regiones independientes, ambas confirmadas; no falta elegir proveedor.
+
+Faltan IP/dominio de VPS, acceso SSH, identidad AWS autorizada, identificador
+de instancia, clave pública age, custodios y ensayo en el destino. La elección
+del proveedor no acredita provisión, despliegue ni restauración real.
+Los apartados siguientes conservan el historial de decisiones.
+
 ## Decisión vigente de alojamiento y operación — 5 de noviembre de 2026
 
 Durante la ejecución el usuario sustituye expresamente el modelo compartido

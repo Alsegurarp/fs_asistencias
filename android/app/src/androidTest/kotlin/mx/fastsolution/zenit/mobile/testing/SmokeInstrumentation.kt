@@ -24,12 +24,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import mx.fastsolution.zenit.mobile.data.AttendanceDatabase
 import mx.fastsolution.zenit.mobile.data.AttendanceRepository
 import mx.fastsolution.zenit.mobile.data.CaptureApiException
+import mx.fastsolution.zenit.mobile.capture.BreakPolicySchedule
 import mx.fastsolution.zenit.mobile.security.OfflineEventCipher
 import org.json.JSONArray
 import org.json.JSONObject
@@ -48,11 +51,12 @@ class SmokeInstrumentation : Instrumentation() {
         try {
             val backend = listOf("baseUrl", "code", "mode", "phase", "tagHex").any(arguments::containsKey)
             val message = runBlocking {
-                if (backend) backendSmoke(targetContext, arguments) { device ->
+                if (arguments.getString("visual") == "true") visualSmoke()
+                else if (backend) backendSmoke(targetContext, arguments) { device ->
                     sendStatus(0, Bundle().apply { putString("stream", "DEVICE: $device\n") })
                 } else {
                     smoke()
-                    "FIXTURE: Keystore ES256, migración sin pérdida, activación, cola cifrada, reintento idéntico, recibos, captura concurrente y reenrolamiento sin borrado."
+                    "FIXTURE: Keystore ES256, migración sin pérdida, activación, cola cifrada, reintento idéntico, recibos, captura concurrente, reenrolamiento sin borrado y vigencia de comida sin servidor."
                 }
             }
             result.putString("stream", "OK: $message\n")
@@ -157,6 +161,23 @@ class SmokeInstrumentation : Instrumentation() {
             repository.activate("http://127.0.0.1:${server.port}", "ABCD-EFGH", preservePreviousPending = true)
             check(dao.pendingCount() == 0 && repository.legacyCount.first() == 3)
             server.failure?.let { throw it }
+        }
+        // El servidor ya está cerrado; el aviso y la vigencia usan sólo la sesión conservada.
+        for ((current, upcoming) in listOf("not_considered" to "marked", "marked" to "not_considered")) {
+            val deadline = Instant.now().plusSeconds(1)
+            val registration = checkNotNull(repository.store.registration()).put("baseUrl", "http://127.0.0.1:1")
+            registration.getJSONObject("session").put("breakPolicy", current).put("upcomingBreakPolicy", JSONObject()
+                .put("breakPolicy", upcoming).put("effectiveOn", "2026-11-16").put("effectiveAt", deadline.toString()))
+            repository.store.saveRegistration(registration)
+            val states = withTimeout(5_000) {
+                BreakPolicySchedule.updates(deadline).map {
+                    val session = checkNotNull(repository.store.registration()).getJSONObject("session")
+                    val now = Instant.now()
+                    AttendanceRepository.breakPolicyAt(session, now) to AttendanceRepository.breakPolicyNotice(session, now)
+                }.toList()
+            }
+            check(states.size == 2 && states.first().first == current && states.first().second != null)
+            check(states.last().first == upcoming && states.last().second == null)
         }
     }
 }

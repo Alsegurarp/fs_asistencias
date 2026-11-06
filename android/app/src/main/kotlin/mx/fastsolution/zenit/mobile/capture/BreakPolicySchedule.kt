@@ -1,9 +1,12 @@
 package mx.fastsolution.zenit.mobile.capture
 
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 
 /**
  * La política de comida que vale en un instante. La sesión trae la de hoy y,
@@ -12,6 +15,17 @@ import java.util.Locale
  */
 object BreakPolicySchedule {
     val POLICIES = setOf("marked", "not_considered")
+
+    fun updates(effectiveAt: Instant?) = flow {
+        val now = Instant.now()
+        emit(Unit)
+        if (effectiveAt != null && now.isBefore(effectiveAt)) {
+            do {
+                delay(Duration.between(Instant.now(), effectiveAt).toMillis().coerceAtLeast(0) + 1)
+            } while (Instant.now().isBefore(effectiveAt))
+            emit(Unit)
+        }
+    }
 
     fun at(current: String, upcoming: String?, effectiveAt: Instant?, instant: Instant): String =
         if (upcoming != null && effectiveAt != null && !instant.isBefore(effectiveAt)) upcoming else current

@@ -30,10 +30,12 @@ export function PersonalAttendance({ me }: { me: Me }) {
     {week.isError && <Button onClick={() => void week.refetch()}>Reintentar mi semana</Button>}
     {week.data && !week.isError && <>
       <WeekSummary week={week.data} />
-      {acknowledgement ? <Alert severity={acknowledgement.type === 'agreed' ? 'success' : 'warning'}>
+      {acknowledgement && acknowledgement.closureId !== week.data.closure?.id ? <Alert severity="error">
+        El acuse recibido no corresponde al cierre vigente. Vuelve a consultar la semana; si continúa, solicita revisión a RH.
+      </Alert> : acknowledgement ? <Alert severity={acknowledgement.type === 'agreed' ? 'success' : 'warning'}>
         {acknowledgement.type === 'agreed' ? 'Conformidad registrada' : 'Diferencia reportada'} · {showTime(acknowledgement.at, week.data.timeZone)}
         <Typography>Comentario: {acknowledgement.note || 'Sin comentario'}</Typography>
-        <Typography>Acuse: {acknowledgement.id} · Referencia: {acknowledgement.evidenceHash}</Typography>
+        <Typography sx={{ overflowWrap: 'anywhere' }}>Acuse: {acknowledgement.id} · Referencia: {acknowledgement.evidenceHash}</Typography>
       </Alert> : <Typography>{week.data.closure?.status === 'closed' ? (week.data.acknowledgement === undefined ? 'Esta versión del servidor no informa acuses en la consulta semanal.' : 'Sin acuse registrado para este cierre.') : 'La semana no tiene un cierre vigente para responder.'}</Typography>}
       <Typography>Esta consulta muestra los registros del servidor; los marcajes pendientes del teléfono todavía no están incluidos. Para reportar diferencias contacta a RH.</Typography>
     </>}

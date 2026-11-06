@@ -1,5 +1,15 @@
 # E6 — Verificación y consulta independiente del expediente
 
+## Ensayo nuevo aprobado — 6 de noviembre de 2026
+
+[Descarga real con MFA y consulta del JAR sin red](qa-expediente-e6-2026-11-06.md)
+aprobadas con dos versiones de cierre y sus acuses objetado/conforme. Se
+usaron las dos huellas del API, se consultaron los históricos y se recalcularon
+ambas huellas de acuse; anclaje incorrecto rechazado. Sustituye el pendiente
+técnico de probar el JAR con un archivo nuevo que sí contenga acuses. No
+cierra custodia, documento histórico ausente ni aceptación integral/pública.
+Los apartados siguientes conservan su fecha y alcance.
+
 ## Avance local del 5 de noviembre de 2026 — integridad del acuse
 
 El verificador independiente ahora recalcula `evidence_hash` con la misma
