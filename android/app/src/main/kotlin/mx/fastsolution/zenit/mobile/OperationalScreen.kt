@@ -1,6 +1,9 @@
 package mx.fastsolution.zenit.mobile
 
-import androidx.compose.foundation.Canvas
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,10 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
@@ -36,6 +35,8 @@ internal fun OperationalScreen(
     onSelectType: (String?) -> Unit,
     onOpenPresentation: () -> Unit,
 ) {
+    var registering by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = registering) { registering = false }
     var tab by rememberSaveable { mutableStateOf("Inicio") }
     var baseUrl by remember(state.serverUrl) { mutableStateOf(state.serverUrl) }
     var code by rememberSaveable { mutableStateOf("") }
@@ -57,17 +58,17 @@ internal fun OperationalScreen(
     LaunchedEffect(state.registered, state.personal) {
         if (tab !in tabs) tab = "Inicio"
     }
-    MaterialTheme(colorScheme = ZenitColors) {
+    MaterialTheme(colorScheme = ZenitColors, shapes = ZenitShapes) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             modifier = Modifier.safeDrawingPadding().imePadding(),
             bottomBar = {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                if (!registering) NavigationBar(modifier = Modifier.clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)), containerColor = MaterialTheme.colorScheme.surface) {
                     tabs.forEach { label ->
                         NavigationBarItem(
                             selected = tab == label,
-                            onClick = { tab = label },
-                            icon = { SectionIcon(label) },
+                            onClick = { tab = label; registering = false },
+                            icon = { NavigationGlyph(label) },
                             label = { Text(label, maxLines = 1) },
                         )
                     }
@@ -75,17 +76,18 @@ internal fun OperationalScreen(
             },
         ) { insets ->
             Column(Modifier.fillMaxSize().padding(insets)) {
-                Surface(color = MaterialTheme.colorScheme.surface) {
-                    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp)) {
-                        Text("ZENIT", style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        Text(tab, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text(if (state.registered) state.deviceLabel else "Control de asistencia",
-                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
+                val employee = state.deviceLabel.substringAfter(" · ", "").ifBlank { "Bienvenido" }
+                ZenitHeader(
+                    title = if (registering) "Registrar asistencia" else if (tab == "Inicio" && state.registered)
+                        (if (state.personal) "Hola, $employee" else "Punto de asistencia") else tab,
+                    subtitle = if (registering) null else if (state.registered) state.deviceLabel.substringBefore(" · ") else "Control de asistencia",
+                    home = tab == "Inicio" && !registering,
+                    onBack = if (registering) ({ registering = false }) else if (tab != "Inicio") ({ tab = "Inicio" }) else null,
+                )
                 Column(
-                    Modifier.weight(1f).verticalScroll(remember(tab) { ScrollState(0) })
+                    Modifier.weight(1f).offset(y = (-24).dp).clip(ZenitBodyShape)
+                        .background(MaterialTheme.colorScheme.background)
+                        .verticalScroll(remember(tab, registering) { ScrollState(0) })
                         .padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     val routineMessage = state.message in setOf("Aproxime una tarjeta NFC al lector", "Dispositivo activado. Aproxime una tarjeta NFC al lector.",
@@ -127,26 +129,41 @@ internal fun OperationalScreen(
                                             style = MaterialTheme.typography.bodyMedium)
                                     }
                                 }
-                                SectionCard("Registro de asistencia", "Aproxime la tarjeta al lector ubicado en la parte posterior del dispositivo.") {
+                                if (registering) Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    NfcIllustration()
+                                    Text(if (state.isCapturing) "Registrando asistencia…" else "Aproxime su tarjeta",
+                                        style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                                    Text("al lector NFC del dispositivo", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (state.isCapturing) LinearProgressIndicator(Modifier.fillMaxWidth())
+                                }
+                                SectionCard(if (registering) "Tipo de registro" else "Registrar asistencia",
+                                    if (registering) "Elija el tipo o permita que se determine al leer la tarjeta."
+                                    else "Aproxime su tarjeta al lector NFC del dispositivo.",
+                                    leading = if (!registering) ({ ZenitIconTile("NFC") }) else null) {
                                     val ready = nfcAvailable && locationGranted && state.sessionUsable
-                                    Text(when {
+                                    if (!ready || registering) Text(when {
                                         !state.sessionUsable -> "La sesión requiere renovación"
                                         !nfcAvailable -> "El lector NFC requiere activación"
                                         !locationGranted -> "Se requiere autorización de ubicación"
                                         else -> "Lector disponible"
                                     },
-                                        style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                                     val types = linkedMapOf<String?, String>(null to "Deducir tipo al leer tarjeta", "clock_in" to "Entrada", "clock_out" to "Salida")
                                     if (state.breakPolicy == "marked") {
                                         types["break_start"] = "Inicio de descanso"
                                         types["break_end"] = "Fin de descanso"
                                     }
-                                    Text(if (selectedType == null) "El tipo de registro se determina al leer la tarjeta."
+                                    if (registering || selectedType != null) Text(if (selectedType == null) "El tipo de registro se determina al leer la tarjeta."
                                         else "Tipo de registro seleccionado: ${types[selectedType]}", style = MaterialTheme.typography.bodyMedium)
-                                    TextButton(onClick = { chooseType = true }, enabled = !state.isCapturing) { Text("Seleccionar tipo de registro") }
-                                    if (!ready) Button(onClick = { tab = "Dispositivo" }, modifier = Modifier.fillMaxWidth()) { Text("Revisar configuración") }
-                                    if (BuildConfig.DEBUG) Text("Versión de prueba · sólo datos ficticios",
-                                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (registering) OutlinedButton(onClick = { chooseType = true }, enabled = !state.isCapturing,
+                                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                                        Text(types[selectedType] ?: "Automático (Entrada o Salida)")
+                                    } else {
+                                        ZenitPrimaryButton("Registrar ahora", enabled = !state.isCapturing) { registering = true }
+                                        TextButton(onClick = { chooseType = true }, enabled = !state.isCapturing) { Text("Seleccionar tipo de registro") }
+                                    }
+                                    if (!ready) Button(onClick = { tab = "Dispositivo"; registering = false }, modifier = Modifier.fillMaxWidth()) { Text("Revisar configuración") }
                                     if (chooseType) AlertDialog(onDismissRequest = { chooseType = false }, title = { Text("Tipo de registro de asistencia") },
                                         text = { Column(Modifier.verticalScroll(remember(tab) { ScrollState(0) })) {
                                             types.forEach { (value, label) ->
@@ -158,6 +175,7 @@ internal fun OperationalScreen(
                                         } }, confirmButton = { TextButton(onClick = { chooseType = false }) { Text("Cancelar") } })
                                 }
                             }
+                            if (state.registered && state.personal && !registering) ZenitLink("Mi semana", "Ver resumen de asistencias", "Mi semana") { tab = "Mi semana" }
                             SectionCard(if (state.pendingCount == 0) "Registros sincronizados" else "Registros pendientes de envío",
                                 if (state.pendingCount == 0) "No hay registros pendientes de envío." else "${state.pendingCount} registros pendientes. Se requiere conexión a internet para completar el envío.") {
                                 if (state.registered && state.pendingCount > 0) Button(onSynchronize, enabled = !state.isCapturing,
@@ -204,8 +222,7 @@ internal fun OperationalScreen(
                                     modifier = Modifier.fillMaxWidth()) { Text("Renovar sesión") }
                                 if (!reenrolling) TextButton(onClick = { confirmChange = true }, enabled = !state.isCapturing) { Text("Cambiar vinculación") }
                                 if (BuildConfig.DEBUG) {
-                                    Text("La captura por UID está en validación y sólo admite datos ficticios.", style = MaterialTheme.typography.bodySmall)
-                                    TextButton(onOpenPresentation) { Text("Ver presentación con ejemplos") }
+                                    TextButton(onOpenPresentation) { Text("Ver vistas de la app") }
                                 }
                             }
                             if (!state.registered) Button(onClick = { tab = "Inicio" }, modifier = Modifier.fillMaxWidth()) { Text("Ir a vinculación") }
@@ -223,10 +240,13 @@ internal fun OperationalScreen(
 }
 
 @Composable
-private fun SectionCard(title: String, description: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+private fun SectionCard(title: String, description: String, leading: (@Composable () -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit) {
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            leading?.invoke()
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             content()
@@ -239,32 +259,5 @@ private fun DetailRow(label: String, value: String) {
     Column(Modifier.fillMaxWidth()) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.bodyLarge)
-    }
-}
-
-@Composable
-private fun SectionIcon(label: String) {
-    val color = LocalContentColor.current
-    Canvas(Modifier.size(24.dp)) {
-        val unit = size.width / 24
-        fun line(x: Float, y: Float, x2: Float, y2: Float) = drawLine(color,
-            Offset(x * unit, y * unit), Offset(x2 * unit, y2 * unit), 1.8f * unit)
-        when (label) {
-            "Inicio" -> {
-                line(3f, 11f, 12f, 3f); line(12f, 3f, 21f, 11f)
-                line(6f, 10f, 6f, 21f); line(6f, 21f, 18f, 21f); line(18f, 21f, 18f, 10f)
-            }
-            "Actividad" -> for (y in listOf(6f, 12f, 18f)) {
-                drawCircle(color, unit, Offset(4 * unit, y * unit)); line(8f, y, 21f, y)
-            }
-            else -> {
-                val phone = label == "Dispositivo"
-                drawRoundRect(color, Offset((if (phone) 6 else 3) * unit, 3 * unit),
-                    Size((if (phone) 12 else 18) * unit, 18 * unit), CornerRadius(2 * unit), style = Stroke(1.8f * unit))
-                if (phone) line(10f, 18f, 14f, 18f) else {
-                    line(3f, 9f, 21f, 9f); line(8f, 1f, 8f, 6f); line(16f, 1f, 16f, 6f)
-                }
-            }
-        }
     }
 }

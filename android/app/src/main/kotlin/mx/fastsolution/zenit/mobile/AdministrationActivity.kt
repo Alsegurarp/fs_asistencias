@@ -30,24 +30,20 @@ class AdministrationActivity : ComponentActivity() {
             var tools by remember { mutableStateOf(false) }
             BackHandler { if (browser?.canGoBack() == true) browser?.goBack() else finish() }
             DisposableEffect(Unit) { onDispose { browser?.apply { stopLoading(); destroy() }; browser = null } }
-            MaterialTheme(colorScheme = ZenitColors) {
+            MaterialTheme(colorScheme = ZenitColors, shapes = ZenitShapes) {
                 Surface(Modifier.fillMaxSize()) {
                     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            TextButton(onClick = { finish() }) { Text("Volver") }
-                            Text("Administración", Modifier.padding(top = 14.dp), style = MaterialTheme.typography.titleSmall)
+                        ZenitHeader("Administración", onBack = { finish() }, trailing = {
                             Box {
-                                TextButton(onClick = { tools = true }) { Text("Opciones") }
+                                TextButton(onClick = { tools = true }, colors = ButtonDefaults.textButtonColors(contentColor = androidx.compose.ui.graphics.Color.White)) { Text("Opciones") }
                                 DropdownMenu(expanded = tools, onDismissRequest = { tools = false }) {
-                                    DropdownMenuItem(text = { Text("Preparar tarjeta de prueba") }, onClick = {
+                                    DropdownMenuItem(text = { Text("Preparar tarjeta NFC") }, onClick = {
                                         tools = false
                                         startActivity(Intent(this@AdministrationActivity, CardProvisioningActivity::class.java))
                                     })
                                 }
                             }
-                        }
-                        Text("Portal del servidor público", Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        })
                         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
                         if (error.isNotEmpty()) {
                             Text(error, Modifier.padding(16.dp))

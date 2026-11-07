@@ -36,19 +36,22 @@ fun PersonalWeekScreen(state: PersonalWeekState, pending: Int, onLoad: (String) 
     val start = week?.let { LocalDate.parse(it.getString("weekStart")) } ?: LocalDate.parse(selectedDate)
     LaunchedEffect(Unit) { if (state.week == null && !state.busy) onLoad(selectedDate) }
     fun load(date: LocalDate) { selectedDate = date.toString(); onLoad(selectedDate) }
-    InfoPanel("${shortDate(start)} – ${shortDate(start.plusDays(6))} · ${start.year}") {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.primaryContainer) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { load(start.minusWeeks(1)) }, enabled = !state.busy,
                 modifier = Modifier.semantics { contentDescription = "Semana anterior" }) { Text("‹", style = MaterialTheme.typography.headlineSmall) }
             TextButton(onClick = { chooseDate = true }, enabled = !state.busy,
-                modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp)) { Text("Elegir fecha") }
+                modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp)) {
+                Text("${shortDate(start)} – ${shortDate(start.plusDays(6))} · ${start.year}", fontWeight = FontWeight.SemiBold)
+            }
             IconButton(onClick = { load(start.plusWeeks(1)) }, enabled = !state.busy,
                 modifier = Modifier.semantics { contentDescription = "Semana siguiente" }) { Text("›", style = MaterialTheme.typography.headlineSmall) }
             IconButton(onClick = { load(start) }, enabled = !state.busy,
                 modifier = Modifier.semantics { contentDescription = "Actualizar semana" }) { Text("↻", style = MaterialTheme.typography.titleLarge) }
         }
-        if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
     }
+    if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
     if (chooseDate) {
         val calendar = rememberDatePickerState(initialSelectedDateMillis = start.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
         DatePickerDialog(onDismissRequest = { chooseDate = false },
@@ -89,10 +92,8 @@ fun PersonalWeekScreen(state: PersonalWeekState, pending: Int, onLoad: (String) 
         }
         return
     }
+    ZenitWeekSummary(days.size, duration(totals.getInt("workedMinutes")), incidents)
     InfoPanel(if (closed) "Semana cerrada" else if (closure == null) "Semana sin cerrar" else "Semana reabierta") {
-        Text(duration(totals.getInt("workedMinutes")), style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-        Text("Tiempo trabajado", style = MaterialTheme.typography.bodyMedium)
         Text("Descansos: ${duration(totals.getInt("breakMinutes"))}", style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (totals.getInt("overtimeMinutes") > 0) Text("Incluye ${duration(totals.getInt("overtimeMinutes"))} extraordinarias",
@@ -105,7 +106,7 @@ fun PersonalWeekScreen(state: PersonalWeekState, pending: Int, onLoad: (String) 
         if (incidents > 0) Text("Consulte con Recursos Humanos las incidencias pendientes de este período.")
         for (i in 0 until alerts.length()) Text(alerts.getJSONObject(i).getString("message"))
     }
-    Text("Detalle de jornadas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+    Text("Detalle por día", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     if (days.isEmpty()) InfoPanel("Sin registros de asistencia en el período", "No hay tramos registrados. Esto no determina una falta injustificada.") {}
     days.forEach { (day, items) ->
         val worked = items.filter { it.getString("kind") == "work" }.sumOf { it.getInt("minutes") }

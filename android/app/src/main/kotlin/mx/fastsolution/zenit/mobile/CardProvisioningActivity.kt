@@ -60,13 +60,10 @@ class CardProvisioningActivity : ComponentActivity(), NfcAdapter.ReaderCallback 
             val employee = employees[selected]
             val validKey = readKey.size == 6
             val waiting = waitingForCard
-            MaterialTheme(colorScheme = ZenitColors) {
+            MaterialTheme(colorScheme = ZenitColors, shapes = ZenitShapes) {
                 Surface(Modifier.fillMaxSize()) {
-                    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        TextButton(onClick = { finish() }) { Text("Volver a administración") }
-                        Text("Empleados listos para cargar", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                        Text("Hay dos empleados de ejemplo disponibles para la carga de tarjetas. Esta herramienta permite consultar y cargar credenciales de prueba. Los empleados de ejemplo no están registrados en el servidor.", style = MaterialTheme.typography.bodySmall)
+                    ZenitPage("Preparar tarjeta NFC", onBack = { finish() }) {
+                        Text("Seleccione el empleado y confirme los datos de su credencial.", style = MaterialTheme.typography.bodySmall)
                         employees.forEachIndexed { index, item ->
                             OutlinedButton(onClick = { selected = index; armed = null; uid = ""; existing = ""; waitingForCard = false; handler.removeCallbacks(noCard); message = "Empleado listo. Pulsa Cargar tarjeta para continuar." }, enabled = !working,
                                 modifier = Modifier.fillMaxWidth()) { Text("${item.id} · ${item.name}\n${if (item.id in loadedIds) "Carga verificada en este teléfono" else "Listo para cargar"}${if (selected == index) " ✓" else ""}") }

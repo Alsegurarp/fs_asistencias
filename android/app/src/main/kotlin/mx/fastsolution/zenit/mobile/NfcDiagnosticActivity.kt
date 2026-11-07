@@ -47,12 +47,10 @@ class NfcDiagnosticActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme(colorScheme = ZenitColors) {
+            MaterialTheme(colorScheme = ZenitColors, shapes = ZenitShapes) {
                 Surface(Modifier.fillMaxSize()) {
-                    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                        TextButton(onClick = { finish() }) { Text("Volver") }
-                        Text("Consultar tarjeta", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                    ZenitPage("Consultar tarjeta", onBack = { finish() }) {
+                        NfcIllustration(Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally))
                         Text("Aproxime la tarjeta para consultar el nombre, puesto, horario e ID del empleado.")
                         Button(onClick = { waitForCard() }, enabled = !loading && readKey.size == 6, modifier = Modifier.fillMaxWidth()) { Text("Leer tarjeta") }
                         if (waiting || loading) LinearProgressIndicator(Modifier.fillMaxWidth())
