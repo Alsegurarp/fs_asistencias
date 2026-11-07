@@ -1,0 +1,103 @@
+{
+  "clips": [
+    {
+      "durationSeconds": 25.0,
+      "fps": 24,
+      "file": "01_inicio_y_empresa.mp4",
+      "width": 1080,
+      "bytes": 775219,
+      "audio": "none",
+      "sha256": "36382928833b517cf6f23a8901b2f3e63d47368154b9a057ec0dbfd1d009762a",
+      "height": 1920
+    },
+    {
+      "durationSeconds": 26.791667,
+      "fps": 24,
+      "file": "02_sedes_y_personal.mp4",
+      "width": 1080,
+      "bytes": 755988,
+      "audio": "none",
+      "sha256": "3af4f12db0a6b5e43170714f031909ce66ac5ef2f39dac8255f05dc5ae315d4d",
+      "height": 1920
+    },
+    {
+      "durationSeconds": 29.0,
+      "fps": 24,
+      "file": "03_horarios_y_asignacion.mp4",
+      "width": 1080,
+      "bytes": 705748,
+      "audio": "none",
+      "sha256": "a9981f5f32c57bab2134fa8ef1b1fdf3a0b1edb269ce96f57cac6d404a8d074b",
+      "height": 1920
+    },
+    {
+      "durationSeconds": 24.0,
+      "fps": 24,
+      "file": "04_usuarios_y_dispositivos.mp4",
+      "width": 1080,
+      "bytes": 865319,
+      "audio": "none",
+      "sha256": "043fe1d42bbb86dda2aa33cf806bc16e27558deeba73173dab860532ebb94e76",
+      "height": 1920
+    },
+    {
+      "durationSeconds": 25.0,
+      "fps": 24,
+      "file": "05_tarjeta_nfc.mp4",
+      "width": 1080,
+      "bytes": 880502,
+      "audio": "none",
+      "sha256": "08b7c1ebf7a55eddda9104d5dee3497c93af50fef326c585d9db2c7158026ac7",
+      "height": 1920
+    },
+    {
+      "durationSeconds": 33.0,
+      "fps": 24,
+      "file": "06_asistencia_e_incidencias.mp4",
+      "width": 1080,
+      "bytes": 1102868,
+      "audio": "none",
+      "sha256": "662664361fa52ca7f87575e976396ecfd50b60b43f9d18447c2f560ef9f409fb",
+      "height": 1920
+    },
+    {
+      "durationSeconds": 31.0,
+      "fps": 24,
+      "file": "07_cierre_y_exportacion.mp4",
+      "width": 1080,
+      "bytes": 738419,
+      "audio": "none",
+      "sha256": "372a8630397611ff9ba550f794df2ccff59eff4269462ed22753c13c45d13fa2",
+      "height": 1920
+    },
+    {
+      "durationSeconds": 31.0,
+      "fps": 24,
+      "file": "08_expediente_y_verificacion.mp4",
+      "width": 1080,
+      "bytes": 1006580,
+      "audio": "none",
+      "sha256": "23a5fcde0a249234cae41c91f3b23741b1add0cc035d61360cfc3ae7b4c871e8",
+      "height": 1920
+    },
+    {
+      "durationSeconds": 20.0,
+      "fps": 24,
+      "file": "09_importacion_de_personal.mp4",
+      "width": 1080,
+      "bytes": 1016430,
+      "audio": "none",
+      "sha256": "6f4a02b230dd74c0ba31a9c872b4471d707bf2b60f6e730acfe312b9538492aa",
+      "height": 1920
+    }
+  ],
+  "environment": "Aplicación nativa y administración web en Samsung SM-S928B, entorno local con datos ficticios",
+  "checks": [
+    "H.264 1080x1920 a 24fps",
+    "Decodificación integral sin errores en cada render",
+    "CSV y ZIP descargados al Samsung y verificados por SHA-256"
+  ],
+  "totalSeconds": 244.79166700000002,
+  "recordedDate": "2026-11-06",
+  "product": "Zenit"
+}

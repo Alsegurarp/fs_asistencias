@@ -32,6 +32,9 @@ autenticación física y aceptación siguen pendientes. [Estado por tarea](docs/
 
 Para el cliente: [guía de demo sin programación](docs/guia-demo-cliente.md)
 y [PDF paso a paso](output/pdf/guia-demo-zenit-cliente.pdf).
+La [demo en nueve videos cortos del 6 de noviembre](output/video/demo-app/README.md)
+incluye el [índice de reproducción](output/video/demo-app/index.html)
+y el [paquete descargable](output/video/zenit_demo_app_20261106.zip).
 Los conteos del párrafo siguiente son antecedentes de octubre.
 
 Monorepo del producto. El backend atiende las 62 operaciones del contrato 0.13,

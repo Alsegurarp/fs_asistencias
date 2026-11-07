@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zenit · Demo de la aplicación</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b2140;color:#f4f8fb;font:16px/1.5 system-ui,sans-serif}main{max-width:1050px;margin:auto;padding:30px 24px}small{color:#50dfcf;letter-spacing:.1em}h1{font-size:32px;margin:8px 0}p{color:#c5d5e5}.layout{display:grid;grid-template-columns:minmax(240px,360px) 1fr;gap:32px;align-items:start}video{width:100%;max-height:75vh;background:#123566;border-radius:12px}ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}button{width:100%;padding:13px 16px;text-align:left;border:1px solid #31547b;border-radius:8px;color:inherit;background:#123566;font:inherit;cursor:pointer}button[aria-current=true]{border-color:#50dfcf;background:#1a4d69}button:focus-visible{outline:3px solid #50dfcf;outline-offset:3px}.duration{float:right;color:#9bc7d5}footer{margin-top:25px;font-size:14px;color:#b7c9da}a{color:#50dfcf}@media(max-width:650px){.layout{grid-template-columns:1fr}video{max-height:65vh}main{padding:20px}h1{font-size:26px}}
+</style>
+<main>
+<small>ZENIT · DEMOSTRACIÓN DEL PRODUCTO</small>
+<h1>La operación, paso a paso</h1>
+<p>Elige una función. Nueve videos cortos con subtítulos en español.</p>
+<div class="layout">
+<div><video id="player" controls playsinline preload="metadata" aria-label="Demo de Zenit" src="01_inicio_y_empresa.mp4"></video><p id="current" aria-live="polite">01 · Inicio y empresa</p></div>
+<ol id="playlist">
+<li><button data-file="01_inicio_y_empresa.mp4" aria-current="true">01 · Inicio y empresa <span class="duration">25 s</span></button></li>
+<li><button data-file="02_sedes_y_personal.mp4">02 · Sedes y personal <span class="duration">27 s</span></button></li>
+<li><button data-file="03_horarios_y_asignacion.mp4">03 · Horarios y asignación <span class="duration">29 s</span></button></li>
+<li><button data-file="04_usuarios_y_dispositivos.mp4">04 · Usuarios y dispositivos <span class="duration">24 s</span></button></li>
+<li><button data-file="05_tarjeta_nfc.mp4">05 · Tarjeta NFC <span class="duration">25 s</span></button></li>
+<li><button data-file="06_asistencia_e_incidencias.mp4">06 · Asistencia e incidencias <span class="duration">33 s</span></button></li>
+<li><button data-file="07_cierre_y_exportacion.mp4">07 · Cierre y exportación <span class="duration">31 s</span></button></li>
+<li><button data-file="08_expediente_y_verificacion.mp4">08 · Expediente y verificación <span class="duration">31 s</span></button></li>
+<li><button data-file="09_importacion_de_personal.mp4">09 · Importación de personal <span class="duration">20 s</span></button></li>
+</ol>
+</div>
+<footer>Datos ficticios en entorno local. App nativa y administración web en Android. NFC: escritura y lectura de credencial de ejemplo; marcaje autenticado pendiente. Videos sin audio. <a href="README.md">Detalle de la demostración</a>.</footer>
+</main>
+<script>
+const player=document.getElementById('player');
+document.getElementById('playlist').addEventListener('click',event=>{
+ const button=event.target.closest('button');if(!button)return;
+ document.querySelectorAll('#playlist button').forEach(item=>item.setAttribute('aria-current',String(item===button)));
+ player.src=button.dataset.file;document.getElementById('current').textContent=button.childNodes[0].textContent.trim();
+ player.play().catch(()=>{});
+});
+</script>
+</html>
