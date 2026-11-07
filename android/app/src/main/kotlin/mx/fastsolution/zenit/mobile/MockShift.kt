@@ -25,8 +25,7 @@ internal fun MockShift(modifier: Modifier = Modifier, onClose: () -> Unit) {
     } ?: "—"
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        Text("ZENIT", color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        NfcIllustration(Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally))
         Text(when {
             exitedAt != null -> "Turno terminado"
             enteredAt != null -> "En turno"

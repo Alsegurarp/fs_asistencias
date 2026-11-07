@@ -63,14 +63,8 @@ internal fun PersonalWeek() {
     var objecting by rememberSaveable { mutableStateOf(false) }
     var note by rememberSaveable { mutableStateOf("") }
     val days = remember { lastWeek() }
-    Text("Mi semana", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
     Text("${days.first().date.format(displayDate)} – ${days.last().date.format(displayDate)} · Roberto AR")
-    HistoryPanel("Resumen semanal") {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            SummaryValue("Horas", "40 h"); SummaryValue("Jornadas", "5"); SummaryValue("Retardos", "1")
-        }
-        Text("4 entradas puntuales · 1 entrada fuera de tolerancia")
-    }
+    ZenitWeekSummary(5, "40 h", 0)
     HistoryPanel("Detalle de jornada") { HistoricalRows(days) }
     HistoryPanel("Cierre de semana") {
         Text("Semana cerrada · 40 horas registradas")
@@ -87,7 +81,6 @@ internal fun PersonalWeek() {
 
 @Composable
 internal fun PersonalActivity() {
-    Text("Actividad", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
     Text("Registros recientes")
     HistoryPanel("Sincronización") {
         Text("Todo al día", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -99,8 +92,7 @@ internal fun PersonalActivity() {
 @Composable
 internal fun PresentationDevice(nfcReady: Boolean, locationGranted: Boolean, onRequestLocation: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        Text("Dispositivo", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        HistoryPanel("Dispositivo vinculado") {
+            HistoryPanel("Dispositivo vinculado") {
             Text("Roberto AR", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Text("Organización · Zenit")
             Text("Sede · Centro")
@@ -118,7 +110,8 @@ internal fun PresentationDevice(nfcReady: Boolean, locationGranted: Boolean, onR
 
 @Composable
 private fun HistoryPanel(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             content()

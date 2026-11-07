@@ -34,23 +34,19 @@ internal fun CardToolsDemo(
 
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        TextButton(onClick = onClose) { Text("Volver a administración") }
-        Text("TARJETAS NFC", color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
         Text("Credenciales del personal", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         Text("Consulta y preparación de credenciales del personal.")
-        Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.medium) {
-            Text("Demostración · Las acciones sólo cambian esta tarjeta de ejemplo. No se usa el NFC ni se guarda en el servidor.",
-                Modifier.padding(16.dp), style = MaterialTheme.typography.bodySmall)
-        }
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
             Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("ZENIT                                      NFC", fontWeight = FontWeight.Bold)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    ZenitBrand()
+                    ZenitIconTile("NFC")
+                }
                 Text(if (savedContent.isEmpty()) "Tarjeta vacía" else savedLabel,
                     style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(if (savedContent.isEmpty()) "Lista para preparar" else
                     employees.firstOrNull { it.first == savedEmployee }?.second ?: "Sin titular")
-                Text("Credencial de ejemplo", style = MaterialTheme.typography.labelSmall)
+                Text("Credencial de asistencia", style = MaterialTheme.typography.labelSmall)
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -62,12 +58,12 @@ internal fun CardToolsDemo(
         when (operation) {
             "Leer" -> {
                 Text("Consultar contenido", style = MaterialTheme.typography.titleLarge)
-                Text("En el flujo final acercarás la tarjeta a la parte posterior del teléfono.")
-                Button(onClick = { read = true; result = "Lectura de ejemplo completada." }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Simular lectura")
+                Text("Consulte los datos de la credencial seleccionada.")
+                Button(onClick = { read = true; result = "Lectura completada." }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Leer tarjeta")
                 }
                 if (read) {
-                    Text("Última lectura de ejemplo", fontWeight = FontWeight.SemiBold)
+                    Text("Última lectura", fontWeight = FontWeight.SemiBold)
                     Text(if (savedContent.isEmpty()) "Sin datos" else "$savedLabel\n$savedEmployee\n$savedContent")
                 }
             }
@@ -78,7 +74,7 @@ internal fun CardToolsDemo(
                 OutlinedButton(onClick = { choosingEmployee = true }, modifier = Modifier.fillMaxWidth()) {
                     Text(employees.firstOrNull { it.first == employee }?.let { "${it.second} · ${it.first}" } ?: "Seleccionar empleado")
                 }
-                OutlinedTextField(content, { content = it.take(200) }, label = { Text("Datos de ejemplo") },
+                OutlinedTextField(content, { content = it.take(200) }, label = { Text("Datos de la tarjeta") },
                     supportingText = { Text("${content.length}/200 caracteres") }, modifier = Modifier.fillMaxWidth())
                 Text("Revise el titular y los datos antes de reemplazar el contenido existente.", style = MaterialTheme.typography.bodySmall)
                 Button(onClick = { pending = "Escribir" }, enabled = label.isNotBlank() && content.isNotBlank() && employees.any { it.first == employee },
@@ -86,17 +82,15 @@ internal fun CardToolsDemo(
             }
             else -> {
                 Text("Borra el contenido", style = MaterialTheme.typography.titleLarge)
-                Text("Vacía los datos de la tarjeta de ejemplo. La baja o revocación de una credencial se gestiona por separado.")
+                Text("Vacía los datos de la tarjeta. La baja o revocación de una credencial se gestiona por separado.")
                 Button(onClick = { pending = "Borrar" }, enabled = savedContent.isNotEmpty(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    modifier = Modifier.fillMaxWidth()) { Text("Borrar datos de ejemplo") }
+                    modifier = Modifier.fillMaxWidth()) { Text("Borrar datos de la tarjeta") }
             }
         }
         if (result.isNotEmpty()) Surface(color = MaterialTheme.colorScheme.tertiaryContainer, shape = MaterialTheme.shapes.medium) {
             Text(result, Modifier.fillMaxWidth().padding(16.dp))
         }
-        Text("Datos de ejemplo para presentación.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     if (choosingEmployee) AlertDialog(onDismissRequest = { choosingEmployee = false },
         title = { Text("Seleccionar empleado") }, text = {
@@ -108,19 +102,19 @@ internal fun CardToolsDemo(
         }, confirmButton = { TextButton(onClick = { choosingEmployee = false }) { Text("Cerrar") } })
     pending?.let { action ->
         AlertDialog(onDismissRequest = { pending = null },
-            title = { Text(if (action == "Borrar") "¿Borrar datos de ejemplo?" else "Confirmar escritura de ejemplo") },
-            text = { Text(if (action == "Borrar") "Se vaciará el contenido de $savedLabel en esta demostración." else
-                "$label\n${employees.firstOrNull { it.first == employee }?.second} · $employee\n$content\n\nSe reemplazará el contenido de ejemplo.") },
+            title = { Text(if (action == "Borrar") "¿Borrar datos de la tarjeta?" else "Confirmar escritura") },
+            text = { Text(if (action == "Borrar") "Se vaciará el contenido de $savedLabel." else
+                "$label\n${employees.firstOrNull { it.first == employee }?.second} · $employee\n$content\n\nSe reemplazará el contenido de la tarjeta.") },
             confirmButton = { TextButton(onClick = {
                 if (action == "Borrar") {
                     savedContent = ""; savedEmployee = ""; read = false
-                    result = "Datos de ejemplo borrados."
+                    result = "Datos de la tarjeta borrados."
                 } else {
                     savedLabel = label.trim(); savedEmployee = employee; savedContent = content.trim(); read = false
-                    result = "Escritura de ejemplo completada."
+                    result = "Escritura completada."
                 }
                 pending = null
-            }) { Text(if (action == "Borrar") "Simular borrado" else "Simular escritura") } },
+            }) { Text(if (action == "Borrar") "Borrar" else "Guardar") } },
             dismissButton = { TextButton(onClick = { pending = null }) { Text("Cancelar") } })
     }
 }

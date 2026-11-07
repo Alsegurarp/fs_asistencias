@@ -1,6 +1,9 @@
 package mx.fastsolution.zenit.mobile
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -63,8 +66,19 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
             else -> onClose()
         }
     }
-    Scaffold(containerColor = MaterialTheme.colorScheme.background, bottomBar = {
-        if (signedIn) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+    Scaffold(modifier = Modifier.safeDrawingPadding(), containerColor = MaterialTheme.colorScheme.background,
+        topBar = { ZenitHeader(if (showCards || destination == "Tarjetas") "Tarjetas NFC" else if (selected != null) "Detalle del empleado"
+            else if (signedIn && destination != "Resumen") destination else "Administración",
+            if (signedIn) "fastSolution" else "Administración del personal",
+            onBack = {
+                when {
+                    showCards || destination == "Tarjetas" -> { showCards = false; destination = "Empleados" }
+                    selectedNumber != null -> selectedNumber = null
+                    signedIn && destination != "Resumen" -> destination = "Resumen"
+                    else -> onClose()
+                }
+            }) }, bottomBar = {
+        if (signedIn) NavigationBar(modifier = Modifier.clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)), containerColor = MaterialTheme.colorScheme.surface) {
             listOf("Resumen", "Empleados", "Tarjetas", "Cuenta").forEach { target ->
                 NavigationBarItem(selected = destination == target,
                     onClick = { destination = target; selectedNumber = null; showCards = false },
@@ -77,22 +91,18 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
             onClose = { showCards = false; destination = "Empleados" })
         return@Scaffold
     }
-    Column(modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+    Column(modifier.padding(padding).fillMaxSize().offset(y = (-24).dp).clip(ZenitBodyShape)
+        .background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("ZENIT · ADMINISTRACIÓN", style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         if (!signedIn) {
             Text("Administración del personal", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("Empleados y asistencia mensual, en un solo lugar.")
-            Text("Acceso de demostración · Administrador / Recursos Humanos", style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary)
-            Text("Consulte las pantallas con datos de ejemplo. Para administrar la empresa, acceda a Administración desde la pantalla de acceso.")
-            Button(onClick = { signedIn = true }, modifier = Modifier.fillMaxWidth()) { Text("Explorar administración") }
+            Button(onClick = { signedIn = true }, modifier = Modifier.fillMaxWidth()) { Text("Ingresar") }
             TextButton(onClick = onClose) { Text("Volver a mi asistencia") }
         } else if (destination == "Cuenta") {
             Text("Espacio de trabajo", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             AdminPanel("Administrador / Recursos Humanos") {
-                Text(email.ifBlank { "Cuenta de demostración" }, style = MaterialTheme.typography.titleMedium)
+                Text(email.ifBlank { "Administrador" }, style = MaterialTheme.typography.titleMedium)
                 Text("Zenit · Sede Centro")
                 Text("Gestión de empleados, asistencia y tarjetas NFC")
             }
@@ -101,7 +111,7 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
                 Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text("Ir a mi perfil de empleado") }
             }
             OutlinedButton(onClick = { signedIn = false; email = ""; destination = "Resumen" },
-                modifier = Modifier.fillMaxWidth()) { Text("Cerrar sesión de demostración") }
+                modifier = Modifier.fillMaxWidth()) { Text("Cerrar sesión") }
         } else if (destination == "Resumen") {
             Text("Resumen del personal", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("Sede Centro · $presentationMonthLabel")
@@ -122,17 +132,13 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
                 AdminStat("Retardos", employees.sumOf { it.late }, Modifier.weight(1f))
                 AdminStat("Faltas", employees.sumOf { it.absent }, Modifier.weight(1f))
             }
-            AdminPanel("Accesos rápidos") {
-                Button(onClick = { destination = "Empleados" }, modifier = Modifier.fillMaxWidth()) { Text("Ver empleados") }
-                OutlinedButton(onClick = { destination = "Tarjetas" }, modifier = Modifier.fillMaxWidth()) { Text("Gestionar tarjetas NFC") }
-            }
+            ZenitLink("Empleados", "Gestiona el personal", "Empleados") { destination = "Empleados" }
+            ZenitLink("Tarjetas NFC", "Credenciales del personal", "Tarjetas") { destination = "Tarjetas" }
             AdminPanel("Pendientes de revisión") {
                 Text("${employees.sumOf { it.late }} retardos y ${employees.sumOf { it.absent }} faltas en el periodo")
                 Text("Abra el detalle de cada empleado para consultar su historial.", style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = { destination = "Empleados" }) { Text("Revisar equipo →") }
             }
-            Text("Datos de demostración", style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else if (selected != null) {
             TextButton(onClick = { selectedNumber = null }) { Text("Volver a empleados") }
             Text(selected.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -153,9 +159,8 @@ internal fun AdminDemo(modifier: Modifier = Modifier, onClose: () -> Unit) {
             Text("Historial del mes", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             HistoricalRows(presentationDays(selected.punctual, selected.late, selected.absent, selected.vacation, selected.justified))
         } else {
-            Text("Empleados", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("$presentationMonthLabel · 20 días programados")
-            Button(onClick = { adding = true }, modifier = Modifier.fillMaxWidth()) { Text("Agregar empleado") }
+            ZenitPrimaryButton("Agregar empleado") { adding = true }
             OutlinedTextField(query, { query = it }, label = { Text("Buscar nombre o número") },
                 singleLine = true, modifier = Modifier.fillMaxWidth())
             val filtered = employees.filter { it.name.contains(query, true) || it.number.contains(query, true) }
