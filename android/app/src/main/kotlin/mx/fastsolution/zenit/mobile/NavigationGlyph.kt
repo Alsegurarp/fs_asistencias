@@ -25,6 +25,12 @@ internal fun NavigationGlyph(destination: String) {
             drawRoundRect(ink, Offset(x * unit, y * unit), Size(width * unit, height * unit),
                 CornerRadius(2 * unit), style = outline)
         when (destination) {
+            "Volver" -> { line(19f, 12f, 5f, 12f); line(5f, 12f, 11f, 6f); line(5f, 12f, 11f, 18f) }
+            "NFC" -> for (i in 0..3) {
+                val radius = (4 + i * 3).toFloat() * unit
+                drawArc(ink, -45f, 90f, false, Offset(8f * unit - radius, 12f * unit - radius),
+                    Size(radius * 2, radius * 2), style = outline)
+            }
             "Resumen" -> { box(3f, 3f, 7f, 7f); box(14f, 3f, 7f, 7f); box(3f, 14f, 7f, 7f); box(14f, 14f, 7f, 7f) }
             "Tarjetas" -> { box(2f, 5f, 20f, 14f); line(2f, 10f, 22f, 10f); line(5f, 15f, 10f, 15f) }
             "Empleados", "Cuenta" -> {

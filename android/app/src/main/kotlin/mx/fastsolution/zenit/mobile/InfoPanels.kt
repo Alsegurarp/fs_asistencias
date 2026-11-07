@@ -14,7 +14,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 internal fun InfoPanel(title: String, subtitle: String? = null, content: @Composable ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -28,7 +29,8 @@ internal fun InfoPanel(title: String, subtitle: String? = null, content: @Compos
 @Composable
 internal fun ExpandablePanel(title: String, summary: String? = null, content: @Composable ColumnScope.() -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Row(Modifier.fillMaxWidth().semantics { stateDescription = if (expanded) "Expandido" else "Contraído" }
             .clickable(onClickLabel = if (expanded) "Ocultar detalles" else "Ver detalles") { expanded = !expanded }
