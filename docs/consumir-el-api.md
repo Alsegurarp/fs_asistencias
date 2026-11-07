@@ -236,6 +236,12 @@ las rutas en PowerShell no se probó.
 - **Ocultar por rol, y aun así esperar el 403.** El portal oculta lo que la
   persona no puede hacer, pero la autoridad es el servidor.
 - **Mostrar los instantes en la zona de la empresa.**
+- **No armar una tabla con una llamada por fila.** Para la asistencia de
+  toda la empresa están `GET /attendance/weeks` y `GET /attendance/summary`;
+  `GET /employees/{employeeId}/attendance` es para el detalle de una persona.
+- **Filtrar en el servidor.** Filtrar una lista paginada en el cliente sólo
+  filtra lo que ya se cargó. Si una lista no tiene el filtro que la pantalla
+  necesita, se pide al backend.
 
 ## Qué cambia sin aviso y qué no
 

@@ -3,6 +3,8 @@
 Corte: 20 de octubre de 2026. Las 62 operaciones de contracts/openapi.yaml (versión 0.13.0).
 Las rutas de esta tabla incluyen el prefijo /api/v1. Los roles se toman del contrato;
 la autorización efectiva también se aplica en SecurityConfig y los servicios.
+Las filas marcadas «desde 0.19.0» se agregaron después de ese corte; la tabla
+no se ha vuelto a contar contra el contrato completo.
 
 | Método y ruta | operationId | Flujo principal | Roles / credencial |
 | --- | --- | --- | --- |
@@ -35,6 +37,8 @@ la autorización efectiva también se aplica en SecurityConfig y los servicios.
 | PATCH /api/v1/employees/{employeeId} | updateEmployee | [04](04-empleados-e-importacion.puml) | admin_empresa, rh |
 | POST /api/v1/employees/{employeeId}/schedule-assignments | assignSchedule | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh |
 | GET /api/v1/employees/{employeeId}/attendance | getEmployeeWeek | [09](09-jornada-semanal.puml) | admin_empresa, rh, supervisor, auditor |
+| GET /api/v1/attendance/weeks | listAttendanceWeeks | [09](09-jornada-semanal.puml), desde 0.19.0 | admin_empresa, rh, supervisor, auditor |
+| GET /api/v1/attendance/summary | getAttendanceSummary | [09](09-jornada-semanal.puml), desde 0.19.0 | admin_empresa, rh, supervisor, auditor |
 | POST /api/v1/imports/csv | importEmployeesCsv | [04](04-empleados-e-importacion.puml) | admin_empresa, rh |
 | GET /api/v1/imports/{importId} | getImport | [04](04-empleados-e-importacion.puml) | admin_empresa, rh |
 | GET /api/v1/cards | listCards | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh, auditor |

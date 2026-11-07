@@ -1,5 +1,14 @@
 # Estado y pendientes
 
+**Asistencia de la empresa, 7 de noviembre (contrato 0.19.0):** primera fase
+del backend que pide la maqueta aprobada del portal. `GET /attendance/weeks`
+da la tabla de asistencia por páginas, con filtros en el servidor, y
+`GET /attendance/summary` los números del panel; las dos usan el mismo cálculo
+que la semana de una persona y respetan el alcance de Supervisión. Medido con
+300 personas: página de 50 en unos 30 ms y panel en unos 90 ms
+([reglas y medición](logica-de-negocio.md#asistencia-de-la-empresa)). Falta
+que el portal las consuma; no se desplegó.
+
 **Continuación con tres agentes, 6 de noviembre:** acuse del portal con ajuste
 de línea; 218 pruebas, TypeScript y build aprobados. Propuestas IAM/lifecycle
 privadas listas para `Cliente-demo`, sin aplicación. E6 revisada sin cambios

@@ -4,6 +4,11 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Asistencia de la empresa, 7 de noviembre:** contrato 0.19.0 con
+`GET /attendance/weeks` y `GET /attendance/summary` para la tabla de
+asistencia y el panel del portal, calculados en lote con el mismo cálculo de
+la semana de cada persona. [Reglas y medición](docs/logica-de-negocio.md#asistencia-de-la-empresa).
+
 **Android físico revisado el 5 de noviembre:** Samsung API 37, 15 unitarias,
 lint y autoensayo de los APK actuales aprobados; datos operativos conservados.
 Con Docker iniciado por el usuario, el modo personal contra backend real

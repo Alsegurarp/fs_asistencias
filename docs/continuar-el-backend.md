@@ -33,7 +33,7 @@ servicio y su controlador.
 | `site`, `schedule`, `employee`, `card` | Sedes, horarios, padrón con su importación, y tarjetas |
 | `device` | Enrolamiento, activación, sesiones y la credencial del dispositivo |
 | `capture` | Recibir un marcaje: reglas (`CaptureRules`), valores (`CaptureProperties`) y el proceso |
-| `workday` | Cálculo de la semana (`WeekCalculator`), incidencias, cierres, y corridas de cierre con el cierre programado (`ClosureRuns`) |
+| `workday` | Cálculo de la semana (`WeekCalculator`), incidencias, cierres, corridas de cierre con el cierre programado (`ClosureRuns`) y la asistencia de toda la empresa en lote (`CompanyAttendance`) |
 | `export` | Exportes y su archivo |
 | `dossier` | Permiso explícito, solicitud y preparación del expediente íntegro por bloques; descarga pendiente de E4 |
 | `jobs` | Trabajos durables y quien los atiende |
@@ -126,6 +126,15 @@ Detalles que ahorran tiempo:
   distinguir un campo nulo de uno ausente, el cuerpo se recibe como mapa, o la
   propiedad lleva un `set` que lo anota.
 - En SQL de jOOQ en texto se usa `cast(? as tipo)` y no `::tipo`.
+- Una lista de identificadores para filtrar se manda como arreglo tipado
+  (`Array<UUID>`) con `columna = any(?)`. Mandarla como texto con
+  `cast(? as uuid[])` obliga a PostgreSQL a convertirla en cada fila que
+  revisa: con 200 personas costó cientos de milisegundos en lugar de unos
+  pocos.
+- Una vista de muchas personas no llama por persona al servicio de una sola:
+  lee todo en lote, con un número fijo de consultas por página, y pasa por el
+  mismo cálculo (`WeekService.calculate`). Así `CompanyAttendance` da los
+  mismos números que la semana de cada persona.
 - Un JSON que lleva huella se guarda como `json`, no `jsonb`: `jsonb`
   reordena el texto y la huella ya no se puede volver a calcular.
 

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.18.0
+  version: 0.19.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -1795,6 +1795,174 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /attendance/weeks:
+    get:
+      tags: [jornada]
+      operationId: listAttendanceWeeks
+      summary: Lista la semana de cada persona con sus totales
+      description: |
+        La tabla de asistencia de la empresa: una fila por persona que entra a
+        la semana, en el orden del padrón. Entran las personas activas y las
+        que marcaron esa semana, igual que en un cierre. Cada fila se calcula
+        como en `getEmployeeWeek`: cerrada, trae lo que se congeló; abierta o
+        reabierta, el cálculo de ahora. No trae los tramos: el detalle de una
+        persona sigue en `getEmployeeWeek`.
+
+        `today` sólo viene cuando la semana contiene el día de hoy de la
+        empresa. `attention` filtra en el servidor:
+
+        - `alerts`: con una incidencia abierta esa semana, una alerta de
+          severidad `warning` o `critical`, o un tramo sin cerrar que ya no es
+          el turno en curso. El tramo del turno en curso no cuenta: su alerta
+          `open_segment` sólo dice que todavía no sale.
+        - `overtime`: con tiempo extraordinario.
+        - `no_entry_today`: hoy no ha marcado y no está en turno.
+        - `on_shift`: está en turno, trabajando o en su descanso.
+
+        El turno en curso es el último tramo abierto, si empezó hace menos de
+        la separación entre turnos que usa el cálculo.
+
+        Los dos últimos responden 422 con `not_current_week` si la semana no
+        es la de hoy.
+
+        Supervisión ve sólo a las personas de sus sedes y no ve la semana de
+        quien marcó esa semana en una sede ajena: esa fila no aparece, como en
+        los cierres.
+      x-roles: [admin_empresa, rh, supervisor, auditor]
+      parameters:
+        - $ref: "#/components/parameters/Week"
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: attention
+          in: query
+          schema:
+            type: string
+            enum: [alerts, overtime, no_entry_today, on_shift]
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de semanas por persona
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceWeekList"
+              example:
+                weekStart: "2026-11-02"
+                timeZone: America/Mexico_City
+                items:
+                  - employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    externalId: E-0001
+                    displayName: Persona de Ejemplo Uno
+                    siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
+                    scheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                    ruleSet:
+                      id: f9b1d3f5-7a9c-4e1b-8d3f-5a7c9e1b3d5f
+                      version: 1
+                    totals:
+                      workedMinutes: 2110
+                      breakMinutes: 0
+                      ordinaryMinutes: 1920
+                      overtimeMinutes: 190
+                    alerts:
+                      - code: weekly_overtime
+                        severity: info
+                        message: La semana tiene 190 minutos extraordinarios por límites diarios o semanales.
+                    openIncidents: []
+                    closure: null
+                    today:
+                      state: on_shift
+                      since: "2026-11-06T13:58:00Z"
+                      lastMarkAt: "2026-11-06T13:58:00Z"
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /attendance/summary:
+    get:
+      tags: [jornada]
+      operationId: getAttendanceSummary
+      summary: Totales de asistencia de un día y de su semana
+      description: |
+        Los números del panel y de los filtros de asistencia, calculados en el
+        servidor con las mismas reglas que `listAttendanceWeeks`, sobre las
+        mismas personas y con el mismo alcance por sede.
+
+        - `date`: el día que se cuenta; si falta, hoy en la zona horaria de la
+          empresa. Responde 422 con `future_date` si todavía no llega.
+        - `day.onShift` y `day.noEntry` sólo tienen sentido hoy: en otro día
+          son nulos. `day.foreignSite`: incidencias abiertas de marca en otra
+          sede cuyo marcaje es de ese día.
+        - `week.missingExit`: personas con un tramo sin cerrar en la semana
+          que ya no es el turno en curso; falta su marca de salida.
+        - `previousWeek`: la semana anterior a la de `date`, con sus cierres
+          vigentes y los acuses de esos cierres.
+        - `devices` es nulo para quien no consulta dispositivos. Un lector
+          está en silencio si no ha dado señal en las últimas 24 horas.
+      x-roles: [admin_empresa, rh, supervisor, auditor]
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Totales del día y de su semana
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceSummary"
+              example:
+                date: "2026-11-06"
+                weekStart: "2026-11-02"
+                timeZone: America/Mexico_City
+                siteId: null
+                people: 42
+                day:
+                  marked: 38
+                  attendanceEvents: 81
+                  onShift: 34
+                  noEntry: 4
+                  foreignSite: 1
+                week:
+                  ordinaryMinutes: 71160
+                  overtimeMinutes: 405
+                  withOvertime: 3
+                  withAttention: 4
+                  missingExit: 3
+                incidents:
+                  open: 6
+                  highSeverity: 1
+                  unassigned: 4
+                previousWeek:
+                  weekStart: "2026-10-26"
+                  people: 42
+                  closed: 39
+                  agreed: 31
+                  objected: 1
+                devices:
+                  active: 6
+                  silent: 1
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -5580,6 +5748,194 @@ components:
                   type: integer
                 status:
                   $ref: "#/components/schemas/WeekClosureStatus"
+            - type: "null"
+    AttendanceToday:
+      type: object
+      additionalProperties: false
+      required: [state, since, lastMarkAt]
+      properties:
+        state:
+          type: string
+          enum: [on_shift, on_break, off_shift, no_entry]
+          description: >-
+            `on_shift` y `on_break`: tiene abierto un tramo de trabajo o de
+            descanso que empezó hace menos de la separación entre turnos.
+            `off_shift`: hoy marcó y no tiene tramo abierto. `no_entry`: hoy
+            no ha marcado.
+        since:
+          type: [string, "null"]
+          format: date-time
+          description: Inicio del tramo abierto; nulo si no hay.
+        lastMarkAt:
+          type: [string, "null"]
+          format: date-time
+          description: Hora del último marcaje de hoy; nulo si no hay.
+    AttendanceWeekRow:
+      type: object
+      additionalProperties: false
+      required: [employeeId, externalId, displayName, siteId, scheduleId, ruleSet, totals, alerts, openIncidents, closure, today]
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        externalId:
+          type: string
+        displayName:
+          type: string
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        scheduleId:
+          type: [string, "null"]
+          format: uuid
+          description: Horario vigente hoy si la semana lo contiene; si no, el de su último día.
+        ruleSet:
+          $ref: "#/components/schemas/RuleSetRef"
+        totals:
+          $ref: "#/components/schemas/WeekTotals"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceAlert"
+        openIncidents:
+          type: array
+          description: Incidencias abiertas cuyo marcaje cae en la semana.
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, type]
+            properties:
+              id:
+                type: string
+                format: uuid
+              type:
+                $ref: "#/components/schemas/IncidentType"
+        closure:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [id, version, status]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                version:
+                  type: integer
+                status:
+                  $ref: "#/components/schemas/WeekClosureStatus"
+            - type: "null"
+        today:
+          oneOf:
+            - $ref: "#/components/schemas/AttendanceToday"
+            - type: "null"
+    AttendanceWeekList:
+      type: object
+      additionalProperties: false
+      required: [weekStart, timeZone, items, nextCursor]
+      properties:
+        weekStart:
+          type: string
+          format: date
+        timeZone:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceWeekRow"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+    AttendanceSummary:
+      type: object
+      additionalProperties: false
+      required: [date, weekStart, timeZone, siteId, people, day, week, incidents, previousWeek, devices]
+      properties:
+        date:
+          type: string
+          format: date
+        weekStart:
+          type: string
+          format: date
+        timeZone:
+          type: string
+        siteId:
+          type: [string, "null"]
+          format: uuid
+        people:
+          type: integer
+          description: Personas que entran a la semana, las mismas filas de `listAttendanceWeeks`.
+        day:
+          type: object
+          additionalProperties: false
+          required: [marked, attendanceEvents, onShift, noEntry, foreignSite]
+          properties:
+            marked:
+              type: integer
+              description: Personas con al menos un marcaje ese día.
+            attendanceEvents:
+              type: integer
+              description: Marcajes de esas personas ese día.
+            onShift:
+              type: [integer, "null"]
+            noEntry:
+              type: [integer, "null"]
+            foreignSite:
+              type: integer
+        week:
+          type: object
+          additionalProperties: false
+          required: [ordinaryMinutes, overtimeMinutes, withOvertime, withAttention, missingExit]
+          properties:
+            ordinaryMinutes:
+              type: integer
+            overtimeMinutes:
+              type: integer
+            withOvertime:
+              type: integer
+            withAttention:
+              type: integer
+              description: Personas que filtra `attention=alerts`.
+            missingExit:
+              type: integer
+        incidents:
+          type: object
+          additionalProperties: false
+          required: [open, highSeverity, unassigned]
+          description: Incidencias abiertas de cualquier semana, con el alcance de `listIncidents`.
+          properties:
+            open:
+              type: integer
+            highSeverity:
+              type: integer
+            unassigned:
+              type: integer
+        previousWeek:
+          type: object
+          additionalProperties: false
+          required: [weekStart, people, closed, agreed, objected]
+          properties:
+            weekStart:
+              type: string
+              format: date
+            people:
+              type: integer
+            closed:
+              type: integer
+              description: Personas con un cierre vigente de esa semana.
+            agreed:
+              type: integer
+            objected:
+              type: integer
+              description: Los cierres sin acuse son `closed - agreed - objected`.
+        devices:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [active, silent]
+              properties:
+                active:
+                  type: integer
+                silent:
+                  type: integer
             - type: "null"
 
     IncidentType:

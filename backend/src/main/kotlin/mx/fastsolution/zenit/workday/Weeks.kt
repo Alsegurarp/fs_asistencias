@@ -253,23 +253,42 @@ class WeekService(
      */
     fun compute(tenant: TenantRow, employeeId: UUID, weekStart: LocalDate): ComputedWeek {
         val zone = ZoneId.of(tenant.timeZone)
-        val ruleSet = rules.effectiveOn(weekStart.plusDays(6))
-            ?: throw Problems.validation("week", "no_rules_for_date", "No hay reglas laborales registradas para esa semana.")
+        val ruleSet = ruleSetFor(weekStart)
         val from = weekStart.atStartOfDay(zone).toOffsetDateTime()
         val until = weekStart.plusDays(7).atStartOfDay(zone).toOffsetDateTime()
         // Un día de margen a cada lado: un turno puede empezar o terminar fuera de la semana.
         val marks = weeks.marks(tenant.id, employeeId, from.minusDays(1), until.plusDays(1))
         val adjustments = weeks.adjustments(tenant.id, employeeId, from.minusDays(1), until.plusDays(1))
-        val calculation = WeekCalculator.calculate(
-            marks, adjustments, policies.on(tenant, weekStart), weekStart, zone, ruleSet.limits,
-            Duration.ofSeconds(capture.duplicateWindowSeconds), Duration.ofHours(capture.shiftGapHours),
-        )
+        val calculation = calculate(marks, adjustments, policies.on(tenant, weekStart), weekStart, zone, ruleSet)
         val core = WeekCore(
             employeeId.toString(), weekStart.toString(), tenant.timeZone, RuleSetRef(ruleSet.id.toString(), ruleSet.version),
             calculation.segments, calculation.totals, calculation.alerts,
         )
         return ComputedWeek(core, ruleSet, weeks.openIncidents(tenant.id, employeeId, from, until), calculation.hasOpenSegment)
     }
+
+    /** Las reglas de una semana son las vigentes en su último día. */
+    fun ruleSetFor(weekStart: LocalDate): RuleSetRow = rules.effectiveOn(weekStart.plusDays(6))
+        ?: throw Problems.validation("week", "no_rules_for_date", "No hay reglas laborales registradas para esa semana.")
+
+    /**
+     * El cálculo con los datos ya leídos. La semana de una persona y la de toda
+     * la empresa pasan por aquí: así no pueden dar números distintos.
+     */
+    fun calculate(
+        marks: List<RawMark>,
+        adjustments: List<AdjustmentRow>,
+        breakPolicy: String,
+        weekStart: LocalDate,
+        zone: ZoneId,
+        ruleSet: RuleSetRow,
+    ): WeekCalculation = WeekCalculator.calculate(
+        marks, adjustments, breakPolicy, weekStart, zone, ruleSet.limits,
+        Duration.ofSeconds(capture.duplicateWindowSeconds), shiftGap(),
+    )
+
+    /** Más que esto entre dos marcas y ya es otro turno. */
+    fun shiftGap(): Duration = Duration.ofHours(capture.shiftGapHours)
 
     fun snapshot(core: WeekCore): String = json.writeValueAsString(core)
 
