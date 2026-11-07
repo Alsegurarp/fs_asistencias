@@ -25,8 +25,7 @@ internal object CardCredentialReader {
         val text = CardCredentialFormat.decode(bytes)
         return runCatching {
             val data = JSONObject(text)
-            "Nombre: ${data.getString("fullName")}\nPuesto: ${data.getString("position")}\nHorario: ${data.getString("schedule")}\nID de empleado: ${data.getString("employeeId")}" +
-                if (data.optBoolean("example")) "\nDatos de ejemplo" else ""
+            "Nombre: ${data.getString("fullName")}\nPuesto: ${data.getString("position")}\nHorario: ${data.getString("schedule")}\nID de empleado: ${data.getString("employeeId")}"
         }.getOrDefault("No se reconocen datos de empleado en esta tarjeta.")
     }
 }

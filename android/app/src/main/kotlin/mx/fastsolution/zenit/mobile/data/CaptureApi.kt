@@ -80,7 +80,7 @@ class CaptureApi(private val baseUrl: String) {
                 "Introduce la dirección del servidor, sin rutas ni credenciales."
             }
             require(uri.scheme == "https" || (BuildConfig.DEBUG && uri.scheme == "http" && uri.host in setOf("localhost", "127.0.0.1", "::1"))) {
-                "El servidor debe usar HTTPS. En pruebas USB se permite http://localhost:8080."
+                "La dirección del servidor debe usar una conexión HTTPS."
             }
             return uri.toString()
         }
