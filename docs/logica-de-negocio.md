@@ -268,6 +268,40 @@ horario asignado y la gestión de vacaciones/incapacidades siguen pendientes:
 no hay todavía retardos ni faltas operativas. Un descanso no reinicia la
 jornada ni cambia su atribución de día/semana al cruzar medianoche.
 
+### Asistencia de la empresa
+
+La tabla de asistencia (`GET /attendance/weeks`) y los totales del panel
+(`GET /attendance/summary`) usan el mismo cálculo que la semana de una
+persona: no pueden dar números distintos.
+
+- **Quién entra a la semana:** las personas activas y las que marcaron esa
+  semana, igual que en un cierre. El orden es el del padrón.
+- **Semana cerrada:** se toma lo que congeló el cierre, no se recalcula.
+- **Turno en curso:** el último tramo abierto, si empezó hace menos de la
+  separación entre turnos (16 horas por omisión). La persona está `on_shift`
+  o, si es un descanso, `on_break`.
+- **Falta la salida:** un tramo abierto que ya no es el turno en curso. Cuenta
+  en `week.missingExit` y pone a la persona en «requiere revisión».
+- **Requiere revisión** (`attention=alerts`): una incidencia abierta en la
+  semana, una alerta `warning` o `critical`, o un tramo con salida faltante.
+  La alerta `open_segment` del turno en curso no cuenta: sólo dice que la
+  persona todavía no sale.
+- **Hoy:** sólo existe en la semana que contiene el día de hoy de la empresa.
+  `no_entry` quiere decir que hoy no marcó y no está en turno; no compara
+  contra su horario, porque la comparación con el horario sigue pendiente.
+- **Supervisión:** sólo ve a las personas de sus sedes, y no ve la semana de
+  quien marcó esa semana en una sede ajena, como en los cierres. Los totales
+  del panel cuentan a las mismas personas que ve en la tabla.
+- **Lectores sin señal:** activos que no han dado señal en 24 horas. El panel
+  no los cuenta para quien no consulta dispositivos.
+
+El cálculo lee marcajes, ajustes, incidencias y cierres de hasta 200 personas
+por consulta. Con 300 personas y una semana completa, medido en el entorno de
+pruebas el 7 de noviembre de 2026: una página de 50 en unos 30 ms, una de 200
+en unos 50 ms y los totales del panel en unos 90 ms. No hay caché: cuando una
+empresa crezca al punto de que eso no alcance, el siguiente paso es guardar
+los totales de la semana al recibir cada marcaje, no recalcularlos.
+
 ## Incidencias
 
 Una incidencia nace abierta cuando un marcaje tiene algo que revisar.

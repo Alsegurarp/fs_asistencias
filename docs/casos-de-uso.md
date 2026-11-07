@@ -134,6 +134,16 @@ Sin conexión, la app guarda los sobres y los manda después con
 Devuelve los tramos de trabajo y de descanso, los totales, las alertas, las
 incidencias abiertas y, si la semana está cerrada, cuál cierre.
 
+Para ver a toda la empresa de una vez, sin una llamada por persona:
+
+| Actor | Ruta | Para qué |
+| --- | --- | --- |
+| Administrador, RH, supervisor, auditor | `GET /attendance/weeks?week=` | La tabla de asistencia: totales, alertas, incidencias y estado de hoy de cada persona, por páginas, con filtro por sede y por lo que requiere atención |
+| Administrador, RH, supervisor, auditor | `GET /attendance/summary?date=` | Los números del panel: quién marcó ese día, quién está en turno, horas de la semana, salidas faltantes, incidencias, cierres y acuses de la semana anterior y lectores sin señal |
+
+El detalle de una persona, con sus tramos, sigue siendo
+`GET /employees/{employeeId}/attendance`.
+
 ## 7. Atender una incidencia
 
 Actores: administrador, RH o supervisor.

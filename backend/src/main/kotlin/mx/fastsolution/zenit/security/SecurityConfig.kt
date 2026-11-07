@@ -133,6 +133,7 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.GET, "/api/v1/attendance-events").hasAnyRole(admin, rh, supervisor, auditor)
                 // Jornada, incidencias y cierre.
                 it.requestMatchers(HttpMethod.GET, "/api/v1/employees/{employeeId}/attendance").hasAnyRole(admin, rh, supervisor, auditor)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/attendance/weeks", "/api/v1/attendance/summary").hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/me/attendance").hasAnyRole(worker, device)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/incidents", "/api/v1/incidents/{incidentId}")
                     .hasAnyRole(admin, rh, supervisor, auditor)
