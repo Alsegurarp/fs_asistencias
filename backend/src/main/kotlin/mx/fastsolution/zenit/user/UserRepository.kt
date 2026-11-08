@@ -1,6 +1,8 @@
 package mx.fastsolution.zenit.user
 
 import mx.fastsolution.zenit.api.PageKey
+import mx.fastsolution.zenit.api.TextSearch
+import mx.fastsolution.zenit.identity.Role
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.stereotype.Repository
@@ -20,6 +22,27 @@ data class UserRow(
     /** Su fila del padrón, cuando la persona también es trabajadora. */
     val employeeId: UUID?,
     val siteIds: Set<UUID> = emptySet(),
+    /** Permiso de expediente vigente para su cuenta de hoy; falso en la búsqueda por identidad, que no lo lee. */
+    val dossierPermission: Boolean = false,
+    val dossierPermissionSince: OffsetDateTime? = null,
+)
+
+/** `text` es el patrón ya escapado de `TextSearch`. */
+data class UserFilter(
+    val text: String? = null,
+    val role: String? = null,
+    val status: String? = null,
+    val dossierPermission: Boolean? = null,
+)
+
+data class UserSummaryView(
+    val total: Int,
+    val active: Int,
+    val invited: Int,
+    val disabled: Int,
+    val byRole: Map<String, Int>,
+    val supervisorsWithoutSites: Int,
+    val dossierPermission: Int,
 )
 
 /**
@@ -36,7 +59,7 @@ class UserRepository(private val dsl: DSLContext) {
     }
 
     fun find(tenantId: UUID, id: UUID): UserRow? =
-        dsl.fetchOne("$SELECT where u.tenant_id = ? and u.id = ?", tenantId, id)?.let(::row)
+        dsl.fetchOne("$VIEW where u.tenant_id = ? and u.id = ?", tenantId, id)?.let(::viewRow)
 
     /** Por correo, dentro de una empresa: una persona de otra empresa no existe para quien pregunta. */
     fun findByEmail(tenantId: UUID, email: String): UserRow? =
@@ -45,17 +68,59 @@ class UserRepository(private val dsl: DSLContext) {
     /** La única búsqueda sin empresa: de ella sale la empresa de quien llama. */
     fun findBySubject(subject: String): UserRow? = dsl.fetchOne("$SELECT where u.subject = ?", subject)?.let(::row)
 
-    fun page(tenantId: UUID, after: PageKey?, limit: Int): List<UserRow> {
-        val rows = if (after == null) {
-            dsl.fetch("$SELECT where u.tenant_id = ? order by u.created_at, u.id limit ?", tenantId, limit)
-        } else {
-            dsl.fetch(
-                "$SELECT where u.tenant_id = ? and (u.created_at, u.id) > (cast(? as timestamptz), cast(? as uuid)) " +
-                    "order by u.created_at, u.id limit ?",
-                tenantId, after.at, after.id, limit,
-            )
+    fun page(tenantId: UUID, filter: UserFilter, after: PageKey?, limit: Int): List<UserRow> {
+        val sql = StringBuilder("$VIEW where u.tenant_id = ?")
+        val binds = mutableListOf<Any>(tenantId)
+        if (filter.text != null) {
+            sql.append(TextSearch.clause("u.display_name", "u.email"))
+            binds.addAll(TextSearch.binds(filter.text, 2))
         }
-        return rows.map { row(it) }
+        if (filter.role != null) {
+            sql.append(" and exists (select 1 from tenant_user_role fr where fr.tenant_id = u.tenant_id and fr.user_id = u.id and fr.role = ?)")
+            binds += filter.role
+        }
+        if (filter.status != null) {
+            sql.append(" and u.status = ?")
+            binds += filter.status
+        }
+        when (filter.dossierPermission) {
+            true -> sql.append(" and $PERMITTED")
+            false -> sql.append(" and not $PERMITTED")
+            null -> Unit
+        }
+        if (after != null) {
+            sql.append(" and (u.created_at, u.id) > (cast(? as timestamptz), cast(? as uuid))")
+            binds += after.at
+            binds += after.id
+        }
+        sql.append(" order by u.created_at, u.id limit ?")
+        binds += limit
+        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { viewRow(it) }
+    }
+
+    /** Conteos para rotular estados, roles y avisos, con la misma búsqueda que la lista. */
+    fun summary(tenantId: UUID, text: String?): UserSummaryView {
+        fun hasRole(role: String) =
+            "exists (select 1 from tenant_user_role sr where sr.tenant_id = u.tenant_id and sr.user_id = u.id and sr.role = '$role')"
+        val roleCounts = Role.OF_TENANT.sorted().joinToString(", ") { "count(*) filter (where ${hasRole(it)}) as role_$it" }
+        val sql = StringBuilder(
+            "select count(*) as total, count(*) filter (where u.status = 'active') as active, " +
+                "count(*) filter (where u.status = 'invited') as invited, count(*) filter (where u.status = 'disabled') as disabled, " +
+                "$roleCounts, count(*) filter (where ${hasRole("supervisor")} and u.status <> 'disabled' and not exists " +
+                "(select 1 from tenant_user_site ss where ss.tenant_id = u.tenant_id and ss.user_id = u.id)) as supervisors_without_sites, " +
+                "count(*) filter (where $PERMITTED) as permitted $VIEW_FROM where u.tenant_id = ?",
+        )
+        val binds = mutableListOf<Any>(tenantId)
+        if (text != null) {
+            sql.append(TextSearch.clause("u.display_name", "u.email"))
+            binds.addAll(TextSearch.binds(text, 2))
+        }
+        val r = dsl.fetchOne(sql.toString(), *binds.toTypedArray())!!
+        fun n(column: String) = r.get(column, Number::class.java).toInt()
+        return UserSummaryView(
+            n("total"), n("active"), n("invited"), n("disabled"), Role.OF_TENANT.sorted().associateWith { n("role_$it") },
+            n("supervisors_without_sites"), n("permitted"),
+        )
     }
 
     /**
@@ -155,6 +220,11 @@ class UserRepository(private val dsl: DSLContext) {
         siteIds = r.get("site_ids", String::class.java).split(',').filter(String::isNotEmpty).map(UUID::fromString).toSet(),
     )
 
+    private fun viewRow(r: Record) = row(r).copy(
+        dossierPermission = r.get("dossier_permission", Boolean::class.javaObjectType) == true,
+        dossierPermissionSince = r.get("dossier_permission_since", OffsetDateTime::class.java),
+    )
+
     private companion object {
         /**
          * Con acceso vigente y con un rol que resuelve en esa sede:
@@ -166,11 +236,23 @@ class UserRepository(private val dsl: DSLContext) {
                 "and r.user_id = u.id and r.role in ('admin_empresa', 'rh')) or exists (select 1 from tenant_user_role r " +
                 "join tenant_user_site s on s.tenant_id = r.tenant_id and s.user_id = r.user_id where r.tenant_id = u.tenant_id " +
                 "and r.user_id = u.id and r.role = 'supervisor' and s.site_id = cast(? as uuid)))"
-        const val SELECT =
-            "select u.tenant_id, u.id, u.email, u.subject, u.display_name, u.status, u.created_at, u.linked_at, u.employee_id, " +
+        const val COLUMNS =
+            "u.tenant_id, u.id, u.email, u.subject, u.display_name, u.status, u.created_at, u.linked_at, u.employee_id, " +
                 "coalesce((select string_agg(s.site_id::text, ',' order by s.site_id) from tenant_user_site s " +
                 "where s.tenant_id = u.tenant_id and s.user_id = u.id), '') as site_ids, " +
                 "coalesce((select string_agg(r.role, ',' order by r.role) from tenant_user_role r " +
-                "where r.tenant_id = u.tenant_id and r.user_id = u.id), '') as roles from tenant_user u"
+                "where r.tenant_id = u.tenant_id and r.user_id = u.id), '') as roles"
+
+        /** La búsqueda por identidad corre en cada petición: sin el permiso de expediente. */
+        const val SELECT = "select $COLUMNS from tenant_user u"
+
+        /** El permiso vale para la cuenta con la que se concedió: si la liga cambió, ya no. */
+        const val PERMITTED = "coalesce(dp.enabled and dp.subject = u.subject and dp.linked_at = u.linked_at, false)"
+
+        const val VIEW_FROM = "from tenant_user u left join dossier_permission dp on dp.tenant_id = u.tenant_id and dp.user_id = u.id"
+
+        const val VIEW =
+            "select $COLUMNS, $PERMITTED as dossier_permission, " +
+                "case when $PERMITTED then dp.granted_at end as dossier_permission_since $VIEW_FROM"
     }
 }

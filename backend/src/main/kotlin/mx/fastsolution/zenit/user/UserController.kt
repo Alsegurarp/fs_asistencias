@@ -27,6 +27,8 @@ data class UserView(
     val linkedAt: String?,
     val employeeId: String?,
     val siteIds: List<String>,
+    val dossierPermission: Boolean,
+    val dossierPermissionSince: String?,
 ) {
     companion object {
         fun of(row: UserRow) = UserView(
@@ -39,6 +41,8 @@ data class UserView(
             linkedAt = row.linkedAt?.toInstant()?.toString(),
             employeeId = row.employeeId?.toString(),
             siteIds = row.siteIds.map(UUID::toString).sorted(),
+            dossierPermission = row.dossierPermission,
+            dossierPermissionSince = row.dossierPermissionSince?.toInstant()?.toString(),
         )
     }
 }
@@ -50,12 +54,20 @@ class UserController(private val service: UserService) {
     @GetMapping
     fun list(
         @AuthenticationPrincipal admin: CurrentPerson,
+        @RequestParam q: String?,
+        @RequestParam role: String?,
+        @RequestParam status: String?,
+        @RequestParam dossierPermission: String?,
         @RequestParam cursor: String?,
         @RequestParam limit: String?,
     ): Page<UserView> {
         val size = Paging.limit(limit)
-        return Paging.page(service.page(admin, Paging.decode(cursor), size), size, { PageKey(it.createdAt, it.id) }) { UserView.of(it) }
+        val rows = service.page(admin, UserService.ListQuery(q, role, status, dossierPermission), Paging.decode(cursor), size)
+        return Paging.page(rows, size, { PageKey(it.createdAt, it.id) }) { UserView.of(it) }
     }
+
+    @GetMapping("/summary")
+    fun summary(@AuthenticationPrincipal admin: CurrentPerson, @RequestParam q: String?): UserSummaryView = service.summary(admin, q)
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

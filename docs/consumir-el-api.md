@@ -248,8 +248,10 @@ las rutas en PowerShell no se probó.
   sin cursor.
 - **Contar con los resúmenes.** Las pestañas y los filtros con número salen
   de `GET /incidents/summary`, `GET /week-closures/summary`,
-  `GET /employees/summary`, `GET /cards/summary` y `GET /devices/summary`, no
-  de contar páginas.
+  `GET /employees/summary`, `GET /cards/summary`, `GET /devices/summary` y
+  `GET /users/summary`, no de contar páginas. La cuenta de la bitácora
+  (`GET /audit-log/summary`) se detiene en un tope: con `capped` se muestra
+  «más de N».
 - **Buscar con `q`.** El buscador de la barra superior pide las tres listas
   (personas, tarjetas y lectores) con `q` y un límite corto, según los
   permisos del rol, y muestra «más» si alguna trae `nextCursor`. Varios

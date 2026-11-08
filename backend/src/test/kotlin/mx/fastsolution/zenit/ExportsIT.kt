@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -153,6 +154,17 @@ class ExportsIT : WorkdayTestBase() {
         assertNull(after.at<Any?>("expiresAt"))
         assertEquals(ready.at<String>("fileHash"), after.at("fileHash"))
         assertEquals(1, count("select count(*) from export where tenant_id = ? and status = 'expired' and content is null and downloaded_by is not null", tenant))
+        // El historial dice quién lo pidió y quién lo descargó, con su estado efectivo.
+        val history = call("GET", "/api/v1/exports", rh.token)
+        assertEquals(200, history.status, history.toString())
+        assertEquals(listOf(id), history.list("items[*].id"))
+        assertEquals(listOf(rh.id, "Persona rh"), listOf<String>(history.at("items[0].requestedBy"), history.at("items[0].requestedByName")))
+        assertNotNull(history.at<String>("items[0].downloadedAt"))
+        assertNotNull(history.at<String>("items[0].downloadedBy"))
+        assertEquals(listOf(id), call("GET", "/api/v1/exports?status=expired&week=$yesterday", c.adminToken).list("items[*].id"))
+        assertEquals(0, call("GET", "/api/v1/exports?status=ready", c.adminToken).at<Int>("items.length()"))
+        assertEquals(0, call("GET", "/api/v1/exports?week=${lastWeek.minusDays(7)}", c.adminToken).at<Int>("items.length()"))
+        for (bad in listOf("?status=vencido", "?week=ayer")) assertProblem(422, "validation", call("GET", "/api/v1/exports$bad", c.adminToken))
         // El manifiesto sigue ahí después de descargar, idéntico.
         assertEquals(declared.body, manifest(c, id).body)
         // El manifiesto queda, y liga el archivo con los cierres por sus huellas; su propia huella se vuelve a calcular.
@@ -257,12 +269,12 @@ class ExportsIT : WorkdayTestBase() {
         class Route(val method: String, val path: String, val body: String?, vararg val allowed: String)
         val routes = listOf(
             Route("POST", "/api/v1/exports", wholeWeek(), *exporters),
+            Route("GET", "/api/v1/exports", null, *exporters),
             Route("GET", "/api/v1/exports/$whole", null, *exporters),
             Route("GET", "/api/v1/exports/$whole/download", null, *exporters),
             Route("GET", "/api/v1/exports/$whole/manifest", null, *exporters),
             Route("GET", "/api/v1/integrations/checkpoints", null, "admin_empresa", "rh"),
             // Lo que el contrato no abre sigue cerrado, también para quien administra.
-            Route("GET", "/api/v1/exports", null),
             Route("DELETE", "/api/v1/exports/$whole", null),
             Route("POST", "/api/v1/integrations/checkpoints", "{}"),
             Route("GET", "/api/v1/jobs", null),

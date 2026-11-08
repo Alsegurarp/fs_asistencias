@@ -135,6 +135,9 @@ class DossierVerificationIT : WorkdayTestBase() {
         } finally { java.nio.file.Files.deleteIfExists(offline) }
         assertEquals("attachment; filename=\"expediente-$id.zip\"", file.headers().firstValue("Content-Disposition").orElse(""))
         assertEquals("downloaded", call("GET", "/api/v1/dossiers/$id", c.adminToken).at("status"))
+        // La descarga deja su hora en el expediente y en la lista de quien lo pidió.
+        assertNotNull(call("GET", "/api/v1/dossiers/$id", c.adminToken).at<String>("downloadedAt"))
+        assertEquals(listOf("downloaded"), call("GET", "/api/v1/dossiers", c.adminToken).at<List<String>>("items[?(@.id=='$id')].status"))
         assertEquals(manifest, call("GET", "/api/v1/dossiers/$id/manifest", c.adminToken).body)
         problem(download(c, id, token), 410, "dossier_downloaded")
         jobWorker.tick()

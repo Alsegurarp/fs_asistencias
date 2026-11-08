@@ -2,6 +2,9 @@ package mx.fastsolution.zenit.export
 
 import mx.fastsolution.zenit.api.Checks
 import mx.fastsolution.zenit.api.Conflicts
+import mx.fastsolution.zenit.api.Page
+import mx.fastsolution.zenit.api.PageKey
+import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.identity.CurrentPerson
@@ -33,6 +36,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import tools.jackson.databind.json.JsonMapper
@@ -122,6 +126,11 @@ data class ExportRecord(
     val requestSha256: String,
     val createdAt: OffsetDateTime,
     val expiresAt: OffsetDateTime?,
+    val requestedBy: UUID? = null,
+    val requestedByName: String? = null,
+    val downloadedAt: OffsetDateTime? = null,
+    val downloadedBy: UUID? = null,
+    val downloadedByName: String? = null,
 ) {
     /** Listo y vencido es vencido, aunque todavía no pase quien lo marca. */
     fun effectiveStatus(now: OffsetDateTime): String =
@@ -144,6 +153,11 @@ data class ExportView(
     val downloadUrl: String?,
     val expiresAt: String?,
     val createdAt: String,
+    val requestedBy: String?,
+    val requestedByName: String?,
+    val downloadedAt: String?,
+    val downloadedBy: String?,
+    val downloadedByName: String?,
 ) {
     companion object {
         fun of(row: ExportRecord): ExportView {
@@ -164,6 +178,11 @@ data class ExportView(
                 downloadUrl = if (ready) "/api/v1/exports/${row.id}/download" else null,
                 expiresAt = if (ready) row.expiresAt?.toInstant()?.toString() else null,
                 createdAt = row.createdAt.toInstant().toString(),
+                requestedBy = row.requestedBy?.toString(),
+                requestedByName = row.requestedByName,
+                downloadedAt = row.downloadedAt?.toInstant()?.toString(),
+                downloadedBy = row.downloadedBy?.toString(),
+                downloadedByName = row.downloadedByName,
             )
         }
     }
@@ -181,6 +200,36 @@ class ExportRepository(private val dsl: DSLContext) {
 
     fun findByKey(tenantId: UUID, key: UUID): ExportRecord? =
         dsl.fetchOne("$SELECT where tenant_id = ? and idempotency_key = ?", tenantId, key)?.let(::row)
+
+    /**
+     * Del más reciente al más antiguo. El estado es el efectivo: uno listo cuyo
+     * plazo ya pasó cuenta como vencido aunque todavía no lo marque el trabajo.
+     */
+    fun page(tenantId: UUID, status: String?, weekStart: LocalDate?, after: PageKey?, limit: Int): List<ExportRecord> {
+        val sql = StringBuilder("$SELECT where tenant_id = ?")
+        val binds = mutableListOf<Any>(tenantId)
+        when (status) {
+            null -> Unit
+            "ready" -> sql.append(" and status = 'ready' and expires_at > now()")
+            "expired" -> sql.append(" and (status = 'expired' or (status = 'ready' and expires_at <= now()))")
+            else -> {
+                sql.append(" and status = ?")
+                binds += status
+            }
+        }
+        if (weekStart != null) {
+            sql.append(" and week_start = cast(? as date)")
+            binds += weekStart.toString()
+        }
+        if (after != null) {
+            sql.append(" and (created_at, id) < (cast(? as timestamptz), cast(? as uuid))")
+            binds += after.at
+            binds += after.id
+        }
+        sql.append(" order by created_at desc, id desc limit ?")
+        binds += limit
+        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { row(it) }
+    }
 
     /** Aparta el exporte para decidir sobre él, con su archivo. */
     fun lock(tenantId: UUID, id: UUID): ExportFile? =
@@ -290,13 +339,21 @@ class ExportRepository(private val dsl: DSLContext) {
         requestSha256 = r.get("request_sha256", String::class.java).trim(),
         createdAt = r.get("created_at", OffsetDateTime::class.java),
         expiresAt = r.get("expires_at", OffsetDateTime::class.java),
+        requestedBy = r.get("requested_by", UUID::class.java),
+        requestedByName = r.get("requested_by_name", String::class.java),
+        downloadedAt = r.get("downloaded_at", OffsetDateTime::class.java),
+        downloadedBy = r.get("downloaded_by", UUID::class.java),
+        downloadedByName = r.get("downloaded_by_name", String::class.java),
     )
 
     private companion object {
         const val COLUMNS =
             "id, cast(week_start as text) as week_start, site_id, format, time_zone, rule_set_version, status, row_count, " +
                 "cast(manifest_hash as text) as manifest_hash, cast(file_hash as text) as file_hash, " +
-                "cast(request_sha256 as text) as request_sha256, created_at, expires_at"
+                "cast(request_sha256 as text) as request_sha256, created_at, expires_at, requested_by, downloaded_at, downloaded_by, " +
+                "(select nullif(u.display_name, '') from tenant_user u where u.tenant_id = export.tenant_id and u.id = export.requested_by) " +
+                "as requested_by_name, (select nullif(u.display_name, '') from tenant_user u where u.tenant_id = export.tenant_id " +
+                "and u.id = export.downloaded_by) as downloaded_by_name"
         const val SELECT = "select $COLUMNS from export"
     }
 }
@@ -357,6 +414,18 @@ class ExportService(
 
     @Transactional(readOnly = true)
     fun get(person: CurrentPerson, id: UUID): ExportRecord = exports.find(person.requireTenant(), id) ?: throw Problems.notFound()
+
+    /** Historial de exportes de la empresa; `week` es cualquier fecha de la semana exportada. */
+    @Transactional(readOnly = true)
+    fun page(person: CurrentPerson, status: String?, week: String?, after: PageKey?, limit: Int): List<ExportRecord> {
+        val tenantId = person.requireTenant()
+        val checks = Checks()
+        checks.oneOf("status", status, setOf("queued", "ready", "failed", "expired"), required = false)
+        val date = checks.date("week", week, required = false)
+        checks.done()
+        val weekStart = date?.let { WeekCalculator.weekStart(it, tenants.find(tenantId)!!.weekStartsOn) }
+        return exports.page(tenantId, status, weekStart, after, limit + 1)
+    }
 
     /** Entrega el archivo una sola vez y deja constancia de quién lo descargó. */
     @Transactional
@@ -504,6 +573,19 @@ class ExportController(private val service: ExportService) {
             throw Problems.validation("Idempotency-Key", "invalid_identifier", "La cabecera Idempotency-Key debe ser un UUID.")
         }
         return ExportView.of(service.request(person, key, request))
+    }
+
+    @GetMapping
+    fun list(
+        @AuthenticationPrincipal person: CurrentPerson,
+        @RequestParam status: String?,
+        @RequestParam week: String?,
+        @RequestParam cursor: String?,
+        @RequestParam limit: String?,
+    ): Page<ExportView> {
+        val size = Paging.limit(limit)
+        val rows = service.page(person, status, week, Paging.decode(cursor), size)
+        return Paging.page(rows, size, { PageKey(it.createdAt, it.id) }) { ExportView.of(it) }
     }
 
     @GetMapping("/{exportId}")

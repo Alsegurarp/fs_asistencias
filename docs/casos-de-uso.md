@@ -242,12 +242,17 @@ entrega el manifiesto: la huella del archivo y, por cada fila, el cierre del
 que salió con su huella. Sigue disponible cuando el archivo ya se descargó o
 venció.
 
+`GET /exports` es el historial: quién pidió cada exporte, quién lo descargó y
+su estado. Del expediente de la empresa, `GET /dossiers` da las copias propias
+de quien tiene el permiso.
+
 ## 11. Revisar qué pasó
 
 | Qué | Ruta | Actor |
 | --- | --- | --- |
 | Marcajes con su evidencia minimizada | `GET /attendance-events` | Administrador, RH, supervisor, auditor |
-| Acciones administrativas, con el nombre de quien actuó y de lo que tocó | `GET /audit-log` | Administrador, auditor |
+| Acciones administrativas, con el nombre de quien actuó y de lo que tocó; por periodo, persona, objeto o grupo, y su cuenta | `GET /audit-log`, `GET /audit-log/summary` | Administrador, auditor |
+| Quién tiene acceso, con su rol, estado y permiso de expediente | `GET /users`, `GET /users/summary` | Administrador |
 | Dispositivos enrolados, también los que no tienen señal | `GET /devices`, `GET /devices/summary` | Administrador, RH, auditor |
 | De dónde viene el padrón | `GET /integrations/checkpoints` | Administrador, RH |
 | Corridas de cierre, también las del sistema | `GET /week-closure-runs` | Administrador, RH, supervisor, auditor |

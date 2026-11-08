@@ -155,8 +155,12 @@ Detalles que ahorran tiempo:
   tarjeta por última vez» recorría todas las asignaciones por cada tarjeta y
   tardaba 1.5 s con 5 000; con `card_assignment_card_since_idx`, 9 ms.
 - Las búsquedas sin nombres del camino caliente (la tarjeta por su huella al
-  marcar, el dispositivo al autenticarse) siguen con su `SELECT` corto; los
-  nombres van en la variante de las listas.
+  marcar, el dispositivo al autenticarse, la persona por su identidad en cada
+  petición) siguen con su `SELECT` corto; los nombres y el permiso de
+  expediente van en la variante de las listas.
+- Un total de algo que sólo crece, como la bitácora, se cuenta con tope
+  (`select count(*) from (… limit tope + 1)`) y dice si lo pasó; no se cuenta
+  todo en cada consulta.
 
 ## Agregar un tipo de trabajo
 

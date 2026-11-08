@@ -62,12 +62,14 @@ class DossierAccess(private val dsl: DSLContext, private val tenants: TenantRepo
         if (enabled && subject == null) throw Problems.conflict("user_not_linked", "La persona debe vincular su cuenta.")
         if (enabled && user.get("status", String::class.java) != "active") throw Problems.conflict("user_not_active", "La cuenta debe estar activa.")
         val changed = dsl.execute(
-            "insert into dossier_permission (tenant_id, user_id, enabled, subject, linked_at) values (?, ?, ?, ?, cast(? as timestamptz)) " +
+            // Conceder (o volver a conceder a la cuenta nueva) fija la fecha; retirar la borra.
+            "insert into dossier_permission (tenant_id, user_id, enabled, subject, linked_at, granted_at) " +
+                "values (?, ?, ?, ?, cast(? as timestamptz), case when ? then clock_timestamp() end) " +
                 "on conflict (tenant_id, user_id) do update set enabled = excluded.enabled, subject = excluded.subject, " +
-                "linked_at = excluded.linked_at, version = dossier_permission.version + 1 " +
+                "linked_at = excluded.linked_at, granted_at = excluded.granted_at, version = dossier_permission.version + 1 " +
                 "where dossier_permission.enabled is distinct from excluded.enabled or " +
                 "(excluded.enabled and (dossier_permission.subject, dossier_permission.linked_at) is distinct from (excluded.subject, excluded.linked_at))",
-            tenantId, userId, enabled, subject, linkedAt,
+            tenantId, userId, enabled, subject, linkedAt, enabled,
         )
         if (changed > 0) audit.record(tenantId, person, if (enabled) "dossier.permission_granted" else "dossier.permission_revoked", "user", userId)
         return DossierPermission(enabled)

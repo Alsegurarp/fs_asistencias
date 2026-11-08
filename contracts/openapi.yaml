@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.21.0
+  version: 0.22.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -274,6 +274,34 @@ paths:
               example: { type: 'https://zenit.invalid/problems/conflict', title: Usuario sin vínculo, status: 409, code: user_not_linked, correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e }
         '422': { $ref: '#/components/responses/Unprocessable' }
   /dossiers:
+    get:
+      tags: [expediente]
+      operationId: listDossiers
+      summary: Lista los expedientes propios de quien llama
+      description: |
+        Del más reciente al más antiguo y sólo los que pidió la cuenta que
+        llama, con el permiso vigente: los de otra persona, o de una liga
+        anterior de la misma, no existen para ella, igual que en
+        `getDossier`. Quién más pidió o descargó una copia está en la
+        bitácora, para Administración y Auditoría.
+      x-roles: [admin_empresa, rh, supervisor, trabajador, auditor]
+      x-permissions: [dossier_download]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de expedientes propios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DossierList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
     post:
       tags: [expediente]
       operationId: createDossier
@@ -316,6 +344,7 @@ paths:
                 manifestSha256: null
                 fileSha256: null
                 failureCode: null
+                downloadedAt: null
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
@@ -353,6 +382,7 @@ paths:
                 manifestSha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                 fileSha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
                 failureCode: null
+                downloadedAt: null
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -1020,8 +1050,28 @@ paths:
       tags: [identidad]
       operationId: listUsers
       summary: Lista las personas con acceso a la empresa
+      description: |
+        Los filtros se aplican en el servidor, antes de paginar. `q` busca por
+        fragmento en el nombre y el correo, sin distinguir mayúsculas ni
+        acentos. `dossierPermission=true` deja a quienes pueden descargar hoy
+        el expediente de la empresa: el permiso vale para la cuenta con la que
+        se concedió.
       x-roles: [admin_empresa]
       parameters:
+        - $ref: "#/components/parameters/SearchText"
+        - name: role
+          in: query
+          schema:
+            $ref: "#/components/schemas/TenantRole"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [invited, active, disabled]
+        - name: dossierPermission
+          in: query
+          schema:
+            type: boolean
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:
@@ -1041,12 +1091,16 @@ paths:
                     createdAt: "2026-10-05T15:05:00Z"
                     linkedAt: "2026-10-05T16:20:00Z"
                     siteIds: []
+                    dossierPermission: false
+                    dossierPermissionSince: null
                     employeeId: null
                 nextCursor: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
     post:
       tags: [identidad]
       operationId: inviteUser
@@ -1087,6 +1141,8 @@ paths:
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: null
                 siteIds: []
+                dossierPermission: false
+                dossierPermissionSince: null
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1094,6 +1150,45 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /users/summary:
+    get:
+      tags: [identidad]
+      operationId: getUserSummary
+      summary: Cuenta las personas con acceso por estado, rol y permiso
+      description: |
+        Con la misma búsqueda `q` que `listUsers`, sin filtrar por estado ni
+        por rol: rotula cada opción. Una persona con varios roles cuenta en
+        cada uno.
+      x-roles: [admin_empresa]
+      parameters:
+        - $ref: "#/components/parameters/SearchText"
+      responses:
+        "200":
+          description: Conteos de personas con acceso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummary"
+              example:
+                total: 7
+                active: 5
+                invited: 1
+                disabled: 1
+                byRole:
+                  admin_empresa: 1
+                  auditor: 2
+                  rh: 2
+                  supervisor: 2
+                  trabajador: 0
+                supervisorsWithoutSites: 0
+                dossierPermission: 2
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -1121,6 +1216,8 @@ paths:
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: "2026-10-05T16:20:00Z"
                 siteIds: []
+                dossierPermission: false
+                dossierPermissionSince: null
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1166,6 +1263,8 @@ paths:
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: "2026-10-05T16:20:00Z"
                 siteIds: []
+                dossierPermission: false
+                dossierPermissionSince: null
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1216,6 +1315,8 @@ paths:
                 createdAt: "2026-10-05T15:05:00Z"
                 linkedAt: null
                 siteIds: []
+                dossierPermission: false
+                dossierPermissionSince: null
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -3971,6 +4072,63 @@ paths:
           $ref: "#/components/responses/Unprocessable"
 
   /exports:
+    get:
+      tags: [exportes]
+      operationId: listExports
+      summary: Lista los exportes de la empresa
+      description: |
+        Del más reciente al más antiguo, con quién lo pidió y quién lo
+        descargó. `status` es el estado efectivo: un exporte listo cuyo plazo
+        ya pasó cuenta como `expired`. `week` es cualquier fecha de la semana
+        exportada.
+      x-roles: [admin_empresa, rh, auditor]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [queued, ready, failed, expired]
+        - name: week
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de exportes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportList"
+              example:
+                items:
+                  - id: e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a
+                    status: expired
+                    weekStart: "2026-10-05"
+                    siteId: null
+                    format: csv
+                    timeZone: America/Mexico_City
+                    ruleSetVersion: 1
+                    rowCount: 42
+                    manifestHash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+                    fileHash: 2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c
+                    downloadUrl: null
+                    expiresAt: null
+                    createdAt: "2026-10-12T16:05:00Z"
+                    requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    requestedByName: Rocío Navarro
+                    downloadedAt: "2026-10-12T16:09:00Z"
+                    downloadedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    downloadedByName: Rocío Navarro
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
     post:
       tags: [exportes]
       operationId: createExport
@@ -4033,6 +4191,11 @@ paths:
                 downloadUrl: null
                 expiresAt: null
                 createdAt: "2026-10-12T16:05:00Z"
+                requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                requestedByName: Rocío Navarro
+                downloadedAt: null
+                downloadedBy: null
+                downloadedByName: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4084,6 +4247,11 @@ paths:
                 downloadUrl: /api/v1/exports/e1c3a5b7-9d2f-4b4a-8c6e-0d2f4a6c8e0a/download
                 expiresAt: "2026-10-12T16:20:00Z"
                 createdAt: "2026-10-12T16:05:00Z"
+                requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                requestedByName: Rocío Navarro
+                downloadedAt: null
+                downloadedBy: null
+                downloadedByName: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4241,22 +4409,25 @@ paths:
         incidencia que se abre queda como `incident.opened`: con actor
         `system` si la detectó la captura, o con quien cerró la semana si
         salió al cerrar.
+
+        Los filtros se aplican en el servidor, antes de paginar. `group` agrupa
+        las acciones por su prefijo: `closures` (`week.*`), `incidents`
+        (`incident.*`), `directory` (`employee.*`, `schedule.*`, `import.*`),
+        `devices` (`card.*`, `device.*`), `access` (`user.*` y los permisos de
+        expediente), `settings` (`tenant.*`, `site.*`) y `exports`
+        (`export.*` y lo demás de `dossier.*`). `actorId` filtra por una
+        persona o dispositivo; `targetType` con `targetId`, por la persona u
+        objeto que se tocó.
       x-roles: [admin_empresa, auditor]
       parameters:
-        - name: action
-          in: query
-          schema:
-            type: string
-        - name: from
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: to
-          in: query
-          schema:
-            type: string
-            format: date-time
+        - $ref: "#/components/parameters/AuditAction"
+        - $ref: "#/components/parameters/AuditGroup"
+        - $ref: "#/components/parameters/AuditActorType"
+        - $ref: "#/components/parameters/AuditActorId"
+        - $ref: "#/components/parameters/AuditTargetType"
+        - $ref: "#/components/parameters/AuditTargetId"
+        - $ref: "#/components/parameters/AuditFrom"
+        - $ref: "#/components/parameters/AuditTo"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:
@@ -4286,6 +4457,45 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /audit-log/summary:
+    get:
+      tags: [auditoria]
+      operationId: getAuditSummary
+      summary: Cuenta las acciones de la bitácora con los filtros de la lista
+      description: |
+        Cuenta hasta `cap` acciones: la bitácora sólo crece, y un total exacto
+        costaría más cada día. Si hay más, `capped` es verdadero y `total`
+        vale `cap`; el portal muestra «más de N».
+      x-roles: [admin_empresa, auditor]
+      parameters:
+        - $ref: "#/components/parameters/AuditAction"
+        - $ref: "#/components/parameters/AuditGroup"
+        - $ref: "#/components/parameters/AuditActorType"
+        - $ref: "#/components/parameters/AuditActorId"
+        - $ref: "#/components/parameters/AuditTargetType"
+        - $ref: "#/components/parameters/AuditTargetId"
+        - $ref: "#/components/parameters/AuditFrom"
+        - $ref: "#/components/parameters/AuditTo"
+      responses:
+        "200":
+          description: Cuántas acciones cumplen los filtros
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditSummary"
+              example:
+                total: 412
+                capped: false
+                cap: 10000
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /integrations/checkpoints:
     get:
@@ -4354,6 +4564,55 @@ components:
       description: Valor de `nextCursor` de la página anterior.
       schema:
         type: string
+    AuditAction:
+      name: action
+      in: query
+      schema:
+        type: string
+    AuditGroup:
+      name: group
+      in: query
+      schema:
+        type: string
+        enum: [closures, incidents, directory, devices, access, settings, exports]
+    AuditActorType:
+      name: actorType
+      in: query
+      schema:
+        type: string
+        enum: [user, device, system]
+    AuditActorId:
+      name: actorId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    AuditTargetType:
+      name: targetType
+      in: query
+      description: Tipo de lo que se tocó, como `employee`, `incident` o `card`.
+      schema:
+        type: string
+        maxLength: 40
+    AuditTargetId:
+      name: targetId
+      in: query
+      description: Va junto con `targetType`.
+      schema:
+        type: string
+        format: uuid
+    AuditFrom:
+      name: from
+      in: query
+      schema:
+        type: string
+        format: date-time
+    AuditTo:
+      name: to
+      in: query
+      schema:
+        type: string
+        format: date-time
     SearchText:
       name: q
       in: query
@@ -4657,8 +4916,9 @@ components:
     Dossier:
       type: object
       additionalProperties: false
-      required: [id, tenantId, requestedBy, formatVersion, scope, status, createdAt, expiresAt, snapshotAt, readyAt, manifestSha256, fileSha256, failureCode]
+      required: [id, tenantId, requestedBy, formatVersion, scope, status, createdAt, expiresAt, snapshotAt, readyAt, manifestSha256, fileSha256, failureCode, downloadedAt]
       properties:
+        downloadedAt: { type: [string, 'null'], format: date-time, description: Cuándo se descargó; nulo mientras no se descarga. }
         id: { type: string, format: uuid }
         tenantId: { type: string, format: uuid, description: Derivado de la identidad; no se admite en solicitudes. }
         requestedBy: { type: string, format: uuid }
@@ -4707,6 +4967,17 @@ components:
             properties:
               readyAt: { type: 'null' }
               fileSha256: { type: 'null' }
+    DossierList:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Dossier"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
     SystemStatus:
       type: object
       additionalProperties: false
@@ -5054,7 +5325,7 @@ components:
     User:
       type: object
       description: Persona con acceso al portal de la empresa. Supervisión se limita a sus siteIds, salvo roles adicionales de alcance empresa. El permiso explícito de expediente es una capacidad independiente.
-      required: [id, email, displayName, roles, status, createdAt, linkedAt, employeeId, siteIds]
+      required: [id, email, displayName, roles, status, createdAt, linkedAt, employeeId, siteIds, dossierPermission, dossierPermissionSince]
       properties:
         id:
           type: string
@@ -5087,6 +5358,50 @@ components:
           description: Su fila del padrón, cuando la persona también es trabajadora.
         siteIds:
           $ref: "#/components/schemas/SupervisorSiteIds"
+        dossierPermission:
+          type: boolean
+          description: >-
+            Puede descargar hoy el expediente de la empresa. El permiso vale
+            para la cuenta con la que se concedió: si la liga cambia, deja de
+            valer.
+        dossierPermissionSince:
+          type: [string, "null"]
+          format: date-time
+          description: Desde cuándo vale; nulo sin permiso, o en un permiso concedido antes de 0.22.0 sin rastro en la bitácora.
+    UserSummary:
+      type: object
+      additionalProperties: false
+      required: [total, active, invited, disabled, byRole, supervisorsWithoutSites, dossierPermission]
+      properties:
+        total:
+          type: integer
+        active:
+          type: integer
+        invited:
+          type: integer
+        disabled:
+          type: integer
+        byRole:
+          type: object
+          additionalProperties: false
+          required: [admin_empresa, auditor, rh, supervisor, trabajador]
+          properties:
+            admin_empresa:
+              type: integer
+            auditor:
+              type: integer
+            rh:
+              type: integer
+            supervisor:
+              type: integer
+            trabajador:
+              type: integer
+        supervisorsWithoutSites:
+          type: integer
+          description: Supervisión con acceso vigente y sin sedes asignadas; no ve a nadie.
+        dossierPermission:
+          type: integer
+          description: Personas que pueden descargar hoy el expediente.
     UserCreate:
       type: object
       additionalProperties: false
@@ -7188,6 +7503,11 @@ components:
         - downloadUrl
         - expiresAt
         - createdAt
+        - requestedBy
+        - requestedByName
+        - downloadedAt
+        - downloadedBy
+        - downloadedByName
       properties:
         id:
           type: string
@@ -7237,6 +7557,32 @@ components:
         createdAt:
           type: string
           format: date-time
+        requestedBy:
+          type: [string, "null"]
+          format: uuid
+          description: Persona de la empresa que lo pidió.
+        requestedByName:
+          type: [string, "null"]
+        downloadedAt:
+          type: [string, "null"]
+          format: date-time
+          description: Cuándo se descargó; nulo mientras no se descarga.
+        downloadedBy:
+          type: [string, "null"]
+          format: uuid
+        downloadedByName:
+          type: [string, "null"]
+    ExportList:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Export"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
 
     ExportManifest:
       type: object
@@ -7362,6 +7708,18 @@ components:
           description: Datos de contexto como texto, sin secretos ni cargas completas.
           additionalProperties:
             type: string
+    AuditSummary:
+      type: object
+      additionalProperties: false
+      required: [total, capped, cap]
+      properties:
+        total:
+          type: integer
+        capped:
+          type: boolean
+          description: Hay más de `total` acciones; la cuenta se detuvo en `cap`.
+        cap:
+          type: integer
     AuditEntryList:
       type: object
       required: [items, nextCursor]

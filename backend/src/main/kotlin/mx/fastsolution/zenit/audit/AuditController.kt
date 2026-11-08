@@ -1,10 +1,10 @@
 package mx.fastsolution.zenit.audit
 
 import com.fasterxml.jackson.annotation.JsonRawValue
+import mx.fastsolution.zenit.api.Checks
 import mx.fastsolution.zenit.api.Page
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
-import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.identity.CurrentPerson
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
@@ -16,6 +16,9 @@ import java.time.format.DateTimeParseException
 
 /** `displayName` viaja para que quien lee la bitácora no tenga que consultar cada persona u objeto. */
 data class AuditReference(val type: String, val id: String?, val displayName: String?)
+
+/** `capped` dice que hay más de `total`: la cuenta se detiene en `cap`. */
+data class AuditSummaryView(val total: Int, val capped: Boolean, val cap: Int)
 
 data class AuditView(
     val id: String,
@@ -36,6 +39,11 @@ class AuditController(private val audit: AuditLog) {
     fun list(
         @AuthenticationPrincipal person: CurrentPerson,
         @RequestParam action: String?,
+        @RequestParam group: String?,
+        @RequestParam actorType: String?,
+        @RequestParam actorId: String?,
+        @RequestParam targetType: String?,
+        @RequestParam targetId: String?,
         @RequestParam from: String?,
         @RequestParam to: String?,
         @RequestParam cursor: String?,
@@ -43,10 +51,8 @@ class AuditController(private val audit: AuditLog) {
     ): Page<AuditView> {
         val size = Paging.limit(limit)
         val tenantId = person.requireTenant()
-        val rows = audit.page(
-            tenantId, action?.takeIf { it.isNotBlank() }, instant("from", from), instant("to", to),
-            Paging.decode(cursor), size + 1,
-        )
+        val filter = filter(action, group, actorType, actorId, targetType, targetId, from, to)
+        val rows = audit.page(tenantId, filter, Paging.decode(cursor), size + 1)
         val names = audit.names(tenantId, rows.take(size))
         return Paging.page(rows, size, { PageKey(it.at, it.id) }) {
             AuditView(
@@ -61,12 +67,55 @@ class AuditController(private val audit: AuditLog) {
         }
     }
 
-    private fun instant(field: String, raw: String?): OffsetDateTime? {
+    /** Cuántas acciones cumplen los filtros de la lista, hasta un tope; pasado el tope, `capped`. */
+    @GetMapping("/summary")
+    fun summary(
+        @AuthenticationPrincipal person: CurrentPerson,
+        @RequestParam action: String?,
+        @RequestParam group: String?,
+        @RequestParam actorType: String?,
+        @RequestParam actorId: String?,
+        @RequestParam targetType: String?,
+        @RequestParam targetId: String?,
+        @RequestParam from: String?,
+        @RequestParam to: String?,
+    ): AuditSummaryView {
+        val filter = filter(action, group, actorType, actorId, targetType, targetId, from, to)
+        val (total, capped) = audit.count(person.requireTenant(), filter, COUNT_CAP)
+        return AuditSummaryView(total, capped, COUNT_CAP)
+    }
+
+    private fun filter(
+        action: String?, group: String?, actorType: String?, actorId: String?, targetType: String?, targetId: String?,
+        from: String?, to: String?,
+    ): AuditFilter {
+        val checks = Checks()
+        checks.oneOf("group", group, AuditLog.GROUPS.keys, required = false)
+        checks.oneOf("actorType", actorType, setOf("user", "device", "system"), required = false)
+        val actor = checks.uuid("actorId", actorId, required = false)
+        val targetKind = checks.text("targetType", targetType?.takeIf { it.isNotBlank() }, MAX_TYPE, required = false)
+        val target = checks.uuid("targetId", targetId, required = false)
+        if (target != null && targetKind == null) checks.fail("targetType", "required", "Va junto con targetId.")
+        val start = instant(checks, "from", from)
+        val end = instant(checks, "to", to)
+        checks.done()
+        return AuditFilter(
+            action?.takeIf { it.isNotBlank() }, group, actorType, actor?.toString(), targetKind, target?.toString(), start, end,
+        )
+    }
+
+    private fun instant(checks: Checks, field: String, raw: String?): OffsetDateTime? {
         if (raw.isNullOrBlank()) return null
         return try {
             OffsetDateTime.parse(raw)
         } catch (e: DateTimeParseException) {
-            throw Problems.validation(field, "invalid_date_time", "Debe ser un instante RFC 3339.")
+            checks.fail(field, "invalid_date_time", "Debe ser un instante RFC 3339.")
+            null
         }
+    }
+
+    private companion object {
+        const val COUNT_CAP = 10_000
+        const val MAX_TYPE = 40
     }
 }

@@ -1,5 +1,8 @@
 package mx.fastsolution.zenit.dossier
 
+import mx.fastsolution.zenit.api.Page
+import mx.fastsolution.zenit.api.PageKey
+import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.export.sha256
@@ -28,6 +31,8 @@ data class DossierView(
     val id: UUID, val tenantId: UUID, val requestedBy: UUID, val formatVersion: Int,
     val scope: String = "all_retained", val status: String, val createdAt: String, val expiresAt: String,
     val snapshotAt: String?, val readyAt: String?, val manifestSha256: String?, val fileSha256: String?, val failureCode: String?,
+    /** Cuándo se descargó; nulo mientras no se descarga. */
+    val downloadedAt: String? = null,
 )
 
 data class DossierRow(val view: DossierView, val subject: String, val linkedAt: OffsetDateTime, val requestSha256: String)
@@ -52,6 +57,26 @@ class DossierRepository(private val dsl: DSLContext) {
         account.tenantId, UUID.randomUUID(), account.userId, account.subject, account.linkedAt, key, requestHash,
     ) == 1
 
+    /**
+     * Los expedientes de esa cuenta, del más reciente al más antiguo. Los de otra
+     * persona, o de una liga anterior de la misma, no existen para quien pregunta.
+     */
+    fun page(account: DossierAccount, after: PageKey?, limit: Int): List<DossierRow> {
+        val sql = StringBuilder(
+            "select $COLUMNS from dossier where tenant_id = ? and requested_by = ? and requested_subject = ? " +
+                "and requested_linked_at = cast(? as timestamptz)",
+        )
+        val binds = mutableListOf<Any>(account.tenantId, account.userId, account.subject, account.linkedAt)
+        if (after != null) {
+            sql.append(" and (created_at, id) < (cast(? as timestamptz), cast(? as uuid))")
+            binds += after.at
+            binds += after.id
+        }
+        sql.append(" order by created_at desc, id desc limit ?")
+        binds += limit
+        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { row(it) }
+    }
+
     fun manifest(tenantId: UUID, id: UUID): String? =
         dsl.fetchOne("select manifest from dossier where tenant_id = ? and id = ?", tenantId, id)?.get("manifest", String::class.java)
 
@@ -72,14 +97,15 @@ class DossierRepository(private val dsl: DSLContext) {
                 formatVersion = r.get("format_version", Int::class.java), status = if (expired) "expired" else r.get("status", String::class.java),
                 createdAt = instant("created_at")!!, expiresAt = instant("expires_at")!!, snapshotAt = instant("snapshot_at"), readyAt = instant("ready_at"),
                 manifestSha256 = r.get("manifest_sha256", String::class.java)?.trim(), fileSha256 = r.get("file_sha256", String::class.java)?.trim(),
-                failureCode = r.get("failure_code", String::class.java),
+                failureCode = r.get("failure_code", String::class.java), downloadedAt = instant("downloaded_at"),
             ), r.get("requested_subject", String::class.java), r.get("requested_linked_at", OffsetDateTime::class.java), r.get("request_sha256", String::class.java).trim(),
         )
     }
 
     private companion object {
         const val COLUMNS = "tenant_id, id, requested_by, requested_subject, requested_linked_at, request_sha256, format_version, status, " +
-            "created_at, expires_at, snapshot_at, ready_at, manifest_sha256, file_sha256, failure_code, expires_at <= clock_timestamp() as expired"
+            "created_at, expires_at, snapshot_at, ready_at, manifest_sha256, file_sha256, failure_code, expires_at <= clock_timestamp() as expired, " +
+            "(select max(a.consumed_at) from dossier_authorization a where a.tenant_id = dossier.tenant_id and a.dossier_id = dossier.id) as downloaded_at"
     }
 }
 
@@ -115,6 +141,11 @@ class DossierService(
     @Transactional
     fun get(person: CurrentPerson, id: UUID): DossierView = owned(person, id).view
 
+    /** Sólo los propios y sólo con el permiso vigente, igual que consultar uno. */
+    @Transactional
+    fun page(person: CurrentPerson, after: PageKey?, limit: Int): List<DossierView> =
+        dossiers.page(access.require(person), after, limit + 1).map { it.view }
+
     @Transactional
     fun manifest(person: CurrentPerson, id: UUID): ByteArray {
         val row = owned(person, id)
@@ -141,6 +172,17 @@ class DossierController(private val access: DossierAccess, private val service: 
     @PostMapping("/dossiers")
     fun create(@AuthenticationPrincipal person: CurrentPerson, @RequestHeader("Idempotency-Key", required = false) key: String?, @RequestBody request: DossierCreateRequest): ResponseEntity<DossierView> =
         response(service.request(person, key, request), HttpStatus.ACCEPTED)
+
+    @GetMapping("/dossiers")
+    fun list(
+        @AuthenticationPrincipal person: CurrentPerson,
+        @RequestParam cursor: String?,
+        @RequestParam limit: String?,
+    ): ResponseEntity<Page<DossierView>> {
+        val size = Paging.limit(limit)
+        val rows = service.page(person, Paging.decode(cursor), size)
+        return response(Paging.page(rows, size, { PageKey(OffsetDateTime.parse(it.createdAt), it.id) }) { it })
+    }
 
     @GetMapping("/dossiers/{dossierId}")
     fun get(@AuthenticationPrincipal person: CurrentPerson, @PathVariable dossierId: UUID): ResponseEntity<DossierView> = response(service.get(person, dossierId))
