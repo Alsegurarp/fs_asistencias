@@ -80,11 +80,19 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.GET, "/api/v1/me").authenticated()
                 it.requestMatchers(HttpMethod.GET, "/api/v1/tenants").hasRole(operator)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/tenants").hasRole(operator)
-                it.requestMatchers(HttpMethod.GET, "/api/v1/tenants/{tenantId}/usage").hasRole(operator)
+                it.requestMatchers(
+                    HttpMethod.GET,
+                    "/api/v1/tenants/summary",
+                    "/api/v1/tenants/usage",
+                    "/api/v1/tenants/usage/summary",
+                    "/api/v1/tenants/{tenantId}/usage",
+                )
+                    .hasRole(operator)
                 it.requestMatchers(
                     HttpMethod.POST,
                     "/api/v1/tenants/{tenantId}/suspension",
                     "/api/v1/tenants/{tenantId}/reactivation",
+                    "/api/v1/tenants/{tenantId}/administrators",
                     "/api/v1/tenants/{tenantId}/administrators/unlink",
                     "/api/v1/tenants/{tenantId}/break-policy-changes",
                     "/api/v1/tenants/{tenantId}/break-policy-changes/{changeId}/cancellation",

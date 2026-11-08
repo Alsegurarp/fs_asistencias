@@ -158,6 +158,19 @@ Detalles que ahorran tiempo:
   marcar, el dispositivo al autenticarse, la persona por su identidad en cada
   petición) siguen con su `SELECT` corto; los nombres y el permiso de
   expediente van en la variante de las listas.
+- Un conteo que se da para un objeto y para una lista de ellos tiene una sola
+  definición en SQL. El uso del mes (`TenantRepository.counts`) corre con una
+  empresa o con una página de empresas, cada una con los límites de su mes
+  calculados en la base con `make_timestamptz(..., zona)`, y los totales
+  suman esos mismos conteos.
+- Lo que una vista necesita de cada fila de una lista se lee en lote:
+  `BreakPolicies.views` da la política de comida de una página de empresas en
+  una consulta, donde `view` por empresa hacía dos.
+- Un conteo que recorre muchas filas por periodo se resuelve desde el índice
+  si éste trae la columna contada (`INCLUDE`). Contar personas distintas con
+  marcajes en el mes leía cada fila de la tabla; con `employee_id` dentro del
+  índice de marcajes por hora (V017), los totales de todas las empresas con
+  1.7 millones de marcajes bajaron de 1 s a 0.2 s.
 - Un total de algo que sólo crece, como la bitácora, se cuenta con tope
   (`select count(*) from (… limit tope + 1)`) y dice si lo pasó; no se cuenta
   todo en cada consulta.

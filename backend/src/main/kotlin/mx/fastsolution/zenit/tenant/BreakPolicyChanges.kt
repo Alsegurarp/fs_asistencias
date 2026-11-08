@@ -124,6 +124,15 @@ class BreakPolicyChangeRepository(private val dsl: DSLContext) {
             tenantId, today.toString(),
         )?.let(::row)
 
+    /** Los cambios no cancelados de varias empresas, de la fecha más temprana a la más tardía. */
+    fun active(tenantIds: Collection<UUID>): List<BreakPolicyChangeRow> {
+        if (tenantIds.isEmpty()) return emptyList()
+        return dsl.fetch(
+            "select $COLUMNS from break_policy_change where tenant_id = any(?) and cancelled_at is null order by tenant_id, effective_on",
+            tenantIds.toTypedArray(),
+        ).map(::row)
+    }
+
     fun find(tenantId: UUID, id: UUID): BreakPolicyChangeRow? =
         dsl.fetchOne("select $COLUMNS from break_policy_change where tenant_id = ? and id = ?", tenantId, id)?.let(::row)
 
@@ -168,6 +177,22 @@ class BreakPolicies(private val changes: BreakPolicyChangeRepository) {
 
     fun view(tenant: TenantRow): TenantView =
         TenantView.of(tenant, current(tenant), pending(tenant)?.let { BreakPolicyChangeView.of(it, tenant.timeZone) })
+
+    /**
+     * Las vistas de una página de empresas con una sola lectura, no dos por
+     * empresa. Aplica la regla de `on` y `pending`: vale el último cambio no
+     * cancelado que ya entró, y queda pendiente el primero que todavía no.
+     */
+    fun views(tenants: List<TenantRow>): Map<UUID, TenantView> {
+        val byTenant = changes.active(tenants.map { it.id }).groupBy { it.tenantId }
+        return tenants.associate { tenant ->
+            val today = today(tenant)
+            val active = byTenant[tenant.id].orEmpty()
+            val current = active.lastOrNull { !it.effectiveOn.isAfter(today) }?.breakPolicy ?: tenant.baseBreakPolicy
+            val pending = active.firstOrNull { it.effectiveOn.isAfter(today) }
+            tenant.id to TenantView.of(tenant, current, pending?.let { BreakPolicyChangeView.of(it, tenant.timeZone) })
+        }
+    }
 }
 
 @Service

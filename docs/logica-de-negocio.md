@@ -498,8 +498,9 @@ incidencias, cierres, corridas de cierre, acuses, exportes, y la suspensión o
 reactivación de la empresa. Dice quién, qué y cuándo, con un
 identificador de correlación. Lo que hace el sistema por su cuenta, como un
 cierre programado, queda a nombre del sistema. No guarda notas ni cuerpos
-completos. De los motivos guarda tres: el de revocar un dispositivo, el de
-reabrir un cierre y el de suspender o reactivar una empresa.
+completos. De los motivos guarda los de revocar un dispositivo, reabrir un
+cierre y suspender o reactivar una empresa, y los de quien opera el servicio
+al soltar la liga de quien administra o al invitar a otra administración.
 
 Toda incidencia que se abre queda como `incident.opened`: a nombre del
 sistema si la detectó la captura, o de quien cerró si salió al cerrar.
@@ -531,6 +532,43 @@ dice `capped` y el portal muestra «más de 10 000».
 
 **Medición** con 100 000 acciones, en contenedor local: cada página de 50 con
 cualquier filtro y cada cuenta respondieron en menos de 30 ms.
+
+## Consola de operación
+
+Lo ve sólo quien opera el servicio. No entra a los datos de ninguna empresa:
+ve sus datos de alta, quién la administra y conteos de uso.
+
+- La lista de empresas busca por nombre o identificador, sin acentos, y
+  filtra en el servidor por estado y por el estado de su administración:
+  `linked` si alguien con Administración entró con su cuenta y conserva el
+  acceso, `pending` si sólo hay invitaciones sin usar, y `none` si no queda
+  nadie con ese rol y acceso. Cada empresa trae hasta cinco personas que la
+  administran, con su correo, si ya entró y cuándo, y el total. Se leen en
+  lote con la página.
+- `GET /tenants/summary` cuenta las empresas por estado y por estado de su
+  administración, con la misma búsqueda.
+- `GET /tenants/usage?month=AAAA-MM` da el uso de un mes de todas las
+  empresas que ya existían en él, por páginas, con los mismos conteos que el
+  uso de una sola empresa: una sola definición de cada conteo, cortada en la
+  zona de cada empresa, y una consulta por página. `GET
+  /tenants/usage/summary` suma esos conteos con los mismos filtros. El mes se
+  acepta en cuanto empezó en alguna zona; donde todavía no empieza, los
+  conteos van en cero.
+- Quien opera el servicio invita a otra persona a administrar una empresa
+  sólo cuando nadie con ese rol entró con su cuenta o conserva el acceso:
+  tras soltar la liga de quien la administraba, o cuando la invitación del
+  alta llegó a un correo equivocado. Si alguien ya la administra con su
+  cuenta, responde 409 `administrator_linked`: esa persona invita a las
+  demás. Lleva el mismo control de correo que el alta, un motivo, y queda en
+  la bitácora de la empresa.
+
+**Medición** con 870 empresas, 1.7 millones de marcajes y 62 000 personas,
+en contenedor local: cada página de 50 empresas con cualquier filtro, sus
+conteos y cada página de 50 del uso del mes respondieron entre 24 y 34 ms;
+los totales del mes de todas las empresas, entre 150 y 230 ms, y el uso de
+una empresa, 13 ms. Los totales tardaban 1 s hasta que el índice de marcajes
+por hora trajo a la persona (V017), y la lista de empresas hacía dos
+consultas por empresa para su política de comida hasta leerlas en lote.
 
 ## Lo provisional, reunido
 

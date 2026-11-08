@@ -24,6 +24,8 @@ class ApiIT : ApiTestBase() {
             "POST" to "/api/v1/tenant/break-policy-changes/${UUID.randomUUID()}/cancellation",
             "POST" to "/api/v1/tenants/${UUID.randomUUID()}/break-policy-changes",
             "POST" to "/api/v1/tenants/${UUID.randomUUID()}/break-policy-changes/${UUID.randomUUID()}/cancellation",
+            "GET" to "/api/v1/tenants/summary", "GET" to "/api/v1/tenants/usage?month=2026-10",
+            "GET" to "/api/v1/tenants/usage/summary?month=2026-10", "POST" to "/api/v1/tenants/${UUID.randomUUID()}/administrators",
         )
         for ((method, path) in routes) {
             assertProblem(401, "unauthorized", call(method, path, body = if (method == "GET") null else "{}"))
@@ -190,6 +192,10 @@ class ApiIT : ApiTestBase() {
         expect("GET", "/api/v1/tenants", null)
         expect("POST", "/api/v1/tenants", tenantBody("no-debe-existir", email("x")))
         expect("GET", "/api/v1/tenants/${c.id}/usage?month=2026-10", null)
+        expect("GET", "/api/v1/tenants/summary", null)
+        expect("GET", "/api/v1/tenants/usage?month=2026-10", null)
+        expect("GET", "/api/v1/tenants/usage/summary?month=2026-10", null)
+        expect("POST", "/api/v1/tenants/${c.id}/administrators", """{"email":"${email("matriz")}","reason":"Matriz de roles de la consola"}""")
         // Lo que no está abierto sigue cerrado, también para quien administra.
         expect("DELETE", "/api/v1/users/${c.adminId}", null)
         expect("GET", "/api/v1/jobs", null)

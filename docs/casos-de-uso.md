@@ -304,6 +304,21 @@ Sólo vale para quien tiene el rol de administrar esa empresa. Con el correo
 de cualquier otra persona, de otra empresa o que no existe, responde 404 sin
 decir cuál de los tres.
 
+Si quien administraba dejó la empresa, o la invitación del alta llegó a un
+correo equivocado, quien opera el servicio invita a otra persona:
+
+1. `POST /tenants/{tenantId}/administrators` con su correo y un motivo de al
+   menos diez caracteres.
+2. Responde 201 con el correo, `invited` y sin fecha de entrada. Queda en la
+   bitácora de la empresa, con el motivo y que fue desde la operación.
+3. La persona entra con ese correo verificado y administra la empresa; desde
+   ahí invita al resto.
+
+Puede salir mal: alguien ya administra la empresa con su cuenta (409
+`administrator_linked`; esa persona invita), o el correo es de quien opera
+el servicio o ya pertenece a alguien (409 `email_unavailable`, sin decir de
+quién).
+
 ## 14. Suspender una empresa
 
 Actor: operador.
@@ -343,3 +358,20 @@ Empresas → «Uso de …».
 Puede salir mal: el mes no tiene la forma `AAAA-MM` (422, error
 `invalid_month`) o todavía no empieza (422, `future_month`). Una persona dada
 de baja sin fecha de fin sigue contando como vigente.
+
+## 16. Revisar las empresas y su uso desde la consola
+
+Actor: operador.
+
+1. `GET /tenants` con `q` (nombre o identificador), `status` y
+   `administration` (`linked`, `pending`, `none`). Cada empresa trae quién la
+   administra, si ya entró y cuándo. `GET /tenants/summary` da los conteos de
+   las pestañas.
+2. `GET /tenants/usage?month=AAAA-MM`, con la misma búsqueda y estado, da el
+   uso del mes de todas las empresas que ya existían en él, por páginas, cada
+   una cortada en su zona. `GET /tenants/usage/summary` da los totales.
+3. El portal arma el CSV recorriendo las páginas: sólo lleva conteos.
+
+Puede salir mal: un filtro que no es uno de sus valores (422), un texto de
+más de 100 caracteres (422, `too_long`), o un mes que todavía no empieza en
+ninguna zona (422, `future_month`).

@@ -4,6 +4,7 @@ import mx.fastsolution.zenit.api.Checks
 import mx.fastsolution.zenit.api.Conflicts
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Problems
+import mx.fastsolution.zenit.api.TextSearch
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.OperatorProperties
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.OffsetDateTime
 import java.time.YearMonth
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.UUID
 
 class TenantCreateRequest {
@@ -51,6 +53,8 @@ class TenantUsage(
     val to: OffsetDateTime,
     val complete: Boolean,
     val counts: TenantUsageCounts,
+    /** La empresa, para las listas de la consola. */
+    val tenant: TenantRow,
 )
 
 class TenantStatusRequest {
@@ -58,6 +62,11 @@ class TenantStatusRequest {
 }
 
 class AdministratorUnlinkRequest {
+    var email: String? = null
+    var reason: String? = null
+}
+
+class AdministratorInviteRequest {
     var email: String? = null
     var reason: String? = null
 }
@@ -109,8 +118,77 @@ class TenantService(
         }
     }
 
+    data class ListQuery(val q: String? = null, val status: String? = null, val administration: String? = null)
+
     @Transactional(readOnly = true)
-    fun page(after: PageKey?, limit: Int): List<TenantRow> = tenants.page(after, limit + 1)
+    fun page(query: ListQuery, after: PageKey?, limit: Int): List<OperatedTenantRow> =
+        tenants.page(filter(query), after, limit + 1)
+
+    @Transactional(readOnly = true)
+    fun summary(q: String?): TenantListSummaryView {
+        val checks = Checks()
+        val text = TextSearch.pattern(checks, q)
+        checks.done()
+        return tenants.summary(text)
+    }
+
+    /** Quienes administran cada empresa de una página, en lote. */
+    @Transactional(readOnly = true)
+    fun administrators(ids: Collection<UUID>): Map<UUID, List<TenantAdministrator>> =
+        tenants.administrators(ids, ADMINISTRATORS_SHOWN)
+
+    /**
+     * Invita a otra persona a administrar una empresa en la que nadie con ese
+     * rol ha entrado o conserva su acceso: tras soltar la liga de quien la
+     * administraba, o cuando la invitación del alta llegó a un correo
+     * equivocado. Si alguien ya la administra con su cuenta, es esa persona
+     * quien invita a las demás. Con el mismo control de correo que el alta,
+     * un motivo, y en la bitácora de la empresa.
+     */
+    @Transactional
+    fun inviteAdministrator(operator: CurrentPerson, id: UUID, request: AdministratorInviteRequest): TenantAdministrator {
+        val checks = Checks()
+        val email = checks.email("email", request.email)
+        val reason = reason(checks, request.reason)
+        checks.done()
+
+        if (tenants.find(id) == null) throw Problems.notFound()
+        if (operators.isOperator(email!!)) throw Conflicts.emailUnavailable()
+        // En fila con soltar la liga y con otra invitación a la misma empresa.
+        tenants.lock(id)
+        if (tenants.administeredByLinked(id)) {
+            throw Problems.conflict("administrator_linked", "La empresa ya tiene quien la administre con su cuenta; esa persona invita a las demás.")
+        }
+        val adminId = UUID.randomUUID()
+        try {
+            users.insertInvited(id, adminId, email, "")
+        } catch (e: RuntimeException) {
+            throw if (Conflicts.uniqueConstraint(e) == Conflicts.USER_EMAIL) Conflicts.emailUnavailable() else e
+        }
+        users.grant(id, adminId, Role.ADMIN_EMPRESA.wire, operator.actorId)
+        audit.record(
+            id, operator, "user.invited", "user", adminId,
+            mapOf("roles" to Role.ADMIN_EMPRESA.wire, "by" to "operator", "reason" to reason!!),
+        )
+        val user = users.find(id, adminId)!!
+        return TenantAdministrator(id, user.email, user.status, user.createdAt, user.linkedAt, total = 0)
+    }
+
+    data class UsageQuery(val month: String?, val q: String? = null, val status: String? = null)
+
+    /** El uso del mes de las empresas que ya existían en él; sólo conteos. */
+    @Transactional(readOnly = true)
+    fun usagePage(query: UsageQuery, after: PageKey?, limit: Int): List<TenantUsage> {
+        val (period, filter) = usageScope(query)
+        return tenants.usagePage(period, filter, after, limit + 1).map { usageOf(period, it) }
+    }
+
+    /** Los totales de `usagePage` con los mismos filtros. */
+    @Transactional(readOnly = true)
+    fun usageTotals(query: UsageQuery): Pair<String, TenantUsageTotals> {
+        val (period, filter) = usageScope(query)
+        return period.toString() to tenants.usageTotals(period, filter)
+    }
 
     @Transactional(readOnly = true)
     fun current(person: CurrentPerson): TenantRow = tenants.find(person.requireTenant()) ?: throw Problems.notFound()
@@ -180,8 +258,7 @@ class TenantService(
     fun unlinkAdministrator(operator: CurrentPerson, id: UUID, request: AdministratorUnlinkRequest) {
         val checks = Checks()
         val email = checks.email("email", request.email)
-        val reason = checks.text("reason", request.reason, MAX_REASON, required = true)
-        if (reason != null && reason.length in 1 until MIN_REASON) checks.fail("reason", "too_short", "Lleva al menos $MIN_REASON caracteres.")
+        val reason = reason(checks, request.reason)
         checks.done()
 
         if (tenants.find(id) == null) throw Problems.notFound()
@@ -199,25 +276,64 @@ class TenantService(
      */
     @Transactional(readOnly = true)
     fun usage(id: UUID, month: String?): TenantUsage {
-        val period = month?.takeIf { MONTH.matches(it) }?.let { runCatching { YearMonth.parse(it) }.getOrNull() }
-        if (period == null) Checks().apply { fail("month", "invalid_month", "El mes va en la forma AAAA-MM.") }.done()
+        val checks = Checks()
+        val period = month(checks, month)
+        checks.done()
 
         val tenant = tenants.find(id) ?: throw Problems.notFound()
-        val zone = ZoneId.of(tenant.timeZone)
-        if (period!! > YearMonth.now(zone)) {
+        if (period!! > YearMonth.now(ZoneId.of(tenant.timeZone))) {
             Checks().apply { fail("month", "future_month", "Ese mes todavía no empieza para la empresa.") }.done()
         }
-        val from = period.atDay(1).atStartOfDay(zone).toOffsetDateTime()
-        val to = period.plusMonths(1).atDay(1).atStartOfDay(zone).toOffsetDateTime()
-        return TenantUsage(
-            tenantId = id,
-            month = period.toString(),
-            timeZone = tenant.timeZone,
-            from = from,
-            to = to,
-            complete = !OffsetDateTime.now().isBefore(to),
-            counts = tenants.usage(id, from, to, period.atDay(1), period.atEndOfMonth()),
-        )
+        return usageOf(period, tenants.usage(id, period))
+    }
+
+    private fun usageOf(period: YearMonth, usage: TenantMonthUsage) = TenantUsage(
+        tenantId = usage.tenant.id,
+        month = period.toString(),
+        timeZone = usage.tenant.timeZone,
+        from = usage.from,
+        to = usage.to,
+        complete = !OffsetDateTime.now().isBefore(usage.to),
+        counts = usage.counts,
+        tenant = usage.tenant,
+    )
+
+    /**
+     * El mes de todas las empresas se acepta en cuanto empezó en la zona que
+     * empieza el día primero; donde todavía no empieza, sus conteos van en
+     * cero y `complete` es falso.
+     */
+    private fun usageScope(query: UsageQuery): Pair<YearMonth, TenantFilter> {
+        val checks = Checks()
+        val period = month(checks, query.month)
+        val text = TextSearch.pattern(checks, query.q)
+        val status = checks.oneOf("status", query.status, STATUSES, required = false)
+        if (period != null && period > YearMonth.now(EARLIEST_ZONE)) {
+            checks.fail("month", "future_month", "Ese mes todavía no empieza en ninguna zona horaria.")
+        }
+        checks.done()
+        return period!! to TenantFilter(text, status)
+    }
+
+    private fun filter(query: ListQuery): TenantFilter {
+        val checks = Checks()
+        val text = TextSearch.pattern(checks, query.q)
+        val status = checks.oneOf("status", query.status, STATUSES, required = false)
+        val administration = checks.oneOf("administration", query.administration, TenantRepository.ADMINISTRATION_STATES.toSet(), required = false)
+        checks.done()
+        return TenantFilter(text, status, administration)
+    }
+
+    private fun month(checks: Checks, month: String?): YearMonth? {
+        val period = month?.takeIf { MONTH.matches(it) }?.let { runCatching { YearMonth.parse(it) }.getOrNull() }
+        if (period == null) checks.fail("month", "invalid_month", "El mes va en la forma AAAA-MM.")
+        return period
+    }
+
+    private fun reason(checks: Checks, raw: String?): String? {
+        val reason = checks.text("reason", raw, MAX_REASON, required = true)
+        if (reason != null && reason.length in 1 until MIN_REASON) checks.fail("reason", "too_short", "Lleva al menos $MIN_REASON caracteres.")
+        return reason
     }
 
     private fun changeStatus(
@@ -230,8 +346,7 @@ class TenantService(
         conflict: () -> RuntimeException,
     ): TenantRow {
         val checks = Checks()
-        val reason = checks.text("reason", request.reason, MAX_REASON, required = true)
-        if (reason != null && reason.length in 1 until MIN_REASON) checks.fail("reason", "too_short", "Lleva al menos $MIN_REASON caracteres.")
+        val reason = reason(checks, request.reason)
         checks.done()
 
         if (tenants.find(id) == null) throw Problems.notFound()
@@ -247,6 +362,11 @@ class TenantService(
         const val MAX_AUTO_CLOSE = 168
         const val MIN_REASON = 10
         const val MAX_REASON = 500
+        const val ADMINISTRATORS_SHOWN = 5
         val MONTH = Regex("[0-9]{4}-(0[1-9]|1[0-2])")
+        val STATUSES = setOf("active", "suspended")
+
+        /** La primera zona del mundo en empezar el día. */
+        val EARLIEST_ZONE: ZoneOffset = ZoneOffset.ofHours(14)
     }
 }

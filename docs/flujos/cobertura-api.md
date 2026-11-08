@@ -3,7 +3,7 @@
 Corte: 20 de octubre de 2026. Las 62 operaciones de contracts/openapi.yaml (versión 0.13.0).
 Las rutas de esta tabla incluyen el prefijo /api/v1. Los roles se toman del contrato;
 la autorización efectiva también se aplica en SecurityConfig y los servicios.
-Las filas marcadas «desde 0.19.0» a «desde 0.22.0» se agregaron después de ese corte; la tabla
+Las filas marcadas «desde 0.19.0» a «desde 0.23.0» se agregaron después de ese corte; la tabla
 no se ha vuelto a contar contra el contrato completo.
 
 | Método y ruta | operationId | Flujo principal | Roles / credencial |
@@ -11,9 +11,13 @@ no se ha vuelto a contar contra el contrato completo.
 | GET /api/v1/system/status | getSystemStatus | [16](16-operacion-auditoria-y-respaldo.puml) | Pública |
 | GET /api/v1/me | getCurrentUser | [02](02-identidad-y-permisos.puml) | operador_saas, admin_empresa, rh, supervisor, trabajador, auditor |
 | GET /api/v1/tenants | listTenants | [03](03-empresa-y-usuarios.puml) | operador_saas |
+| GET /api/v1/tenants/summary | getTenantListSummary | [03](03-empresa-y-usuarios.puml), desde 0.23.0 | operador_saas |
+| GET /api/v1/tenants/usage | listTenantUsage | [03](03-empresa-y-usuarios.puml), desde 0.23.0 | operador_saas |
+| GET /api/v1/tenants/usage/summary | getTenantUsageSummary | [03](03-empresa-y-usuarios.puml), desde 0.23.0 | operador_saas |
 | POST /api/v1/tenants | createTenant | [03](03-empresa-y-usuarios.puml) | operador_saas |
 | POST /api/v1/tenants/{tenantId}/suspension | suspendTenant | [03](03-empresa-y-usuarios.puml) | operador_saas |
 | POST /api/v1/tenants/{tenantId}/reactivation | reactivateTenant | [03](03-empresa-y-usuarios.puml) | operador_saas |
+| POST /api/v1/tenants/{tenantId}/administrators | inviteTenantAdministrator | [03](03-empresa-y-usuarios.puml), desde 0.23.0 | operador_saas |
 | POST /api/v1/tenants/{tenantId}/administrators/unlink | unlinkTenantAdministrator | [03](03-empresa-y-usuarios.puml) | operador_saas |
 | GET /api/v1/tenants/{tenantId}/usage | getTenantUsage (desde 0.16.0) | [03](03-empresa-y-usuarios.puml) | operador_saas |
 | GET /api/v1/tenant | getTenant | [03](03-empresa-y-usuarios.puml) | admin_empresa, rh, supervisor, auditor |
