@@ -4,6 +4,12 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Consola de operación para el portal, 7 de noviembre:** contrato 0.23.0
+con búsqueda y filtros de empresas, quién administra cada una y si ya
+entró, el uso de un mes de todas las empresas con sus totales, e invitar
+otra administración desde la operación.
+[Reglas y medición](docs/logica-de-negocio.md#consola-de-operación).
+
 **Usuarios, reportes y bitácora para el portal, 7 de noviembre:** contrato
 0.22.0 con filtros y conteos de usuarios y su permiso de expediente,
 historial de exportes y expedientes, y filtros y cuenta acotada de la
@@ -298,6 +304,11 @@ El token dice quién es la persona; su empresa y sus roles salen de la base.
   el servicio suelta la liga por correo y con un motivo mediante
   `POST /api/v1/tenants/{tenantId}/administrators/unlink`; no recibe datos de
   la persona y la acción queda en la bitácora de la empresa.
+- Cuando en una empresa nadie con Administración entró con su cuenta o
+  conserva el acceso, quien opera el servicio invita a otra persona con
+  `POST /api/v1/tenants/{tenantId}/administrators`, con el mismo control de
+  correo del alta y un motivo. Si alguien ya la administra con su cuenta, es
+  esa persona quien invita.
 - Cada persona tiene una cuota de peticiones por minuto, 600 por defecto
   (`API_PERSON_REQUESTS_PER_MINUTE`). Se cuenta dentro de la cadena de
   seguridad, cuando ya se sabe quién llama, y responde 429 antes de llegar a

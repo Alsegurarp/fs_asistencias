@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.22.0
+  version: 0.23.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -465,9 +465,32 @@ paths:
     get:
       tags: [empresa]
       operationId: listTenants
-      summary: Lista las empresas dadas de alta
+      summary: Lista las empresas dadas de alta, con quién las administra
+      description: |
+        De la más antigua a la más reciente. `q` busca en el nombre y el
+        identificador; los filtros se aplican antes de paginar.
+
+        Cada empresa trae el estado de su administración, que sólo ve quien
+        opera el servicio: `linked` si alguien con el rol `admin_empresa`
+        entró con su cuenta y conserva el acceso, `pending` si sólo hay
+        invitaciones sin usar, y `none` si no queda nadie con ese rol y acceso.
+        Lista hasta 5 personas que la administran, primero quien ya entró;
+        `total` dice cuántas son.
+
+        Responde 422 si un filtro no es uno de sus valores.
       x-roles: [operador_saas]
       parameters:
+        - $ref: "#/components/parameters/SearchText"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended]
+        - name: administration
+          in: query
+          description: Estado de la administración de la empresa.
+          schema:
+            $ref: "#/components/schemas/TenantAdministrationState"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:
@@ -489,11 +512,21 @@ paths:
                     createdAt: "2026-10-05T15:00:00Z"
                     autoCloseAfterHours: null
                     breakPolicyChange: null
+                    administration:
+                      state: pending
+                      total: 1
+                      administrators:
+                        - email: administracion@panificadora.example
+                          status: invited
+                          invitedAt: "2026-10-05T15:00:00Z"
+                          linkedAt: null
                 nextCursor: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
     post:
       tags: [empresa]
       operationId: createTenant
@@ -540,6 +573,142 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /tenants/summary:
+    get:
+      tags: [empresa]
+      operationId: getTenantListSummary
+      summary: Cuenta las empresas por estado y por el estado de su administración
+      description: |
+        Con la misma búsqueda `q` que `listTenants`, sin filtrar por estado ni
+        por administración: rotula cada pestaña de la consola.
+      x-roles: [operador_saas]
+      parameters:
+        - $ref: "#/components/parameters/SearchText"
+      responses:
+        "200":
+          description: Conteos de empresas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantListSummary"
+              example:
+                total: 12
+                active: 11
+                suspended: 1
+                administration:
+                  linked: 10
+                  pending: 2
+                  none: 0
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /tenants/usage:
+    get:
+      tags: [empresa]
+      operationId: listTenantUsage
+      summary: Uso de un mes de todas las empresas, por páginas
+      description: |
+        Las empresas que ya existían antes de que el mes terminara en su zona,
+        de la más antigua a la más reciente, cada una con los mismos conteos
+        de `getTenantUsage` cortados en su propia zona. Se calcula una página
+        a la vez, con una sola consulta; los totales están en
+        `getTenantUsageSummary`. Sólo son conteos: ningún dato de una persona
+        sale de aquí.
+
+        Responde 422 con el error de `month` en `invalid_month` si el mes no
+        tiene la forma `AAAA-MM`, y en `future_month` si todavía no empieza en
+        ninguna zona horaria. Donde el mes aún no empieza, los conteos van en
+        cero y `complete` es falso.
+      x-roles: [operador_saas]
+      parameters:
+        - $ref: "#/components/parameters/UsageMonth"
+        - $ref: "#/components/parameters/SearchText"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended]
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página del uso del mes por empresa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantUsageList"
+              example:
+                items:
+                  - id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                    name: Panificadora Ejemplo
+                    slug: panificadora-ejemplo
+                    status: active
+                    usage:
+                      tenantId: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                      month: "2026-10"
+                      timeZone: America/Mexico_City
+                      from: "2026-10-01T06:00:00Z"
+                      to: "2026-11-01T06:00:00Z"
+                      complete: true
+                      employeesWithAttendance: 42
+                      employeesInPeriod: 45
+                      cardsAssigned: 44
+                      devicesActive: 3
+                      attendanceEvents: 3520
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /tenants/usage/summary:
+    get:
+      tags: [empresa]
+      operationId: getTenantUsageSummary
+      summary: Totales del uso de un mes de todas las empresas
+      description: |
+        La suma de cada conteo de `listTenantUsage` con los mismos filtros, sin
+        paginar. `tenants` cuenta las empresas que entran; `complete`, en
+        cuántas de ellas el mes ya terminó. Responde 422 en los mismos casos
+        que `listTenantUsage`.
+      x-roles: [operador_saas]
+      parameters:
+        - $ref: "#/components/parameters/UsageMonth"
+        - $ref: "#/components/parameters/SearchText"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended]
+      responses:
+        "200":
+          description: Totales del uso del mes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantUsageSummary"
+              example:
+                month: "2026-10"
+                tenants: 12
+                complete: 12
+                employeesWithAttendance: 480
+                employeesInPeriod: 512
+                cardsAssigned: 505
+                devicesActive: 31
+                attendanceEvents: 40210
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -674,6 +843,73 @@ paths:
         "422":
           $ref: "#/components/responses/Unprocessable"
 
+  /tenants/{tenantId}/administrators:
+    parameters:
+      - $ref: "#/components/parameters/TenantId"
+    post:
+      tags: [identidad]
+      operationId: inviteTenantAdministrator
+      summary: Invita a otra persona a administrar una empresa, desde la operación del servicio
+      description: |
+        Para cuando en la empresa nadie con el rol `admin_empresa` entró con
+        su cuenta y conserva el acceso: después de soltar la liga de quien la
+        administraba con `unlinkTenantAdministrator`, o cuando la invitación
+        del alta llegó a un correo equivocado. La persona queda `invited` con
+        el rol `admin_empresa` y entra con ese correo verificado, como en el
+        alta.
+
+        Si alguien ya administra la empresa con su cuenta, es esa persona
+        quien invita a las demás con `inviteUser`: responde 409 con `code`
+        `administrator_linked`. Pide un motivo, que queda en la bitácora de la
+        empresa. La invitación anterior, si la hay, sigue como estaba.
+
+        Responde 404 si la empresa no existe, y 409 con `code`
+        `email_unavailable` si el correo es de quien opera el servicio o ya
+        pertenece a alguien; la respuesta no dice a qué empresa.
+      x-roles: [operador_saas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdministratorInvite"
+            example:
+              email: direccion@panificadora.example
+              reason: Quien administraba dejó la empresa y la dirección pidió tomarla.
+      responses:
+        "201":
+          description: Persona invitada a administrar la empresa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantAdministrator"
+              example:
+                email: direccion@panificadora.example
+                status: invited
+                invitedAt: "2026-11-07T18:00:00Z"
+                linkedAt: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: La empresa ya tiene quien la administre con su cuenta, o el correo no está disponible
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/conflict
+                title: Conflicto con el estado actual
+                status: 409
+                code: administrator_linked
+                detail: La empresa ya tiene quien la administre con su cuenta; esa persona invita a las demás.
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
   /tenants/{tenantId}/administrators/unlink:
     parameters:
       - $ref: "#/components/parameters/TenantId"
@@ -760,14 +996,7 @@ paths:
         la zona horaria de la empresa.
       x-roles: [operador_saas]
       parameters:
-        - name: month
-          in: query
-          required: true
-          description: Mes del calendario de la empresa, en la forma `AAAA-MM`.
-          schema:
-            type: string
-            pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
-          example: "2026-10"
+        - $ref: "#/components/parameters/UsageMonth"
       responses:
         "200":
           description: Uso de la empresa en el mes
@@ -4613,6 +4842,15 @@ components:
       schema:
         type: string
         format: date-time
+    UsageMonth:
+      name: month
+      in: query
+      required: true
+      description: Mes del calendario de cada empresa, en la forma `AAAA-MM`.
+      schema:
+        type: string
+        pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      example: "2026-10"
     SearchText:
       name: q
       in: query
@@ -5307,6 +5545,73 @@ components:
           minLength: 10
           maxLength: 500
           description: Por qué se suelta la liga; queda en la bitácora de la empresa.
+    AdministratorInvite:
+      type: object
+      additionalProperties: false
+      required: [email, reason]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Correo de quien administrará la empresa.
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+          description: Por qué se invita desde la operación; queda en la bitácora de la empresa.
+    TenantAdministrationState:
+      type: string
+      description: >-
+        `linked`: alguien con el rol `admin_empresa` entró con su cuenta y
+        conserva el acceso. `pending`: sólo hay invitaciones sin usar.
+        `none`: no queda nadie con ese rol y acceso.
+      enum: [linked, pending, none]
+    TenantAdministrator:
+      type: object
+      additionalProperties: false
+      description: Quien administra una empresa. No lleva más datos de la persona que su correo y su acceso.
+      required: [email, status, invitedAt, linkedAt]
+      properties:
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [active, invited]
+        invitedAt:
+          type: string
+          format: date-time
+        linkedAt:
+          type: [string, "null"]
+          format: date-time
+          description: Cuándo entró por primera vez con su cuenta de hoy; nulo si todavía no entra.
+    TenantAdministration:
+      type: object
+      additionalProperties: false
+      required: [state, total, administrators]
+      properties:
+        state:
+          $ref: "#/components/schemas/TenantAdministrationState"
+        total:
+          type: integer
+          minimum: 0
+          description: Cuántas personas con acceso tienen el rol `admin_empresa`.
+        administrators:
+          type: array
+          maxItems: 5
+          description: Hasta 5, primero quien ya entró y luego las invitaciones más recientes.
+          items:
+            $ref: "#/components/schemas/TenantAdministrator"
+    OperatedTenant:
+      description: Una empresa vista desde la operación del servicio, con el estado de su administración.
+      allOf:
+        - $ref: "#/components/schemas/Tenant"
+        - type: object
+          required: [administration]
+          properties:
+            administration:
+              $ref: "#/components/schemas/TenantAdministration"
     TenantList:
       type: object
       required: [items, nextCursor]
@@ -5314,9 +5619,86 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Tenant"
+            $ref: "#/components/schemas/OperatedTenant"
         nextCursor:
           $ref: "#/components/schemas/NextCursor"
+    TenantListSummary:
+      type: object
+      additionalProperties: false
+      required: [total, active, suspended, administration]
+      properties:
+        total:
+          type: integer
+        active:
+          type: integer
+        suspended:
+          type: integer
+        administration:
+          type: object
+          additionalProperties: false
+          required: [linked, pending, none]
+          properties:
+            linked: { type: integer }
+            pending: { type: integer }
+            none: { type: integer }
+    TenantUsageItem:
+      type: object
+      additionalProperties: false
+      required: [id, name, slug, status, usage]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended]
+        usage:
+          $ref: "#/components/schemas/TenantUsage"
+    TenantUsageList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TenantUsageItem"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
+    TenantUsageSummary:
+      type: object
+      additionalProperties: false
+      required: [month, tenants, complete, employeesWithAttendance, employeesInPeriod, cardsAssigned, devicesActive, attendanceEvents]
+      properties:
+        month:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        tenants:
+          type: integer
+          minimum: 0
+          description: Empresas que entran con estos filtros.
+        complete:
+          type: integer
+          minimum: 0
+          description: En cuántas de ellas el mes ya terminó.
+        employeesWithAttendance:
+          type: integer
+          minimum: 0
+        employeesInPeriod:
+          type: integer
+          minimum: 0
+        cardsAssigned:
+          type: integer
+          minimum: 0
+        devicesActive:
+          type: integer
+          minimum: 0
+        attendanceEvents:
+          type: integer
+          minimum: 0
 
     TenantRole:
       type: string

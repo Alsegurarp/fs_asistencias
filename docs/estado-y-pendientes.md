@@ -1,5 +1,19 @@
 # Estado y pendientes
 
+**Consola de operación para el portal, 7 de noviembre (contrato 0.23.0):**
+quinta y última fase del backend de la maqueta. La lista de empresas busca
+por nombre o identificador y filtra en el servidor por estado y por el estado
+de su administración, y cada empresa trae quién la administra y si ya entró;
+`GET /tenants/summary` da los conteos. `GET /tenants/usage` da el uso de un
+mes de todas las empresas por páginas y `GET /tenants/usage/summary` sus
+totales. Quien opera el servicio invita a otra administración cuando nadie la
+administra con su cuenta. Migración V017: la persona dentro del índice de
+marcajes por hora, para contar sólo del índice. Medido con 870 empresas y
+1.7 millones de marcajes: listas y conteos entre 24 y 45 ms, totales del mes
+entre 150 y 230 ms
+([reglas y medición](logica-de-negocio.md#consola-de-operación)). Falta que
+el portal las consuma; no se desplegó.
+
 **Usuarios, reportes y bitácora para el portal, 7 de noviembre (contrato
 0.22.0):** cuarta fase del backend de la maqueta. La lista de usuarios busca
 y filtra en el servidor y trae si cada persona puede descargar el expediente
@@ -8,8 +22,8 @@ exportes con quién los pidió y descargó, y `GET /dossiers` las copias propias
 del expediente. La bitácora filtra por quién actuó, por la persona u objeto y
 por grupo de acciones, y `GET /audit-log/summary` la cuenta hasta 10 000.
 Migración V016. Medido con 100 000 acciones: menos de 30 ms por página o
-cuenta ([reglas y medición](logica-de-negocio.md#bitácora)). Falta que el
-portal las consuma; no se desplegó.
+cuenta ([reglas y medición](logica-de-negocio.md#bitácora)). Desplegada en el
+ambiente publicado el 7 de noviembre; falta que el portal la consuma.
 
 **Padrón y buscador para el portal, 7 de noviembre (contrato 0.21.0):**
 tercera fase del backend de la maqueta. Personas, tarjetas y lectores se

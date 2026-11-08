@@ -227,6 +227,17 @@ Las rutas van sin el prefijo `/api/v1`.
 | Empresas | `GET /tenants`, `POST /tenants` |
 | Suspender y reactivar | `POST /tenants/{tenantId}/suspension`, `POST /tenants/{tenantId}/reactivation` |
 | Uso de una empresa | `GET /tenants/{tenantId}/usage?month=AAAA-MM` |
+| Consola: búsqueda, filtros y conteos (desde 0.23.0) | `GET /tenants?q=&status=&administration=`, `GET /tenants/summary` |
+| Consola: uso del mes de todas (desde 0.23.0) | `GET /tenants/usage?month=AAAA-MM`, `GET /tenants/usage/summary` |
+| Consola: invitar otra administración (desde 0.23.0) | `POST /tenants/{tenantId}/administrators` |
+
+Desde el contrato 0.23.0 cada empresa de `GET /tenants` trae `administration`:
+su estado (`linked`, `pending`, `none`), cuántas personas la administran y
+hasta cinco, con correo, si ya entraron y cuándo. El portal todavía no usa
+esas rutas. «Invitar otra administración» sólo se ofrece cuando el estado no
+es `linked`; si lo es, el servidor responde 409 `administrator_linked`. El CSV
+del uso se arma recorriendo las páginas de `GET /tenants/usage`, sólo con
+conteos.
 
 El uso abre con el mes en curso en la zona horaria de la empresa y muestra sólo
 conteos: personas que marcaron, personas vigentes, tarjetas, dispositivos y
