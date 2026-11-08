@@ -41,7 +41,7 @@ export function Dossiers({ me }: { me: Me }) {
     const proof = takeDossierVerification(owner); setReturned(false); checkAccount()
     const authorization = await api<{ authorization: string }>(`/dossiers/${proof.dossierId}/authorizations`, 'POST', proof.body); checkAccount()
     const file = await apiDownload(`/dossiers/${proof.dossierId}/download`, 'POST', { authorization: authorization.authorization }); checkAccount()
-    saveFile(file.blob, file.filename); setMessage('El expediente se descargó. Conserva también las huellas y el manifiesto.'); window.history.replaceState(null, '', '/')
+    saveFile(file.blob, file.filename); setMessage('El expediente se descargó. Conserva también las huellas y el manifiesto.'); window.history.replaceState(null, '', '/reportes/expediente')
   }, onSettled: () => { if (mounted.current) void record.refetch() } })
   const manifest = useMutation({ mutationFn: async () => { const file = await apiDownload(`/dossiers/${id}/manifest`); checkAccount(); saveFile(file.blob, `expediente-${id}-manifest.json`) } })
   const error = request.error || record.error || verify.error || download.error || manifest.error

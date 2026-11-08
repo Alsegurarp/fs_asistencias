@@ -1,6 +1,7 @@
 import { decomposeColor, getContrastRatio, recomposeColor } from '@mui/material/styles'
 import { expect, it } from 'vitest'
 import { theme } from './theme'
+import { color } from './design'
 
 /** Color que se ve al poner uno con transparencia sobre un fondo opaco. */
 function over(color: string, background: string) {
@@ -27,5 +28,26 @@ it('el texto del tema cumple contraste AA sobre los fondos que usa', () => {
   ]
   for (const [name, color, background] of pairs) {
     expect(getContrastRatio(over(color, background), background), name).toBeGreaterThanOrEqual(4.5)
+  }
+})
+
+// Pares de texto del lienzo que no pasan por la paleta de MUI: menú, barra
+// superior, pestañas, insignias y tarjetas de estado.
+it('los colores de texto del lienzo cumplen contraste AA donde se usan', () => {
+  const pairs: [string, string, string][] = [
+    ['blanco sobre el inicio del degradado azul', color.white, color.gradientFrom],
+    ['blanco sobre el final del degradado azul', color.white, color.gradientTo],
+    ['texto del menú sobre blanco', color.inkSoft, color.white],
+    ['título de grupo del menú sobre blanco', color.subtle, color.white],
+    ['ruta de la página sobre el fondo', color.subtle, color.page],
+    ['sección activa sobre su mosaico', color.deep, color.tile],
+    ['pestaña sin elegir sobre el fondo', color.muted, color.page],
+    ['enlace sobre el fondo', color.link, color.page],
+    ['insignia de pendientes', color.warnInk, color.warnBg],
+    ['texto principal sobre vidrio', color.ink, 'rgba(255,255,255,0.7)'],
+  ]
+  for (const [name, front, background] of pairs) {
+    const back = background.startsWith('rgba') ? over(background, color.page) : background
+    expect(getContrastRatio(over(front, back), back), name).toBeGreaterThanOrEqual(4.5)
   }
 })

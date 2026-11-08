@@ -1,5 +1,17 @@
 # Estado y pendientes
 
+**Marco del portal según el lienzo, 8 de noviembre:** primer bloque del
+portal. Colores, tipografía Inter servida desde el portal, una dirección por
+pantalla, barra superior, menú lateral ocultable con grupos plegables, barra
+inferior de teléfono con «Más», menú de la cuenta y estados de sin permiso,
+página no encontrada, error, cuenta sin empresa y sesión terminada. Las
+pantallas anteriores siguen dentro del marco hasta reconstruir su sección.
+Recorrido con sesiones reales de los cinco roles en local, a 1440 y 390 px,
+incluido el expediente con verificación y descarga. Falta: que `/me`
+distinga una empresa suspendida (hoy se ve como cuenta sin acceso), decidir
+si se queda «Mi asistencia» y el canal de «Ayuda y soporte»
+([orden y pendientes](construir-el-portal.md)).
+
 **Consola de operación para el portal, 7 de noviembre (contrato 0.23.0):**
 quinta y última fase del backend de la maqueta. La lista de empresas busca
 por nombre o identificador y filtra en el servidor por estado y por el estado
@@ -12,7 +24,7 @@ marcajes por hora, para contar sólo del índice. Medido con 870 empresas y
 1.7 millones de marcajes: listas y conteos entre 24 y 45 ms, totales del mes
 entre 150 y 230 ms
 ([reglas y medición](logica-de-negocio.md#consola-de-operación)). Falta que
-el portal las consuma; no se desplegó.
+el portal las consuma. Desplegada en el ambiente publicado el 8 de noviembre.
 
 **Usuarios, reportes y bitácora para el portal, 7 de noviembre (contrato
 0.22.0):** cuarta fase del backend de la maqueta. La lista de usuarios busca

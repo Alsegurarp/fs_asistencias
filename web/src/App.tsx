@@ -1,48 +1,68 @@
 import { useEffect, useState } from 'react'
-import { Alert, AppBar, Button, CircularProgress, Container, Stack, Toolbar, Typography } from '@mui/material'
+import { Alert, Box, Button } from '@mui/material'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { auth, authReady } from './auth'
-import { api, type Me } from './api'
-import { ErrorNotice } from './Directory'
-import { Workspace } from './Workspace'
+import { ApiError, api, type Me } from './api'
+import { Portal } from './Portal'
 import { clearDossierVerification } from './dossierFlow'
+import { gradient } from './design'
+import { FullPageLoading, IdentityUnavailable, NoCompany, SessionEnded, StateCard } from './States'
+import { sessionEndedPath } from './sections'
+
+type Session = 'starting' | 'signedIn' | 'signedOut' | 'ended' | 'unavailable'
+
+// Un solo viaje al inicio de sesión, también con el montaje doble de StrictMode.
+let signingIn = false
+
+/** Vuelve a la misma pantalla después de iniciar sesión, salvo desde «sesión terminada». */
+function returnUrl() {
+  const path = window.location.pathname === sessionEndedPath ? '/' : window.location.pathname
+  return `${window.location.origin}${path}`
+}
 
 export function App() {
   const cache = useQueryClient()
-  const [ready, setReady] = useState(false)
-  const [signedIn, setSignedIn] = useState(false)
-  const [error, setError] = useState('')
+  const [session, setSession] = useState<Session>('starting')
+  const [notice, setNotice] = useState('')
   useEffect(() => {
-    auth.onAuthLogout = () => { clearDossierVerification(); setSignedIn(false); cache.clear() }
-    authReady.then(() => { setSignedIn(!!auth.authenticated); setReady(true) })
-      .catch(() => { setError('No se pudo conectar con el proveedor de identidad.'); setReady(true) })
+    auth.onAuthLogout = () => { clearDossierVerification(); cache.clear(); setSession('ended') }
+    authReady.then(() => setSession(auth.authenticated ? 'signedIn' : window.location.pathname === sessionEndedPath ? 'ended' : 'signedOut'))
+      .catch(() => setSession('unavailable'))
     const timer = window.setInterval(() => {
       if (auth.authenticated) void auth.updateToken(60).catch(() => auth.clearToken())
     }, 30_000)
     return () => { window.clearInterval(timer); auth.onAuthLogout = undefined }
   }, [cache])
-  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), enabled: signedIn, retry: false })
-  return <>
-    <AppBar position="static"><Toolbar sx={{ gap: 2 }}>
-      <Typography variant="h6" sx={{ flexGrow: 1 }}>Zenit · {me.data?.tenant?.name || 'fastSolution'}</Typography>
-      {signedIn && <Button color="inherit" onClick={() => { clearDossierVerification(); cache.clear(); void auth.logout({ redirectUri: `${window.location.origin}/` }).catch(() => setError('No se pudo cerrar la sesión en el proveedor de identidad.')) }}>Cerrar sesión</Button>}
-    </Toolbar></AppBar>
-    <Container maxWidth="lg" component="main" sx={{ py: 4 }}>
-      {!ready ? <CircularProgress aria-label="Preparando inicio de sesión" /> : !signedIn ? <Stack spacing={3} sx={{ maxWidth: 540, mx: 'auto', py: 6 }}>
-        <Typography variant="h3">Control de jornada</Typography>
-        <Typography>Accede con tu cuenta de empresa para administrar sedes, empleados y tarjetas.</Typography>
-        {error && <Alert severity="error">{error}</Alert>}
-        <Button variant="contained" onClick={() => void auth.login({ redirectUri: `${window.location.origin}/` }).catch(() => setError('No se pudo iniciar sesión.'))}>Iniciar sesión</Button>
-      </Stack> : <Stack spacing={3}>
-        {error && <Alert severity="error">{error}</Alert>}
-        {me.isPending && <CircularProgress aria-label="Cargando cuenta" />}
-        <ErrorNotice error={me.error} />
-        {me.isError && <Button onClick={() => void me.refetch()}>Reintentar</Button>}
-        {me.data && <>
-          <Typography variant="h5">Hola, {me.data.displayName}</Typography>
-          <Workspace me={me.data} />
-        </>}
-      </Stack>}
-    </Container>
-  </>
+
+  const signIn = () => {
+    if (signingIn) return
+    signingIn = true
+    void auth.login({ redirectUri: returnUrl() }).catch(() => { signingIn = false; setSession('unavailable') })
+  }
+  // ACC-01 es la pantalla del servicio de identidad: el portal no pone otra antes.
+  useEffect(() => { if (session === 'signedOut') signIn() }, [session])
+
+  const signOut = () => {
+    clearDossierVerification(); cache.clear(); setNotice('')
+    void auth.logout({ redirectUri: `${window.location.origin}${sessionEndedPath}` })
+      .catch(() => setNotice('No se pudo cerrar la sesión en el proveedor de identidad. Intenta de nuevo.'))
+  }
+
+  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), enabled: session === 'signedIn', retry: false })
+
+  if (session === 'starting') return <FullPageLoading label="Preparando el inicio de sesión" />
+  if (session === 'unavailable') return <IdentityUnavailable />
+  if (session === 'ended') return <SessionEnded onSignIn={signIn} />
+  if (session === 'signedOut') return <FullPageLoading label="Abriendo el inicio de sesión" />
+  if (me.isPending) return <FullPageLoading label="Cargando tu cuenta" />
+  if (me.isError) return <Box sx={{ minHeight: '100dvh', display: 'flex', p: 2, background: gradient.page }}>
+    <StateCard icon="alert" eyebrow="Error" title="Algo salió mal de nuestro lado"
+      reference={me.error instanceof ApiError ? me.error.correlationId : undefined}
+      actions={<Button variant="contained" sx={{ minHeight: 46, px: 2.75 }} onClick={() => void me.refetch()}>Reintentar</Button>}>
+      No pudimos cargar tu cuenta. Intenta de nuevo en un momento; si se repite, comparte la referencia con soporte.
+    </StateCard>
+  </Box>
+  const email = typeof auth.tokenParsed?.email === 'string' ? auth.tokenParsed.email : undefined
+  if (!me.data.tenant && !me.data.roles.includes('operador_saas')) return <NoCompany email={email} onSignOut={signOut} />
+  return <Portal me={me.data} email={email} onSignOut={signOut} notice={notice && <Alert severity="error">{notice}</Alert>} />
 }

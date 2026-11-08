@@ -6,6 +6,38 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 8 de noviembre de 2026 — Marco del portal según el lienzo
+
+Rama `feat/portal-base` desde `main` en `eafc2ad`. El portal adopta el marco
+del lienzo aprobado: `design.ts` con sus valores, tema de MUI, direcciones
+con `react-router` (ya instalado y sin uso), menú por rol en `sections.ts`,
+`Shell.tsx`, `Portal.tsx` (reemplaza a `Workspace.tsx`), `More.tsx` y
+`States.tsx`. Inter 5.3.0 se empaqueta con el portal. Las pantallas
+anteriores se montan en su dirección sin cambios, salvo que el expediente,
+tras descargar, deja la dirección en `/reportes/expediente` en lugar de `/`.
+
+Pruebas: 233 aprobadas en 21 archivos, en el contenedor de construcción; las
+del marco cubren menú y pestañas por rol, permiso explícito del expediente,
+regreso de la verificación sin permiso, inicio por rol, página no
+encontrada, consola de operación, ocultar el menú, menú de la cuenta,
+teléfono, paso de Cierres a Incidencias, contraste de los colores del lienzo
+y revisión automática de accesibilidad.
+
+Recorrido en Chromium contra un entorno local aislado, con datos ficticios y
+cuentas de los cinco roles con contraseña y código de segundo factor: 41
+vistas a 1440 y 390 px sin errores de consola, sin respuestas fallidas, con
+un solo h1 por página y sin desborde horizontal; alta real de una sede;
+enlace directo sin sesión que vuelve a su pantalla; cerrar sesión y volver a
+entrar; y el expediente completo: conceder permiso, solicitar, verificar con
+contraseña y código nuevo, volver por `/dossier/callback` y descargar el ZIP.
+El recorrido corrió en el contenedor de Playwright 1.52.0.
+
+Hallazgos: con la empresa suspendida, `/me` responde sin empresa ni roles,
+igual que una cuenta sin acceso, y el portal no puede mostrar la pantalla de
+empresa suspendida; el lienzo no tiene «Mi asistencia» ni destino para
+«Ayuda y soporte»; su panel de marca trae una cifra de ejemplo que el portal
+no muestra. Sin despliegue: espera la PR.
+
 ## 6 de noviembre de 2026 — Corrección del análisis de imágenes de la PR #30
 
 La [PR #30](https://github.com/Alsegurarp/fs_asistencias/pull/30) está abierta
