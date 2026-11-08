@@ -6,8 +6,11 @@ import java.time.ZoneOffset
 import java.util.Base64
 import java.util.UUID
 
-/** Última fila de una página: con ella se pide la siguiente. */
-data class PageKey(val at: OffsetDateTime, val id: UUID)
+/**
+ * Última fila de una página: con ella se pide la siguiente. `rank` sólo va en
+ * las listas que ordenan primero por una categoría, como la severidad.
+ */
+data class PageKey(val at: OffsetDateTime, val id: UUID, val rank: Int? = null)
 
 data class Page<T>(val items: List<T>, val nextCursor: String?)
 
@@ -24,19 +27,25 @@ object Paging {
         return value
     }
 
-    fun encode(key: PageKey): String =
-        Base64.getUrlEncoder().withoutPadding().encodeToString("${key.at.toInstant()}|${key.id}".toByteArray())
+    fun encode(key: PageKey): String {
+        val text = "${key.at.toInstant()}|${key.id}" + (key.rank?.let { "|$it" } ?: "")
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(text.toByteArray())
+    }
 
     /** El cursor es opaco para el cliente; uno alterado se rechaza. */
     fun decode(cursor: String?): PageKey? {
         if (cursor.isNullOrBlank()) return null
         return try {
-            val (at, id) = String(Base64.getUrlDecoder().decode(cursor)).split('|', limit = 2)
-            PageKey(Instant.parse(at).atOffset(ZoneOffset.UTC), UUID.fromString(id))
+            val parts = String(Base64.getUrlDecoder().decode(cursor)).split('|')
+            require(parts.size in 2..3)
+            PageKey(Instant.parse(parts[0]).atOffset(ZoneOffset.UTC), UUID.fromString(parts[1]), parts.getOrNull(2)?.toInt())
         } catch (e: RuntimeException) {
-            throw Problems.validation("cursor", "invalid_cursor", "El cursor no es válido.")
+            throw invalidCursor()
         }
     }
+
+    /** Un cursor de otro orden daría una página equivocada: se rechaza igual que uno alterado. */
+    fun invalidCursor() = Problems.validation("cursor", "invalid_cursor", "El cursor no es válido.")
 
     /** Recibe una fila de más para saber si hay página siguiente. */
     fun <R, T> page(rows: List<R>, limit: Int, key: (R) -> PageKey, view: (R) -> T): Page<T> {

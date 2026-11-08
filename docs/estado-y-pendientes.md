@@ -1,13 +1,26 @@
 # Estado y pendientes
 
+**Incidencias, cierres y bitácora para el portal, 7 de noviembre (contrato
+0.20.0):** segunda fase del backend de la maqueta. Las incidencias filtran en
+el servidor por severidad, asignación y si bloquean un cierre, ordenan por
+severidad o resolución y traen los nombres de quien las atiende;
+`GET /incidents/summary` da sus conteos y `GET /incidents/{id}/assignees` a
+quién se pueden asignar, que son sólo quienes pueden resolverlas. Los cierres
+filtran por sede, estado y acuse, con `GET /week-closures/summary`, y la
+bitácora trae el nombre de quien actuó y de lo que tocó. Migración V014.
+Medido con 30 000 incidencias y un año de cierres: menos de 30 ms por lista o
+conteo ([reglas y medición](logica-de-negocio.md#lista-y-conteos-de-incidencias)).
+Falta que el portal las consuma; no se desplegó.
+
 **Asistencia de la empresa, 7 de noviembre (contrato 0.19.0):** primera fase
 del backend que pide la maqueta aprobada del portal. `GET /attendance/weeks`
 da la tabla de asistencia por páginas, con filtros en el servidor, y
 `GET /attendance/summary` los números del panel; las dos usan el mismo cálculo
 que la semana de una persona y respetan el alcance de Supervisión. Medido con
 300 personas: página de 50 en unos 30 ms y panel en unos 90 ms
-([reglas y medición](logica-de-negocio.md#asistencia-de-la-empresa)). Falta
-que el portal las consuma; no se desplegó.
+([reglas y medición](logica-de-negocio.md#asistencia-de-la-empresa)).
+Desplegada en el ambiente publicado el 7 de noviembre; falta que el portal la
+consuma.
 
 **Continuación con tres agentes, 6 de noviembre:** acuse del portal con ajuste
 de línea; 218 pruebas, TypeScript y build aprobados. Propuestas IAM/lifecycle

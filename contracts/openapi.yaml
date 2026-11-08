@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.19.0
+  version: 0.20.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -2797,10 +2797,23 @@ paths:
       operationId: listIncidents
       summary: Lista las incidencias
       description: |
-        De la más antigua a la más reciente. Una incidencia no sanciona a
-        nadie: es algo que una persona autorizada revisa. `severity` sale del
-        tipo: `high` para `clock_anomaly`; `low` para `duplicate`, `late_sync`
-        y `outside_window`; `medium` para las demás.
+        Una incidencia no sanciona a nadie: es algo que una persona autorizada
+        revisa. `severity` sale del tipo: `high` para `clock_anomaly`; `low`
+        para `duplicate`, `late_sync` y `outside_window`; `medium` para las
+        demás.
+
+        Todos los filtros se aplican en el servidor, antes de paginar, con el
+        alcance por sede de Supervisión. `blocksClosure` es verdadero cuando la
+        incidencia sigue abierta, su semana ya terminó y esa persona no tiene
+        esa semana cerrada: mientras siga así, el cierre de esa persona queda
+        bloqueado. Una abierta en una semana ya cerrada no bloquea nada; para
+        corregirla hay que reabrir la semana.
+
+        `sort` elige el orden: `opened` (predeterminado), de la más antigua a
+        la más reciente; `severity`, la más grave primero y, dentro de cada
+        severidad, la más antigua; `resolved`, la resuelta más recientemente
+        primero, y sólo con `status=resolved`. El cursor vale sólo para el
+        orden con el que se pidió: con otro, responde 422 `invalid_cursor`.
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: status
@@ -2818,10 +2831,33 @@ paths:
             format: uuid
         - name: week
           in: query
-          description: Cualquier fecha de la semana.
+          description: Cualquier fecha de la semana en la que cayó el marcaje.
           schema:
             type: string
             format: date
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high]
+        - name: assignee
+          in: query
+          description: >-
+            `me`, asignadas a quien llama; `unassigned`, sin asignar;
+            `assigned`, asignadas a alguien.
+          schema:
+            type: string
+            enum: [me, unassigned, assigned]
+        - name: blocksClosure
+          in: query
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [opened, severity, resolved]
+            default: opened
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:
@@ -2838,16 +2874,121 @@ paths:
                     severity: low
                     status: open
                     employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    employeeName: Ana Torres
+                    employeeExternalId: "0187"
                     siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
                     eventIds: [3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c]
+                    occurredAt: "2026-10-06T12:50:00Z"
                     openedAt: "2026-10-06T12:55:03Z"
                     assigneeUserId: null
+                    assigneeName: null
+                    assignedAt: null
+                    assignedBy: null
+                    assignedByName: null
+                    blocksClosure: false
                     resolution: null
                 nextCursor: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /incidents/summary:
+    get:
+      tags: [jornada]
+      operationId: getIncidentSummary
+      summary: Cuenta las incidencias para las pestañas y los filtros
+      description: |
+        Una sola consulta con el mismo alcance que `listIncidents` y con sus
+        filtros de contexto (`type`, `siteId` y `week`); los demás filtros de
+        la lista son los que estos conteos acompañan. `open.mine` cuenta las
+        asignadas a quien llama. `resolved.thisWeek` cuenta las resueltas
+        desde `weekStart`, el inicio de la semana en curso de la empresa.
+      x-roles: [admin_empresa, rh, supervisor, auditor]
+      parameters:
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/IncidentType"
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: week
+          in: query
+          description: Cualquier fecha de la semana en la que cayó el marcaje.
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Conteos de incidencias
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentSummary"
+              example:
+                weekStart: "2026-11-02"
+                open:
+                  total: 6
+                  unassigned: 4
+                  mine: 1
+                  high: 1
+                  medium: 2
+                  low: 3
+                  blockingClosure: 2
+                resolved:
+                  total: 27
+                  thisWeek: 5
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /incidents/{incidentId}/assignees:
+    parameters:
+      - $ref: "#/components/parameters/IncidentId"
+    get:
+      tags: [jornada]
+      operationId: listIncidentAssignees
+      summary: Lista a quién se puede asignar una incidencia
+      description: |
+        Quienes pueden resolverla, que son los únicos que `updateIncident`
+        acepta en `assigneeUserId`: personas con acceso vigente y con rol
+        `admin_empresa` o `rh`, o con rol `supervisor` y la sede de la
+        incidencia entre sus sedes. Trae sólo nombre y roles, sin correo, para
+        que RH y Supervisión asignen sin leer `/users`. Responde 404 si quien
+        llama no ve la incidencia.
+      x-roles: [admin_empresa, rh, supervisor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de personas que pueden resolverla
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentAssigneeList"
+              example:
+                items:
+                  - id: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    displayName: Rocío Navarro
+                    roles: [rh]
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /incidents/{incidentId}:
     parameters:
@@ -2870,10 +3011,18 @@ paths:
                 severity: low
                 status: open
                 employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                employeeName: Ana Torres
+                employeeExternalId: "0187"
                 siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
                 eventIds: [3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c]
+                occurredAt: "2026-10-06T12:50:00Z"
                 openedAt: "2026-10-06T12:55:03Z"
                 assigneeUserId: null
+                assigneeName: null
+                assignedAt: null
+                assignedBy: null
+                assignedByName: null
+                blocksClosure: false
                 resolution: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -2887,8 +3036,13 @@ paths:
         Resolver exige una decisión y un motivo. Un ajuste no edita el marcaje:
         agrega una intención y produce una versión nueva del cálculo.
 
-        `assigneeUserId` asigna la incidencia a una persona con acceso vigente
-        a la empresa, y en nulo quita la asignación. `adjustment` sólo va con
+        `assigneeUserId` asigna la incidencia a una persona que pueda
+        resolverla, las mismas que da `listIncidentAssignees`, y en nulo quita
+        la asignación. Asignar guarda quién y cuándo en `assignedBy` y
+        `assignedAt`; quitarla los borra. Responde 422 con `user_not_found` si
+        esa persona no tiene acceso vigente, y con `assignee_cannot_resolve`
+        si lo tiene pero no puede resolver incidencias de esa sede.
+        `adjustment` sólo va con
         la decisión `adjusted`, y cada clase trae lo suyo y nada más:
         `add_event` lleva `eventType` y `occurredAt`; `exclude_event` lleva
         `eventId`; `retype_event` lleva `eventId` y `eventType`. El marcaje
@@ -2922,15 +3076,24 @@ paths:
                 severity: low
                 status: resolved
                 employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                employeeName: Ana Torres
+                employeeExternalId: "0187"
                 siteId: 3b1f9a52-6c0d-4e7a-8f21-9d4c5b6a7e80
                 eventIds: [3c5e7a9c-1e3a-4c5e-9a1c-3e5a7c9e1a3c]
+                occurredAt: "2026-10-06T12:50:00Z"
                 openedAt: "2026-10-06T12:55:03Z"
                 assigneeUserId: null
+                assigneeName: null
+                assignedAt: null
+                assignedBy: null
+                assignedByName: null
+                blocksClosure: false
                 resolution:
                   decision: justified
                   reason: El teléfono estuvo sin señal durante el turno.
                   adjustment: null
                   resolvedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                  resolvedByName: Rocío Navarro
                   resolvedAt: "2026-10-06T17:00:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -2950,7 +3113,10 @@ paths:
       summary: Lista los cierres semanales
       description: |
         Todas las versiones de esa semana, de la más antigua a la más
-        reciente: las reabiertas siguen en la lista con su estado.
+        reciente: las reabiertas siguen en la lista con su estado. Los filtros
+        se aplican en el servidor, antes de paginar: `siteId` es la sede de la
+        persona, `status` el estado del cierre y `acknowledgement` su acuse,
+        donde `none` es sin acuse.
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - $ref: "#/components/parameters/Week"
@@ -2959,6 +3125,20 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/WeekClosureStatus"
+        - name: acknowledgement
+          in: query
+          schema:
+            type: string
+            enum: [agreed, objected, none]
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:
@@ -2972,6 +3152,8 @@ paths:
                 items:
                   - id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
                     employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    employeeName: Ana Torres
+                    employeeExternalId: "0187"
                     weekStart: "2026-10-05"
                     version: 1
                     status: closed
@@ -2986,12 +3168,15 @@ paths:
                     hash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
                     closedAt: "2026-10-12T16:00:00Z"
                     closedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    closedByName: Rocío Navarro
                     acknowledgement: null
                 nextCursor: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
     post:
       tags: [jornada]
       operationId: closeWeek
@@ -3037,6 +3222,8 @@ paths:
                 closed:
                   - id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
                     employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    employeeName: Ana Torres
+                    employeeExternalId: "0187"
                     weekStart: "2026-10-05"
                     version: 1
                     status: closed
@@ -3051,8 +3238,53 @@ paths:
                     hash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
                     closedAt: "2026-10-12T16:00:00Z"
                     closedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    closedByName: Rocío Navarro
                     acknowledgement: null
                 blocked: []
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /week-closures/summary:
+    get:
+      tags: [jornada]
+      operationId: getWeekClosureSummary
+      summary: Cuenta los cierres y los acuses de una semana
+      description: |
+        Con el alcance de `listWeekClosures` y `siteId` como sede de la
+        persona. Los acuses cuentan sólo los cierres vigentes (`closed`);
+        `none` es sin acuse. `blocked` cuenta personas con al menos una
+        incidencia con `blocksClosure` en esa semana, con el alcance y la sede
+        de `listIncidents`: la lista de esas personas sale de
+        `listIncidents?week=…&blocksClosure=true`. Vale cero mientras la
+        semana no termina.
+      x-roles: [admin_empresa, rh, supervisor, auditor]
+      parameters:
+        - $ref: "#/components/parameters/Week"
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Conteos de la semana
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekClosureSummary"
+              example:
+                weekStart: "2026-10-26"
+                closed: 39
+                reopened: 0
+                blocked: 3
+                acknowledgements:
+                  agreed: 31
+                  objected: 1
+                  none: 7
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3081,6 +3313,8 @@ paths:
               example:
                 id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
                 employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                employeeName: Ana Torres
+                employeeExternalId: "0187"
                 weekStart: "2026-10-05"
                 version: 1
                 status: closed
@@ -3095,6 +3329,7 @@ paths:
                 hash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
                 closedAt: "2026-10-12T16:00:00Z"
                 closedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                closedByName: Rocío Navarro
                 acknowledgement: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -3131,6 +3366,8 @@ paths:
               example:
                 id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
                 employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                employeeName: Ana Torres
+                employeeExternalId: "0187"
                 weekStart: "2026-10-05"
                 version: 1
                 status: reopened
@@ -3145,6 +3382,7 @@ paths:
                 hash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
                 closedAt: "2026-10-12T16:00:00Z"
                 closedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                closedByName: Rocío Navarro
                 acknowledgement: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -3248,6 +3486,7 @@ paths:
                       openIncidents: 9
                       openSegment: 3
                     requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    requestedByName: Rocío Navarro
                     failure: null
                     createdAt: "2026-10-12T16:00:00Z"
                     startedAt: "2026-10-12T16:00:02Z"
@@ -3314,6 +3553,7 @@ paths:
                   openIncidents: 0
                   openSegment: 0
                 requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                requestedByName: Rocío Navarro
                 failure: null
                 createdAt: "2026-10-12T16:00:00Z"
                 startedAt: null
@@ -3360,6 +3600,7 @@ paths:
                   openIncidents: 9
                   openSegment: 3
                 requestedBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                requestedByName: Rocío Navarro
                 failure: null
                 createdAt: "2026-10-12T16:00:00Z"
                 startedAt: "2026-10-12T16:00:02Z"
@@ -3731,6 +3972,12 @@ paths:
       tags: [auditoria]
       operationId: listAuditEntries
       summary: Lista las acciones registradas en la bitácora
+      description: |
+        Lo más reciente primero. `actor.displayName` y `target.displayName`
+        traen los nombres para mostrar, leídos en lote con la página. Toda
+        incidencia que se abre queda como `incident.opened`: con actor
+        `system` si la detectó la captura, o con quien cerró la semana si
+        salió al cerrar.
       x-roles: [admin_empresa, auditor]
       parameters:
         - name: action
@@ -3763,10 +4010,12 @@ paths:
                     actor:
                       type: user
                       id: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                      displayName: Rocío Navarro
                     action: week_closure.created
                     target:
                       type: week_closure
                       id: 0a2c4e6b-8d0f-4a2c-9e4b-6d8f0a2c4e6d
+                      displayName: Ana Torres
                     correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
                     metadata: {}
                 nextCursor: null
@@ -5986,8 +6235,11 @@ components:
           $ref: "#/components/schemas/Adjustment"
     IncidentResolution:
       type: object
-      required: [decision, reason, adjustment, resolvedBy, resolvedAt]
+      required: [decision, reason, adjustment, resolvedBy, resolvedByName, resolvedAt]
       properties:
+        resolvedByName:
+          type: [string, "null"]
+          description: Nombre de quien la resolvió; nulo si su cuenta no tiene nombre.
         decision:
           type: string
           enum: [justified, confirmed, adjusted]
@@ -6021,11 +6273,23 @@ components:
         - severity
         - status
         - employeeId
+        - employeeName
+        - employeeExternalId
         - siteId
         - eventIds
+        - occurredAt
         - openedAt
         - assigneeUserId
+        - assigneeName
+        - assignedAt
+        - assignedBy
+        - assignedByName
+        - blocksClosure
         - resolution
+      description: >-
+        Los nombres viajan en la incidencia para que RH, Supervisión y
+        Auditoría vean quién la atiende sin leer `/users`. Un nombre es nulo
+        si esa cuenta no tiene nombre todavía.
       properties:
         id:
           type: string
@@ -6040,6 +6304,11 @@ components:
         employeeId:
           type: [string, "null"]
           format: uuid
+        employeeName:
+          type: string
+        employeeExternalId:
+          type: string
+          description: Número de la persona en el sistema de nómina de la empresa.
         siteId:
           type: [string, "null"]
           format: uuid
@@ -6048,12 +6317,33 @@ components:
           items:
             type: string
             format: uuid
+        occurredAt:
+          type: string
+          format: date-time
+          description: Hora del marcaje que la abrió, como la registró el dispositivo.
         openedAt:
           type: string
           format: date-time
         assigneeUserId:
           type: [string, "null"]
           format: uuid
+        assigneeName:
+          type: [string, "null"]
+        assignedAt:
+          type: [string, "null"]
+          format: date-time
+          description: Cuándo se asignó a quien la tiene; nulo si no está asignada.
+        assignedBy:
+          type: [string, "null"]
+          format: uuid
+          description: Quién la asignó; nulo si no está asignada.
+        assignedByName:
+          type: [string, "null"]
+        blocksClosure:
+          type: boolean
+          description: >-
+            Abierta, de una semana ya terminada que esa persona no tiene
+            cerrada: mientras siga así, su cierre queda bloqueado.
         resolution:
           oneOf:
             - $ref: "#/components/schemas/IncidentResolution"
@@ -6068,6 +6358,71 @@ components:
             $ref: "#/components/schemas/Incident"
         nextCursor:
           $ref: "#/components/schemas/NextCursor"
+    IncidentSummary:
+      type: object
+      additionalProperties: false
+      required: [weekStart, open, resolved]
+      properties:
+        weekStart:
+          type: string
+          format: date
+          description: Inicio de la semana en curso de la empresa, desde el que cuenta `resolved.thisWeek`.
+        open:
+          type: object
+          additionalProperties: false
+          required: [total, unassigned, mine, high, medium, low, blockingClosure]
+          properties:
+            total:
+              type: integer
+            unassigned:
+              type: integer
+            mine:
+              type: integer
+              description: Asignadas a quien llama.
+            high:
+              type: integer
+            medium:
+              type: integer
+            low:
+              type: integer
+            blockingClosure:
+              type: integer
+              description: Abiertas con `blocksClosure` verdadero.
+        resolved:
+          type: object
+          additionalProperties: false
+          required: [total, thisWeek]
+          properties:
+            total:
+              type: integer
+            thisWeek:
+              type: integer
+    IncidentAssignee:
+      type: object
+      additionalProperties: false
+      required: [id, displayName, roles]
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: [string, "null"]
+          description: Nulo si la cuenta no tiene nombre todavía.
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/TenantRole"
+    IncidentAssigneeList:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentAssignee"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
 
     WeekClosureStatus:
       type: string
@@ -6077,6 +6432,8 @@ components:
       required:
         - id
         - employeeId
+        - employeeName
+        - employeeExternalId
         - weekStart
         - version
         - status
@@ -6085,6 +6442,7 @@ components:
         - hash
         - closedAt
         - closedBy
+        - closedByName
         - acknowledgement
       properties:
         id:
@@ -6093,6 +6451,13 @@ components:
         employeeId:
           type: string
           format: uuid
+        employeeName:
+          type: string
+        employeeExternalId:
+          type: string
+        closedByName:
+          type: [string, "null"]
+          description: Nombre de quien lo cerró; nulo si lo cerró el cierre programado o su cuenta no tiene nombre.
         weekStart:
           type: string
           format: date
@@ -6180,6 +6545,32 @@ components:
             $ref: "#/components/schemas/BlockedClosure"
         nextCursor:
           $ref: "#/components/schemas/NextCursor"
+    WeekClosureSummary:
+      type: object
+      additionalProperties: false
+      required: [weekStart, closed, reopened, blocked, acknowledgements]
+      properties:
+        weekStart:
+          type: string
+          format: date
+        closed:
+          type: integer
+        reopened:
+          type: integer
+        blocked:
+          type: integer
+          description: Personas con al menos una incidencia que bloquea su cierre.
+        acknowledgements:
+          type: object
+          additionalProperties: false
+          required: [agreed, objected, none]
+          properties:
+            agreed:
+              type: integer
+            objected:
+              type: integer
+            none:
+              type: integer
     WeekClosureList:
       type: object
       required: [items, nextCursor]
@@ -6214,6 +6605,7 @@ components:
         - closed
         - blocked
         - requestedBy
+        - requestedByName
         - failure
         - createdAt
         - startedAt
@@ -6256,6 +6648,9 @@ components:
           type: [string, "null"]
           format: uuid
           description: Quien la pidió; nulo si la abrió el cierre programado.
+        requestedByName:
+          type: [string, "null"]
+          description: Nombre de quien la pidió; nulo si la abrió el cierre programado o su cuenta no tiene nombre.
         failure:
           type: [string, "null"]
           description: Por qué no terminó; nulo si no falló.
@@ -6524,7 +6919,7 @@ components:
           format: date-time
         actor:
           type: object
-          required: [type, id]
+          required: [type, id, displayName]
           properties:
             type:
               type: string
@@ -6532,17 +6927,28 @@ components:
             id:
               type: [string, "null"]
               format: uuid
+            displayName:
+              type: [string, "null"]
+              description: >-
+                Nombre de la persona o etiqueta del dispositivo; nulo para el
+                sistema, para quien opera el servicio o si no tiene nombre.
         action:
           type: string
         target:
           type: object
-          required: [type, id]
+          required: [type, id, displayName]
           properties:
             type:
               type: string
             id:
               type: [string, "null"]
               format: uuid
+            displayName:
+              type: [string, "null"]
+              description: >-
+                Nombre de lo que se tocó: persona del padrón, usuario,
+                tarjeta, dispositivo, sede u horario; una incidencia y un
+                cierre, por la persona a la que pertenecen. Nulo para lo demás.
         correlationId:
           type: string
           format: uuid

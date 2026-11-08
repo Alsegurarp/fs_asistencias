@@ -317,7 +317,12 @@ compare con el horario.
 
 Atenderla:
 
-- Se asigna a una persona con acceso vigente a la empresa, o a nadie.
+- Se asigna sólo a quien puede resolverla, o a nadie: una persona con acceso
+  vigente y con rol de administración o RH, o de supervisión con la sede de
+  la incidencia entre sus sedes. Sin sede, sólo administración o RH.
+  `GET /incidents/{incidentId}/assignees` da exactamente esa lista, con nombre
+  y roles y sin correo, para que RH y supervisión asignen sin leer los
+  usuarios. Asignar guarda quién y cuándo; quitar la asignación lo borra.
 - Se resuelve con una decisión y un motivo de 10 a 500 caracteres:
   `justified`, `confirmed` o `adjusted`.
 - `adjusted` lleva un ajuste, y cada clase trae lo suyo y nada más:
@@ -333,6 +338,40 @@ Atenderla:
 - Una semana cerrada no admite ajustes: primero se reabre.
 
 Cada ajuste sube en uno la versión de los tramos de esa semana.
+
+### Bloquear un cierre
+
+Una incidencia **bloquea un cierre** (`blocksClosure`) mientras sigue
+abierta, su semana ya terminó y esa persona no tiene esa semana cerrada: es
+lo que impide cerrarla. La semana es la de la empresa, en su zona y con su
+día de inicio vigente, así que se calcula al consultar con la función
+`week_start_of` de la base. Una abierta de la semana en curso todavía no
+bloquea, porque esa semana aún no se puede cerrar; una abierta en una semana
+ya cerrada tampoco, porque para corregirla hay que reabrir.
+
+### Lista y conteos de incidencias
+
+Todo filtro se aplica en el servidor, antes de paginar y con el alcance por
+sede de supervisión: estado, tipo, sede, semana, severidad, asignación
+(`me`, `unassigned`, `assigned`) y `blocksClosure`. El orden lo elige
+`sort`: `opened` (de la más antigua a la más reciente), `severity` (la más
+grave primero) o `resolved` (la resuelta más recientemente primero, sólo con
+`status=resolved`). Un cursor vale sólo para el orden con el que se pidió.
+
+`GET /incidents/summary` da los conteos de la pantalla en dos consultas, con
+el mismo alcance y los filtros de contexto (tipo, sede y semana): abiertas,
+sin asignar, mías, por severidad y las que bloquean; resueltas en total y en
+la semana en curso.
+
+Cada incidencia trae los nombres de la persona, de quien la tiene asignada,
+de quien la asignó y de quien la resolvió, y la hora del marcaje que la
+abrió (`occurredAt`). El historial completo de una incidencia sigue en la
+bitácora, que sólo ven administración y auditoría.
+
+**Medición** con 30 000 incidencias (847 abiertas), 300 personas, un año de
+cierres y 50 000 acciones en la bitácora, en contenedor local: cada lista de
+50 y cada conteo de incidencias y de cierres respondió en menos de 30 ms de
+mediana, y la bitácora de 200 con nombres en 13 ms.
 
 ## Cierre semanal
 
@@ -360,6 +399,13 @@ Cada ajuste sube en uno la versión de los tramos de esa semana.
   la versión siguiente.
 - Un marcaje que llega de una semana cerrada se guarda y abre una incidencia;
   el cierre no cambia solo.
+- La lista de cierres de una semana filtra en el servidor por sede de la
+  persona, estado (`closed`, `reopened`) y acuse (`agreed`, `objected` o
+  `none`, sin acuse), y trae el nombre de la persona y de quien cerró.
+  `GET /week-closures/summary` cuenta cerrados, reabiertos, personas
+  bloqueadas y acuses de los cierres vigentes. Las personas bloqueadas salen
+  de las incidencias que bloquean: su lista es
+  `GET /incidents?week=…&blocksClosure=true`.
 
 ## Acuse del trabajador
 
@@ -400,6 +446,15 @@ identificador de correlación. Lo que hace el sistema por su cuenta, como un
 cierre programado, queda a nombre del sistema. No guarda notas ni cuerpos
 completos. De los motivos guarda tres: el de revocar un dispositivo, el de
 reabrir un cierre y el de suspender o reactivar una empresa.
+
+Toda incidencia que se abre queda como `incident.opened`: a nombre del
+sistema si la detectó la captura, o de quien cerró si salió al cerrar.
+
+La bitácora no guarda nombres. Al consultarla, cada entrada trae el nombre de
+quien actuó y de lo que tocó (`displayName`), leídos en lote con la página: a
+lo más una consulta por tipo presente. Una incidencia y un cierre se nombran
+por la persona a la que pertenecen; lo que no tiene nombre, como la empresa o
+un exporte, va en nulo.
 
 ## Lo provisional, reunido
 

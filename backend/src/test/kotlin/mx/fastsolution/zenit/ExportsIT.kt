@@ -166,7 +166,10 @@ class ExportsIT : WorkdayTestBase() {
             assertEquals(1, audit.at<List<Any>>("items[?(@.action=='$action')]").size, action)
         }
         assertEquals(listOf("system"), audit.at<List<String>>("items[?(@.action=='export.ready')].actor.type"))
-        assertFalse("Güera" in audit.body)
+        // La bitácora no guarda lo que trae el exporte: los nombres sólo se leen al consultarla.
+        assertEquals(0, count("select count(*) from audit_log where tenant_id = ? and cast(metadata as text) like '%Güera%'", tenant))
+        assertFalse("Güera" in audit.at<List<Any>>("items[*].metadata").toString())
+        assertEquals(listOf(null), audit.at<List<Any?>>("items[?(@.action=='export.ready')].target.displayName"))
     }
 
     @Test

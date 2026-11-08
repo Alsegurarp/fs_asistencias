@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.RestController
 import java.time.OffsetDateTime
 import java.time.format.DateTimeParseException
 
-data class AuditReference(val type: String, val id: String?)
+/** `displayName` viaja para que quien lee la bitácora no tenga que consultar cada persona u objeto. */
+data class AuditReference(val type: String, val id: String?, val displayName: String?)
 
 data class AuditView(
     val id: String,
@@ -41,17 +42,19 @@ class AuditController(private val audit: AuditLog) {
         @RequestParam limit: String?,
     ): Page<AuditView> {
         val size = Paging.limit(limit)
+        val tenantId = person.requireTenant()
         val rows = audit.page(
-            person.requireTenant(), action?.takeIf { it.isNotBlank() }, instant("from", from), instant("to", to),
+            tenantId, action?.takeIf { it.isNotBlank() }, instant("from", from), instant("to", to),
             Paging.decode(cursor), size + 1,
         )
+        val names = audit.names(tenantId, rows.take(size))
         return Paging.page(rows, size, { PageKey(it.at, it.id) }) {
             AuditView(
                 id = it.id.toString(),
                 at = it.at.toInstant().toString(),
-                actor = AuditReference(it.actorType, it.actorId),
+                actor = AuditReference(it.actorType, it.actorId, names[it.actorType to it.actorId]),
                 action = it.action,
-                target = AuditReference(it.targetType, it.targetId),
+                target = AuditReference(it.targetType, it.targetId, names[it.targetType to it.targetId]),
                 correlationId = it.correlationId.toString(),
                 metadata = it.metadata,
             )

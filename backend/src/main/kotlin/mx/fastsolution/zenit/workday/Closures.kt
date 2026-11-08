@@ -54,11 +54,16 @@ data class ClosureRow(
     val closedAt: OffsetDateTime,
     val closedBy: UUID?,
     val acknowledgement: AcknowledgementView?,
+    val employeeName: String,
+    val employeeExternalId: String,
+    val closedByName: String?,
 )
 
 data class WeekClosureView(
     val id: String,
     val employeeId: String,
+    val employeeName: String,
+    val employeeExternalId: String,
     val weekStart: String,
     val version: Int,
     val status: String,
@@ -67,16 +72,28 @@ data class WeekClosureView(
     val hash: String,
     val closedAt: String,
     val closedBy: String?,
+    val closedByName: String?,
     val acknowledgement: AcknowledgementView?,
 ) {
     companion object {
         fun of(row: ClosureRow) = WeekClosureView(
-            row.id.toString(), row.employeeId.toString(), row.weekStart.toString(), row.version, row.status,
-            RuleSetRef(row.ruleSetId.toString(), row.ruleSetVersion), row.totals, row.hash, row.closedAt.toInstant().toString(),
-            row.closedBy?.toString(), row.acknowledgement,
+            row.id.toString(), row.employeeId.toString(), row.employeeName, row.employeeExternalId, row.weekStart.toString(),
+            row.version, row.status, RuleSetRef(row.ruleSetId.toString(), row.ruleSetVersion), row.totals, row.hash,
+            row.closedAt.toInstant().toString(), row.closedBy?.toString(), row.closedByName, row.acknowledgement,
         )
     }
 }
+
+data class AcknowledgementCounts(val agreed: Int, val objected: Int, val none: Int)
+
+/** `blocked` cuenta personas, con las reglas y el alcance de `blocksClosure` en las incidencias. */
+data class WeekClosureSummaryView(
+    val weekStart: String,
+    val closed: Int,
+    val reopened: Int,
+    val blocked: Int,
+    val acknowledgements: AcknowledgementCounts,
+)
 
 data class BlockedClosureView(val employeeId: String, val reason: String, val incidentIds: List<String>)
 
@@ -111,12 +128,38 @@ class ClosureRepository(private val dsl: DSLContext) {
             tenantId, employeeId, weekStart.toString(),
         )?.let(::row)
 
-    fun page(tenantId: UUID, weekStart: LocalDate, employeeId: UUID?, after: PageKey?, limit: Int): List<ClosureRow> {
+    /** `acknowledgement` es `agreed`, `objected` o `none`, que es sin acuse. La sede es la de la persona. */
+    fun page(
+        tenantId: UUID,
+        weekStart: LocalDate,
+        employeeId: UUID?,
+        siteId: UUID?,
+        status: String?,
+        acknowledgement: String?,
+        after: PageKey?,
+        limit: Int,
+    ): List<ClosureRow> {
         val sql = StringBuilder("$SELECT where c.tenant_id = ?${scope()} and c.week_start = cast(? as date)")
         val binds = mutableListOf<Any>(tenantId, weekStart.toString())
         if (employeeId != null) {
             sql.append(" and c.employee_id = ?")
             binds += employeeId
+        }
+        if (siteId != null) {
+            sql.append(" and emp.site_id = ?")
+            binds += siteId
+        }
+        if (status != null) {
+            sql.append(" and c.status = ?")
+            binds += status
+        }
+        when (acknowledgement) {
+            null -> Unit
+            "none" -> sql.append(" and k.id is null")
+            else -> {
+                sql.append(" and k.type = ?")
+                binds += acknowledgement
+            }
         }
         if (after != null) {
             sql.append(" and (c.closed_at, c.id) > (cast(? as timestamptz), cast(? as uuid))")
@@ -126,6 +169,23 @@ class ClosureRepository(private val dsl: DSLContext) {
         sql.append(" order by c.closed_at, c.id limit ?")
         binds += limit
         return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { row(it) }
+    }
+
+    /** Conteos de una semana con el alcance de la lista; los acuses, sólo de los cierres vigentes. */
+    fun counts(tenantId: UUID, weekStart: LocalDate, siteId: UUID?): Pair<Pair<Int, Int>, AcknowledgementCounts> {
+        val site = if (siteId != null) " and emp.site_id = ?" else ""
+        val binds = mutableListOf<Any>(tenantId, weekStart.toString())
+        if (siteId != null) binds += siteId
+        val r = dsl.fetchOne(
+            "select count(*) filter (where c.status = 'closed') as closed, count(*) filter (where c.status = 'reopened') as reopened, " +
+                "count(*) filter (where c.status = 'closed' and k.type = 'agreed') as agreed, " +
+                "count(*) filter (where c.status = 'closed' and k.type = 'objected') as objected, " +
+                "count(*) filter (where c.status = 'closed' and k.id is null) as pending " +
+                "$FROM where c.tenant_id = ?${scope()} and c.week_start = cast(? as date)$site",
+            *binds.toTypedArray(),
+        )!!
+        fun n(column: String) = r.get(column, Number::class.java).toInt()
+        return (n("closed") to n("reopened")) to AcknowledgementCounts(n("agreed"), n("objected"), n("pending"))
     }
 
     /** Un cierre no se recorta: se oculta si mezcla evidencia fuera del alcance. */
@@ -222,16 +282,23 @@ class ClosureRepository(private val dsl: DSLContext) {
                 r.get("ack_hash", String::class.java).trim(),
             )
         },
+        employeeName = r.get("employee_name", String::class.java),
+        employeeExternalId = r.get("employee_external_id", String::class.java),
+        closedByName = r.get("closed_by_name", String::class.java),
     )
 
     private companion object {
         const val MISSING_PAIR = "missing_pair"
+        const val FROM =
+            "from week_closure c join employee emp on emp.tenant_id = c.tenant_id and emp.id = c.employee_id " +
+                "left join closure_acknowledgement k on k.tenant_id = c.tenant_id and k.closure_id = c.id"
         const val SELECT =
             "select c.id, c.employee_id, cast(c.week_start as text) as week_start, c.version, c.status, c.rule_set_id, " +
                 "c.rule_set_version, c.worked_minutes, c.break_minutes, c.ordinary_minutes, c.overtime_minutes, " +
                 "cast(c.hash as text) as hash, c.closed_at, c.closed_by, k.id as ack_id, k.type as ack_type, k.note as ack_note, " +
-                "k.at as ack_at, cast(k.evidence_hash as text) as ack_hash from week_closure c " +
-                "left join closure_acknowledgement k on k.tenant_id = c.tenant_id and k.closure_id = c.id"
+                "k.at as ack_at, cast(k.evidence_hash as text) as ack_hash, emp.display_name as employee_name, " +
+                "emp.external_id as employee_external_id, nullif(closer.display_name, '') as closed_by_name $FROM " +
+                "left join tenant_user closer on closer.tenant_id = c.tenant_id and closer.id = c.closed_by"
     }
 }
 
@@ -299,6 +366,7 @@ class WeekCloser(
 @Service
 class ClosureService(
     private val closures: ClosureRepository,
+    private val incidents: IncidentRepository,
     private val sites: SiteRepository,
     private val tenants: TenantRepository,
     private val closer: WeekCloser,
@@ -343,14 +411,44 @@ class ClosureService(
     }
 
     @Transactional(readOnly = true)
-    fun page(person: CurrentPerson, week: String?, employeeId: String?, after: PageKey?, limit: Int): List<ClosureRow> {
+    fun page(
+        person: CurrentPerson,
+        week: String?,
+        employeeId: String?,
+        siteId: String?,
+        status: String?,
+        acknowledgement: String?,
+        after: PageKey?,
+        limit: Int,
+    ): List<ClosureRow> {
         val tenantId = person.requireTenant()
         val tenant = tenants.find(tenantId) ?: throw Problems.notFound()
         val checks = Checks()
         val date = checks.date("week", week, required = true)
         val employee = checks.uuid("employeeId", employeeId, required = false)
+        val site = checks.uuid("siteId", siteId, required = false)
+        checks.oneOf("status", status, STATUSES, required = false)
+        checks.oneOf("acknowledgement", acknowledgement, ACKNOWLEDGEMENTS, required = false)
         checks.done()
-        return closures.page(tenantId, WeekCalculator.weekStart(date!!, tenant.weekStartsOn), employee, after, limit + 1)
+        val weekStart = WeekCalculator.weekStart(date!!, tenant.weekStartsOn)
+        return closures.page(tenantId, weekStart, employee, site, status, acknowledgement, after, limit + 1)
+    }
+
+    /** Lo que muestran las pestañas y los acuses de la pantalla de cierres, en dos consultas. */
+    @Transactional(readOnly = true)
+    fun summary(person: CurrentPerson, week: String?, siteId: String?): WeekClosureSummaryView {
+        val tenantId = person.requireTenant()
+        val tenant = tenants.find(tenantId) ?: throw Problems.notFound()
+        val checks = Checks()
+        val date = checks.date("week", week, required = true)
+        val site = checks.uuid("siteId", siteId, required = false)
+        checks.done()
+        val zone = ZoneId.of(tenant.timeZone)
+        val weekStart = WeekCalculator.weekStart(date!!, tenant.weekStartsOn)
+        val range = weekStart.atStartOfDay(zone).toOffsetDateTime() to weekStart.plusDays(7).atStartOfDay(zone).toOffsetDateTime()
+        val (statuses, acknowledgements) = closures.counts(tenantId, weekStart, site)
+        val blocked = incidents.blockedPeople(tenantId, IncidentFilter(siteId = site, week = range))
+        return WeekClosureSummaryView(weekStart.toString(), statuses.first, statuses.second, blocked, acknowledgements)
     }
 
     /** Quien sólo es trabajador ve su propio cierre; los de otras personas no existen para él. */
@@ -411,6 +509,8 @@ class ClosureService(
         const val MIN_REASON = 10
         const val MAX_TEXT = 500
         val STAFF = setOf(Role.ADMIN_EMPRESA, Role.RH, Role.SUPERVISOR, Role.AUDITOR)
+        val STATUSES = setOf("closed", "reopened")
+        val ACKNOWLEDGEMENTS = setOf("agreed", "objected", "none")
     }
 }
 
@@ -422,13 +522,23 @@ class ClosureController(private val service: ClosureService) {
         @AuthenticationPrincipal person: CurrentPerson,
         @RequestParam week: String?,
         @RequestParam employeeId: String?,
+        @RequestParam siteId: String?,
+        @RequestParam status: String?,
+        @RequestParam acknowledgement: String?,
         @RequestParam cursor: String?,
         @RequestParam limit: String?,
     ): Page<WeekClosureView> {
         val size = Paging.limit(limit)
-        val rows = service.page(person, week, employeeId, Paging.decode(cursor), size)
+        val rows = service.page(person, week, employeeId, siteId, status, acknowledgement, Paging.decode(cursor), size)
         return Paging.page(rows, size, { PageKey(it.closedAt, it.id) }) { WeekClosureView.of(it) }
     }
+
+    @GetMapping("/summary")
+    fun summary(
+        @AuthenticationPrincipal person: CurrentPerson,
+        @RequestParam week: String?,
+        @RequestParam siteId: String?,
+    ): WeekClosureSummaryView = service.summary(person, week, siteId)
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
