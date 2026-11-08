@@ -352,6 +352,12 @@ y auditor no consultan `/users`, porque esa ruta sólo admite administradores.
 Un responsable ajeno se muestra como «Otra persona de la empresa» cuando no
 se tiene permiso de consultar su nombre.
 
+Desde el contrato 0.20.0 el backend ya resuelve esto, y el portal todavía no
+lo usa: cada incidencia trae `assigneeName`, `assignedByName` y
+`resolution.resolvedByName`, y `GET /incidents/{incidentId}/assignees` da a
+quién puede asignar cada rol. La asignación sólo acepta a quienes da esa
+lista (422 `assignee_cannot_resolve`).
+
 Al agregar un marcaje se introduce la hora en la zona de la empresa y se envía
 el instante UTC. Una hora inexistente por cambio horario no se admite; si
 se repite, hay que elegir la primera o segunda ocurrencia. La resolución

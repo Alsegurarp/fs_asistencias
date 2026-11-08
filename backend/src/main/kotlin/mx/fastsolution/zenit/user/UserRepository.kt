@@ -111,6 +111,27 @@ class UserRepository(private val dsl: DSLContext) {
         dsl.execute("delete from tenant_user_role where tenant_id = ? and user_id = ? and role = ?", tenantId, id, role)
     }
 
+    /**
+     * Quienes pueden resolver una incidencia de esa sede, de la más antigua a
+     * la más reciente: lo que la lista ofrece es lo mismo que la asignación
+     * acepta.
+     */
+    fun resolvers(tenantId: UUID, siteId: UUID?, after: PageKey?, limit: Int): List<UserRow> {
+        val sql = StringBuilder("$SELECT where u.tenant_id = ? and $RESOLVER")
+        val binds = mutableListOf<Any?>(tenantId, siteId)
+        if (after != null) {
+            sql.append(" and (u.created_at, u.id) > (cast(? as timestamptz), cast(? as uuid))")
+            binds += after.at
+            binds += after.id
+        }
+        sql.append(" order by u.created_at, u.id limit ?")
+        binds += limit
+        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { row(it) }
+    }
+
+    fun canResolve(tenantId: UUID, id: UUID, siteId: UUID?): Boolean =
+        dsl.fetchOne("select 1 as found from tenant_user u where u.tenant_id = ? and u.id = ? and $RESOLVER", tenantId, id, siteId) != null
+
     /** Otras personas de la empresa que pueden administrarla. */
     fun otherAdministrators(tenantId: UUID, exceptId: UUID): Int =
         dsl.fetchOne(
@@ -135,6 +156,16 @@ class UserRepository(private val dsl: DSLContext) {
     )
 
     private companion object {
+        /**
+         * Con acceso vigente y con un rol que resuelve en esa sede:
+         * Administración y RH en toda la empresa; Supervisión sólo en sus
+         * sedes, y sin sede no resuelve. Lleva un parámetro: la sede.
+         */
+        const val RESOLVER =
+            "u.status <> 'disabled' and (exists (select 1 from tenant_user_role r where r.tenant_id = u.tenant_id " +
+                "and r.user_id = u.id and r.role in ('admin_empresa', 'rh')) or exists (select 1 from tenant_user_role r " +
+                "join tenant_user_site s on s.tenant_id = r.tenant_id and s.user_id = r.user_id where r.tenant_id = u.tenant_id " +
+                "and r.user_id = u.id and r.role = 'supervisor' and s.site_id = cast(? as uuid)))"
         const val SELECT =
             "select u.tenant_id, u.id, u.email, u.subject, u.display_name, u.status, u.created_at, u.linked_at, u.employee_id, " +
                 "coalesce((select string_agg(s.site_id::text, ',' order by s.site_id) from tenant_user_site s " +

@@ -6,6 +6,7 @@ import mx.fastsolution.zenit.api.Page
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
+import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.card.CardRepository
 import mx.fastsolution.zenit.device.CurrentDevice
 import mx.fastsolution.zenit.device.DeviceKeys
@@ -282,6 +283,7 @@ class CaptureProcessor(
     private val tenants: TenantRepository,
     private val capture: CaptureProperties,
     private val policies: BreakPolicies,
+    private val audit: AuditLog,
 ) {
     @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = [IdempotencyConflict::class])
     fun process(device: CurrentDevice, envelope: String, headerKey: UUID?): Processed {
@@ -399,7 +401,12 @@ class CaptureProcessor(
         events.insertEvent(
             tenantId, eventId, payload, decision.type, outcome, receivedAt, device, employee.id, card.id, site?.id, verdict, envelope, hash,
         )
-        incidents.forEach { events.insertIncident(tenantId, UUID.randomUUID(), eventId, employee.id, site?.id, it) }
+        // Toda incidencia que se abre queda en la bitácora, la detecte la captura o el cierre.
+        incidents.forEach {
+            val incidentId = UUID.randomUUID()
+            events.insertIncident(tenantId, incidentId, eventId, employee.id, site?.id, it)
+            audit.record(tenantId, "system", null, "incident.opened", "incident", incidentId, mapOf("type" to it))
+        }
         devices.touch(tenantId, device.id, payload.appVersion)
         return Processed(receipt(tenantId, events.findEvent(tenantId, payload.idempotencyKey)!!), created = true)
     }

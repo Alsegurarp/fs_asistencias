@@ -102,7 +102,47 @@ class AuditLog(private val dsl: DSLContext) {
         }
     }
 
+    /**
+     * Nombre para mostrar de quien actuó y de lo que tocó, por (tipo, id).
+     * Se lee en lote: a lo más una consulta por tipo presente en la página.
+     * Lo que no tiene nombre (la empresa, un exporte, el sistema) no aparece.
+     */
+    fun names(tenantId: UUID, rows: List<AuditRow>): Map<Pair<String, String>, String> {
+        val wanted = mutableMapOf<String, MutableSet<UUID>>()
+        fun want(type: String, id: String?) {
+            if (type !in LABELS) return
+            val uuid = id?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: return
+            wanted.getOrPut(type) { mutableSetOf() } += uuid
+        }
+        rows.forEach {
+            want(it.actorType, it.actorId)
+            want(it.targetType, it.targetId)
+        }
+        return buildMap {
+            for ((type, ids) in wanted) {
+                dsl.fetch(LABELS.getValue(type), tenantId, ids.toTypedArray()).forEach { r ->
+                    val name = r.get("name", String::class.java)
+                    if (!name.isNullOrBlank()) put(type to r.get("id", UUID::class.java).toString(), name)
+                }
+            }
+        }
+    }
+
     companion object {
+        /** Cómo se nombra cada tipo; un incidente y un cierre, por la persona a la que pertenecen. */
+        private val LABELS = mapOf(
+            "user" to "select id, display_name as name from tenant_user where tenant_id = ? and id = any(?)",
+            "device" to "select id, coalesce(label, manufacturer || ' ' || model) as name from device where tenant_id = ? and id = any(?)",
+            "employee" to "select id, display_name as name from employee where tenant_id = ? and id = any(?)",
+            "card" to "select id, label as name from card where tenant_id = ? and id = any(?)",
+            "site" to "select id, name from site where tenant_id = ? and id = any(?)",
+            "schedule" to "select id, name from schedule where tenant_id = ? and id = any(?)",
+            "incident" to "select i.id, e.display_name as name from incident i join employee e on e.tenant_id = i.tenant_id " +
+                "and e.id = i.employee_id where i.tenant_id = ? and i.id = any(?)",
+            "week_closure" to "select c.id, e.display_name as name from week_closure c join employee e on e.tenant_id = c.tenant_id " +
+                "and e.id = c.employee_id where c.tenant_id = ? and c.id = any(?)",
+        )
+
         /** Objeto JSON de texto a texto. Los valores nunca llevan secretos ni cuerpos completos. */
         fun json(values: Map<String, String>): String =
             values.entries.joinToString(",", "{", "}") { "${quote(it.key)}:${quote(it.value)}" }

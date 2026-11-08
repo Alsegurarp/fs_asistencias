@@ -83,8 +83,8 @@ class ClosureRunsIT : WorkdayTestBase() {
         assertEquals(202, asked.status, asked.toString())
         val id = asked.at<String>("id")
         assertEquals(
-            listOf("queued", "requested", lastWeek.toString(), rh.id),
-            listOf<String>(asked.at("status"), asked.at("origin"), asked.at("weekStart"), asked.at("requestedBy")),
+            listOf("queued", "requested", lastWeek.toString(), rh.id, "Persona rh"),
+            listOf<String>(asked.at("status"), asked.at("origin"), asked.at("weekStart"), asked.at("requestedBy"), asked.at("requestedByName")),
         )
         assertEquals(listOf(null, 0, 0, 0), counts(asked))
         assertEquals(emptyList(), blocked(c, id).list("items[*].employeeId"))
@@ -292,6 +292,7 @@ class ClosureRunsIT : WorkdayTestBase() {
         assertEquals(listOf("scheduled"), runs.list("items[*].origin"))
         assertEquals(listOf("done"), runs.list("items[*].status"))
         assertEquals(listOf(null), runs.at<List<Any?>>("items[*].requestedBy"))
+        assertEquals(listOf(null), runs.at<List<Any?>>("items[*].requestedByName"))
         assertEquals(listOf(2, 1, 0, 1), listOf(runs.at<Int>("items[0].total"), runs.at<Int>("items[0].closed"), runs.at<Int>("items[0].blocked.openIncidents"), runs.at<Int>("items[0].blocked.openSegment")))
         // El cierre no tiene persona, y la bitácora se lo atribuye al sistema.
         assertEquals(listOf(ok.employeeId), closures(c).list("items[*].employeeId"))

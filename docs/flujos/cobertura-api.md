@@ -3,7 +3,7 @@
 Corte: 20 de octubre de 2026. Las 62 operaciones de contracts/openapi.yaml (versión 0.13.0).
 Las rutas de esta tabla incluyen el prefijo /api/v1. Los roles se toman del contrato;
 la autorización efectiva también se aplica en SecurityConfig y los servicios.
-Las filas marcadas «desde 0.19.0» se agregaron después de ese corte; la tabla
+Las filas marcadas «desde 0.19.0» o «desde 0.20.0» se agregaron después de ese corte; la tabla
 no se ha vuelto a contar contra el contrato completo.
 
 | Método y ruta | operationId | Flujo principal | Roles / credencial |
@@ -55,10 +55,13 @@ no se ha vuelto a contar contra el contrato completo.
 | POST /api/v1/attendance-events/batch | submitAttendanceBatch | [08](08-captura-en-backend.puml) | Dispositivo: aserción ES256 |
 | GET /api/v1/me/attendance | getMyWeek | [09](09-jornada-semanal.puml) | trabajador o dispositivo personal |
 | GET /api/v1/incidents | listIncidents | [10](10-incidencias-y-ajustes.puml) | admin_empresa, rh, supervisor, auditor |
+| GET /api/v1/incidents/summary | getIncidentSummary | [10](10-incidencias-y-ajustes.puml), desde 0.20.0 | admin_empresa, rh, supervisor, auditor |
 | GET /api/v1/incidents/{incidentId} | getIncident | [10](10-incidencias-y-ajustes.puml) | admin_empresa, rh, supervisor, auditor |
+| GET /api/v1/incidents/{incidentId}/assignees | listIncidentAssignees | [10](10-incidencias-y-ajustes.puml), desde 0.20.0 | admin_empresa, rh, supervisor |
 | PATCH /api/v1/incidents/{incidentId} | updateIncident | [10](10-incidencias-y-ajustes.puml) | admin_empresa, rh, supervisor |
 | GET /api/v1/week-closures | listWeekClosures | [11](11-cierres-y-corridas.puml) | admin_empresa, rh, supervisor, auditor |
 | POST /api/v1/week-closures | closeWeek | [11](11-cierres-y-corridas.puml) | admin_empresa, rh |
+| GET /api/v1/week-closures/summary | getWeekClosureSummary | [11](11-cierres-y-corridas.puml), desde 0.20.0 | admin_empresa, rh, supervisor, auditor |
 | GET /api/v1/week-closures/{closureId} | getWeekClosure | [11](11-cierres-y-corridas.puml) | admin_empresa, rh, supervisor, auditor, trabajador |
 | POST /api/v1/week-closures/{closureId}/reopen | reopenWeekClosure | [12](12-reapertura-y-acuse.puml) | admin_empresa |
 | POST /api/v1/week-closures/{closureId}/acknowledgements | acknowledgeWeekClosure | [12](12-reapertura-y-acuse.puml) | trabajador o dispositivo personal |

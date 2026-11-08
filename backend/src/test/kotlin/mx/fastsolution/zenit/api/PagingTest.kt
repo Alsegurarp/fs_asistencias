@@ -23,6 +23,18 @@ class PagingTest {
     }
 
     @Test
+    fun `a cursor of a list ordered by category keeps its rank, and one with extra parts is rejected`() {
+        val key = PageKey(OffsetDateTime.parse("2026-10-05T15:00:00Z"), UUID.randomUUID(), 3)
+
+        assertEquals(key, Paging.decode(Paging.encode(key)))
+        assertNull(Paging.decode(Paging.encode(key.copy(rank = null)))!!.rank)
+        val tooLong = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString("${key.at.toInstant()}|${key.id}|3|4".toByteArray())
+        assertEquals("validation", assertFailsWith<ApiException> { Paging.decode(tooLong) }.code)
+        val notANumber = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString("${key.at.toInstant()}|${key.id}|alta".toByteArray())
+        assertEquals("validation", assertFailsWith<ApiException> { Paging.decode(notANumber) }.code)
+    }
+
+    @Test
     fun `a tampered cursor or an out of range limit is a validation error`() {
         assertEquals("validation", assertFailsWith<ApiException> { Paging.decode("no-es-un-cursor") }.code)
         assertEquals("validation", assertFailsWith<ApiException> { Paging.limit("0") }.code)

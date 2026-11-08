@@ -44,9 +44,13 @@ class WorkdayIT : WorkdayTestBase() {
             Route("GET", "/api/v1/employees/${mine.employeeId}/attendance?week=$yesterday", null, *staff),
             Route("GET", "/api/v1/me/attendance?week=$yesterday", null, "trabajador"),
             Route("GET", "/api/v1/incidents", null, *staff),
+            Route("GET", "/api/v1/incidents/summary", null, *staff),
             Route("GET", "/api/v1/incidents/$incidentId", null, *staff),
+            Route("GET", "/api/v1/incidents/$incidentId/assignees", null, "admin_empresa", "rh", "supervisor"),
             Route("PATCH", "/api/v1/incidents/$incidentId", """{"assigneeUserId":null}""", "admin_empresa", "rh", "supervisor"),
             Route("GET", "/api/v1/week-closures?week=$yesterday", null, *staff),
+            // El resumen no lo alcanza la regla del cierre por identificador, que admite a quien sólo es trabajador.
+            Route("GET", "/api/v1/week-closures/summary?week=$yesterday", null, *staff),
             Route("POST", "/api/v1/week-closures", closing, "admin_empresa", "rh"),
             Route("GET", "/api/v1/week-closures/$closureId", null, *staff, "trabajador"),
             Route("GET", "/api/v1/rule-sets", null, *staff),
@@ -504,7 +508,11 @@ class WorkdayIT : WorkdayTestBase() {
         val audit = call("GET", "/api/v1/audit-log?limit=200", c.adminToken)
         assertEquals(4, audit.at<List<Any>>("items[?(@.action=='week.closed')]").size)
         assertEquals(1, audit.at<List<Any>>("items[?(@.action=='week.reopened')]").size)
-        assertEquals(1, audit.at<List<Any>>("items[?(@.action=='incident.opened')]").size)
+        // Toda incidencia que se abre queda: dos las abrió la captura y una el cierre, a nombre de quien cerró.
+        assertEquals(
+            listOf("system", "system", "user"),
+            audit.at<List<String>>("items[?(@.action=='incident.opened')].actor.type").sorted(),
+        )
     }
 
     @Test

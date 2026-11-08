@@ -137,6 +137,16 @@ Detalles que ahorran tiempo:
   mismos números que la semana de cada persona.
 - Un JSON que lleva huella se guarda como `json`, no `jsonb`: `jsonb`
   reordena el texto y la huella ya no se puede volver a calcular.
+- Una función SQL que se usa fila por fila, como `week_start_of`, va como una
+  sola expresión, sin `FROM` y sin `STRICT`: así PostgreSQL la incorpora a la
+  consulta. Con una subconsulta y `STRICT` se llamaba como función 12 000 veces
+  en una página y costaba 60 ms en lugar de 5.
+- Una lista que ordena primero por una categoría, como la severidad, pagina con
+  `PageKey.rank`; el servicio rechaza un cursor de otro orden con
+  `Paging.invalidCursor()`.
+- Un nombre para mostrar se une en la consulta de la lista (`left join
+  tenant_user`) o se lee en lote por página, como `AuditLog.names`; no se
+  guarda copiado en otra tabla.
 
 ## Agregar un tipo de trabajo
 

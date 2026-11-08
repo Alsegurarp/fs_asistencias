@@ -4,6 +4,11 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Incidencias, cierres y bitácora para el portal, 7 de noviembre:** contrato
+0.20.0 con filtros, orden y conteos en el servidor para incidencias y
+cierres, a quién se puede asignar cada incidencia y nombres en las
+respuestas. [Reglas y medición](docs/logica-de-negocio.md#lista-y-conteos-de-incidencias).
+
 **Asistencia de la empresa, 7 de noviembre:** contrato 0.19.0 con
 `GET /attendance/weeks` y `GET /attendance/summary` para la tabla de
 asistencia y el panel del portal, calculados en lote con el mismo cálculo de

@@ -242,6 +242,17 @@ las rutas en PowerShell no se probó.
 - **Filtrar en el servidor.** Filtrar una lista paginada en el cliente sólo
   filtra lo que ya se cargó. Si una lista no tiene el filtro que la pantalla
   necesita, se pide al backend.
+- **Ordenar en el servidor y conservar el orden del cursor.** Ordenar en el
+  cliente una lista por cursor desordena las páginas. `GET /incidents` ordena
+  con `sort`, y su cursor vale sólo para ese orden: al cambiarlo se empieza
+  sin cursor.
+- **Contar con los resúmenes.** Las pestañas y los filtros con número salen
+  de `GET /incidents/summary` y `GET /week-closures/summary`, no de contar
+  páginas.
+- **Mostrar los nombres que trae la respuesta.** Incidencias, cierres,
+  corridas y bitácora traen el nombre de quien actuó; RH, supervisión y
+  auditoría no pueden leer `/users`. Un nombre nulo es una cuenta sin nombre
+  todavía, o el sistema.
 
 ## Qué cambia sin aviso y qué no
 

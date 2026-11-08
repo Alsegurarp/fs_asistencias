@@ -58,6 +58,7 @@ data class RunRow(
     val origin: String,
     val status: String,
     val requestedBy: UUID?,
+    val requestedByName: String?,
     val total: Int?,
     val closed: Int,
     val blockedOpenIncidents: Int,
@@ -82,6 +83,7 @@ data class WeekClosureRunView(
     val closed: Int,
     val blocked: BlockedCountView,
     val requestedBy: String?,
+    val requestedByName: String?,
     val failure: String?,
     val createdAt: String,
     val startedAt: String?,
@@ -98,6 +100,7 @@ data class WeekClosureRunView(
             closed = row.closed,
             blocked = BlockedCountView(row.blockedOpenIncidents, row.blockedOpenSegment),
             requestedBy = row.requestedBy?.toString(),
+            requestedByName = row.requestedByName,
             failure = row.failure,
             createdAt = row.createdAt.toInstant().toString(),
             startedAt = row.startedAt?.toInstant()?.toString(),
@@ -227,6 +230,7 @@ class ClosureRunRepository(private val dsl: DSLContext) {
         origin = r.get("origin", String::class.java),
         status = r.get("status", String::class.java),
         requestedBy = r.get("requested_by", UUID::class.java),
+        requestedByName = r.get("requested_by_name", String::class.java),
         total = r.get("total", Number::class.java)?.toInt(),
         closed = r.get("closed", Number::class.java).toInt(),
         blockedOpenIncidents = r.get("blocked_open_incidents", Number::class.java).toInt(),
@@ -240,7 +244,9 @@ class ClosureRunRepository(private val dsl: DSLContext) {
     private companion object {
         const val SELECT =
             "select id, cast(week_start as text) as week_start, site_id, origin, status, requested_by, total, closed, " +
-                "blocked_open_incidents, blocked_open_segment, failure, created_at, started_at, finished_at from week_closure_run"
+                "blocked_open_incidents, blocked_open_segment, failure, created_at, started_at, finished_at, " +
+                "(select nullif(u.display_name, '') from tenant_user u where u.tenant_id = week_closure_run.tenant_id " +
+                "and u.id = week_closure_run.requested_by) as requested_by_name from week_closure_run"
     }
 }
 

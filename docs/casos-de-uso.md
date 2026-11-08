@@ -149,8 +149,12 @@ El detalle de una persona, con sus tramos, sigue siendo
 Actores: administrador, RH o supervisor.
 
 1. `GET /incidents` lista lo que hay por revisar; filtra por estado, tipo,
-   sede y semana.
-2. `PATCH /incidents/{incidentId}` la asigna a alguien, o la resuelve con una
+   sede, semana, severidad, asignación y si bloquea un cierre, y ordena por
+   apertura, severidad o resolución. `GET /incidents/summary` da los
+   conteos de las pestañas y los filtros.
+2. `GET /incidents/{incidentId}/assignees` dice a quién se puede asignar:
+   sólo a quien puede resolverla.
+3. `PATCH /incidents/{incidentId}` la asigna a alguien, o la resuelve con una
    decisión y un motivo:
    - `justified`: hay una razón legítima; la jornada no cambia.
    - `confirmed`: la anomalía es real; la jornada no cambia.
@@ -158,7 +162,8 @@ Actores: administrador, RH o supervisor.
      tipo de un marcaje. El marcaje original no se toca.
 
 Puede salir mal: ya estaba resuelta (409 `incident_already_resolved`); el
-ajuste cae en una semana cerrada (409 `week_closed`).
+ajuste cae en una semana cerrada (409 `week_closed`); se asigna a quien no
+puede resolverla (422, con el error `assignee_cannot_resolve`).
 
 ## 8. Cerrar la semana
 
@@ -175,6 +180,12 @@ Puede salir mal: la semana todavía no termina (422, con el error `week_not_fini
 
 Reabrir (`POST /week-closures/{closureId}/reopen`) es sólo del administrador
 y pide motivo. La versión cerrada se conserva; el siguiente cierre crea otra.
+
+Para revisar una semana: `GET /week-closures?week=` filtra por sede, estado
+y acuse, con el nombre de la persona y de quien cerró;
+`GET /week-closures/summary?week=` cuenta cerrados, reabiertos, bloqueados y
+acuses; las personas bloqueadas, con lo que falta, salen de
+`GET /incidents?week=&blocksClosure=true`.
 
 ### Cuando son muchas personas: la corrida de cierre
 
@@ -234,7 +245,7 @@ venció.
 | Qué | Ruta | Actor |
 | --- | --- | --- |
 | Marcajes con su evidencia minimizada | `GET /attendance-events` | Administrador, RH, supervisor, auditor |
-| Acciones administrativas | `GET /audit-log` | Administrador, auditor |
+| Acciones administrativas, con el nombre de quien actuó y de lo que tocó | `GET /audit-log` | Administrador, auditor |
 | Dispositivos enrolados | `GET /devices` | Administrador, RH, auditor |
 | De dónde viene el padrón | `GET /integrations/checkpoints` | Administrador, RH |
 | Corridas de cierre, también las del sistema | `GET /week-closure-runs` | Administrador, RH, supervisor, auditor |
