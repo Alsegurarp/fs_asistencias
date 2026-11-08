@@ -1,5 +1,18 @@
 # Guía del portal web
 
+**Actualización del 8 de noviembre, marco del lienzo:** el portal ya tiene la
+barra superior, el menú lateral ocultable con grupos plegables (Operación,
+Padrón, Empresa), la barra inferior de teléfono con «Más», el menú de la
+cuenta y los estados de sin permiso, página no encontrada, error, cuenta sin
+empresa y sesión terminada, con los colores, la tipografía Inter y las formas
+del lienzo aprobado. Cada pantalla tiene su dirección (`/incidencias`,
+`/personal/horarios`, `/reportes/expediente`…), el botón atrás funciona y un
+enlace directo sobrevive al inicio de sesión. Sin sesión, el portal va
+directo al inicio de sesión del servicio de identidad; al salir muestra «Tu
+sesión terminó». Las pantallas de abajo siguen siendo las anteriores, dentro
+del marco, hasta que su sección se reconstruya. Orden, direcciones y reglas
+para el equipo en [Construir el portal](construir-el-portal.md).
+
 **Actualización del 5 de noviembre, API candidata 0.18.0:** Usuarios permite
 asignar sedes a supervisores al invitar o editar. Sin sedes no reciben datos
 de supervisión. La restricción se aplica en servidor antes de paginar; las

@@ -42,6 +42,7 @@ contradice al contrato, manda el contrato.
 | [Guía de la app Android](guia-app-android.md) | Enrolar, firmar, marcar, trabajar sin conexión y mostrar la semana |
 | [Producto móvil](alcance-producto-movil.md) | Pantallas del producto, endpoints y qué funciones están conectadas |
 | [Guía del portal web](guia-portal-web.md) | Inicio de sesión, pantallas contra rutas, roles y exportes |
+| [Construir el portal](construir-el-portal.md) | Orden de construcción según el lienzo, direcciones, cómo está armado el marco y reglas para no duplicar |
 | [Accesibilidad del portal](accesibilidad.md) | Qué se comprueba solo, qué se revisó a mano y qué falta para WCAG 2.1 AA |
 | [Diccionario](diccionario.md) | Glosario, catálogos de valores y diccionario de datos |
 | [Entorno local](entorno-local.md) | Levantar, crear cuentas, obtener un token, simular dispositivos, ensayar el respaldo, revisar vulnerabilidades y resolver problemas frecuentes |
@@ -86,7 +87,7 @@ contradice al contrato, manda el contrato.
 | --- | --- | --- |
 | Backend | `backend/` | API 0.15.0 con 70 operaciones en la entrega E4–E6: permiso, preparación, MFA nuevo y descarga de un uso. 67 unitarias/88 integraciones PostgreSQL aprobadas; incluye simulador y dirección real del visitante detrás del borde |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
-| Portal web | `web/` | PKCE, catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, usuarios y configuración de empresa; A5 local 33/33 y horarios/CSV en navegador local 17/17 aprobados. Aceptación pública/del usuario pendiente |
+| Portal web | `web/` | Marco del lienzo aprobado (direcciones, menú por rol, teléfono y estados) con las pantallas anteriores dentro: catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, expediente, usuarios y configuración. Las secciones se reconstruyen según [Construir el portal](construir-el-portal.md). Aceptación pública/del usuario pendiente |
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Captura simulada comprobada contra backend local/HTTPS; semana/acuse visual aprobados en teléfono contra backend real local el 21. Faltan aceptación pública/del usuario, expediente y tarjeta autenticada |
 | Conector | `connector/` | Vacío; es el futuro agente que sincronice el padrón desde la red de un cliente |
 | Infraestructura | `infra/` | Imagen y realm del proveedor de identidad, guiones de la base y ensayo de respaldo |
