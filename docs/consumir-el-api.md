@@ -247,8 +247,13 @@ las rutas en PowerShell no se probó.
   con `sort`, y su cursor vale sólo para ese orden: al cambiarlo se empieza
   sin cursor.
 - **Contar con los resúmenes.** Las pestañas y los filtros con número salen
-  de `GET /incidents/summary` y `GET /week-closures/summary`, no de contar
-  páginas.
+  de `GET /incidents/summary`, `GET /week-closures/summary`,
+  `GET /employees/summary`, `GET /cards/summary` y `GET /devices/summary`, no
+  de contar páginas.
+- **Buscar con `q`.** El buscador de la barra superior pide las tres listas
+  (personas, tarjetas y lectores) con `q` y un límite corto, según los
+  permisos del rol, y muestra «más» si alguna trae `nextCursor`. Varios
+  estados se piden repitiendo `status`.
 - **Mostrar los nombres que trae la respuesta.** Incidencias, cierres,
   corridas y bitácora traen el nombre de quien actuó; RH, supervisión y
   auditoría no pueden leer `/users`. Un nombre nulo es una cuenta sin nombre

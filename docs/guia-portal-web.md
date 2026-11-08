@@ -283,6 +283,12 @@ Notas:
   puede volver a consultar.
 - La huella de una tarjeta se captura al registrarla y no vuelve en ninguna
   respuesta.
+- Desde el contrato 0.21.0 el backend ya resuelve, y el portal todavía no
+  usa: la búsqueda `q` y los filtros de padrón, tarjetas y lectores, sus
+  conteos en `/summary`, el historial `GET /imports` y aplicar una revisión
+  del historial subiendo otra vez el mismo archivo con `reviewedImportId`.
+  Al confirmar después de validar, mandar `reviewedImportId` asegura que se
+  aplica el archivo que se revisó.
 
 ### Operación (administrador, RH, supervisor, auditor)
 

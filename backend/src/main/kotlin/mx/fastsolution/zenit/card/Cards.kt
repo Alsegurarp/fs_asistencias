@@ -6,6 +6,7 @@ import mx.fastsolution.zenit.api.Page
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
+import mx.fastsolution.zenit.api.TextSearch
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
@@ -37,6 +38,16 @@ data class CardRow(
     val assignedSince: OffsetDateTime?,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    /** La asignación más reciente, vigente o terminada; nula en la búsqueda de la captura, que no la necesita. */
+    val latest: LatestHolder? = null,
+)
+
+data class LatestHolder(
+    val employeeId: UUID,
+    val employeeName: String,
+    val employeeExternalId: String,
+    val since: OffsetDateTime,
+    val until: OffsetDateTime?,
 )
 
 data class OpenAssignment(val id: UUID, val cardId: UUID)
@@ -57,7 +68,9 @@ class CardRevocationRequest {
     var note: String? = null
 }
 
-data class CardHolder(val employeeId: String, val since: String)
+data class CardHolder(val employeeId: String, val employeeName: String, val employeeExternalId: String, val since: String)
+
+data class LatestHolderView(val employeeId: String, val employeeName: String, val employeeExternalId: String, val since: String, val until: String?)
 
 /** La huella nunca sale: sólo entra al registrar la tarjeta. */
 data class CardView(
@@ -66,25 +79,38 @@ data class CardView(
     val status: String,
     val keyVersion: Int?,
     val assignment: CardHolder?,
+    val latestAssignment: LatestHolderView?,
     val createdAt: String,
     val updatedAt: String,
 ) {
     companion object {
-        fun of(row: CardRow) = CardView(
-            id = row.id.toString(),
-            label = row.label,
-            status = row.status,
-            keyVersion = row.keyVersion,
-            assignment = if (row.employeeId != null && row.assignedSince != null) {
-                CardHolder(row.employeeId.toString(), row.assignedSince.toInstant().toString())
-            } else {
-                null
-            },
-            createdAt = row.createdAt.toInstant().toString(),
-            updatedAt = row.updatedAt.toInstant().toString(),
-        )
+        fun of(row: CardRow): CardView {
+            val latest = row.latest
+            return CardView(
+                id = row.id.toString(),
+                label = row.label,
+                status = row.status,
+                keyVersion = row.keyVersion,
+                // La vigente es la más reciente sin fin: de ahí salen los nombres.
+                assignment = if (row.employeeId != null && row.assignedSince != null && latest != null && latest.until == null) {
+                    CardHolder(row.employeeId.toString(), latest.employeeName, latest.employeeExternalId, row.assignedSince.toInstant().toString())
+                } else {
+                    null
+                },
+                latestAssignment = latest?.let {
+                    LatestHolderView(
+                        it.employeeId.toString(), it.employeeName, it.employeeExternalId, it.since.toInstant().toString(),
+                        it.until?.toInstant()?.toString(),
+                    )
+                },
+                createdAt = row.createdAt.toInstant().toString(),
+                updatedAt = row.updatedAt.toInstant().toString(),
+            )
+        }
     }
 }
+
+data class CardSummaryView(val total: Int, val byStatus: Map<String, Int>)
 
 data class CardAssignmentView(
     val id: String,
@@ -104,18 +130,23 @@ class CardRepository(private val dsl: DSLContext) {
         )
     }
 
-    fun find(tenantId: UUID, id: UUID): CardRow? = dsl.fetchOne("$SELECT where c.tenant_id = ? and c.id = ?", tenantId, id)?.let(::row)
+    fun find(tenantId: UUID, id: UUID): CardRow? = dsl.fetchOne("$NAMED where c.tenant_id = ? and c.id = ?", tenantId, id)?.let(::named)
 
-    /** La captura identifica la tarjeta por su huella, dentro de la empresa del dispositivo. */
+    /** La captura identifica la tarjeta por su huella, dentro de la empresa del dispositivo; no necesita nombres. */
     fun findByFingerprint(tenantId: UUID, fingerprint: String): CardRow? =
         dsl.fetchOne("$SELECT where c.tenant_id = ? and c.fingerprint = ?", tenantId, fingerprint)?.let(::row)
 
-    fun page(tenantId: UUID, status: String?, after: PageKey?, limit: Int): List<CardRow> {
-        val sql = StringBuilder("$SELECT where c.tenant_id = ?")
+    /** `text` busca en la etiqueta y en el nombre y el número de quien la tuvo por última vez. */
+    fun page(tenantId: UUID, statuses: Set<String>, text: String?, after: PageKey?, limit: Int): List<CardRow> {
+        val sql = StringBuilder("$NAMED where c.tenant_id = ?")
         val binds = mutableListOf<Any>(tenantId)
-        if (status != null) {
-            sql.append(" and c.status = ?")
-            binds += status
+        if (statuses.isNotEmpty()) {
+            sql.append(" and c.status = any(?)")
+            binds.add(statuses.toTypedArray())
+        }
+        if (text != null) {
+            sql.append(TextSearch.clause("c.label", "h.display_name", "h.external_id"))
+            binds.addAll(TextSearch.binds(text, 3))
         }
         if (after != null) {
             sql.append(" and (c.created_at, c.id) > (cast(? as timestamptz), cast(? as uuid))")
@@ -124,7 +155,21 @@ class CardRepository(private val dsl: DSLContext) {
         }
         sql.append(" order by c.created_at, c.id limit ?")
         binds += limit
-        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { row(it) }
+        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { named(it) }
+    }
+
+    /** Conteos por estado con la búsqueda de la lista, sin filtrar por estado: rotulan cada opción. */
+    fun summary(tenantId: UUID, text: String?): CardSummaryView {
+        val sql = StringBuilder("select c.status, count(*) as cards $NAMED_FROM where c.tenant_id = ?")
+        val binds = mutableListOf<Any>(tenantId)
+        if (text != null) {
+            sql.append(TextSearch.clause("c.label", "h.display_name", "h.external_id"))
+            binds.addAll(TextSearch.binds(text, 3))
+        }
+        sql.append(" group by c.status")
+        val counts = dsl.fetch(sql.toString(), *binds.toTypedArray())
+            .associate { it.get("status", String::class.java) to it.get("cards", Number::class.java).toInt() }
+        return CardSummaryView(counts.values.sum(), STATUSES.associateWith { counts[it] ?: 0 })
     }
 
     fun setStatus(tenantId: UUID, id: UUID, status: String) {
@@ -165,11 +210,35 @@ class CardRepository(private val dsl: DSLContext) {
         updatedAt = r.get("updated_at", OffsetDateTime::class.java),
     )
 
-    private companion object {
-        const val SELECT =
+    private fun named(r: Record) = row(r).copy(
+        latest = r.get("latest_employee_id", UUID::class.java)?.let {
+            LatestHolder(
+                it, r.get("latest_employee_name", String::class.java), r.get("latest_employee_external_id", String::class.java),
+                r.get("latest_since", OffsetDateTime::class.java), r.get("latest_until", OffsetDateTime::class.java),
+            )
+        },
+    )
+
+    companion object {
+        /** Los estados de una tarjeta, en el orden en que se muestran. */
+        val STATUSES = linkedSetOf("inventory", "assigned", "active", "lost", "damaged", "revoked", "replaced")
+
+        private const val SELECT =
             "select c.id, c.label, c.status, c.key_version, c.created_at, c.updated_at, a.employee_id, a.since " +
                 "from card c left join card_assignment a " +
                 "on a.tenant_id = c.tenant_id and a.card_id = c.id and a.until is null"
+
+        /** Con quien la tuvo por última vez, para nombrarlo aunque la tarjeta ya no esté asignada. */
+        private const val NAMED_FROM =
+            "from card c left join card_assignment a on a.tenant_id = c.tenant_id and a.card_id = c.id and a.until is null " +
+                "left join lateral (select l.employee_id, l.since, l.until from card_assignment l where l.tenant_id = c.tenant_id " +
+                "and l.card_id = c.id order by l.since desc, l.id desc limit 1) l on true " +
+                "left join employee h on h.tenant_id = c.tenant_id and h.id = l.employee_id"
+
+        private const val NAMED =
+            "select c.id, c.label, c.status, c.key_version, c.created_at, c.updated_at, a.employee_id, a.since, " +
+                "l.employee_id as latest_employee_id, h.display_name as latest_employee_name, " +
+                "h.external_id as latest_employee_external_id, l.since as latest_since, l.until as latest_until $NAMED_FROM"
     }
 }
 
@@ -211,11 +280,21 @@ class CardService(
     }
 
     @Transactional(readOnly = true)
-    fun page(person: CurrentPerson, status: String?, after: PageKey?, limit: Int): List<CardRow> {
+    fun page(person: CurrentPerson, statuses: List<String>?, q: String?, after: PageKey?, limit: Int): List<CardRow> {
         val checks = Checks()
-        checks.oneOf("status", status, STATUSES, required = false)
+        statuses.orEmpty().forEach { checks.oneOf("status", it, STATUSES, required = false) }
+        val text = TextSearch.pattern(checks, q)
         checks.done()
-        return cards.page(person.requireTenant(), status, after, limit + 1)
+        return cards.page(person.requireTenant(), statuses.orEmpty().toSet(), text, after, limit + 1)
+    }
+
+    /** Cuántas tarjetas hay en cada estado, con la misma búsqueda que la lista. */
+    @Transactional(readOnly = true)
+    fun summary(person: CurrentPerson, q: String?): CardSummaryView {
+        val checks = Checks()
+        val text = TextSearch.pattern(checks, q)
+        checks.done()
+        return cards.summary(person.requireTenant(), text)
     }
 
     /**
@@ -290,7 +369,7 @@ class CardService(
         const val MIN_FINGERPRINT = 16
         const val MAX_FINGERPRINT = 128
         const val MAX_NOTE = 280
-        val STATUSES = setOf("inventory", "assigned", "active", "revoked", "lost", "damaged", "replaced")
+        val STATUSES = CardRepository.STATUSES
         val REASONS = setOf("revoked", "lost", "damaged")
         val REVOCABLE = setOf("inventory", "assigned", "active")
     }
@@ -302,14 +381,18 @@ class CardController(private val service: CardService) {
     @GetMapping
     fun list(
         @AuthenticationPrincipal person: CurrentPerson,
-        @RequestParam status: String?,
+        @RequestParam status: List<String>?,
+        @RequestParam q: String?,
         @RequestParam cursor: String?,
         @RequestParam limit: String?,
     ): Page<CardView> {
         val size = Paging.limit(limit)
-        val rows = service.page(person, status, Paging.decode(cursor), size)
+        val rows = service.page(person, status, q, Paging.decode(cursor), size)
         return Paging.page(rows, size, { PageKey(it.createdAt, it.id) }) { CardView.of(it) }
     }
+
+    @GetMapping("/summary")
+    fun summary(@AuthenticationPrincipal person: CurrentPerson, @RequestParam q: String?): CardSummaryView = service.summary(person, q)
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

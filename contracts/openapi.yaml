@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.20.0
+  version: 0.21.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -1530,6 +1530,12 @@ paths:
       tags: [personas]
       operationId: listEmployees
       summary: Lista el padrón de personas
+      description: |
+        Todos los filtros se aplican en el servidor, antes de paginar, con el
+        alcance por sede de Supervisión. `q` busca por fragmento en el nombre
+        y en el identificador externo, sin distinguir mayúsculas ni acentos.
+        `scheduleId` es el horario vigente hoy en la zona de la empresa y
+        `withoutCard=true` deja a quien no tiene tarjeta vigente.
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: status
@@ -1541,6 +1547,16 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: scheduleId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: withoutCard
+          in: query
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/SearchText"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:
@@ -1562,6 +1578,7 @@ paths:
                     source: manual
                     currentScheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
                     activeCardId: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
+                    activeCardLabel: ZN-000123
                     createdAt: "2026-10-05T15:30:00Z"
                     updatedAt: "2026-10-05T15:30:00Z"
                 nextCursor: null
@@ -1569,6 +1586,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
     post:
       tags: [personas]
       operationId: createEmployee
@@ -1604,6 +1623,7 @@ paths:
                 source: manual
                 currentScheduleId: null
                 activeCardId: null
+                activeCardLabel: null
                 createdAt: "2026-10-05T15:30:00Z"
                 updatedAt: "2026-10-05T15:30:00Z"
         "401":
@@ -1612,6 +1632,53 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /employees/summary:
+    get:
+      tags: [personas]
+      operationId: getEmployeeSummary
+      summary: Cuenta las personas para las pestañas y los filtros del padrón
+      description: |
+        Con el alcance y los filtros de `listEmployees` (`siteId`, `q` y
+        `status`). `active` e `inactive` no aplican el filtro de estado, para
+        rotular cada opción; `total`, `withoutCard`, `withoutSchedule` y
+        `bySchedule`, sí. `bySchedule` cuenta por horario vigente hoy, de más
+        a menos personas, y sirve también para la columna de personas de cada
+        horario.
+      x-roles: [admin_empresa, rh, supervisor, auditor]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/EmployeeStatus"
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/SearchText"
+      responses:
+        "200":
+          description: Conteos del padrón
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeSummary"
+              example:
+                total: 42
+                active: 42
+                inactive: 3
+                withoutCard: 2
+                withoutSchedule: 0
+                bySchedule:
+                  - scheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                    people: 24
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -1641,6 +1708,7 @@ paths:
                 source: manual
                 currentScheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
                 activeCardId: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
+                activeCardLabel: ZN-000123
                 createdAt: "2026-10-05T15:30:00Z"
                 updatedAt: "2026-10-05T15:30:00Z"
         "401":
@@ -1688,6 +1756,7 @@ paths:
                 source: manual
                 currentScheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
                 activeCardId: null
+                activeCardLabel: null
                 createdAt: "2026-10-05T15:30:00Z"
                 updatedAt: "2026-12-31T23:00:00Z"
         "401":
@@ -1994,6 +2063,15 @@ paths:
         devuelve el resultado anterior sin volver a aplicar. Con otro
         contenido responde 409 con `code` `idempotency_conflict`: aplicar
         después de validar lleva una clave nueva.
+
+        Se guarda el nombre del archivo (`fileName`, sin ruta), nunca su
+        contenido. Para aplicar una revisión anterior se vuelve a subir el
+        archivo con `dryRun` en falso y `reviewedImportId`: el servidor sólo
+        compara su huella con la de la revisión. Responde 409 con
+        `review_mismatch` si el archivo no es el mismo, `review_already_applied`
+        si esa revisión ya se aplicó y `review_not_applicable` si no es una
+        revisión lista; 422 con `requires_apply` si llega con `dryRun` en
+        verdadero o `import_not_found` si no existe.
       x-roles: [admin_empresa, rh]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -2013,6 +2091,10 @@ paths:
                 dryRun:
                   type: boolean
                   default: true
+                reviewedImportId:
+                  type: string
+                  format: uuid
+                  description: Revisión anterior que este archivo aplica.
       responses:
         "202":
           description: Importación aceptada
@@ -2031,6 +2113,11 @@ paths:
                   rejected: 0
                 errors: []
                 manifestHash: null
+                fileName: padron-octubre.csv
+                createdBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                createdByName: Rocío Navarro
+                reviewedImportId: null
+                appliedByImportId: null
                 createdAt: "2026-10-05T15:40:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -2038,6 +2125,57 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /imports:
+    get:
+      tags: [personas]
+      operationId: listImports
+      summary: Lista las importaciones del padrón
+      description: |
+        De la más reciente a la más antigua, con el nombre del archivo y de
+        quien lo subió. Una revisión (`dryRun` verdadero, `ready`) que ya se
+        aplicó trae en `appliedByImportId` la importación que la aplicó.
+      x-roles: [admin_empresa, rh]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ready, applied, failed]
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de importaciones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportList"
+              example:
+                items:
+                  - id: b7d9f1a3-5c7e-4a9b-8d1f-3a5c7e9b1d3f
+                    status: ready
+                    dryRun: true
+                    templateVersion: 1
+                    counts:
+                      total: 48
+                      accepted: 45
+                      rejected: 3
+                    errors: []
+                    manifestHash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+                    fileName: padron-noviembre.csv
+                    createdBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                    createdByName: Rocío Navarro
+                    reviewedImportId: null
+                    appliedByImportId: null
+                    createdAt: "2026-11-06T17:02:00Z"
+                nextCursor: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -2071,6 +2209,11 @@ paths:
                     code: site_unknown
                     message: La sede indicada no existe.
                 manifestHash: null
+                fileName: padron-octubre.csv
+                createdBy: a3c5e7b9-1d3f-4b5a-9c7e-1b3d5f7a9c1e
+                createdByName: Rocío Navarro
+                reviewedImportId: null
+                appliedByImportId: null
                 createdAt: "2026-10-05T15:40:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -2082,12 +2225,24 @@ paths:
       tags: [credenciales]
       operationId: listCards
       summary: Lista las tarjetas de la empresa
+      description: |
+        Los filtros se aplican en el servidor, antes de paginar. `status` se
+        repite para pedir varios estados a la vez (`status=lost&status=damaged`).
+        `q` busca por fragmento en la etiqueta y en el nombre y el número de
+        quien la tuvo por última vez, sin distinguir mayúsculas ni acentos.
+        `assignment` es quien la tiene hoy; `latestAssignment`, quien la tuvo
+        por última vez, también cuando ya no está asignada.
       x-roles: [admin_empresa, rh, auditor]
       parameters:
         - name: status
           in: query
+          style: form
+          explode: true
           schema:
-            $ref: "#/components/schemas/CardStatus"
+            type: array
+            items:
+              $ref: "#/components/schemas/CardStatus"
+        - $ref: "#/components/parameters/SearchText"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:
@@ -2105,7 +2260,15 @@ paths:
                     keyVersion: 1
                     assignment:
                       employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                      employeeName: Persona de Ejemplo Uno
+                      employeeExternalId: E-0001
                       since: "2026-10-05T15:50:00Z"
+                    latestAssignment:
+                      employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                      employeeName: Persona de Ejemplo Uno
+                      employeeExternalId: E-0001
+                      since: "2026-10-05T15:50:00Z"
+                      until: null
                     createdAt: "2026-10-05T15:45:00Z"
                     updatedAt: "2026-10-05T15:50:00Z"
                 nextCursor: null
@@ -2113,6 +2276,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
     post:
       tags: [credenciales]
       operationId: registerCard
@@ -2144,6 +2309,7 @@ paths:
                 status: inventory
                 keyVersion: 1
                 assignment: null
+                latestAssignment: null
                 createdAt: "2026-10-05T15:45:00Z"
                 updatedAt: "2026-10-05T15:45:00Z"
         "401":
@@ -2152,6 +2318,42 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /cards/summary:
+    get:
+      tags: [credenciales]
+      operationId: getCardSummary
+      summary: Cuenta las tarjetas por estado
+      description: |
+        Con la misma búsqueda `q` que `listCards` y sin filtrar por estado:
+        rotula cada opción. `byStatus` trae todos los estados, en cero los
+        que no tienen tarjetas.
+      x-roles: [admin_empresa, rh, auditor]
+      parameters:
+        - $ref: "#/components/parameters/SearchText"
+      responses:
+        "200":
+          description: Conteos de tarjetas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardSummary"
+              example:
+                total: 62
+                byStatus:
+                  inventory: 12
+                  assigned: 0
+                  active: 40
+                  lost: 3
+                  damaged: 1
+                  revoked: 4
+                  replaced: 2
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -2241,6 +2443,12 @@ paths:
                 status: lost
                 keyVersion: 1
                 assignment: null
+                latestAssignment:
+                  employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                  employeeName: Persona de Ejemplo Uno
+                  employeeExternalId: E-0001
+                  since: "2026-10-05T15:50:00Z"
+                  until: "2026-10-12T16:00:00Z"
                 createdAt: "2026-10-05T15:45:00Z"
                 updatedAt: "2026-10-12T16:00:00Z"
         "401":
@@ -2390,6 +2598,13 @@ paths:
       tags: [credenciales]
       operationId: listDevices
       summary: Lista los dispositivos enrolados
+      description: |
+        Los filtros se aplican en el servidor, antes de paginar. `status` se
+        repite para pedir varios estados a la vez. `silent=true` deja los
+        activos sin contacto en las últimas 24 horas, o que nunca se
+        conectaron, con el mismo umbral que el panel. `q` busca por fragmento
+        en la etiqueta, el modelo y el nombre de la persona de un teléfono
+        personal, sin distinguir mayúsculas ni acentos.
       x-roles: [admin_empresa, rh, auditor]
       parameters:
         - name: mode
@@ -2398,8 +2613,17 @@ paths:
             $ref: "#/components/schemas/DeviceMode"
         - name: status
           in: query
+          style: form
+          explode: true
           schema:
-            $ref: "#/components/schemas/DeviceStatus"
+            type: array
+            items:
+              $ref: "#/components/schemas/DeviceStatus"
+        - name: silent
+          in: query
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/SearchText"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:
@@ -2415,6 +2639,7 @@ paths:
                     mode: personal
                     status: active
                     employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    employeeName: Persona de Ejemplo Uno
                     siteId: null
                     label: null
                     model: Ejemplo Modelo X
@@ -2427,6 +2652,43 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /devices/summary:
+    get:
+      tags: [credenciales]
+      operationId: getDeviceSummary
+      summary: Cuenta los lectores por estado y los que no tienen señal
+      description: |
+        Con el modo y la búsqueda `q` de `listDevices`, sin filtrar por
+        estado. `silent` cuenta los activos sin contacto en las últimas 24
+        horas o que nunca se conectaron, el mismo umbral del panel.
+      x-roles: [admin_empresa, rh, auditor]
+      parameters:
+        - name: mode
+          in: query
+          schema:
+            $ref: "#/components/schemas/DeviceMode"
+        - $ref: "#/components/parameters/SearchText"
+      responses:
+        "200":
+          description: Conteos de lectores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceSummary"
+              example:
+                active: 6
+                silent: 1
+                revoked: 2
+                replaced: 1
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
 
   /devices/{deviceId}/revocation:
     parameters:
@@ -2459,6 +2721,7 @@ paths:
                 mode: personal
                 status: revoked
                 employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                employeeName: Persona de Ejemplo Uno
                 siteId: null
                 label: null
                 model: Ejemplo Modelo X
@@ -4091,6 +4354,16 @@ components:
       description: Valor de `nextCursor` de la página anterior.
       schema:
         type: string
+    SearchText:
+      name: q
+      in: query
+      description: >-
+        Texto a buscar por fragmento, sin distinguir mayúsculas ni acentos del
+        español. Un `%` o un `_` se buscan tal cual. Más de 100 caracteres
+        responde 422 con `too_long`.
+      schema:
+        type: string
+        maxLength: 100
     Limit:
       name: limit
       in: query
@@ -5094,6 +5367,7 @@ components:
         - source
         - currentScheduleId
         - activeCardId
+        - activeCardLabel
         - createdAt
         - updatedAt
       properties:
@@ -5125,6 +5399,9 @@ components:
         activeCardId:
           type: [string, "null"]
           format: uuid
+        activeCardLabel:
+          type: [string, "null"]
+          description: Etiqueta de la tarjeta vigente, para mostrarla sin leer la lista de tarjetas.
         createdAt:
           type: string
           format: date-time
@@ -5167,6 +5444,33 @@ components:
         employmentEnd:
           type: [string, "null"]
           format: date
+    EmployeeSummary:
+      type: object
+      additionalProperties: false
+      required: [total, active, inactive, withoutCard, withoutSchedule, bySchedule]
+      properties:
+        total:
+          type: integer
+        active:
+          type: integer
+        inactive:
+          type: integer
+        withoutCard:
+          type: integer
+        withoutSchedule:
+          type: integer
+        bySchedule:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [scheduleId, people]
+            properties:
+              scheduleId:
+                type: string
+                format: uuid
+              people:
+                type: integer
     EmployeeList:
       type: object
       required: [items, nextCursor]
@@ -5180,7 +5484,7 @@ components:
 
     Import:
       type: object
-      required: [id, status, dryRun, templateVersion, counts, errors, manifestHash, createdAt]
+      required: [id, status, dryRun, templateVersion, counts, errors, manifestHash, fileName, createdBy, createdByName, reviewedImportId, appliedByImportId, createdAt]
       properties:
         id:
           type: string
@@ -5211,9 +5515,38 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Sha256Hex"
             - type: "null"
+        fileName:
+          type: [string, "null"]
+          maxLength: 255
+          description: Nombre del archivo que se subió, sin ruta; nulo en las importaciones anteriores a 0.21.0.
+        createdBy:
+          type: [string, "null"]
+          format: uuid
+          description: Persona de la empresa que lo subió.
+        createdByName:
+          type: [string, "null"]
+        reviewedImportId:
+          type: [string, "null"]
+          format: uuid
+          description: Revisión que esta importación aplicó, si se aplicó desde el historial.
+        appliedByImportId:
+          type: [string, "null"]
+          format: uuid
+          description: En una revisión, la importación que la aplicó; nulo mientras no se aplica.
         createdAt:
           type: string
           format: date-time
+    ImportList:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Import"
+        nextCursor:
+          $ref: "#/components/schemas/NextCursor"
     ImportRowError:
       type: object
       required: [row, externalId, code, message]
@@ -5233,7 +5566,7 @@ components:
       enum: [inventory, assigned, active, revoked, lost, damaged, replaced]
     Card:
       type: object
-      required: [id, label, status, keyVersion, assignment, createdAt, updatedAt]
+      required: [id, label, status, keyVersion, assignment, latestAssignment, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -5246,15 +5579,43 @@ components:
         keyVersion:
           type: [integer, "null"]
         assignment:
+          description: Quien la tiene hoy.
           oneOf:
             - type: object
-              required: [employeeId, since]
+              required: [employeeId, employeeName, employeeExternalId, since]
               properties:
                 employeeId:
                   type: string
                   format: uuid
+                employeeName:
+                  type: string
+                employeeExternalId:
+                  type: string
                 since:
                   type: string
+                  format: date-time
+            - type: "null"
+        latestAssignment:
+          description: >-
+            Quien la tuvo por última vez, también si ya no está asignada
+            (perdida, dañada, revocada o reemplazada); `until` es nulo si sigue
+            asignada. Nula si nunca tuvo titular.
+          oneOf:
+            - type: object
+              required: [employeeId, employeeName, employeeExternalId, since, until]
+              properties:
+                employeeId:
+                  type: string
+                  format: uuid
+                employeeName:
+                  type: string
+                employeeExternalId:
+                  type: string
+                since:
+                  type: string
+                  format: date-time
+                until:
+                  type: [string, "null"]
                   format: date-time
             - type: "null"
         createdAt:
@@ -5277,6 +5638,32 @@ components:
           minLength: 16
           maxLength: 128
           description: Huella criptográfica de la tarjeta. El UID público no basta como identidad.
+    CardSummary:
+      type: object
+      additionalProperties: false
+      required: [total, byStatus]
+      properties:
+        total:
+          type: integer
+        byStatus:
+          type: object
+          additionalProperties: false
+          required: [inventory, assigned, active, lost, damaged, revoked, replaced]
+          properties:
+            inventory:
+              type: integer
+            assigned:
+              type: integer
+            active:
+              type: integer
+            lost:
+              type: integer
+            damaged:
+              type: integer
+            revoked:
+              type: integer
+            replaced:
+              type: integer
     CardList:
       type: object
       required: [items, nextCursor]
@@ -5542,6 +5929,7 @@ components:
         - mode
         - status
         - employeeId
+        - employeeName
         - siteId
         - label
         - model
@@ -5560,6 +5948,9 @@ components:
         employeeId:
           type: [string, "null"]
           format: uuid
+        employeeName:
+          type: [string, "null"]
+          description: Nombre de la persona de un teléfono personal; nulo en una terminal de sede.
         siteId:
           type: [string, "null"]
           format: uuid
@@ -5578,6 +5969,20 @@ components:
         revokedAt:
           type: [string, "null"]
           format: date-time
+    DeviceSummary:
+      type: object
+      additionalProperties: false
+      required: [active, silent, revoked, replaced]
+      properties:
+        active:
+          type: integer
+        silent:
+          type: integer
+          description: Activos sin contacto en las últimas 24 horas o que nunca se conectaron.
+        revoked:
+          type: integer
+        replaced:
+          type: integer
     DeviceList:
       type: object
       required: [items, nextCursor]

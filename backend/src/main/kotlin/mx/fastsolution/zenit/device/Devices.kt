@@ -7,6 +7,7 @@ import mx.fastsolution.zenit.api.Page
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
+import mx.fastsolution.zenit.api.TextSearch
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.capture.CaptureProperties
 import mx.fastsolution.zenit.capture.FixedWindowLimiter
@@ -54,6 +55,8 @@ data class DeviceRow(
     val enrolledAt: OffsetDateTime,
     val lastSeenAt: OffsetDateTime?,
     val revokedAt: OffsetDateTime?,
+    /** Nombre de la persona de un teléfono personal; nulo en la autenticación, que no lo necesita. */
+    val employeeName: String? = null,
 )
 
 data class EnrollmentRow(
@@ -119,6 +122,7 @@ data class DeviceView(
     val mode: String,
     val status: String,
     val employeeId: String?,
+    val employeeName: String?,
     val siteId: String?,
     val label: String?,
     val model: String,
@@ -129,7 +133,7 @@ data class DeviceView(
 ) {
     companion object {
         fun of(row: DeviceRow) = DeviceView(
-            row.id.toString(), row.mode, row.status, row.employeeId?.toString(), row.siteId?.toString(), row.label, row.model,
+            row.id.toString(), row.mode, row.status, row.employeeId?.toString(), row.employeeName, row.siteId?.toString(), row.label, row.model,
             row.appVersion, row.enrolledAt.toInstant().toString(), row.lastSeenAt?.toInstant()?.toString(),
             row.revokedAt?.toInstant()?.toString(),
         )
@@ -137,6 +141,21 @@ data class DeviceView(
 }
 
 data class OfflinePolicyView(val maxAgeHours: Long, val maxEvents: Int)
+
+/** Qué lectores pide la lista. `text` es el patrón ya escapado de `TextSearch`. */
+data class DeviceFilter(
+    val mode: String? = null,
+    val statuses: Set<String> = emptySet(),
+    val silentBefore: OffsetDateTime? = null,
+    val text: String? = null,
+)
+
+data class DeviceSummaryView(val active: Int, val silent: Int, val revoked: Int, val replaced: Int)
+
+/** Un lector activo sin contacto por más de este tiempo está «sin señal»: lo usan la lista, sus conteos y el panel. */
+object DeviceSignal {
+    val SILENT_AFTER: Duration = Duration.ofHours(24)
+}
 
 data class DeviceSessionView(
     val sessionId: String,
@@ -204,21 +223,23 @@ class DeviceRepository(private val dsl: DSLContext) {
         )
     }
 
-    fun find(tenantId: UUID, id: UUID): DeviceRow? = dsl.fetchOne("$DEVICE where tenant_id = ? and id = ?", tenantId, id)?.let(::device)
+    fun find(tenantId: UUID, id: UUID): DeviceRow? = dsl.fetchOne("$NAMED where tenant_id = ? and id = ?", tenantId, id)?.let(::named)
 
     /** La única búsqueda sin empresa: de ella sale la empresa del dispositivo que llama. */
     fun findForAuthentication(id: UUID): DeviceRow? = dsl.fetchOne("$DEVICE where id = ?", id)?.let(::device)
 
-    fun page(tenantId: UUID, mode: String?, status: String?, after: PageKey?, limit: Int): List<DeviceRow> {
-        val sql = StringBuilder("$DEVICE where tenant_id = ?")
+    fun page(tenantId: UUID, filter: DeviceFilter, after: PageKey?, limit: Int): List<DeviceRow> {
+        val sql = StringBuilder("$NAMED where tenant_id = ?")
         val binds = mutableListOf<Any>(tenantId)
-        if (mode != null) {
-            sql.append(" and mode = ?")
-            binds += mode
+        where(filter, sql, binds)
+        if (filter.statuses.isNotEmpty()) {
+            sql.append(" and status = any(?)")
+            binds.add(filter.statuses.toTypedArray())
         }
-        if (status != null) {
-            sql.append(" and status = ?")
-            binds += status
+        if (filter.silentBefore != null) {
+            // Sin señal: activo y sin contacto desde hace más del umbral, o nunca.
+            sql.append(" and status = 'active' and (last_seen_at is null or last_seen_at < cast(? as timestamptz))")
+            binds += filter.silentBefore
         }
         if (after != null) {
             sql.append(" and (enrolled_at, id) > (cast(? as timestamptz), cast(? as uuid))")
@@ -227,7 +248,33 @@ class DeviceRepository(private val dsl: DSLContext) {
         }
         sql.append(" order by enrolled_at, id limit ?")
         binds += limit
-        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { device(it) }
+        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { named(it) }
+    }
+
+    /** Conteos con el modo y la búsqueda de la lista, sin filtrar por estado: rotulan cada opción. */
+    fun summary(tenantId: UUID, filter: DeviceFilter, silentBefore: OffsetDateTime): DeviceSummaryView {
+        val sql = StringBuilder(
+            "select count(*) filter (where status = 'active') as active, " +
+                "count(*) filter (where status = 'active' and (last_seen_at is null or last_seen_at < cast(? as timestamptz))) as silent, " +
+                "count(*) filter (where status = 'revoked') as revoked, count(*) filter (where status = 'replaced') as replaced " +
+                "from device where tenant_id = ?",
+        )
+        val binds = mutableListOf<Any>(silentBefore, tenantId)
+        where(filter, sql, binds)
+        val r = dsl.fetchOne(sql.toString(), *binds.toTypedArray())!!
+        fun n(column: String) = r.get(column, Number::class.java).toInt()
+        return DeviceSummaryView(n("active"), n("silent"), n("revoked"), n("replaced"))
+    }
+
+    private fun where(filter: DeviceFilter, sql: StringBuilder, binds: MutableList<Any>) {
+        if (filter.mode != null) {
+            sql.append(" and mode = ?")
+            binds += filter.mode
+        }
+        if (filter.text != null) {
+            sql.append(TextSearch.clause("label", "model", OWNER_NAME))
+            binds.addAll(TextSearch.binds(filter.text, 3))
+        }
     }
 
     /** Cierra el teléfono personal anterior de esa persona, si lo había. */
@@ -300,12 +347,22 @@ class DeviceRepository(private val dsl: DSLContext) {
         revokedAt = r.get("revoked_at", OffsetDateTime::class.java),
     )
 
+    private fun named(r: Record) = device(r).copy(employeeName = r.get("employee_name", String::class.java))
+
     private companion object {
         const val ENROLLMENT =
             "select tenant_id, id, mode, employee_id, site_id, label, status, expires_at, created_at from device_enrollment"
         const val DEVICE =
             "select tenant_id, id, mode, status, employee_id, site_id, label, cast(public_jwk as text) as public_jwk, " +
                 "model, app_version, enrolled_at, last_seen_at, revoked_at from device"
+
+        /** Nombre de la persona de un teléfono personal. Subconsulta para no chocar con las columnas de `device`. */
+        const val OWNER_NAME =
+            "(select owner.display_name from employee owner where owner.tenant_id = device.tenant_id and owner.id = device.employee_id)"
+
+        const val NAMED =
+            "select tenant_id, id, mode, status, employee_id, site_id, label, cast(public_jwk as text) as public_jwk, " +
+                "model, app_version, enrolled_at, last_seen_at, revoked_at, $OWNER_NAME as employee_name from device"
     }
 }
 
@@ -462,13 +519,27 @@ class DeviceService(
         )
     }
 
+    /** Lo que llega en la consulta de la lista, tal como viene. */
+    data class ListQuery(val mode: String? = null, val statuses: List<String>? = null, val silent: String? = null, val q: String? = null)
+
     @Transactional(readOnly = true)
-    fun page(person: CurrentPerson, mode: String?, status: String?, after: PageKey?, limit: Int): List<DeviceRow> {
+    fun page(person: CurrentPerson, query: ListQuery, after: PageKey?, limit: Int): List<DeviceRow> =
+        devices.page(person.requireTenant(), filter(query), after, limit + 1)
+
+    @Transactional(readOnly = true)
+    fun summary(person: CurrentPerson, query: ListQuery): DeviceSummaryView =
+        devices.summary(person.requireTenant(), filter(query), OffsetDateTime.now().minus(DeviceSignal.SILENT_AFTER))
+
+    private fun filter(query: ListQuery): DeviceFilter {
         val checks = Checks()
-        checks.oneOf("mode", mode, MODES, required = false)
-        checks.oneOf("status", status, STATUSES, required = false)
+        val mode = checks.oneOf("mode", query.mode, MODES, required = false)
+        query.statuses.orEmpty().forEach { checks.oneOf("status", it, STATUSES, required = false) }
+        val silent = checks.oneOf("silent", query.silent, setOf("true", "false"), required = false)
+        val text = TextSearch.pattern(checks, query.q)
         checks.done()
-        return devices.page(person.requireTenant(), mode, status, after, limit + 1)
+        // Sólo se filtra por los que no tienen señal; `false` es lo mismo que no filtrar.
+        val silentBefore = if (silent == "true") OffsetDateTime.now().minus(DeviceSignal.SILENT_AFTER) else null
+        return DeviceFilter(mode, query.statuses.orEmpty().toSet(), silentBefore, text)
     }
 
     /** Invalida la clave del dispositivo. Sus marcajes anteriores se conservan. */
@@ -556,14 +627,23 @@ class DeviceController(private val service: DeviceService) {
     fun list(
         @AuthenticationPrincipal person: CurrentPerson,
         @RequestParam mode: String?,
-        @RequestParam status: String?,
+        @RequestParam status: List<String>?,
+        @RequestParam silent: String?,
+        @RequestParam q: String?,
         @RequestParam cursor: String?,
         @RequestParam limit: String?,
     ): Page<DeviceView> {
         val size = Paging.limit(limit)
-        val rows = service.page(person, mode, status, Paging.decode(cursor), size)
+        val rows = service.page(person, DeviceService.ListQuery(mode, status, silent, q), Paging.decode(cursor), size)
         return Paging.page(rows, size, { PageKey(it.enrolledAt, it.id) }) { DeviceView.of(it) }
     }
+
+    @GetMapping("/devices/summary")
+    fun summary(
+        @AuthenticationPrincipal person: CurrentPerson,
+        @RequestParam mode: String?,
+        @RequestParam q: String?,
+    ): DeviceSummaryView = service.summary(person, DeviceService.ListQuery(mode = mode, q = q))
 
     @PostMapping("/devices/{deviceId}/revocation")
     fun revoke(

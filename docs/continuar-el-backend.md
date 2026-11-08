@@ -147,6 +147,16 @@ Detalles que ahorran tiempo:
 - Un nombre para mostrar se une en la consulta de la lista (`left join
   tenant_user`) o se lee en lote por página, como `AuditLog.names`; no se
   guarda copiado en otra tabla.
+- Una búsqueda por texto usa `TextSearch.pattern` (valida y escapa `%` y `_`)
+  y `TextSearch.clause`, que compara con `search_key` de la base. Un filtro
+  de varios valores llega como `List<String>` y se manda como un solo arreglo
+  con `columna = any(?)`.
+- Una subconsulta `lateral` por fila necesita su índice: «quién tuvo la
+  tarjeta por última vez» recorría todas las asignaciones por cada tarjeta y
+  tardaba 1.5 s con 5 000; con `card_assignment_card_since_idx`, 9 ms.
+- Las búsquedas sin nombres del camino caliente (la tarjeta por su huella al
+  marcar, el dispositivo al autenticarse) siguen con su `SELECT` corto; los
+  nombres van en la variante de las listas.
 
 ## Agregar un tipo de trabajo
 

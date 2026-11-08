@@ -144,6 +144,8 @@ abstract class ApiTestBase {
         csv: ByteArray?,
         dryRun: String? = null,
         key: String? = UUID.randomUUID().toString(),
+        fileName: String = "padron.csv",
+        reviewedImportId: String? = null,
     ): Reply {
         val boundary = "zenit-${UUID.randomUUID()}"
         val body = ByteArrayOutputStream()
@@ -152,8 +154,9 @@ abstract class ApiTestBase {
             body.write(content)
             body.write("\r\n".toByteArray())
         }
-        if (csv != null) part("file", "; filename=\"padron.csv\"\r\nContent-Type: text/csv", csv)
+        if (csv != null) part("file", "; filename=\"$fileName\"\r\nContent-Type: text/csv", csv)
         if (dryRun != null) part("dryRun", "", dryRun.toByteArray())
+        if (reviewedImportId != null) part("reviewedImportId", "", reviewedImportId.toByteArray())
         body.write("--$boundary--\r\n".toByteArray())
         val request = HttpRequest.newBuilder(URI("http://127.0.0.1:$serverPort$path"))
             .header("Content-Type", "multipart/form-data; boundary=$boundary")

@@ -3,6 +3,7 @@ package mx.fastsolution.zenit.workday
 import mx.fastsolution.zenit.api.Checks
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
+import mx.fastsolution.zenit.device.DeviceSignal
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.Role
@@ -403,7 +404,7 @@ class CompanyAttendanceService(
             ),
             incidents = incidents,
             previousWeek = repository.closures(tenant.id, previousStart, window(previousStart, zone), site),
-            devices = if (seesDevices) repository.devices(tenant.id, site, OffsetDateTime.now().minus(SILENT_AFTER)) else null,
+            devices = if (seesDevices) repository.devices(tenant.id, site, OffsetDateTime.now().minus(DeviceSignal.SILENT_AFTER)) else null,
         )
     }
 
@@ -495,7 +496,6 @@ class CompanyAttendanceService(
         val TODAY_ONLY = setOf("no_entry_today", "on_shift")
         val ON_SHIFT = setOf("on_shift", "on_break")
         val DEVICE_READERS = setOf(Role.ADMIN_EMPRESA, Role.RH, Role.AUDITOR)
-        val SILENT_AFTER: Duration = Duration.ofHours(24)
     }
 }
 
