@@ -34,8 +34,6 @@
         </activity>
         <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".NfcDiagnosticActivity" android:exported="false" />
-        <activity android:name=".AdministrationActivity" android:exported="false" />
-        <activity android:name=".CardProvisioningActivity" android:exported="false" />
     </application>
 
 </manifest>

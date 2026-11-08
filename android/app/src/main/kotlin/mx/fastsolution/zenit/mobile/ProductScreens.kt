@@ -24,16 +24,11 @@ internal fun ProductApp(
 ) {
     var page by rememberSaveable { mutableStateOf("Inicio") }
     var showMock by rememberSaveable { mutableStateOf(false) }
-    var showAdmin by rememberSaveable { mutableStateOf(false) }
     val terminal = activation.mode == "terminal"
     val pages = if (terminal) listOf("Inicio", "Actividad", "Dispositivo")
         else listOf("Inicio", "Mi semana", "Actividad", "Dispositivo")
     val selectedPage = if (page in pages) page else "Inicio"
     MaterialTheme(colorScheme = ZenitColors, shapes = ZenitShapes) {
-        if (showAdmin) {
-            AdminDemo(onClose = { showAdmin = false })
-            return@MaterialTheme
-        }
         Scaffold(
             modifier = Modifier.safeDrawingPadding(),
             containerColor = MaterialTheme.colorScheme.background,
@@ -71,7 +66,6 @@ internal fun ProductApp(
                                 }
                                 if (!terminal) ZenitLink("Mi semana", "Ver resumen de asistencias", "Mi semana") { page = "Mi semana" }
                                 ZenitLink("Registros sincronizados", "No hay registros pendientes", "Actividad") { page = "Actividad" }
-                                ZenitLink("Administración", "Empleados y asistencia del equipo", "Empleados") { showAdmin = true }
                             }
                             "Mi semana" -> PersonalWeek()
                             else -> PersonalActivity()

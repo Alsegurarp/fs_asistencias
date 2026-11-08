@@ -43,9 +43,6 @@ class WelcomeActivity : ComponentActivity() {
                             AccessCard("Mi asistencia", "Registro de asistencia y consulta del resumen semanal.", "Entrar como empleado") {
                                 startActivity(Intent(this@WelcomeActivity, MainActivity::class.java))
                             }
-                            AccessCard("Administración", "Administración de empleados, horarios y dispositivos de la empresa.", "Entrar a administración", primary = false) {
-                                startActivity(Intent(this@WelcomeActivity, AdministrationActivity::class.java))
-                            }
                             ExpandablePanel("Otras opciones", "Consultar tarjeta y ayuda de acceso") {
                                 OutlinedButton(onClick = { startActivity(Intent(this@WelcomeActivity, NfcDiagnosticActivity::class.java)) },
                                     modifier = Modifier.fillMaxWidth()) { Text("Consultar tarjeta NFC") }
@@ -65,9 +62,8 @@ class WelcomeActivity : ComponentActivity() {
 }
 
 @Composable
-private fun AccessCard(title: String, description: String, action: String, primary: Boolean = true, onClick: () -> Unit) {
+private fun AccessCard(title: String, description: String, action: String, onClick: () -> Unit) {
     InfoPanel(title, description) {
-        if (primary) Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(action) }
-        else OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(action) }
+        Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(action) }
     }
 }
