@@ -96,7 +96,6 @@ internal fun PresentationDevice(nfcReady: Boolean, locationGranted: Boolean, onR
             Text("Roberto AR", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Text("Organización · Zenit")
             Text("Sede · Centro")
-            Text("Modalidad · Personal")
             Text("Identificador · ZNT-MOV-001")
             Text("Estado · Activo", color = MaterialTheme.colorScheme.primary)
         }

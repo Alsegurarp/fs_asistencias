@@ -47,7 +47,7 @@ internal fun ProductApp(
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
                 ZenitHeader(title = if (showMock) "Registrar asistencia" else if (selectedPage == "Inicio") "Hola, Roberto" else selectedPage,
-                    subtitle = if (selectedPage == "Inicio" && !showMock) "fastSolution" else null,
+                    subtitle = "Demostración · Datos de ejemplo",
                     home = selectedPage == "Inicio" && !showMock,
                     onBack = if (showMock) ({ showMock = false }) else if (selectedPage != "Inicio") ({ page = "Inicio" }) else null)
                 Box(Modifier.weight(1f).offset(y = (-24).dp).clip(ZenitBodyShape).background(MaterialTheme.colorScheme.background)) {

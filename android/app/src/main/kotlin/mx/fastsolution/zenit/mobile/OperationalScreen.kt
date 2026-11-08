@@ -76,10 +76,10 @@ internal fun OperationalScreen(
             },
         ) { insets ->
             Column(Modifier.fillMaxSize().padding(insets)) {
-                val employee = state.deviceLabel.substringAfter(" · ", "").ifBlank { "Bienvenido" }
+                val employee = state.deviceLabel.substringAfter(" · ", "").trim()
                 ZenitHeader(
                     title = if (registering) "Registrar asistencia" else if (tab == "Inicio" && state.registered)
-                        (if (state.personal) "Hola, $employee" else "Punto de asistencia") else tab,
+                        (if (state.personal) employee.takeIf { it.isNotBlank() }?.let { "Hola, $it" } ?: "Bienvenido" else "Punto de asistencia") else tab,
                     subtitle = if (registering) null else if (state.registered) state.deviceLabel.substringBefore(" · ") else "Control de asistencia",
                     home = tab == "Inicio" && !registering,
                     onBack = if (registering) ({ registering = false }) else if (tab != "Inicio") ({ tab = "Inicio" }) else null,
@@ -100,9 +100,11 @@ internal fun OperationalScreen(
                         }
                     }
                     if ((!state.registered && tab == "Inicio") || tab == "Dispositivo" && reenrolling) {
-                        SectionCard("Vinculación del dispositivo", "Solicite a Recursos Humanos un código de vinculación personal o de terminal.") {
-                            OutlinedTextField(baseUrl, { baseUrl = it }, label = { Text("Servidor") },
-                                singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
+                        SectionCard("Vincula tu teléfono", "Solicita a Recursos Humanos tu código de vinculación. Sólo necesitas hacerlo una vez en este teléfono.") {
+                            ExpandablePanel("Configuración de conexión", "Cambia la dirección sólo si Recursos Humanos te lo indica") {
+                                OutlinedTextField(baseUrl, { baseUrl = it }, label = { Text("Servidor") },
+                                    singleLine = true, enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
+                            }
                             OutlinedTextField(code, { code = it }, label = { Text("Código de vinculación") },
                                 placeholder = { Text("XXXXX-XXXXX") }, singleLine = true,
                                 enabled = !state.isCapturing, modifier = Modifier.fillMaxWidth())
@@ -176,7 +178,7 @@ internal fun OperationalScreen(
                                 }
                             }
                             if (state.registered && state.personal && !registering) ZenitLink("Mi semana", "Ver resumen de asistencias", "Mi semana") { tab = "Mi semana" }
-                            SectionCard(if (state.pendingCount == 0) "Registros sincronizados" else "Registros pendientes de envío",
+                            if (state.registered || state.pendingCount > 0) SectionCard(if (state.pendingCount == 0) "Registros sincronizados" else "Registros pendientes de envío",
                                 if (state.pendingCount == 0) "No hay registros pendientes de envío." else "${state.pendingCount} registros pendientes. Se requiere conexión a internet para completar el envío.") {
                                 if (state.registered && state.pendingCount > 0) Button(onSynchronize, enabled = !state.isCapturing,
                                     modifier = Modifier.fillMaxWidth()) { Text("Enviar pendientes") }
@@ -222,7 +224,7 @@ internal fun OperationalScreen(
                                     modifier = Modifier.fillMaxWidth()) { Text("Renovar sesión") }
                                 if (!reenrolling) TextButton(onClick = { confirmChange = true }, enabled = !state.isCapturing) { Text("Cambiar vinculación") }
                                 if (BuildConfig.DEBUG) {
-                                    TextButton(onOpenPresentation) { Text("Ver vistas de la app") }
+                                    TextButton(onOpenPresentation) { Text("Explorar con datos de ejemplo") }
                                 }
                             }
                             if (!state.registered) Button(onClick = { tab = "Inicio" }, modifier = Modifier.fillMaxWidth()) { Text("Ir a vinculación") }

@@ -46,7 +46,6 @@ class ActivationViewModel(application: Application) : AndroidViewModel(applicati
         mode = activation.getString("mode"),
         breakPolicy = activation.getJSONObject("session").getString("breakPolicy"),
         activated = true,
-        message = "Teléfono activado para ${activation.getJSONObject("tenant").getString("name")}. " +
-            if (activation.getString("mode") == "personal") "Modalidad personal." else "Modalidad terminal.",
+        message = "Teléfono vinculado a ${activation.getJSONObject("tenant").getString("name")}.",
     )
 }
