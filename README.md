@@ -4,6 +4,11 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Usuarios, reportes y bitácora para el portal, 7 de noviembre:** contrato
+0.22.0 con filtros y conteos de usuarios y su permiso de expediente,
+historial de exportes y expedientes, y filtros y cuenta acotada de la
+bitácora. [Reglas y medición](docs/logica-de-negocio.md#bitácora).
+
 **Padrón y buscador para el portal, 7 de noviembre:** contrato 0.21.0 con
 búsqueda por texto sin acentos, filtros y conteos en el servidor para
 personas, tarjetas y lectores, e historial de importaciones.

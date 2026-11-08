@@ -1,5 +1,16 @@
 # Estado y pendientes
 
+**Usuarios, reportes y bitácora para el portal, 7 de noviembre (contrato
+0.22.0):** cuarta fase del backend de la maqueta. La lista de usuarios busca
+y filtra en el servidor y trae si cada persona puede descargar el expediente
+y desde cuándo, con `GET /users/summary`. `GET /exports` da el historial de
+exportes con quién los pidió y descargó, y `GET /dossiers` las copias propias
+del expediente. La bitácora filtra por quién actuó, por la persona u objeto y
+por grupo de acciones, y `GET /audit-log/summary` la cuenta hasta 10 000.
+Migración V016. Medido con 100 000 acciones: menos de 30 ms por página o
+cuenta ([reglas y medición](logica-de-negocio.md#bitácora)). Falta que el
+portal las consuma; no se desplegó.
+
 **Padrón y buscador para el portal, 7 de noviembre (contrato 0.21.0):**
 tercera fase del backend de la maqueta. Personas, tarjetas y lectores se
 buscan por fragmento sin acentos (`q`) y se filtran en el servidor por
@@ -11,7 +22,8 @@ historial con el nombre del archivo y de quien lo subió, y una revisión se
 aplica volviendo a subir el mismo archivo. Migración V015. Medido con 5 000
 personas y 5 000 tarjetas: listas y conteos entre 4 y 65 ms
 ([reglas y medición](logica-de-negocio.md#búsqueda-y-filtros-del-padrón)).
-Falta que el portal las consuma; no se desplegó.
+Desplegada en el ambiente publicado el 7 de noviembre; falta que el portal la
+consuma.
 
 **Incidencias, cierres y bitácora para el portal, 7 de noviembre (contrato
 0.20.0):** segunda fase del backend de la maqueta. Las incidencias filtran en

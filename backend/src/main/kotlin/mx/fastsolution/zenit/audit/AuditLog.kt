@@ -21,6 +21,18 @@ data class AuditRow(
     val metadata: String,
 )
 
+/** Qué acciones pide la lista. `group` es una de las llaves de `AuditLog.GROUPS`. */
+data class AuditFilter(
+    val action: String? = null,
+    val group: String? = null,
+    val actorType: String? = null,
+    val actorId: String? = null,
+    val targetType: String? = null,
+    val targetId: String? = null,
+    val from: OffsetDateTime? = null,
+    val to: OffsetDateTime? = null,
+)
+
 /**
  * Bitácora de acciones administrativas. Sólo se agrega: el rol de la base con
  * el que atiende el backend no puede corregirla ni borrarla.
@@ -62,24 +74,13 @@ class AuditLog(private val dsl: DSLContext) {
     }
 
     /** Lo más reciente primero, y sólo de la empresa indicada. */
-    fun page(tenantId: UUID, action: String?, from: OffsetDateTime?, to: OffsetDateTime?, after: PageKey?, limit: Int): List<AuditRow> {
+    fun page(tenantId: UUID, filter: AuditFilter, after: PageKey?, limit: Int): List<AuditRow> {
         val sql = StringBuilder(
             "select id, at, actor_type, actor_id, action, target_type, target_id, correlation_id, " +
                 "cast(metadata as text) as metadata from audit_log where tenant_id = ?",
         )
         val binds = mutableListOf<Any>(tenantId)
-        if (action != null) {
-            sql.append(" and action = ?")
-            binds += action
-        }
-        if (from != null) {
-            sql.append(" and at >= cast(? as timestamptz)")
-            binds += from
-        }
-        if (to != null) {
-            sql.append(" and at < cast(? as timestamptz)")
-            binds += to
-        }
+        where(filter, sql, binds)
         if (after != null) {
             sql.append(" and (at, id) < (cast(? as timestamptz), cast(? as uuid))")
             binds += after.at
@@ -99,6 +100,44 @@ class AuditLog(private val dsl: DSLContext) {
                 correlationId = r.get("correlation_id", UUID::class.java),
                 metadata = r.get("metadata", String::class.java),
             )
+        }
+    }
+
+    /**
+     * Cuántas acciones cumplen los filtros, contando a lo más hasta `cap`: un
+     * total exacto de una bitácora que sólo crece costaría más con cada día.
+     * Pasado el tope dice que hay más.
+     */
+    fun count(tenantId: UUID, filter: AuditFilter, cap: Int): Pair<Int, Boolean> {
+        val sql = StringBuilder("select count(*) as total from (select 1 from audit_log where tenant_id = ?")
+        val binds = mutableListOf<Any>(tenantId)
+        where(filter, sql, binds)
+        sql.append(" limit ?) as capped")
+        binds += cap + 1
+        val total = dsl.fetchOne(sql.toString(), *binds.toTypedArray())!!.get("total", Number::class.java).toInt()
+        return total.coerceAtMost(cap) to (total > cap)
+    }
+
+    private fun where(filter: AuditFilter, sql: StringBuilder, binds: MutableList<Any>) {
+        fun equal(column: String, value: Any?) {
+            if (value != null) {
+                sql.append(" and $column = ?")
+                binds += value
+            }
+        }
+        equal("action", filter.action)
+        equal("actor_type", filter.actorType)
+        equal("actor_id", filter.actorId)
+        equal("target_type", filter.targetType)
+        equal("target_id", filter.targetId)
+        filter.group?.let { sql.append(" and (${GROUPS.getValue(it)})") }
+        if (filter.from != null) {
+            sql.append(" and at >= cast(? as timestamptz)")
+            binds += filter.from
+        }
+        if (filter.to != null) {
+            sql.append(" and at < cast(? as timestamptz)")
+            binds += filter.to
         }
     }
 
@@ -129,6 +168,23 @@ class AuditLog(private val dsl: DSLContext) {
     }
 
     companion object {
+        private const val PERMISSION_ACTIONS = "'dossier.permission_granted', 'dossier.permission_revoked'"
+
+        /**
+         * Grupos de acciones de la bitácora, por el prefijo de la acción. Una
+         * acción nueva entra sola a su grupo por su prefijo; los permisos de
+         * expediente son de accesos, no de exportes.
+         */
+        val GROUPS = linkedMapOf(
+            "closures" to "action like 'week.%'",
+            "incidents" to "action like 'incident.%'",
+            "directory" to "action like 'employee.%' or action like 'schedule.%' or action like 'import.%'",
+            "devices" to "action like 'card.%' or action like 'device.%'",
+            "access" to "action like 'user.%' or action in ($PERMISSION_ACTIONS)",
+            "settings" to "action like 'tenant.%' or action like 'site.%'",
+            "exports" to "action like 'export.%' or (action like 'dossier.%' and action not in ($PERMISSION_ACTIONS))",
+        )
+
         /** Cómo se nombra cada tipo; un incidente y un cierre, por la persona a la que pertenecen. */
         private val LABELS = mapOf(
             "user" to "select id, display_name as name from tenant_user where tenant_id = ? and id = any(?)",

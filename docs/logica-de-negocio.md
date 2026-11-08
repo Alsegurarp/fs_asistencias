@@ -59,6 +59,13 @@ Se registran en [Decisiones de negocio](decisiones-de-negocio.md).
   llegue a ejecutarse. Los dispositivos tienen la suya aparte, en la captura.
 - Una cuenta de trabajador se liga con una sola fila del padrón, y una fila
   con una sola cuenta. La liga quien administra.
+- La lista de personas con acceso (sólo para quien administra) busca por
+  nombre o correo y filtra en el servidor por rol, estado y permiso de
+  expediente. `GET /users/summary` cuenta por estado y por rol, cuántas
+  personas de supervisión no tienen sedes y cuántas pueden descargar el
+  expediente. Cada persona trae si puede descargarlo hoy y desde cuándo: el
+  permiso vale para la cuenta con la que se concedió, así que soltar la liga
+  lo apaga.
 
 ## Padrón, sedes, horarios y tarjetas
 
@@ -475,6 +482,13 @@ el acuerdo exigido para el registro electrónico. Véase la
   guardó, de modo que su propia huella se puede volver a calcular.
 - **Provisional:** la plantilla del archivo trae una fila por cierre con sus
   totales. No trae el detalle por día.
+- El historial (`GET /exports`) va del más reciente al más antiguo, con quién
+  lo pidió y quién lo descargó, y filtra por estado efectivo y semana: uno
+  listo cuyo plazo pasó cuenta como vencido.
+- Del expediente de la empresa, cada persona con el permiso ve sólo sus
+  propias copias (`GET /dossiers`), con la hora de su descarga: las de otra
+  persona no existen para ella, igual que al consultar una. Quién más pidió o
+  descargó una copia se ve en la bitácora.
 
 ## Bitácora
 
@@ -495,6 +509,28 @@ quien actuó y de lo que tocó (`displayName`), leídos en lote con la página: 
 lo más una consulta por tipo presente. Una incidencia y un cierre se nombran
 por la persona a la que pertenecen; lo que no tiene nombre, como la empresa o
 un exporte, va en nulo.
+
+Se filtra en el servidor por periodo, acción, quién actuó (`actorType`, o una
+persona o dispositivo con `actorId`), la persona u objeto que se tocó
+(`targetType` con `targetId`) y grupo de acciones (`group`), que se arma por
+el prefijo de la acción:
+
+| Grupo | Acciones |
+| --- | --- |
+| `closures` | `week.*` |
+| `incidents` | `incident.*` |
+| `directory` | `employee.*`, `schedule.*`, `import.*` |
+| `devices` | `card.*`, `device.*` |
+| `access` | `user.*` y los permisos de expediente |
+| `settings` | `tenant.*`, `site.*` |
+| `exports` | `export.*` y lo demás de `dossier.*` |
+
+`GET /audit-log/summary` cuenta las acciones con esos filtros hasta 10 000: la
+bitácora sólo crece, y un total exacto costaría más cada día. Pasado el tope
+dice `capped` y el portal muestra «más de 10 000».
+
+**Medición** con 100 000 acciones, en contenedor local: cada página de 50 con
+cualquier filtro y cada cuenta respondieron en menos de 30 ms.
 
 ## Lo provisional, reunido
 

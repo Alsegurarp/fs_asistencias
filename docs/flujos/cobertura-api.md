@@ -3,7 +3,7 @@
 Corte: 20 de octubre de 2026. Las 62 operaciones de contracts/openapi.yaml (versión 0.13.0).
 Las rutas de esta tabla incluyen el prefijo /api/v1. Los roles se toman del contrato;
 la autorización efectiva también se aplica en SecurityConfig y los servicios.
-Las filas marcadas «desde 0.19.0», «desde 0.20.0» o «desde 0.21.0» se agregaron después de ese corte; la tabla
+Las filas marcadas «desde 0.19.0» a «desde 0.22.0» se agregaron después de ese corte; la tabla
 no se ha vuelto a contar contra el contrato completo.
 
 | Método y ruta | operationId | Flujo principal | Roles / credencial |
@@ -19,6 +19,7 @@ no se ha vuelto a contar contra el contrato completo.
 | GET /api/v1/tenant | getTenant | [03](03-empresa-y-usuarios.puml) | admin_empresa, rh, supervisor, auditor |
 | PATCH /api/v1/tenant | updateTenant | [03](03-empresa-y-usuarios.puml) | admin_empresa |
 | GET /api/v1/users | listUsers | [03](03-empresa-y-usuarios.puml) | admin_empresa |
+| GET /api/v1/users/summary | getUserSummary | [03](03-empresa-y-usuarios.puml), desde 0.22.0 | admin_empresa |
 | POST /api/v1/users | inviteUser | [03](03-empresa-y-usuarios.puml) | admin_empresa |
 | GET /api/v1/users/{userId} | getUser | [03](03-empresa-y-usuarios.puml) | admin_empresa |
 | PATCH /api/v1/users/{userId} | updateUser | [03](03-empresa-y-usuarios.puml) | admin_empresa |
@@ -74,9 +75,11 @@ no se ha vuelto a contar contra el contrato completo.
 | GET /api/v1/week-closure-runs/{runId} | getWeekClosureRun | [11](11-cierres-y-corridas.puml) | admin_empresa, rh, supervisor, auditor |
 | GET /api/v1/week-closure-runs/{runId}/blocked | listWeekClosureRunBlocked | [11](11-cierres-y-corridas.puml) | admin_empresa, rh, supervisor, auditor |
 | GET /api/v1/rule-sets | listRuleSets | [09](09-jornada-semanal.puml) | admin_empresa, rh, supervisor, auditor |
+| GET /api/v1/exports | listExports | [13](13-exportes-y-trabajos.puml), desde 0.22.0 | admin_empresa, rh, auditor |
 | POST /api/v1/exports | createExport | [13](13-exportes-y-trabajos.puml) | admin_empresa, rh, auditor |
 | GET /api/v1/exports/{exportId} | getExport | [13](13-exportes-y-trabajos.puml) | admin_empresa, rh, auditor |
 | GET /api/v1/exports/{exportId}/download | downloadExport | [13](13-exportes-y-trabajos.puml) | admin_empresa, rh, auditor |
 | GET /api/v1/exports/{exportId}/manifest | getExportManifest | [13](13-exportes-y-trabajos.puml) | admin_empresa, rh, auditor |
 | GET /api/v1/audit-log | listAuditEntries | [16](16-operacion-auditoria-y-respaldo.puml) | admin_empresa, auditor |
+| GET /api/v1/audit-log/summary | getAuditSummary | [16](16-operacion-auditoria-y-respaldo.puml), desde 0.22.0 | admin_empresa, auditor |
 | GET /api/v1/integrations/checkpoints | listIntegrationCheckpoints | [04](04-empleados-e-importacion.puml) | admin_empresa, rh |

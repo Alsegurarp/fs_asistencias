@@ -498,6 +498,13 @@ Editar el propio acceso actualiza `/me` para ajustar la navegación.
 
 **Desvincular cuenta** exige confirmar que la identidad anterior fue desactivada
 en Keycloak: esta operación conserva los roles y no bloquea el acceso.
+
+Desde el contrato 0.22.0 el backend ya resuelve, y el portal todavía no usa:
+la búsqueda `q` y los filtros por rol, estado y permiso de expediente de
+`GET /users`, sus conteos en `GET /users/summary`, y en cada persona
+`dossierPermission` con `dossierPermissionSince`. También `GET /exports` y
+`GET /dossiers` para el historial de Reportes, y los filtros de la bitácora
+con su cuenta acotada en `GET /audit-log/summary`.
 Si la cuenta anterior sigue activa con el mismo correo verificado, vuelve
 a vincularse al entrar. Para quitar el acceso a la empresa, deshabilitarlo.
 Ni habilitación ni desvinculación cambian contraseñas o segundo factor.

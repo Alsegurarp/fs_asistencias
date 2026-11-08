@@ -4,6 +4,7 @@ import mx.fastsolution.zenit.api.Checks
 import mx.fastsolution.zenit.api.Conflicts
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Problems
+import mx.fastsolution.zenit.api.TextSearch
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.employee.EmployeeRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
@@ -91,9 +92,27 @@ class UserService(
         return users.find(tenantId, id)!!
     }
 
+    /** Lo que llega en la consulta de la lista, tal como viene. */
+    data class ListQuery(val q: String? = null, val role: String? = null, val status: String? = null, val dossierPermission: String? = null)
+
     @Transactional(readOnly = true)
-    fun page(admin: CurrentPerson, after: PageKey?, limit: Int): List<UserRow> =
-        users.page(admin.requireTenant(), after, limit + 1)
+    fun page(admin: CurrentPerson, query: ListQuery, after: PageKey?, limit: Int): List<UserRow> {
+        val checks = Checks()
+        val text = TextSearch.pattern(checks, query.q)
+        val role = checks.oneOf("role", query.role, Role.OF_TENANT, required = false)
+        val status = checks.oneOf("status", query.status, STATUSES, required = false)
+        val permitted = checks.oneOf("dossierPermission", query.dossierPermission, setOf("true", "false"), required = false)
+        checks.done()
+        return users.page(admin.requireTenant(), UserFilter(text, role, status, permitted?.toBooleanStrictOrNull()), after, limit + 1)
+    }
+
+    @Transactional(readOnly = true)
+    fun summary(admin: CurrentPerson, q: String?): UserSummaryView {
+        val checks = Checks()
+        val text = TextSearch.pattern(checks, q)
+        checks.done()
+        return users.summary(admin.requireTenant(), text)
+    }
 
     @Transactional(readOnly = true)
     fun get(admin: CurrentPerson, id: UUID): UserRow = users.find(admin.requireTenant(), id) ?: throw Problems.notFound()
@@ -219,5 +238,6 @@ class UserService(
 
     private companion object {
         const val MAX_NAME = 120
+        val STATUSES = setOf("invited", "active", "disabled")
     }
 }

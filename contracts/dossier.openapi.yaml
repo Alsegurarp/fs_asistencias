@@ -376,6 +376,7 @@ components:
       additionalProperties: false
       required: [id, tenantId, requestedBy, formatVersion, scope, status, createdAt, expiresAt, snapshotAt, readyAt, manifestSha256, fileSha256, failureCode]
       properties:
+        downloadedAt: { type: [string, 'null'], format: date-time, description: Cuándo se descargó; desde openapi.yaml 0.22.0. }
         id: { type: string, format: uuid }
         tenantId: { type: string, format: uuid, description: Derivado de la identidad; no se admite en solicitudes. }
         requestedBy: { type: string, format: uuid }
