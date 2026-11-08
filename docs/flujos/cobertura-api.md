@@ -3,7 +3,7 @@
 Corte: 20 de octubre de 2026. Las 62 operaciones de contracts/openapi.yaml (versión 0.13.0).
 Las rutas de esta tabla incluyen el prefijo /api/v1. Los roles se toman del contrato;
 la autorización efectiva también se aplica en SecurityConfig y los servicios.
-Las filas marcadas «desde 0.19.0» o «desde 0.20.0» se agregaron después de ese corte; la tabla
+Las filas marcadas «desde 0.19.0», «desde 0.20.0» o «desde 0.21.0» se agregaron después de ese corte; la tabla
 no se ha vuelto a contar contra el contrato completo.
 
 | Método y ruta | operationId | Flujo principal | Roles / credencial |
@@ -32,6 +32,7 @@ no se ha vuelto a contar contra el contrato completo.
 | POST /api/v1/schedules | createSchedule | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh |
 | GET /api/v1/schedules/{scheduleId} | getSchedule | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh, supervisor, auditor |
 | GET /api/v1/employees | listEmployees | [04](04-empleados-e-importacion.puml) | admin_empresa, rh, supervisor, auditor |
+| GET /api/v1/employees/summary | getEmployeeSummary | [04](04-empleados-e-importacion.puml), desde 0.21.0 | admin_empresa, rh, supervisor, auditor |
 | POST /api/v1/employees | createEmployee | [04](04-empleados-e-importacion.puml) | admin_empresa, rh |
 | GET /api/v1/employees/{employeeId} | getEmployee | [04](04-empleados-e-importacion.puml) | admin_empresa, rh, supervisor, auditor |
 | PATCH /api/v1/employees/{employeeId} | updateEmployee | [04](04-empleados-e-importacion.puml) | admin_empresa, rh |
@@ -41,13 +42,16 @@ no se ha vuelto a contar contra el contrato completo.
 | GET /api/v1/attendance/summary | getAttendanceSummary | [09](09-jornada-semanal.puml), desde 0.19.0 | admin_empresa, rh, supervisor, auditor |
 | POST /api/v1/imports/csv | importEmployeesCsv | [04](04-empleados-e-importacion.puml) | admin_empresa, rh |
 | GET /api/v1/imports/{importId} | getImport | [04](04-empleados-e-importacion.puml) | admin_empresa, rh |
+| GET /api/v1/imports | listImports | [04](04-empleados-e-importacion.puml), desde 0.21.0 | admin_empresa, rh |
 | GET /api/v1/cards | listCards | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh, auditor |
+| GET /api/v1/cards/summary | getCardSummary | [05](05-sedes-horarios-tarjetas.puml), desde 0.21.0 | admin_empresa, rh, auditor |
 | POST /api/v1/cards | registerCard | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh |
 | POST /api/v1/cards/{cardId}/assignments | assignCard | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh |
 | POST /api/v1/cards/{cardId}/revocation | revokeCard | [05](05-sedes-horarios-tarjetas.puml) | admin_empresa, rh |
 | POST /api/v1/device-enrollments | createDeviceEnrollment | [06](06-enrolamiento-y-dispositivo.puml) | admin_empresa, rh |
 | POST /api/v1/device-activations | activateDevice | [06](06-enrolamiento-y-dispositivo.puml) | Código de un uso y prueba de posesión |
 | GET /api/v1/devices | listDevices | [06](06-enrolamiento-y-dispositivo.puml) | admin_empresa, rh, auditor |
+| GET /api/v1/devices/summary | getDeviceSummary | [06](06-enrolamiento-y-dispositivo.puml), desde 0.21.0 | admin_empresa, rh, auditor |
 | POST /api/v1/devices/{deviceId}/revocation | revokeDevice | [06](06-enrolamiento-y-dispositivo.puml) | admin_empresa, rh |
 | POST /api/v1/device-sessions | openDeviceSession | [06](06-enrolamiento-y-dispositivo.puml) | Dispositivo: aserción ES256 |
 | GET /api/v1/attendance-events | listAttendanceEvents | [08](08-captura-en-backend.puml) | admin_empresa, rh, supervisor, auditor |

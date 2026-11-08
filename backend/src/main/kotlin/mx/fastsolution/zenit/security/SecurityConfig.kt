@@ -111,15 +111,15 @@ class SecurityConfig {
                     .hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/schedules").hasAnyRole(admin, rh)
                 // Padrón e importación.
-                it.requestMatchers(HttpMethod.GET, "/api/v1/employees", "/api/v1/employees/{employeeId}")
+                it.requestMatchers(HttpMethod.GET, "/api/v1/employees", "/api/v1/employees/summary", "/api/v1/employees/{employeeId}")
                     .hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/employees").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/employees/{employeeId}").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/employees/{employeeId}/schedule-assignments").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/imports/csv").hasAnyRole(admin, rh)
-                it.requestMatchers(HttpMethod.GET, "/api/v1/imports/{importId}").hasAnyRole(admin, rh)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/imports", "/api/v1/imports/{importId}").hasAnyRole(admin, rh)
                 // Tarjetas.
-                it.requestMatchers(HttpMethod.GET, "/api/v1/cards").hasAnyRole(admin, rh, auditor)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/cards", "/api/v1/cards/summary").hasAnyRole(admin, rh, auditor)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/cards").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/cards/{cardId}/assignments", "/api/v1/cards/{cardId}/revocation")
                     .hasAnyRole(admin, rh)
@@ -127,7 +127,7 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.POST, "/api/v1/device-enrollments").hasAnyRole(admin, rh)
                 // Sin credencial: la autoriza el código de un solo uso.
                 it.requestMatchers(HttpMethod.POST, "/api/v1/device-activations").permitAll()
-                it.requestMatchers(HttpMethod.GET, "/api/v1/devices").hasAnyRole(admin, rh, auditor)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/devices", "/api/v1/devices/summary").hasAnyRole(admin, rh, auditor)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/devices/{deviceId}/revocation").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.POST, *DEVICE_ROUTES.toTypedArray()).hasRole(device)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/attendance-events").hasAnyRole(admin, rh, supervisor, auditor)

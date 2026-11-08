@@ -6,6 +6,7 @@ import mx.fastsolution.zenit.api.Page
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
+import mx.fastsolution.zenit.api.TextSearch
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.card.CardRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
@@ -45,6 +46,7 @@ data class EmployeeRow(
     val source: String,
     val currentScheduleId: UUID?,
     val activeCardId: UUID?,
+    val activeCardLabel: String?,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
 )
@@ -74,6 +76,7 @@ data class EmployeeView(
     val source: String,
     val currentScheduleId: String?,
     val activeCardId: String?,
+    val activeCardLabel: String?,
     val createdAt: String,
     val updatedAt: String,
 ) {
@@ -89,6 +92,7 @@ data class EmployeeView(
             source = row.source,
             currentScheduleId = row.currentScheduleId?.toString(),
             activeCardId = row.activeCardId?.toString(),
+            activeCardLabel = row.activeCardLabel,
             createdAt = row.createdAt.toInstant().toString(),
             updatedAt = row.updatedAt.toInstant().toString(),
         )
@@ -96,6 +100,26 @@ data class EmployeeView(
 }
 
 data class ScheduleAssignmentView(val id: String, val employeeId: String, val scheduleId: String, val validFrom: String, val validTo: String?)
+
+/** `text` es el patrón ya escapado de `TextSearch`. */
+data class EmployeeFilter(
+    val status: String? = null,
+    val siteId: UUID? = null,
+    val scheduleId: UUID? = null,
+    val withoutCard: Boolean? = null,
+    val text: String? = null,
+)
+
+data class ScheduleCount(val scheduleId: String, val people: Int)
+
+data class EmployeeSummaryView(
+    val total: Int,
+    val active: Int,
+    val inactive: Int,
+    val withoutCard: Int,
+    val withoutSchedule: Int,
+    val bySchedule: List<ScheduleCount>,
+)
 
 @Repository
 class EmployeeRepository(private val dsl: DSLContext) {
@@ -117,16 +141,13 @@ class EmployeeRepository(private val dsl: DSLContext) {
     fun lock(tenantId: UUID, id: UUID): Boolean =
         dsl.fetchOne("select id from employee where tenant_id = ? and id = ? for update", tenantId, id) != null
 
-    fun page(tenantId: UUID, status: String?, siteId: UUID?, after: PageKey?, limit: Int): List<EmployeeRow> {
+    fun page(tenantId: UUID, filter: EmployeeFilter, after: PageKey?, limit: Int): List<EmployeeRow> {
         val sql = StringBuilder("$SELECT where e.tenant_id = ?${SiteScope.clause("e.site_id")}")
         val binds = mutableListOf<Any>(tenantId)
-        if (status != null) {
+        where(filter, sql, binds)
+        if (filter.status != null) {
             sql.append(" and e.status = ?")
-            binds += status
-        }
-        if (siteId != null) {
-            sql.append(" and e.site_id = ?")
-            binds += siteId
+            binds += filter.status
         }
         if (after != null) {
             sql.append(" and (e.created_at, e.id) > (cast(? as timestamptz), cast(? as uuid))")
@@ -136,6 +157,62 @@ class EmployeeRepository(private val dsl: DSLContext) {
         sql.append(" order by e.created_at, e.id limit ?")
         binds += limit
         return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { row(it) }
+    }
+
+    /**
+     * Conteos de la pestaña de personas con el alcance y los filtros de la
+     * lista. Los de estado no aplican el filtro de estado, para rotular cada
+     * opción; los demás, sí.
+     */
+    fun summary(tenantId: UUID, filter: EmployeeFilter): EmployeeSummaryView {
+        val matching = if (filter.status != null) "e.status = ?" else "true"
+        val sql = StringBuilder(
+            "select count(*) filter (where $matching) as total, count(*) filter (where e.status = 'active') as active, " +
+                "count(*) filter (where e.status = 'inactive') as inactive, " +
+                "count(*) filter (where $matching and ca.card_id is null) as without_card, " +
+                "count(*) filter (where $matching and cs.schedule_id is null) as without_schedule " +
+                "$FROM where e.tenant_id = ?${SiteScope.clause("e.site_id")}",
+        )
+        val binds = mutableListOf<Any>()
+        repeat(3) { filter.status?.let { binds += it } }
+        binds += tenantId
+        where(filter.copy(scheduleId = null, withoutCard = null), sql, binds)
+        val counts = dsl.fetchOne(sql.toString(), *binds.toTypedArray())!!
+        fun n(column: String) = counts.get(column, Number::class.java).toInt()
+
+        val grouped = StringBuilder("select cs.schedule_id, count(*) as people $FROM where e.tenant_id = ?${SiteScope.clause("e.site_id")}")
+        val groupBinds = mutableListOf<Any>(tenantId)
+        where(filter.copy(scheduleId = null, withoutCard = null), grouped, groupBinds)
+        if (filter.status != null) {
+            grouped.append(" and e.status = ?")
+            groupBinds += filter.status
+        }
+        grouped.append(" and cs.schedule_id is not null group by cs.schedule_id order by count(*) desc, cs.schedule_id")
+        val bySchedule = dsl.fetch(grouped.toString(), *groupBinds.toTypedArray()).map {
+            ScheduleCount(it.get("schedule_id", UUID::class.java).toString(), it.get("people", Number::class.java).toInt())
+        }
+        return EmployeeSummaryView(n("total"), n("active"), n("inactive"), n("without_card"), n("without_schedule"), bySchedule)
+    }
+
+    /** Filtros comunes a la lista y a sus conteos, salvo el estado. */
+    private fun where(filter: EmployeeFilter, sql: StringBuilder, binds: MutableList<Any>) {
+        if (filter.siteId != null) {
+            sql.append(" and e.site_id = ?")
+            binds += filter.siteId
+        }
+        if (filter.scheduleId != null) {
+            sql.append(" and cs.schedule_id = ?")
+            binds += filter.scheduleId
+        }
+        when (filter.withoutCard) {
+            true -> sql.append(" and ca.card_id is null")
+            false -> sql.append(" and ca.card_id is not null")
+            null -> Unit
+        }
+        if (filter.text != null) {
+            sql.append(TextSearch.clause("e.display_name", "e.external_id"))
+            binds.addAll(TextSearch.binds(filter.text, 2))
+        }
     }
 
     fun update(tenantId: UUID, id: UUID, displayName: String, siteId: UUID?, status: String, start: LocalDate, end: LocalDate?) {
@@ -192,23 +269,27 @@ class EmployeeRepository(private val dsl: DSLContext) {
         source = r.get("source", String::class.java),
         currentScheduleId = r.get("current_schedule_id", UUID::class.java),
         activeCardId = r.get("active_card_id", UUID::class.java),
+        activeCardLabel = r.get("active_card_label", String::class.java),
         createdAt = r.get("created_at", OffsetDateTime::class.java),
         updatedAt = r.get("updated_at", OffsetDateTime::class.java),
     )
 
     private companion object {
-        // El horario vigente se calcula con la fecha de hoy en la zona de la empresa.
+        // El horario vigente se calcula con la fecha de hoy en la zona de la empresa. Va en el FROM para
+        // que la lista filtre por horario y por tarjeta en el servidor.
+        const val FROM =
+            "from employee e join tenant t on t.id = e.tenant_id " +
+                "left join lateral (select a.schedule_id from schedule_assignment a where a.tenant_id = e.tenant_id " +
+                "and a.employee_id = e.id and a.valid_from <= cast(now() at time zone t.time_zone as date) " +
+                "and (a.valid_to is null or a.valid_to >= cast(now() at time zone t.time_zone as date)) " +
+                "order by a.valid_from desc limit 1) cs on true " +
+                "left join card_assignment ca on ca.tenant_id = e.tenant_id and ca.employee_id = e.id and ca.until is null " +
+                "left join card cd on cd.tenant_id = ca.tenant_id and cd.id = ca.card_id"
         const val SELECT =
             "select e.id, e.external_id, e.display_name, e.status, e.site_id, " +
                 "cast(e.employment_start as text) as employment_start, cast(e.employment_end as text) as employment_end, " +
-                "e.source, e.created_at, e.updated_at, " +
-                "(select a.schedule_id from schedule_assignment a where a.tenant_id = e.tenant_id and a.employee_id = e.id " +
-                "and a.valid_from <= cast(now() at time zone t.time_zone as date) " +
-                "and (a.valid_to is null or a.valid_to >= cast(now() at time zone t.time_zone as date)) " +
-                "order by a.valid_from desc limit 1) as current_schedule_id, " +
-                "(select c.card_id from card_assignment c where c.tenant_id = e.tenant_id and c.employee_id = e.id " +
-                "and c.until is null) as active_card_id " +
-                "from employee e join tenant t on t.id = e.tenant_id"
+                "e.source, e.created_at, e.updated_at, cs.schedule_id as current_schedule_id, ca.card_id as active_card_id, " +
+                "cd.label as active_card_label $FROM"
         const val ASSIGNMENT =
             "select id, employee_id, schedule_id, cast(valid_from as text) as valid_from, " +
                 "cast(valid_to as text) as valid_to from schedule_assignment"
@@ -246,13 +327,32 @@ class EmployeeService(
         return employees.find(tenantId, id)!!
     }
 
+    /** Lo que llega en la consulta de la lista, tal como viene. */
+    data class ListQuery(
+        val status: String? = null,
+        val siteId: String? = null,
+        val scheduleId: String? = null,
+        val withoutCard: String? = null,
+        val q: String? = null,
+    )
+
     @Transactional(readOnly = true)
-    fun page(person: CurrentPerson, status: String?, siteId: String?, after: PageKey?, limit: Int): List<EmployeeRow> {
+    fun page(person: CurrentPerson, query: ListQuery, after: PageKey?, limit: Int): List<EmployeeRow> =
+        employees.page(person.requireTenant(), filter(query), after, limit + 1)
+
+    @Transactional(readOnly = true)
+    fun summary(person: CurrentPerson, query: ListQuery): EmployeeSummaryView =
+        employees.summary(person.requireTenant(), filter(query))
+
+    private fun filter(query: ListQuery): EmployeeFilter {
         val checks = Checks()
-        checks.oneOf("status", status, STATUSES, required = false)
-        val site = checks.uuid("siteId", siteId, required = false)
+        val status = checks.oneOf("status", query.status, STATUSES, required = false)
+        val site = checks.uuid("siteId", query.siteId, required = false)
+        val schedule = checks.uuid("scheduleId", query.scheduleId, required = false)
+        val withoutCard = checks.oneOf("withoutCard", query.withoutCard, setOf("true", "false"), required = false)
+        val text = TextSearch.pattern(checks, query.q)
         checks.done()
-        return employees.page(person.requireTenant(), status, site, after, limit + 1)
+        return EmployeeFilter(status, site, schedule, withoutCard?.toBooleanStrictOrNull(), text)
     }
 
     @Transactional(readOnly = true)
@@ -370,13 +470,25 @@ class EmployeeController(private val service: EmployeeService) {
         @AuthenticationPrincipal person: CurrentPerson,
         @RequestParam status: String?,
         @RequestParam siteId: String?,
+        @RequestParam scheduleId: String?,
+        @RequestParam withoutCard: String?,
+        @RequestParam q: String?,
         @RequestParam cursor: String?,
         @RequestParam limit: String?,
     ): Page<EmployeeView> {
         val size = Paging.limit(limit)
-        val rows = service.page(person, status, siteId, Paging.decode(cursor), size)
+        val query = EmployeeService.ListQuery(status, siteId, scheduleId, withoutCard, q)
+        val rows = service.page(person, query, Paging.decode(cursor), size)
         return Paging.page(rows, size, { PageKey(it.createdAt, it.id) }) { EmployeeView.of(it) }
     }
+
+    @GetMapping("/summary")
+    fun summary(
+        @AuthenticationPrincipal person: CurrentPerson,
+        @RequestParam status: String?,
+        @RequestParam siteId: String?,
+        @RequestParam q: String?,
+    ): EmployeeSummaryView = service.summary(person, EmployeeService.ListQuery(status = status, siteId = siteId, q = q))
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

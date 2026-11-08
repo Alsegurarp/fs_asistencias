@@ -69,7 +69,14 @@ Se registran en [Decisiones de negocio](decisiones-de-negocio.md).
   asigna desde una fecha; asignarlo cierra el anterior el día previo.
 - Importación por archivo: primero valida y reporta cada fila rechazada con
   su línea; sólo con `dryRun=false` aplica. Repetir el archivo no duplica a
-  nadie. El archivo no se guarda: quedan su huella y los conteos.
+  nadie. El archivo no se guarda: quedan su nombre, su huella y los conteos.
+- El historial de importaciones (`GET /imports`) va de la más reciente a la
+  más antigua, con el nombre del archivo y de quien lo subió. Aplicar una
+  revisión anterior pide volver a subir el archivo con `reviewedImportId`: el
+  servidor compara su huella con la de la revisión y lo rechaza si cambió
+  (`review_mismatch`). Cada revisión se aplica una sola vez, también con dos
+  peticiones a la par, y la revisión aplicada apunta a la importación que la
+  aplicó (`appliedByImportId`).
 - Una tarjeta entra al inventario con su número impreso y su huella. La
   huella no sale en ninguna respuesta.
 - Sólo se asigna una tarjeta del inventario. La que ya tuvo titular no pasa a
@@ -87,6 +94,39 @@ Se registran en [Decisiones de negocio](decisiones-de-negocio.md).
   ajena a esas sedes se deniega completa, sin entregar totales parciales.
   Administración/RH conservan su alcance; combinar auditor y supervisor permite
   lectura global de auditor, pero no amplía escrituras de supervisión.
+
+### Búsqueda y filtros del padrón
+
+Personas, tarjetas y lectores se buscan y filtran en el servidor, antes de
+paginar, con el alcance por sede de supervisión:
+
+| Lista | `q` busca en | Otros filtros | Conteos |
+| --- | --- | --- | --- |
+| Personas | nombre e identificador externo | estado, sede, horario vigente, sin tarjeta | `GET /employees/summary`: por estado, por horario, sin tarjeta y sin horario |
+| Tarjetas | etiqueta, y nombre y número de quien la tuvo por última vez | varios estados a la vez | `GET /cards/summary`: por estado |
+| Lectores | etiqueta, modelo y nombre de la persona del teléfono | modo, varios estados, sin señal | `GET /devices/summary`: activos, sin señal, revocados y reemplazados |
+
+`q` busca por fragmento y sin distinguir mayúsculas ni acentos del español,
+con la función `search_key` de la base; un `%` o un `_` se buscan tal cual.
+Los conteos de estado no aplican el filtro de estado, para rotular cada
+opción. Un lector está **sin señal** si está activo y no tuvo contacto en las
+últimas 24 horas, o nunca: el mismo umbral del panel (`DeviceSignal`).
+
+Cada persona trae la etiqueta de su tarjeta vigente; cada tarjeta, a quien la
+tiene hoy y a quien la tuvo por última vez, con nombre y número, aunque ya
+esté perdida o revocada; cada teléfono personal, el nombre de su persona.
+
+El buscador del portal combina las tres listas con `q` y un límite corto: tres
+llamadas fijas, nunca una por resultado. Supervisión sólo busca personas,
+porque tarjetas y lectores no son de su rol.
+
+**Medición** con 5 000 personas, 5 000 tarjetas y 2 000 importaciones, en
+contenedor local: cada lista de 50 y cada conteo de tarjetas, lectores e
+importaciones respondió en menos de 25 ms; buscar personas, en 10 a 40 ms
+(40 cuando ninguna coincide y se revisan todas), y sus conteos con búsqueda en
+unos 65 ms. Si una empresa pasa de unas 10 000 personas, el siguiente paso es
+guardar el texto de búsqueda en una columna calculada con índice de
+trigramas.
 
 ## Dispositivos
 

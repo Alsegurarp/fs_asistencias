@@ -84,10 +84,12 @@ Actores: administrador y RH.
 | Crear sedes | `POST /sites` | Coordenada y radio de la geocerca, de 20 a 2000 metros |
 | Crear horarios | `POST /schedules` | Con vigencia; no se editan, se crea otro |
 | Dar de alta personas | `POST /employees` | Identificador externo único en la empresa |
-| Cargar el padrón por archivo | `POST /imports/csv` | Primero valida; con `dryRun=false` aplica |
+| Cargar el padrón por archivo | `POST /imports/csv` | Primero valida; con `dryRun=false` aplica. Una revisión del historial se aplica volviendo a subir el mismo archivo con `reviewedImportId` |
+| Ver las cargas anteriores | `GET /imports` | Archivo, quién lo subió, conteos y si una revisión ya se aplicó |
 | Asignar horario | `POST /employees/{employeeId}/schedule-assignments` | Desde una fecha; cierra el anterior el día previo |
 | Registrar tarjetas | `POST /cards` | Número impreso y huella; quedan en inventario |
 | Asignar una tarjeta | `POST /cards/{cardId}/assignments` | Sólo una del inventario; reemplaza la que la persona tuviera |
+| Buscar y contar personas, tarjetas y lectores | `GET /employees`, `/cards`, `/devices` con `q`, y sus `/summary` | Por fragmento, sin acentos; filtros y conteos en el servidor |
 
 ## 4. Enrolar un dispositivo
 
@@ -246,7 +248,7 @@ venció.
 | --- | --- | --- |
 | Marcajes con su evidencia minimizada | `GET /attendance-events` | Administrador, RH, supervisor, auditor |
 | Acciones administrativas, con el nombre de quien actuó y de lo que tocó | `GET /audit-log` | Administrador, auditor |
-| Dispositivos enrolados | `GET /devices` | Administrador, RH, auditor |
+| Dispositivos enrolados, también los que no tienen señal | `GET /devices`, `GET /devices/summary` | Administrador, RH, auditor |
 | De dónde viene el padrón | `GET /integrations/checkpoints` | Administrador, RH |
 | Corridas de cierre, también las del sistema | `GET /week-closure-runs` | Administrador, RH, supervisor, auditor |
 | Reglas laborales y su vigencia | `GET /rule-sets` | Administrador, RH, supervisor, auditor |

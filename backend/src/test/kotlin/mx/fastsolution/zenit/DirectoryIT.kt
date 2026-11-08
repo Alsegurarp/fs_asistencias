@@ -76,10 +76,15 @@ class DirectoryIT : ApiTestBase() {
             Triple("GET", "/api/v1/schedules", readers), Triple("POST", "/api/v1/schedules", writers),
             Triple("GET", "/api/v1/schedules/$id", readers),
             Triple("GET", "/api/v1/employees", readers), Triple("POST", "/api/v1/employees", writers),
+            Triple("GET", "/api/v1/employees/summary", readers),
             Triple("GET", "/api/v1/employees/$id", readers), Triple("PATCH", "/api/v1/employees/$id", writers),
             Triple("POST", "/api/v1/employees/$id/schedule-assignments", writers),
             Triple("POST", "/api/v1/imports/csv", writers), Triple("GET", "/api/v1/imports/$id", writers),
+            Triple("GET", "/api/v1/imports", writers),
             Triple("GET", "/api/v1/cards", setOf("admin_empresa", "rh", "auditor")), Triple("POST", "/api/v1/cards", writers),
+            Triple("GET", "/api/v1/cards/summary", setOf("admin_empresa", "rh", "auditor")),
+            Triple("GET", "/api/v1/devices", setOf("admin_empresa", "rh", "auditor")),
+            Triple("GET", "/api/v1/devices/summary", setOf("admin_empresa", "rh", "auditor")),
             Triple("POST", "/api/v1/cards/$id/assignments", writers), Triple("POST", "/api/v1/cards/$id/revocation", writers),
         )
     }
@@ -94,7 +99,7 @@ class DirectoryIT : ApiTestBase() {
             "auditor" to member(c, "auditor").token,
             "trabajador" to member(c, "trabajador").token,
         )
-        assertEquals(18, routes.size)
+        assertEquals(23, routes.size)
         for ((method, path, allowed) in routes) {
             val body = if (method == "GET") null else "{}"
             assertProblem(401, "unauthorized", call(method, path, body = body))

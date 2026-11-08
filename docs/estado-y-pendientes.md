@@ -1,5 +1,18 @@
 # Estado y pendientes
 
+**Padrón y buscador para el portal, 7 de noviembre (contrato 0.21.0):**
+tercera fase del backend de la maqueta. Personas, tarjetas y lectores se
+buscan por fragmento sin acentos (`q`) y se filtran en el servidor por
+horario, sin tarjeta, varios estados o sin señal, con sus conteos en
+`/employees/summary`, `/cards/summary` y `/devices/summary`. Las respuestas
+traen la etiqueta de la tarjeta vigente, quién tuvo cada tarjeta por última
+vez y el nombre de la persona de cada teléfono. `GET /imports` da el
+historial con el nombre del archivo y de quien lo subió, y una revisión se
+aplica volviendo a subir el mismo archivo. Migración V015. Medido con 5 000
+personas y 5 000 tarjetas: listas y conteos entre 4 y 65 ms
+([reglas y medición](logica-de-negocio.md#búsqueda-y-filtros-del-padrón)).
+Falta que el portal las consuma; no se desplegó.
+
 **Incidencias, cierres y bitácora para el portal, 7 de noviembre (contrato
 0.20.0):** segunda fase del backend de la maqueta. Las incidencias filtran en
 el servidor por severidad, asignación y si bloquean un cierre, ordenan por
@@ -10,7 +23,8 @@ filtran por sede, estado y acuse, con `GET /week-closures/summary`, y la
 bitácora trae el nombre de quien actuó y de lo que tocó. Migración V014.
 Medido con 30 000 incidencias y un año de cierres: menos de 30 ms por lista o
 conteo ([reglas y medición](logica-de-negocio.md#lista-y-conteos-de-incidencias)).
-Falta que el portal las consuma; no se desplegó.
+Desplegada en el ambiente publicado el 7 de noviembre; falta que el portal la
+consuma.
 
 **Asistencia de la empresa, 7 de noviembre (contrato 0.19.0):** primera fase
 del backend que pide la maqueta aprobada del portal. `GET /attendance/weeks`

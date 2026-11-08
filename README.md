@@ -4,6 +4,11 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Padrón y buscador para el portal, 7 de noviembre:** contrato 0.21.0 con
+búsqueda por texto sin acentos, filtros y conteos en el servidor para
+personas, tarjetas y lectores, e historial de importaciones.
+[Reglas y medición](docs/logica-de-negocio.md#búsqueda-y-filtros-del-padrón).
+
 **Incidencias, cierres y bitácora para el portal, 7 de noviembre:** contrato
 0.20.0 con filtros, orden y conteos en el servidor para incidencias y
 cierres, a quién se puede asignar cada incidencia y nombres en las

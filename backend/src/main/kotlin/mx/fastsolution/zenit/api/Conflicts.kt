@@ -18,6 +18,7 @@ object Conflicts {
     const val CARD_LABEL = "card_label_key"
     const val CARD_FINGERPRINT = "card_fingerprint_key"
     const val IMPORT_IDEMPOTENCY = "employee_import_idempotency_key"
+    const val IMPORT_REVIEW = "employee_import_review_key"
     const val USER_EMPLOYEE = "tenant_user_employee_key"
     const val EXPORT_IDEMPOTENCY = "export_idempotency_key"
     const val BREAK_POLICY_CHANGE_DAY = "break_policy_change_one_per_day"

@@ -1,7 +1,11 @@
 package mx.fastsolution.zenit.employee
 
 import com.fasterxml.jackson.annotation.JsonRawValue
+import mx.fastsolution.zenit.api.Checks
 import mx.fastsolution.zenit.api.Conflicts
+import mx.fastsolution.zenit.api.Page
+import mx.fastsolution.zenit.api.PageKey
+import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.identity.CurrentPerson
@@ -45,6 +49,12 @@ data class ImportRow(
     val errors: String,
     val manifestHash: String?,
     val createdAt: OffsetDateTime,
+    val fileName: String? = null,
+    val reviewedImportId: UUID? = null,
+    /** Lo que sólo se lee de la base: quién la subió y, si fue una revisión, la importación que la aplicó. */
+    val createdBy: String? = null,
+    val createdByName: String? = null,
+    val appliedByImportId: UUID? = null,
 )
 
 data class ImportCounts(val total: Int, val accepted: Int, val rejected: Int)
@@ -57,12 +67,21 @@ data class ImportView(
     val counts: ImportCounts,
     @get:JsonRawValue val errors: String,
     val manifestHash: String?,
+    val fileName: String?,
+    val createdBy: String?,
+    val createdByName: String?,
+    val reviewedImportId: String?,
+    val appliedByImportId: String?,
     val createdAt: String,
 ) {
     companion object {
         fun of(row: ImportRow) = ImportView(
             row.id.toString(), row.status, row.dryRun, row.templateVersion,
             ImportCounts(row.total, row.accepted, row.rejected), row.errors, row.manifestHash,
+            row.fileName,
+            // Quien la subió es una persona de la empresa; otro actor no se expone como identificador.
+            row.createdBy?.takeIf { runCatching { UUID.fromString(it) }.isSuccess },
+            row.createdByName, row.reviewedImportId?.toString(), row.appliedByImportId?.toString(),
             row.createdAt.toInstant().toString(),
         )
     }
@@ -80,19 +99,36 @@ class ImportRepository(private val dsl: DSLContext) {
     fun insert(tenantId: UUID, row: ImportRow, idempotencyKey: UUID, createdBy: String) {
         dsl.execute(
             "insert into employee_import (tenant_id, id, idempotency_key, content_sha256, dry_run, status, template_version, " +
-                "total, accepted, rejected, errors, manifest_hash, created_by) " +
-                "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), cast(? as text), ?)",
+                "total, accepted, rejected, errors, manifest_hash, created_by, file_name, reviewed_import_id) " +
+                "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), cast(? as text), ?, cast(? as text), cast(? as uuid))",
             tenantId, row.id, idempotencyKey, row.contentSha256, row.dryRun, row.status, row.templateVersion,
-            row.total, row.accepted, row.rejected, row.errors, row.manifestHash, createdBy,
+            row.total, row.accepted, row.rejected, row.errors, row.manifestHash, createdBy, row.fileName, row.reviewedImportId,
         )
     }
 
     fun find(tenantId: UUID, id: UUID): ImportRow? =
-        dsl.fetchOne("select $COLUMNS from employee_import where tenant_id = ? and id = ?", tenantId, id)?.let(::row)
+        dsl.fetchOne("$SELECT where i.tenant_id = ? and i.id = ?", tenantId, id)?.let(::row)
 
     fun findByKey(tenantId: UUID, idempotencyKey: UUID): ImportRow? =
-        dsl.fetchOne("select $COLUMNS from employee_import where tenant_id = ? and idempotency_key = ?", tenantId, idempotencyKey)
-            ?.let(::row)
+        dsl.fetchOne("$SELECT where i.tenant_id = ? and i.idempotency_key = ?", tenantId, idempotencyKey)?.let(::row)
+
+    /** De la más reciente a la más antigua. */
+    fun page(tenantId: UUID, status: String?, after: PageKey?, limit: Int): List<ImportRow> {
+        val sql = StringBuilder("$SELECT where i.tenant_id = ?")
+        val binds = mutableListOf<Any>(tenantId)
+        if (status != null) {
+            sql.append(" and i.status = ?")
+            binds += status
+        }
+        if (after != null) {
+            sql.append(" and (i.created_at, i.id) < (cast(? as timestamptz), cast(? as uuid))")
+            binds += after.at
+            binds += after.id
+        }
+        sql.append(" order by i.created_at desc, i.id desc limit ?")
+        binds += limit
+        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { row(it) }
+    }
 
     private fun row(r: Record) = ImportRow(
         id = r.get("id", UUID::class.java),
@@ -106,12 +142,22 @@ class ImportRepository(private val dsl: DSLContext) {
         errors = r.get("errors", String::class.java),
         manifestHash = r.get("manifest_hash", String::class.java)?.trim(),
         createdAt = r.get("created_at", OffsetDateTime::class.java),
+        fileName = r.get("file_name", String::class.java),
+        reviewedImportId = r.get("reviewed_import_id", UUID::class.java),
+        createdBy = r.get("created_by", String::class.java),
+        createdByName = r.get("created_by_name", String::class.java),
+        appliedByImportId = r.get("applied_by_import_id", UUID::class.java),
     )
 
     private companion object {
-        const val COLUMNS =
-            "id, cast(content_sha256 as text) as content_sha256, dry_run, status, template_version, total, accepted, " +
-                "rejected, cast(errors as text) as errors, cast(manifest_hash as text) as manifest_hash, created_at"
+        // Quien la subió se compara como texto: `created_by` guarda el actor, que no siempre es un UUID.
+        const val SELECT =
+            "select i.id, cast(i.content_sha256 as text) as content_sha256, i.dry_run, i.status, i.template_version, i.total, " +
+                "i.accepted, i.rejected, cast(i.errors as text) as errors, cast(i.manifest_hash as text) as manifest_hash, " +
+                "i.created_at, i.file_name, i.reviewed_import_id, i.created_by, nullif(u.display_name, '') as created_by_name, " +
+                "(select a.id from employee_import a where a.tenant_id = i.tenant_id and a.reviewed_import_id = i.id) " +
+                "as applied_by_import_id from employee_import i " +
+                "left join tenant_user u on u.tenant_id = i.tenant_id and cast(u.id as text) = i.created_by"
     }
 }
 
@@ -128,12 +174,25 @@ class ImportService(
     private val sources: SourceRepository,
     private val audit: AuditLog,
 ) {
+    /**
+     * Valida o aplica un archivo. `reviewedImportId` aplica una revisión
+     * anterior: el archivo tiene que ser el mismo que se revisó, byte por byte,
+     * porque el servidor no lo conserva; sólo compara su huella.
+     */
     @Transactional
-    fun run(person: CurrentPerson, idempotencyKey: UUID, content: ByteArray, dryRun: Boolean): ImportRow {
+    fun run(
+        person: CurrentPerson,
+        idempotencyKey: UUID,
+        content: ByteArray,
+        dryRun: Boolean,
+        fileName: String? = null,
+        reviewedImportId: UUID? = null,
+    ): ImportRow {
         val tenantId = person.requireTenant()
         val sha = sha256(content)
         // La misma clave nunca crea dos resultados.
-        imports.findByKey(tenantId, idempotencyKey)?.let { return replay(it, sha, dryRun) }
+        imports.findByKey(tenantId, idempotencyKey)?.let { return replay(it, sha, dryRun, reviewedImportId) }
+        if (reviewedImportId != null) checkReview(tenantId, reviewedImportId, sha, dryRun)
 
         val parsed = parse(tenantId, content)
         val manifest = parsed.accepted
@@ -154,12 +213,19 @@ class ImportService(
             errors = errorsJson(parsed.errors),
             manifestHash = if (parsed.structural) null else sha256(manifest.toByteArray()),
             createdAt = OffsetDateTime.now(),
+            fileName = cleanFileName(fileName),
+            reviewedImportId = reviewedImportId,
         )
         try {
             imports.insert(tenantId, row, idempotencyKey, person.actorId)
         } catch (e: RuntimeException) {
-            // Otra petición con la misma clave ganó; el cliente reintenta y recibe su resultado.
-            throw if (Conflicts.uniqueConstraint(e) == Conflicts.IMPORT_IDEMPOTENCY) idempotencyConflict() else e
+            throw when (Conflicts.uniqueConstraint(e)) {
+                // Otra petición con la misma clave ganó; el cliente reintenta y recibe su resultado.
+                Conflicts.IMPORT_IDEMPOTENCY -> idempotencyConflict()
+                // Otra petición aplicó la misma revisión al mismo tiempo.
+                Conflicts.IMPORT_REVIEW -> reviewAlreadyApplied()
+                else -> e
+            }
         }
         if (row.status == "applied") {
             apply(tenantId, parsed.accepted)
@@ -176,12 +242,41 @@ class ImportService(
     @Transactional(readOnly = true)
     fun get(person: CurrentPerson, id: UUID): ImportRow = imports.find(person.requireTenant(), id) ?: throw Problems.notFound()
 
-    private fun replay(existing: ImportRow, sha: String, dryRun: Boolean): ImportRow {
-        if (existing.contentSha256 != sha || existing.dryRun != dryRun) throw idempotencyConflict()
+    @Transactional(readOnly = true)
+    fun page(person: CurrentPerson, status: String?, after: PageKey?, limit: Int): List<ImportRow> {
+        val checks = Checks()
+        checks.oneOf("status", status, STATUSES, required = false)
+        checks.done()
+        return imports.page(person.requireTenant(), status, after, limit + 1)
+    }
+
+    private fun replay(existing: ImportRow, sha: String, dryRun: Boolean, reviewedImportId: UUID?): ImportRow {
+        if (existing.contentSha256 != sha || existing.dryRun != dryRun || existing.reviewedImportId != reviewedImportId) {
+            throw idempotencyConflict()
+        }
         return existing
     }
 
+    private fun checkReview(tenantId: UUID, reviewedImportId: UUID, sha: String, dryRun: Boolean) {
+        if (dryRun) throw Problems.validation("reviewedImportId", "requires_apply", "Aplicar una revisión exige dryRun=false.")
+        val reviewed = imports.find(tenantId, reviewedImportId)
+            ?: throw Problems.validation("reviewedImportId", "import_not_found", "Esa revisión no existe.")
+        if (!reviewed.dryRun || reviewed.status != "ready") {
+            throw Problems.conflict("review_not_applicable", "Sólo se aplica una revisión que quedó lista sin aplicar.")
+        }
+        if (reviewed.appliedByImportId != null) throw reviewAlreadyApplied()
+        if (reviewed.contentSha256 != sha) {
+            throw Problems.conflict("review_mismatch", "El archivo no es el que se revisó: su huella es distinta. Revísalo de nuevo.")
+        }
+    }
+
+    private fun reviewAlreadyApplied() = Problems.conflict("review_already_applied", "Esa revisión ya se aplicó.")
+
     private fun idempotencyConflict() = Problems.conflict("idempotency_conflict", "La clave de idempotencia ya se usó con otro contenido.")
+
+    /** Sólo el nombre, sin ruta ni caracteres de control, y a lo más 255 caracteres. */
+    private fun cleanFileName(raw: String?): String? =
+        raw?.substringAfterLast('/')?.substringAfterLast('\\')?.filterNot { it.isISOControl() }?.trim()?.take(MAX_FILE_NAME)?.ifEmpty { null }
 
     /** Alta o actualización por identificador externo: repetir el archivo no duplica a nadie. */
     private fun apply(tenantId: UUID, rows: List<AcceptedRow>) {
@@ -275,6 +370,8 @@ class ImportService(
         const val MAX_ROWS = 5000
         const val MAX_EXTERNAL_ID = 64
         const val MAX_NAME = 160
+        const val MAX_FILE_NAME = 255
+        val STATUSES = setOf("ready", "applied", "failed")
 
         /** Plantilla vigente. Cambiar los encabezados sube la versión. */
         val HEADERS = listOf("external_id", "display_name", "employment_start", "site_name")
@@ -291,6 +388,7 @@ class ImportController(private val service: ImportService) {
         @RequestHeader("Idempotency-Key", required = false) idempotencyKey: String?,
         @RequestParam("file", required = false) file: MultipartFile?,
         @RequestParam("dryRun", required = false) dryRun: String?,
+        @RequestParam("reviewedImportId", required = false) reviewedImportId: String?,
     ): ImportView {
         val key = try {
             UUID.fromString(idempotencyKey ?: "")
@@ -304,7 +402,23 @@ class ImportController(private val service: ImportService) {
             "false" -> false
             else -> throw Problems.validation("dryRun", "invalid_value", "Debe ser true o false.")
         }
-        return ImportView.of(service.run(person, key, file.bytes, dry))
+        val reviewed = reviewedImportId?.takeIf { it.isNotBlank() }?.let {
+            runCatching { UUID.fromString(it) }.getOrNull()
+                ?: throw Problems.validation("reviewedImportId", "invalid_identifier", "Debe ser un UUID.")
+        }
+        return ImportView.of(service.run(person, key, file.bytes, dry, file.originalFilename, reviewed))
+    }
+
+    @GetMapping
+    fun list(
+        @AuthenticationPrincipal person: CurrentPerson,
+        @RequestParam status: String?,
+        @RequestParam cursor: String?,
+        @RequestParam limit: String?,
+    ): Page<ImportView> {
+        val size = Paging.limit(limit)
+        val rows = service.page(person, status, Paging.decode(cursor), size)
+        return Paging.page(rows, size, { PageKey(it.createdAt, it.id) }) { ImportView.of(it) }
     }
 
     @GetMapping("/{importId}")
