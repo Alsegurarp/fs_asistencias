@@ -4,6 +4,13 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Portal según el lienzo, 8 de noviembre:** contrato 0.26.0. Integrados el
+marco (PR #37), Asistencia (PR #38), Incidencias (PR #39), los días de la
+semana con su tiempo ordinario y extra (PR #40) y Cierres (PR #41). Sigue el
+Panel, que cierra el bloque de Operación; después Padrón, Empresa,
+Reportes, Consola y acceso con la marca.
+[Orden y pendientes](docs/construir-el-portal.md).
+
 **Consola de operación para el portal, 7 de noviembre:** contrato 0.23.0
 con búsqueda y filtros de empresas, quién administra cada una y si ya
 entró, el uso de un mes de todas las empresas con sus totales, e invitar

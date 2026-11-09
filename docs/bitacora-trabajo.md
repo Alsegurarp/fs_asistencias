@@ -6,6 +6,24 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 9 de noviembre de 2026 — Revisión del estado antes del Panel
+
+`main` en `6faf0d7`, sin cambios locales y al día con `origin`. La PR #41
+(Cierres) ya está integrada; los documentos que decían «en la rama» o
+«espera la PR» se actualizaron. El despliegue de `6faf0d7` no está
+registrado: no hay registro en `build/despliegue/registros/` de esta
+estación, `https://zenit.fastsolution.com.mx` no respondió en 20 segundos y
+Docker Desktop estaba detenido, así que no se desplegó ni se comprobó.
+
+Se corrigió el estado del backend en el [índice de documentos](README.md),
+que seguía en el API 0.15.0: el contrato vigente es 0.26.0, con 92
+operaciones. El README raíz suma los avances del portal del 8 de noviembre.
+
+Siguiente: Panel (OPE-01) con la campana de avisos (CTA-03), en
+`feat/portal-panel`, que cierra el bloque 1. Las 17 tareas abiertas y los
+seis P0 no cambian: dependen de datos y accesos externos
+([seguimiento](TareasPendientes.md)).
+
 ## 8 de noviembre de 2026 — Cierres según el lienzo
 
 Rama `feat/portal-cierres` desde `main` en `718e72c` (PR #40 integrada y

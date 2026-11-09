@@ -7,7 +7,11 @@ y reabiertas, «Cerrar las pendientes» como corrida de toda la empresa o de
 una sede, el cierre de una persona con sus días congelados y reabrir con
 motivo. Recorrida con sesiones reales en local, cerrando y reabriendo de
 verdad. Sigue Panel, la última del bloque 1
-([orden y pendientes](construir-el-portal.md)). Espera la PR.
+([orden y pendientes](construir-el-portal.md)). Integrado con la PR #41 el
+8 de noviembre (`main` en `6faf0d7`); el despliegue no está registrado: el
+9 de noviembre el ambiente publicado no respondió desde la estación de
+trabajo y Docker estaba detenido, así que falta desplegar o confirmar que ya
+se desplegó.
 
 **Días de la semana, 8 de noviembre (contrato 0.26.0):** fase 6 del backend.
 La semana trae cada día con su tiempo ordinario y extra, el cierre lo
