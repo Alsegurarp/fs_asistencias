@@ -1,5 +1,13 @@
 # Estado y pendientes
 
+**Incidencias según el lienzo, 8 de noviembre (contrato 0.25.0):**
+segunda pantalla de Operación. Lista y tablero, búsqueda y filtros en el
+servidor, detalle con las marcas del día para asignar y resolver, resueltas
+con su historial, teléfono y el conteo de abiertas en el menú. Recorrida con
+sesiones reales en local, resolviendo de verdad. Siguen la fase 6 del backend
+(el extra de cada día, decidida antes del piloto), Cierres y Panel
+([orden y pendientes](construir-el-portal.md)).
+
 **Asistencia según el lienzo, 8 de noviembre (contrato 0.24.0):** primera
 pantalla de Operación. La semana de cada persona con ordinarias y extra contra
 el tope de las reglas, lo de hoy y lo que pide atención; filtros con sus
@@ -8,7 +16,8 @@ semana día por día, los marcajes con su evidencia y los cierres con su acuse;
 exportar la vista a CSV; teléfono. Recorrida con sesiones reales en local.
 Falta: el tiempo extra de cada día (la semana calculada sólo trae el de la
 semana) y siguen Incidencias, Cierres y Panel
-([orden y pendientes](construir-el-portal.md)).
+([orden y pendientes](construir-el-portal.md)). Integrado con la PR #38 y
+desplegado el 8 de noviembre.
 
 **Marco del portal según el lienzo, 8 de noviembre:** primer bloque del
 portal. Colores, tipografía Inter servida desde el portal, una dirección por

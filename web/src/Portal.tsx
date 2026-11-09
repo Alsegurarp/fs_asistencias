@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect } from 'react'
-import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
+import { Link, Navigate, Route, Routes, useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Alert, Button, CircularProgress, Stack } from '@mui/material'
 import { api, type Me, permissions } from './api'
@@ -12,7 +12,7 @@ import { Dossiers, dossierOwner, dossierPermissionKey } from './Dossiers'
 import { clearDossierVerification } from './dossierFlow'
 import { Exports } from './Exports'
 import { Imports } from './Imports'
-import { Incidents, type IncidentTarget } from './Incidents'
+import { Incidents, type IncidentSummary } from './Incidents'
 import { PersonalAttendance } from './PersonalAttendance'
 import { Schedules } from './Schedules'
 import { Tenants } from './Tenants'
@@ -49,8 +49,12 @@ export function Portal({ me, email, onSignOut, notice }: PortalProps) {
     <ScreenPage me={me} section={section} screen={screen} allowed={allowed} roles={roles} context={context} home={home} dossierPending={dossierPending} callback={callback} />
 
   const upcoming = me.tenant?.upcomingBreakPolicy
+  // Las incidencias abiertas, junto a su sección en el menú.
+  const incidentCount = useQuery({ queryKey: ['incident-summary', ''], queryFn: () => api<IncidentSummary>('/incidents/summary'), enabled: allowed.incidents, retry: false, staleTime: 60_000 })
+  const open = incidentCount.data?.open.total
+  const counts = open ? { incidencias: { value: open, label: `${open} ${open === 1 ? 'abierta' : 'abiertas'}` } } : {}
   return <Routes>
-    <Route element={<Shell me={me} email={email} groups={groups} firstPath={firstPath} context={context} onSignOut={onSignOut}
+    <Route element={<Shell me={me} email={email} groups={groups} firstPath={firstPath} context={context} onSignOut={onSignOut} counts={counts}
       notice={<>{notice}{upcoming && <Alert severity="info" role="status" aria-live="polite">Aviso sobre la comida: {upcomingText(upcoming)}</Alert>}</>} />}>
       <Route index element={home ? <Navigate to={home} replace /> : <NoScreens me={me} />} />
       {all.flatMap(section => section.screens.map(screen => <Route key={screen.path} path={screen.path} element={page(section, screen)} />))}
@@ -76,6 +80,7 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   const screens = section.key === personalSection.key ? [screen] : visibleScreens(section, allowed, roles)
   // Las pantallas ya reconstruidas con el lienzo llevan su propio encabezado.
   if (screen.key === 'attendance') return <Attendance me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'incidents') return <Incidents me={me} context={context} section={section} screens={screens} screen={screen} />
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
@@ -85,10 +90,13 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
 /** Las pantallas anteriores del portal, cada una en su dirección. */
 function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
   const navigate = useNavigate()
-  const location = useLocation()
   switch (screen) {
-    case 'incidents': return <Incidents key={location.key} me={me} initial={(location.state as { incidentTarget?: IncidentTarget } | null)?.incidentTarget} />
-    case 'closures': return <Closures me={me} onIncidents={target => { void navigate('/incidencias', { state: { incidentTarget: target } }) }} />
+    case 'closures': return <Closures me={me} onIncidents={target => {
+      const query = new URLSearchParams({ semana: target.week })
+      if (target.siteId) query.set('sede', target.siteId)
+      if (target.incidentId) query.set('incidencia', target.incidentId)
+      void navigate(`/incidencias?${query}`)
+    }} />
     case 'employees': case 'sites': case 'cards': return <Directory key={screen} kind={screen} me={me} />
     case 'schedules': return <Schedules me={me} />
     case 'imports': return <Imports me={me} />
@@ -99,7 +107,7 @@ function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
-    case 'attendance': return null
+    case 'attendance': case 'incidents': return null
   }
 }
 

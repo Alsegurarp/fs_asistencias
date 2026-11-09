@@ -57,6 +57,9 @@ it('los colores de texto del lienzo cumplen contraste AA donde se usan', () => {
     ['blanco sobre el encabezado de la ficha', color.white, '#2459BE'],
     ['texto secundario sobre las cifras de la ficha', color.muted, color.rowHover],
     ['filtro elegido sobre su mosaico', color.deep, '#EEF4FE'],
+    ['conteo de la barra inferior', color.countInk, color.countBg],
+    ['vista elegida sobre el botón azul', color.white, '#1D4A9F'],
+    ['columna del tablero', color.muted, '#E3ECFB'],
   ]
   for (const [name, front, background] of pairs) {
     const back = background.startsWith('rgba') ? over(background, color.page) : background

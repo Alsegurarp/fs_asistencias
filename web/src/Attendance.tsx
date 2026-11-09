@@ -13,7 +13,7 @@ import { PersonSheet } from './PersonSheet'
 import { PageHeader } from './Shell'
 import type { Section, Screen } from './sections'
 import { Icon } from './Icons'
-import { Badge, FilterChip, IconButton, Note, OutlineButton, Pager, Pane, SearchBox, SelectBox, SkeletonRows, WeekNav, tableSx, toneText } from './ui'
+import { Badge, FilterChip, IconButton, visuallyHidden, Note, OutlineButton, Pager, Pane, SearchBox, SelectBox, SkeletonRows, WeekNav, tableSx, toneText } from './ui'
 
 const pageSize = 25
 const filters: { slug: string; attention: Attention; label: string; short: string; today?: boolean }[] = [
@@ -229,7 +229,7 @@ export function Attendance({ me, context, section, screens, screen }: Props) {
                       <td><strong>{hours(row.totals.ordinaryMinutes)}</strong>{ordinaryMax && <Box component="span" sx={{ color: color.subtle }}> / {limitHours(ordinaryMax)}</Box>}</td>
                       <td><strong>{hours(row.totals.overtimeMinutes)}</strong>{overtimeMax && row.totals.overtimeMinutes > 0 && <Box component="span" sx={{ color: color.subtle }}> / {limitHours(overtimeMax)}</Box>}</td>
                       {visible('today') && <Box component="td" sx={{ color: todayLabel ? toneText[todayLabel.tone] : color.subtle, fontWeight: todayLabel?.tone === 'ok' || todayLabel?.tone === 'warn' ? 600 : 400 }}>{todayLabel?.text || '—'}</Box>}
-                      {visible('attention') && <td><Flags flags={flags} weekStart={weekStart} /></td>}
+                      {visible('attention') && <td><Flags flags={flags} /></td>}
                     </tr>
                   })}
                 </tbody>
@@ -240,7 +240,6 @@ export function Attendance({ me, context, section, screens, screen }: Props) {
   </>
 }
 
-const visuallyHidden = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
 
 function withPerson(params: URLSearchParams, employeeId: string) {
   const next = new URLSearchParams(params)
@@ -251,11 +250,11 @@ function withPerson(params: URLSearchParams, employeeId: string) {
 function Muted({ children }: { children: React.ReactNode }) { return <Box component="span" sx={{ color: color.subtle }}>{children}</Box> }
 
 /** Hasta dos etiquetas; las incidencias abren Incidencias en su semana. */
-function Flags({ flags, weekStart }: { flags: ReturnType<typeof attentionFlags>; weekStart?: string }) {
+function Flags({ flags }: { flags: ReturnType<typeof attentionFlags> }) {
   if (!flags.length) return <Muted>—</Muted>
   return <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
     {flags.slice(0, 2).map(flag => <Badge key={`${flag.label}-${flag.incidentId || ''}`} tone={flag.tone}
-      to={flag.incidentId ? '/incidencias' : undefined} state={flag.incidentId ? { incidentTarget: { week: weekStart, incidentId: flag.incidentId } } : undefined}>{flag.label}</Badge>)}
+      to={flag.incidentId ? `/incidencias?incidencia=${flag.incidentId}` : undefined}>{flag.label}</Badge>)}
     {flags.length > 2 && <Box component="span" sx={{ fontSize: 12, color: color.muted }} title={flags.slice(2).map(flag => flag.label).join(', ')}>+{flags.length - 2}</Box>}
   </Stack>
 }

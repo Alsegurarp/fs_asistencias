@@ -1,5 +1,16 @@
 # Guía del portal web
 
+**Actualización del 8 de noviembre, Incidencias:** segunda pantalla de
+Operación con el lienzo, en `/incidencias`. Abiertas y resueltas en lista o
+tablero (sin asignar, asignadas y resueltas esta semana); búsqueda por nombre
+o número (`q`, nueva en el contrato 0.25.0), tipo, sede y los filtros «Mías»,
+«Severidad alta» y «Bloquean un cierre», todo en el servidor. El detalle se
+abre sobre la lista con las marcas del día, la salida que falta, a quién está
+asignada y el formulario para resolverla como justificada, confirmada o
+ajustada; una resuelta muestra su decisión y su historial. El menú lleva
+cuántas siguen abiertas. Lo elegido vive en la dirección; Cierres y
+Asistencia llegan con la semana y la incidencia.
+
 **Actualización del 8 de noviembre, Asistencia:** primera pantalla de
 Operación reconstruida con el lienzo, en `/asistencia` y como inicio de
 Administración, RH, Supervisión y Auditoría. Tabla de la semana de cada
@@ -335,7 +346,8 @@ Notas:
 | Asistencia: ficha de una persona | `GET /employees/{employeeId}/attendance?week=`, `GET /attendance-events?employeeId=&from=&to=`, `GET /week-closures?week=&employeeId=` (seis semanas) |
 | Marcajes | `GET /attendance-events` |
 | Semana de una persona | `GET /employees/{employeeId}/attendance?week=` |
-| Incidencias | `GET /incidents`, `GET /incidents/{incidentId}`, `PATCH /incidents/{incidentId}` |
+| Incidencias: lista, tablero y conteos (búsqueda desde 0.25.0) | `GET /incidents?status=&sort=&q=&type=&siteId=&week=&assignee=&severity=&blocksClosure=`, `GET /incidents/summary?type=&siteId=&week=` |
+| Incidencias: detalle, asignar y resolver | `GET /incidents/{incidentId}`, `GET /incidents/{incidentId}/assignees`, `PATCH /incidents/{incidentId}`, `GET /attendance-events?employeeId=&from=&to=` (marcas del día) |
 | Cierres | `GET /week-closures`, `POST /week-closures`, `GET /week-closures/{closureId}`, `POST /week-closures/{closureId}/reopen` |
 | Corridas de cierre | `POST /week-closure-runs`, `GET /week-closure-runs`, `GET /week-closure-runs/{runId}` |
 | Reglas laborales | `GET /rule-sets` |

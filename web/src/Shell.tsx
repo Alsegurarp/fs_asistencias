@@ -4,6 +4,7 @@ import { Box, ButtonBase, Divider, MenuItem, MenuList, Popover, Stack, ThemeProv
 import type { Me } from './api'
 import { color, font, gradient, phoneQuery, shadow } from './design'
 import { Icon, ZenitMark } from './Icons'
+import { visuallyHidden } from './ui'
 import { type Group, type Screen, type Section, dossierCallbackPath, joinNames, personalScreen, roleLabel } from './sections'
 
 const menuKey = 'zenit.menu.oculto'
@@ -33,6 +34,8 @@ type ShellProps = {
   context: string
   onSignOut: () => void
   notice?: ReactNode
+  /** Pendientes de una sección junto a su nombre, como las incidencias abiertas. */
+  counts?: Partial<Record<string, { value: number; label: string }>>
 }
 
 /**
@@ -40,7 +43,7 @@ type ShellProps = {
  * plegables y contenido con desplazamiento propio. En teléfono el menú pasa a
  * la barra inferior (TEL-06) y la página se desplaza completa.
  */
-export function Shell({ me, email, groups, firstPath, context, onSignOut, notice }: ShellProps) {
+export function Shell({ me, email, groups, firstPath, context, onSignOut, notice, counts = {} }: ShellProps) {
   const phone = useMediaQuery(phoneQuery)
   const [hidden, setHidden] = useState(readHidden)
   const { pathname } = useLocation()
@@ -69,7 +72,7 @@ export function Shell({ me, email, groups, firstPath, context, onSignOut, notice
     </Box>
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', [`@media ${phoneQuery}`]: { display: 'block' } }}>
       {hasMenu && !phone && !hidden && <Box component="aside" id={sideId} sx={{ flex: '0 0 232px', height: '100%', overflow: 'auto', background: color.white, borderRight: `1px solid ${color.line}`, p: '14px 10px' }}>
-        <SideNav groups={groups} active={active} firstPath={firstPath} label={me.tenant ? 'Secciones del portal' : 'Secciones de la consola'} />
+        <SideNav groups={groups} active={active} firstPath={firstPath} counts={counts} label={me.tenant ? 'Secciones del portal' : 'Secciones de la consola'} />
       </Box>}
       <Box component="main" id="contenido" tabIndex={-1} sx={{ flex: 1, minWidth: 0, height: '100%', overflow: 'auto', p: '18px 24px', display: 'flex', flexDirection: 'column', gap: 1.25, outline: 'none',
         [`@media ${phoneQuery}`]: { height: 'auto', overflow: 'visible', p: '16px 16px 96px' } }}>
@@ -77,7 +80,7 @@ export function Shell({ me, email, groups, firstPath, context, onSignOut, notice
         <Outlet />
       </Box>
     </Box>
-    {hasMenu && phone && <BottomNav groups={groups} active={active} firstPath={firstPath} pathname={pathname} />}
+    {hasMenu && phone && <BottomNav groups={groups} active={active} firstPath={firstPath} pathname={pathname} counts={counts} />}
   </Box>
 }
 
@@ -88,7 +91,14 @@ const navLinkSx = {
   '&[aria-current="page"]': { background: gradient.tile, color: color.deep, fontWeight: 600 },
 } as const
 
-function SideNav({ groups, active, firstPath, label }: { groups: Group[]; active?: Section; firstPath: (section: Section) => string; label: string }) {
+type Counts = NonNullable<ShellProps['counts']>
+
+/** El conteo para el lector de pantalla; la cifra visible va oculta para él. */
+function CountText({ label }: { label: string }) {
+  return <Box component="span" sx={visuallyHidden}>, {label}</Box>
+}
+
+function SideNav({ groups, active, firstPath, label, counts }: { groups: Group[]; active?: Section; firstPath: (section: Section) => string; label: string; counts: Counts }) {
   return <Box component="nav" aria-label={label} sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
     {groups.map(group => <Box component="details" key={group.key} open sx={{ m: '0 0 6px',
       '& > summary': { listStyle: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 36, p: '6px 12px', borderRadius: '10px', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: color.subtle, cursor: 'pointer',
@@ -100,12 +110,14 @@ function SideNav({ groups, active, firstPath, label }: { groups: Group[]; active
       <summary>{group.label}</summary>
       {group.sections.map(section => <Box component={Link} key={section.key} to={firstPath(section)} aria-current={active?.key === section.key ? 'page' : undefined} sx={navLinkSx}>
         <Icon name={section.icon} />{section.label}
+        {counts[section.key] && <CountText label={counts[section.key]!.label} />}
+        {counts[section.key] && <Box component="span" aria-hidden="true" sx={{ ml: 'auto', minWidth: 24, height: 22, px: 1, borderRadius: 999, background: color.warnBg, color: color.warnInk, fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{counts[section.key]!.value}</Box>}
       </Box>)}
     </Box>)}
   </Box>
 }
 
-function BottomNav({ groups, active, firstPath, pathname }: { groups: Group[]; active?: Section; firstPath: (section: Section) => string; pathname: string }) {
+function BottomNav({ groups, active, firstPath, pathname, counts }: { groups: Group[]; active?: Section; firstPath: (section: Section) => string; pathname: string; counts: Counts }) {
   const sections = groups.flatMap(group => group.sections)
   const shown = sections.length <= 4 ? sections : sections.slice(0, 3)
   const more = sections.length > 4
@@ -115,6 +127,8 @@ function BottomNav({ groups, active, firstPath, pathname }: { groups: Group[]; a
   return <Box component="nav" aria-label="Secciones" sx={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 20, display: 'grid', gridTemplateColumns: `repeat(${shown.length + (more ? 1 : 0)}, minmax(0, 1fr))`, gap: 0.5, p: '8px 10px 18px', background: color.white, borderRadius: '24px 24px 0 0', boxShadow: shadow.bottomNav }}>
     {shown.map(section => <Box component={Link} key={section.key} to={firstPath(section)} aria-current={active?.key === section.key ? 'page' : undefined} sx={item}>
       <Icon name={section.icon} size={22} />{section.short}
+      {counts[section.key] && <CountText label={counts[section.key]!.label} />}
+      {counts[section.key] && <Box component="span" aria-hidden="true" sx={{ position: 'absolute', top: 4, right: 'calc(50% - 26px)', minWidth: 18, height: 18, px: '5px', borderRadius: 999, background: color.countBg, color: color.countInk, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{counts[section.key]!.value}</Box>}
     </Box>)}
     {more && <Box component={Link} to="/mas" aria-current={pathname === '/mas' || (!!active && !shown.includes(active)) ? 'page' : undefined} sx={item}>
       <Icon name="more" size={22} />Más

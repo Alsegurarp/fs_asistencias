@@ -3,8 +3,8 @@ import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTi
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, permissions, type Employee, type Me, type Page } from './api'
 import { EntitySelect, ErrorNotice } from './Directory'
-import { RecordName, type IncidentTarget } from './Incidents'
-import { dateInZone, showTime } from './incidentModel'
+import { RecordName } from './legacy'
+import { dateInZone, showTime, type IncidentTarget } from './incidentModel'
 import { closeBody, reopenBody, runBody, runPollInterval, type BlockedClosure, type Closure, type ClosureResult, type ClosureRun } from './closureModel'
 
 const statusLabels = { closed: 'Cerrada', reopened: 'Reabierta', queued: 'En cola', running: 'En curso', done: 'Terminada', failed: 'Fallida' }

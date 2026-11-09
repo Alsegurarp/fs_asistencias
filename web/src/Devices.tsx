@@ -3,7 +3,7 @@ import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuI
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, permissions, type Device, type DeviceEnrollment, type Me, type Page } from './api'
 import { EntitySelect, ErrorNotice } from './Directory'
-import { RecordName } from './Incidents'
+import { RecordName } from './legacy'
 import { showTime } from './incidentModel'
 
 const modes = { personal: 'Teléfono personal', terminal: 'Terminal compartida' }

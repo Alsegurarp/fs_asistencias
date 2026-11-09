@@ -46,7 +46,7 @@ export function PersonSheet({ employeeId, weekStart, today, timeZone, row, siteN
 
   return <SidePanel title={name} subtitle={subtitle} initials={initials(name)} tabs={tabs} tab={tabs.some(item => item.key === tab) ? tab : 'semana'} onTab={onTab} onClose={onClose}>
     {failure ? <Note tone="error">{failure.status === 403 ? 'Esta persona no está en tus sedes o ya no puedes consultarla.' : failure.status === 404 ? 'No encontramos a esta persona en tu empresa.' : `No pudimos cargar su semana. ${failure.message}`}</Note>
-      : tab === 'marcajes' ? <Marks marks={marks.data?.items} loading={marks.isPending} error={marks.error} timeZone={timeZone} siteName={siteName} weekStart={weekStart} />
+      : tab === 'marcajes' ? <Marks marks={marks.data?.items} loading={marks.isPending} error={marks.error} timeZone={timeZone} siteName={siteName} />
         : tab === 'cierres' ? <Closures name={name} results={closures.map(item => item.data?.items)} loading={closures.some(item => item.isPending)} error={closures.find(item => item.error)?.error || null} />
           : <WeekTab week={week.data} loading={week.isPending} row={row} rule={rule} schedule={schedule} today={today} marks={marks.data?.items} siteName={siteName} />}
   </SidePanel>
@@ -107,7 +107,7 @@ function Tile({ value, label, divided }: { value: string; label: string; divided
   </Box>
 }
 
-function Marks({ marks, loading, error, timeZone, siteName, weekStart }: { marks?: Mark[]; loading: boolean; error: Error | null; timeZone: string; siteName: (id: string | null) => string | undefined; weekStart: string }) {
+function Marks({ marks, loading, error, timeZone, siteName }: { marks?: Mark[]; loading: boolean; error: Error | null; timeZone: string; siteName: (id: string | null) => string | undefined }) {
   if (error) return <Note tone="error">No pudimos cargar los marcajes. {error.message}</Note>
   if (loading || !marks) return <Loading>Cargando los marcajes…</Loading>
   const sorted = [...marks].sort((a, b) => b.observedAt.localeCompare(a.observedAt))
@@ -121,7 +121,7 @@ function Marks({ marks, loading, error, timeZone, siteName, weekStart }: { marks
           <Box sx={{ color: color.muted }}>{markEvidence(mark)}</Box>
         </Box>
         {mark.outcome === 'accepted' ? <Badge tone="ok">Aceptada</Badge>
-          : <Badge tone="warn" to="/incidencias" state={{ incidentTarget: { week: weekStart, incidentId: mark.incidentIds[0] } }}>Con incidencia</Badge>}
+          : <Badge tone="warn" to={`/incidencias?incidencia=${mark.incidentIds[0]}`}>Con incidencia</Badge>}
       </Box>)}
     </Box>}
     <Note>Una marca no se edita; si falta o sobra, se corrige con una incidencia y queda el ajuste aparte.</Note>

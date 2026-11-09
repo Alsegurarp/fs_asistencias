@@ -3,7 +3,7 @@
 El portal sigue el [lienzo aprobado](https://claude.ai/artifact/6nguqVzZ7N9rtHX2LDScvq)
 el 7 de noviembre: 81 pantallas con código por sección (ACC, CTA, OPE, PAD,
 EMP, REP, EST, TEL y CON). El backend que piden ya está en `main` y en el
-ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia sube a 0.24.0). Este documento dice en qué orden se
+ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia lo sube a 0.24.0 y la de Incidencias a 0.25.0). Este documento dice en qué orden se
 construye, cómo está armado el marco y qué reglas evitan que dos personas
 hagan lo mismo.
 
@@ -17,7 +17,7 @@ ambiente nunca pierde una función.
 | Bloque | Qué entra | Pantallas del lienzo | Pantalla anterior que se retira | Estado |
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
-| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia en la rama `feat/portal-asistencia`; siguen Incidencias, Cierres y Panel |
+| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia integrada (PR #38); Incidencias en la rama `feat/portal-incidencias`; siguen la fase 6 del backend, Cierres y Panel |
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Pendiente |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
@@ -25,8 +25,10 @@ ambiente nunca pierde una función.
 | 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pendiente |
 
 El bloque 1 entra en cuatro PR, una por pantalla y en ese orden: Asistencia
-(OPE-02, OPE-07, OPE-08, EST-09, TEL-07, TEL-08), Incidencias, Cierres y
-Panel. El menú Crear (CTA-04) aparece con los primeros modales que abre, en
+(OPE-02, OPE-07, OPE-08, EST-09, TEL-07, TEL-08), Incidencias (OPE-03,
+OPE-05, OPE-06, EST-08, TEL-02, TEL-09), Cierres y Panel. Entre Incidencias y
+Cierres va la fase 6 del backend: los días de la semana con su tiempo
+ordinario y extra, que Cierres y el reporte de nómina también muestran. El menú Crear (CTA-04) aparece con los primeros modales que abre, en
 los bloques 1 y 2.
 
 ## Reglas para no duplicar
@@ -58,7 +60,9 @@ los bloques 1 y 2.
 | «Más» en teléfono (TEL-06) | `web/src/More.tsx` |
 | Sesión terminada (ACC-07), cuenta sin empresa (EST-01), error (EST-05) y carga | `web/src/States.tsx`, `web/src/App.tsx` |
 | Íconos y marca de dos ondas | `web/src/Icons.tsx` |
-| Piezas de las secciones: etiquetas de estado, filtros de un toque, búsqueda, sede, semana, tabla con paginador, filas de espera, avisos y ficha lateral | `web/src/ui.tsx` |
+| Piezas de las secciones: etiquetas de estado, filtros de un toque, búsqueda, sede, semana, tabla con paginador, filas de espera, avisos, ficha lateral (de persona o de registro, con pie de acciones), conmutador de vista, pestañas de estado y texto para lectores de pantalla (`visuallyHidden`) | `web/src/ui.tsx` |
+| Pendientes junto a una sección del menú, como las incidencias abiertas | `counts` de `Shell`, que llena `Portal.tsx` |
+| Piezas de las pantallas anteriores que todavía se usan (`RecordName`, `WeekSummary`) | `web/src/legacy.tsx` |
 | Listas cortas pedidas completas (sedes, horarios) | `web/src/lists.ts` |
 
 - **Sesión.** Sin sesión, el portal va directo al inicio de sesión del
@@ -85,7 +89,8 @@ los bloques 1 y 2.
 | --- | --- |
 | `/` | La primera sección del rol: Asistencia para Administración, RH, Supervisión y Auditoría |
 | `/asistencia` | Asistencia; lo elegido va en la dirección: `semana`, `sede`, `filtro` (`alertas`, `extra`, `sin-entrada`, `en-turno`), `q`, `persona` y `ficha` (`marcajes`, `cierres`) |
-| `/incidencias`, `/cierres` | Operación |
+| `/incidencias` | Incidencias; en la dirección: `estado` (`resueltas`), `vista` (`tablero`), `q`, `tipo`, `sede`, `semana`, `mias`, `alta`, `bloquean` e `incidencia`, la que está abierta. Cierres y Asistencia llegan con `semana` e `incidencia` |
+| `/cierres` | Operación |
 | `/personal`, `/personal/horarios`, `/personal/importaciones` | Personal y horarios |
 | `/dispositivos`, `/dispositivos/tarjetas` | Dispositivos y tarjetas |
 | `/configuracion`, `/configuracion/sedes` | Configuración |
@@ -113,9 +118,10 @@ los bloques 1 y 2.
 | Falta | Llega con |
 | --- | --- |
 | Panel (OPE-01): mientras no exista, el inicio es la primera sección del rol y los estados dicen «Ir al inicio» | Bloque 1 |
-| Tiempo extra de cada día en la ficha de Asistencia («8:00 +1:05»): la semana calculada sólo trae los totales de la semana; el cálculo del servidor sí lo tiene por día. La ficha muestra el tiempo trabajado de cada día | Agregar los días a la semana calculada, en el backend |
+| Tiempo extra de cada día en la ficha de Asistencia («8:00 +1:05»): la semana calculada sólo trae los totales de la semana; el cálculo del servidor sí lo tiene por día. La ficha muestra el tiempo trabajado de cada día | Fase 6 del backend, decidida antes del piloto; va antes de Cierres |
 | Cierres de una persona más allá de seis semanas: `GET /week-closures` pide la semana, y la ficha consulta las seis últimas en seis llamadas fijas | Una ruta de cierres por persona, si se necesita más historia |
 | Avisos de la campana (CTA-03) | Bloque 1 |
+| Historial completo de una incidencia: la incidencia trae su apertura, su asignación actual y su resolución; lo demás está en la bitácora, que sólo ven Administración y Auditoría | Bitácora en Reportes (bloque 4) |
 | Buscador (CTA-05) | Bloque 2 |
 | Menú Crear (CTA-04) | Bloques 1 y 2 |
 | Mi perfil y seguridad de la cuenta en el menú (CTA-01) | Bloque 3 |
@@ -142,6 +148,15 @@ Diferencias deliberadas con el lienzo:
   turno de hoy y cada incidencia abierta, que abre Incidencias en su semana.
 - **Días sin marcas.** Un día con horario que ya pasó y no tiene marcas dice
   «Sin marcas · programado …»; el lienzo no tiene ese caso.
+- **Incidencias: semana elegida.** Cuando se llega desde Cierres con una
+  semana, aparece un filtro «Semana …» que se quita con un toque; el lienzo
+  no lo tiene.
+- **Incidencias: «Ver su semana»** también está en una abierta, junto a las
+  marcas del día, y lleva a la ficha de la persona en Asistencia.
+- **Incidencias: «Mías»** no aparece para Auditoría, que no se asigna
+  incidencias.
+- **El historial de una resuelta** se arma con lo que guarda la incidencia:
+  abierta, asignada, resuelta y, si hubo ajuste, semana recalculada.
 
 ## Verificar
 
@@ -151,5 +166,6 @@ docker run --rm --network none zenit-web-check pnpm test
 ```
 
 Las pruebas del marco están en `Portal.test.tsx` y `States.test.tsx`; las de
-Asistencia, en `Attendance.test.tsx` y `attendanceModel.test.ts`; el
+Asistencia, en `Attendance.test.tsx` y `attendanceModel.test.ts`; las de
+Incidencias, en `Incidents.test.tsx`; el
 contraste de los colores del lienzo, en `accessibility.test.ts`.
