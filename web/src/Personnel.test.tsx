@@ -325,7 +325,7 @@ it('sin nadie en el padrón invita a dar de alta o importar', async () => {
     : call.path.startsWith('/employees?') ? Promise.resolve({ items: [], nextCursor: null }) : defaultServer(call)
   await render()
   expect(container.querySelector('main h2')?.textContent).toBe('Aún no hay personas en el padrón')
-  expect([...container.querySelectorAll('main section a')].map(link => link.getAttribute('href'))).toEqual(['/personal/importaciones'])
+  expect([...container.querySelectorAll('main section a')].map(link => link.getAttribute('href'))).toEqual(['/personal/importaciones?importar=archivo'])
 })
 
 it('en teléfono cada persona es una tarjeta y la ficha ocupa la pantalla', async () => {

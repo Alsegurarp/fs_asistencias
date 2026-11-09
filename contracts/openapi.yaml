@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.28.0
+  version: 0.29.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -2510,6 +2510,9 @@ paths:
                   total: 0
                   accepted: 0
                   rejected: 0
+                  created: 0
+                  updated: 0
+                  unchanged: 0
                 errors: []
                 manifestHash: null
                 fileName: padron-octubre.csv
@@ -2562,6 +2565,9 @@ paths:
                       total: 48
                       accepted: 45
                       rejected: 3
+                      created: 4
+                      updated: 2
+                      unchanged: 39
                     errors: []
                     manifestHash: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
                     fileName: padron-noviembre.csv
@@ -2602,6 +2608,9 @@ paths:
                   total: 3
                   accepted: 2
                   rejected: 1
+                  created: 2
+                  updated: 0
+                  unchanged: 0
                 errors:
                   - row: 4
                     externalId: E-0003
@@ -6273,7 +6282,13 @@ components:
           type: integer
         counts:
           type: object
-          required: [total, accepted, rejected]
+          required: [total, accepted, rejected, created, updated, unchanged]
+          description: |
+            `created`, `updated` y `unchanged` reparten las filas aceptadas:
+            altas, personas cuyo nombre, sede o fecha de ingreso cambia y
+            personas que ya estaban igual. En una revisión anticipan lo que
+            haría aplicarla con el padrón de ese momento. Son nulos en las
+            importaciones anteriores a 0.29.0.
           properties:
             total:
               type: integer
@@ -6281,6 +6296,15 @@ components:
               type: integer
             rejected:
               type: integer
+            created:
+              type: [integer, "null"]
+              minimum: 0
+            updated:
+              type: [integer, "null"]
+              minimum: 0
+            unchanged:
+              type: [integer, "null"]
+              minimum: 0
         errors:
           type: array
           description: Filas rechazadas, con su causa.

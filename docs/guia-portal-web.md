@@ -1,5 +1,13 @@
 # Guía del portal web
 
+**Actualización del 9 de noviembre, Importar CSV (contrato 0.29.0):**
+Importaciones con el lienzo (PAD-09) y el modal de tres pasos: subir,
+revisar sin cambiar nada y aplicar las filas listas (PAD-04 a 06). El
+historial aplica una revisión pendiente eligiendo otra vez el mismo archivo.
+El resultado dice altas, con cambios y sin cambios: `counts` trae
+`created`, `updated` y `unchanged`. Detalle en
+[Importación de empleados](#importación-de-empleados).
+
 **Actualización del 9 de noviembre, Personal y horarios (contrato 0.28.0):**
 primera pantalla del Padrón con el lienzo, en `/personal`. Personas con su
 sede, horario vigente, tarjeta, origen y estado; filtros por estado, horario,
@@ -9,7 +17,6 @@ nueva), la tarjeta, editar, dar de baja con fecha efectiva y reactivar; alta
 con horario y tarjeta opcionales. Horarios separa vigentes e históricos,
 cuenta a las personas de cada uno, crea y asigna desde una fecha a varias
 personas. Fuentes del padrón muestra cada fuente y los cambios recientes.
-Importaciones sigue con la pantalla anterior hasta su PR.
 
 **Actualización del 9 de noviembre, Panel (contrato 0.27.0):** cuarta y
 última pantalla de Operación, en `/panel`, que pasa a ser el inicio de
@@ -168,10 +175,36 @@ de asistencia.
 
 ## Importación de empleados
 
-La pestaña **Importar empleados** sólo está disponible para administración y RH.
-Permite descargar un ejemplo, seleccionar un CSV, validarlo sin escribir el
-padrón y aplicar explícitamente las filas aceptadas. Muestra conteos, errores
-por fila y huella del manifiesto del servidor. No verifica esa huella localmente.
+Desde el 9 de noviembre es la pestaña **Importaciones** de Personal y horarios
+(PAD-09), en `/personal/importaciones`, sólo para Administración y RH. Lista
+cada archivo que se subió (`GET /imports`): nombre, quién lo subió, cuándo,
+filas, listas, con error y estado (Revisado, sin aplicar · Revisado y
+aplicado · Aplicado · Falló), con «Revisar y aplicar», «Ver errores» o «Ver
+huella». En teléfono cada importación es una tarjeta.
+
+«Importar CSV», en el encabezado de la sección o en la pestaña, abre el
+modal en `?importar=archivo` (PAD-04 a 06); `?importar=<id>` abre una
+importación del historial. Tres pasos:
+
+1. **Subir archivo**: arrastrar o elegir el CSV. Antes de enviarlo dice el
+   nombre, cuántas filas trae y su tamaño, y rechaza un archivo vacío o de
+   más de 1 MB. Enlaza la plantilla.
+2. **Revisar**: `POST /imports/csv` con `dryRun=true`. Filas, listas para
+   aplicar, con error y la tabla de las filas rechazadas (fila, número, qué
+   pasa; muestra las primeras 100) con «Descargar errores». Un archivo que no
+   es la plantilla o no está en UTF-8 no se puede aplicar.
+3. **Aplicar**: `dryRun=false` con `reviewedImportId` de la revisión, así el
+   servidor comprueba que es el mismo archivo. El resultado dice altas, con
+   cambios, sin cambios y fuera por error (desde el contrato 0.29.0; las
+   importaciones anteriores sólo dicen cuántas se aplicaron), quién y cuándo,
+   y la huella de las filas aplicadas.
+
+El servidor no guarda el archivo: aplicar una revisión del historial pide
+elegirlo otra vez, y si no es el mismo responde `review_mismatch` y el modal
+lo explica. Cada archivo lleva sus dos claves de idempotencia; reintentar
+tras perder la respuesta manda el mismo archivo con la misma clave y no
+aplica dos veces. Elegir otro archivo estrena claves. Al aplicar se
+actualizan el padrón, sus conteos, la asistencia, las fuentes y la bitácora.
 
 El formato UTF-8 es:
 
@@ -181,26 +214,18 @@ IMPORT-DEMO-001,Elena Demo,2026-10-01,
 IMPORT-DEMO-002,Fernando Demo,2026-10-01,
 ```
 
-El límite es 1 MB de archivo y 5.000 filas. `site_name` es el nombre exacto de
-una sede activa; nombres ambiguos se rechazan. Una sede vacía deja al empleado
-sin sede, también al actualizarlo. El identificador externo hace alta o
-actualización de nombre, sede y fecha de alta, conservando estado y tarjetas.
-No se eliminan empleados. Las filas rechazadas no se aplican; se muestran para
-corregirlas. Un error estructural de encabezados o codificación impide aplicar.
+El límite es 1 MB de archivo y 5.000 filas. `site_name` es el nombre de una
+sede activa, sin distinguir mayúsculas; nombres ambiguos se rechazan. Una
+sede vacía deja al empleado sin sede, también al actualizarlo. El
+identificador externo hace alta o actualización de nombre, sede y fecha de
+alta, conservando estado y tarjetas. No se eliminan empleados. Las filas
+rechazadas no se aplican. Nginx admite 2 MB de petición para que el
+envoltorio multipart no rechace un archivo válido de 1 MB; el backend
+mantiene los límites de archivo y petición.
 
-Se envía multipart a `POST /imports/csv`: `file`, `dryRun=true` al validar y
-`dryRun=false` al aplicar. Cada paso conserva su clave de idempotencia al
-reintentar y usa una distinta del otro. Cambiar el archivo descarta la validación
-y exige confirmar de nuevo. Aplicar exige al menos una fila aceptada y una
-confirmación que incluye conteos y el aviso de actualización de empleados.
-Después de aplicar se actualiza la consulta del padrón. Nginx admite 2 MB de
-petición para que el envoltorio multipart no rechace un archivo válido de 1 MB;
-el backend mantiene los límites de archivo y petición.
-
-La validación es una vista previa: aplicar vuelve a validar contra el estado
-actual del backend. Los resultados pueden variar si cambian las sedes entre
-ambos pasos. No hay historial en pantalla ni se conserva el archivo al abandonar
-la pestaña. Si se perdió la respuesta, reintentar antes de cambiar el archivo.
+La revisión es una vista previa: aplicar vuelve a validar contra el estado
+actual del backend, así que los conteos pueden variar si cambian las sedes o
+el padrón entre ambos pasos.
 
 ### Prueba manual de ambos entregables
 
@@ -357,7 +382,7 @@ para eso está `disabled`. Conviene decirlo en la propia pantalla.
 | Padrón | `GET /employees?status=&scheduleId=&withoutCard=&siteId=&q=`, `GET /employees/summary?status=&siteId=&q=`, `POST /employees`, `GET /employees/{employeeId}`, `PATCH /employees/{employeeId}` |
 | Horarios de una persona | `GET /employees/{employeeId}/schedule-assignments` (desde 0.28.0), `POST /employees/{employeeId}/schedule-assignments` |
 | Fuentes del padrón | `GET /integrations/checkpoints`; cambios recientes, `GET /audit-log?group=directory` (Administración) |
-| Cargar padrón | `POST /imports/csv`, `GET /imports/{importId}` |
+| Importaciones | `GET /imports`, `POST /imports/csv` (revisar con `dryRun=true`, aplicar con `dryRun=false` y `reviewedImportId`), `GET /imports/{importId}`; altas, con cambios y sin cambios desde 0.29.0 |
 | Tarjetas | `GET /cards`, `POST /cards`, `POST /cards/{cardId}/assignments`, `POST /cards/{cardId}/revocation` |
 | Dispositivos | `GET /devices`, `POST /device-enrollments`, `POST /devices/{deviceId}/revocation` |
 | De dónde viene el padrón | `GET /integrations/checkpoints` |
@@ -369,18 +394,16 @@ Notas:
 - La carga del padrón tiene dos pasos. Primero se sube el archivo sin
   `dryRun`, que sólo valida y devuelve cada fila rechazada con su línea; se
   muestra el resultado, y sólo si la persona confirma se sube otra vez con
-  `dryRun=false`. Cada subida lleva su propia `Idempotency-Key`.
+  `dryRun=false` y `reviewedImportId`. Cada subida lleva su propia
+  `Idempotency-Key`.
 - El código de enrolamiento sólo aparece en la respuesta de
   `POST /device-enrollments`. Mostrarlo en grande, con su vencimiento; no se
   puede volver a consultar.
 - La huella de una tarjeta se captura al registrarla y no vuelve en ninguna
   respuesta.
 - Desde el contrato 0.21.0 el backend ya resuelve, y el portal todavía no
-  usa: la búsqueda `q` y los filtros de padrón, tarjetas y lectores, sus
-  conteos en `/summary`, el historial `GET /imports` y aplicar una revisión
-  del historial subiendo otra vez el mismo archivo con `reviewedImportId`.
-  Al confirmar después de validar, mandar `reviewedImportId` asegura que se
-  aplica el archivo que se revisó.
+  usa: la búsqueda `q` y los filtros de tarjetas y lectores, y sus conteos en
+  `/summary`. Llegan con Dispositivos y tarjetas.
 
 ### Operación (administrador, RH, supervisor, auditor)
 

@@ -15,7 +15,7 @@ import { Imports } from './Imports'
 import { Incidents, type IncidentSummary } from './Incidents'
 import { PersonalAttendance } from './PersonalAttendance'
 import { Schedules } from './Schedules'
-import { Personnel, PersonnelHeader } from './Personnel'
+import { Personnel } from './Personnel'
 import { Sources } from './Sources'
 import { Tenants } from './Tenants'
 import { TenantSettings } from './TenantSettings'
@@ -96,8 +96,7 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   if (screen.key === 'employees') return <Personnel me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'schedules') return <Schedules me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'sources') return <Sources me={me} context={context} section={section} screens={screens} screen={screen} />
-  // Importaciones se rehace en la siguiente PR del bloque 2; mientras, lleva el encabezado de su sección.
-  if (screen.key === 'imports') return <><PersonnelHeader me={me} context={context} section={section} screens={screens} screen={screen} /><LegacyScreen><Imports me={me} /></LegacyScreen></>
+  if (screen.key === 'imports') return <Imports me={me} context={context} section={section} screens={screens} screen={screen} />
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
