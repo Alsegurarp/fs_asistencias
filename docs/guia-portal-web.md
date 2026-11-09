@@ -1,5 +1,16 @@
 # Guía del portal web
 
+**Actualización del 9 de noviembre, Personal y horarios (contrato 0.28.0):**
+primera pantalla del Padrón con el lienzo, en `/personal`. Personas con su
+sede, horario vigente, tarjeta, origen y estado; filtros por estado, horario,
+«Sin tarjeta», sede y búsqueda en el servidor; la ficha con el horario
+vigente, sus días y los anteriores (`GET /employees/{employeeId}/schedule-assignments`,
+nueva), la tarjeta, editar, dar de baja con fecha efectiva y reactivar; alta
+con horario y tarjeta opcionales. Horarios separa vigentes e históricos,
+cuenta a las personas de cada uno, crea y asigna desde una fecha a varias
+personas. Fuentes del padrón muestra cada fuente y los cambios recientes.
+Importaciones sigue con la pantalla anterior hasta su PR.
+
 **Actualización del 9 de noviembre, Panel (contrato 0.27.0):** cuarta y
 última pantalla de Operación, en `/panel`, que pasa a ser el inicio de
 Administración, RH, Supervisión y Auditoría. Asistencia de hoy, la semana
@@ -146,10 +157,14 @@ minutos que quepa en el turno. Los errores conservan el formulario.
 `POST /employees/{id}/schedule-assignments`. La fecha debe estar dentro de la
 vigencia del horario y después del inicio de la última asignación. La anterior
 se cierra el día previo si se cruza; la nueva termina con la vigencia del horario.
-El resultado confirma las fechas. Empleados muestra el horario **vigente hoy**:
-una asignación futura no aparece como vigente todavía. El API no ofrece una
-lista de historial de asignaciones. El horario tampoco determina retardos,
-faltas ni salida anticipada en el cálculo actual de asistencia.
+Desde el contrato 0.28.0, `GET /employees/{id}/schedule-assignments` da las
+asignaciones de una persona, de la más reciente a la más antigua: la ficha
+muestra la vigente con su fecha, la que viene y las anteriores. La lista y la
+ficha marcan el horario **vigente hoy**: una asignación futura aparece como
+«Desde el …». Asignar a varias personas hace una petición por persona; si
+alguna falla, se dice quién y por qué y las demás quedan asignadas. El horario
+tampoco determina retardos, faltas ni salida anticipada en el cálculo actual
+de asistencia.
 
 ## Importación de empleados
 
@@ -339,8 +354,9 @@ para eso está `disabled`. Conviene decirlo en la propia pantalla.
 | --- | --- |
 | Sedes | `GET /sites`, `POST /sites`, `GET /sites/{siteId}`, `PATCH /sites/{siteId}` |
 | Horarios | `GET /schedules`, `POST /schedules`, `GET /schedules/{scheduleId}` |
-| Padrón | `GET /employees`, `POST /employees`, `GET /employees/{employeeId}`, `PATCH /employees/{employeeId}` |
-| Asignar horario | `POST /employees/{employeeId}/schedule-assignments` |
+| Padrón | `GET /employees?status=&scheduleId=&withoutCard=&siteId=&q=`, `GET /employees/summary?status=&siteId=&q=`, `POST /employees`, `GET /employees/{employeeId}`, `PATCH /employees/{employeeId}` |
+| Horarios de una persona | `GET /employees/{employeeId}/schedule-assignments` (desde 0.28.0), `POST /employees/{employeeId}/schedule-assignments` |
+| Fuentes del padrón | `GET /integrations/checkpoints`; cambios recientes, `GET /audit-log?group=directory` (Administración) |
 | Cargar padrón | `POST /imports/csv`, `GET /imports/{importId}` |
 | Tarjetas | `GET /cards`, `POST /cards`, `POST /cards/{cardId}/assignments`, `POST /cards/{cardId}/revocation` |
 | Dispositivos | `GET /devices`, `POST /device-enrollments`, `POST /devices/{deviceId}/revocation` |

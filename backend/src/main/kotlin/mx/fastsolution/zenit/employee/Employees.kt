@@ -101,6 +101,8 @@ data class EmployeeView(
 
 data class ScheduleAssignmentView(val id: String, val employeeId: String, val scheduleId: String, val validFrom: String, val validTo: String?)
 
+data class ScheduleAssignmentList(val items: List<ScheduleAssignmentView>)
+
 /** `text` es el patrón ya escapado de `TextSearch`. */
 data class EmployeeFilter(
     val status: String? = null,
@@ -222,6 +224,10 @@ class EmployeeRepository(private val dsl: DSLContext) {
             displayName, siteId, status, start.toString(), end?.toString(), tenantId, id,
         )
     }
+
+    /** Todas las asignaciones de horario de una persona, de la más reciente a la más antigua. */
+    fun assignments(tenantId: UUID, employeeId: UUID): List<ScheduleAssignmentRow> =
+        dsl.fetch("$ASSIGNMENT where tenant_id = ? and employee_id = ? order by valid_from desc", tenantId, employeeId).map(::assignment)
 
     fun latestAssignment(tenantId: UUID, employeeId: UUID): ScheduleAssignmentRow? =
         dsl.fetchOne(
@@ -357,6 +363,11 @@ class EmployeeService(
 
     @Transactional(readOnly = true)
     fun get(person: CurrentPerson, id: UUID): EmployeeRow = employees.find(person.requireTenant(), id) ?: throw Problems.notFound()
+
+    /** Los horarios que ha tenido una persona, con el alcance de [get]: quien no la ve recibe 404. */
+    @Transactional(readOnly = true)
+    fun assignments(person: CurrentPerson, id: UUID): List<ScheduleAssignmentRow> =
+        employees.assignments(person.requireTenant(), get(person, id).id)
 
     /**
      * Cambia datos o registra la baja. El cuerpo llega como mapa porque aquí
@@ -505,6 +516,12 @@ class EmployeeController(private val service: EmployeeService) {
         @PathVariable employeeId: UUID,
         @RequestBody body: Map<String, Any?>,
     ): EmployeeView = EmployeeView.of(service.update(person, employeeId, body))
+
+    @GetMapping("/{employeeId}/schedule-assignments")
+    fun scheduleAssignments(@AuthenticationPrincipal person: CurrentPerson, @PathVariable employeeId: UUID): ScheduleAssignmentList =
+        ScheduleAssignmentList(service.assignments(person, employeeId).map {
+            ScheduleAssignmentView(it.id.toString(), it.employeeId.toString(), it.scheduleId.toString(), it.validFrom.toString(), it.validTo?.toString())
+        })
 
     @PostMapping("/{employeeId}/schedule-assignments")
     @ResponseStatus(HttpStatus.CREATED)

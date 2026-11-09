@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, permissions, type Card, type Employee, type Me, type Page, type Site } from './api'
 
-type Kind = 'sites' | 'employees' | 'cards'
-type Row = Site | Employee | Card
+/** Sedes y tarjetas, mientras Configuración y Dispositivos no se reconstruyan; las personas ya están en Personal. */
+type Kind = 'sites' | 'cards'
+type Row = Site | Card
 type Action = { mode: 'create' | 'edit' | 'assign' | 'revoke'; row?: Row }
-const names = { sites: 'Sedes', employees: 'Empleados', cards: 'Tarjetas' }
+const names = { sites: 'Sedes', cards: 'Tarjetas' }
 const statuses: Record<string, string> = { active: 'Activo', inactive: 'Inactivo', inventory: 'Inventario', assigned: 'Asignada', revoked: 'Revocada', lost: 'Extraviada', damaged: 'Dañada', replaced: 'Reemplazada' }
 
 export function EntitySelect({ kind, name, label, value = '', required = false, onChange, disabled = false, emptyLabel }: { kind: 'sites' | 'employees'; name: string; label: string; value?: string; required?: boolean; onChange?: (value: string) => void; disabled?: boolean; emptyLabel?: string }) {
@@ -34,14 +35,6 @@ export function ErrorNotice({ error }: { error: Error | null }) {
     {error.errors.map((item, index) => <div key={index}>{item.field}: {item.message}</div>)}
     {error.correlationId && <div>Referencia: {error.correlationId}</div>}
   </>}</Alert>
-}
-
-function CurrentSchedule({ id }: { id: string | null }) {
-  const cache = useQueryClient()
-  const schedule = useQuery({ queryKey: ['schedule', id], queryFn: () => api<{ name: string }>(`/schedules/${id}`), enabled: !!id, retry: false })
-  useEffect(() => { if (schedule.error instanceof ApiError && schedule.error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) }, [schedule.error, cache])
-  if (!id) return <>Sin horario vigente</>
-  return <>{schedule.data?.name || 'Consultando horario…'}<ErrorNotice error={schedule.error} />{schedule.isError && <Button onClick={() => void schedule.refetch()}>Reintentar horario</Button>}</>
 }
 
 export function Directory({ kind, me }: { kind: Kind; me: Me }) {
@@ -83,15 +76,11 @@ export function Directory({ kind, me }: { kind: Kind; me: Me }) {
       body = { reason: value('reason'), note: value('note') }
     } else if (kind === 'sites') {
       body = { name: value('name'), timeZone: value('timeZone'), latitude: Number(value('latitude')), longitude: Number(value('longitude')), radiusMeters: Number(value('radiusMeters')), ...(action.mode === 'edit' ? { status: value('status') } : {}) }
-    } else if (kind === 'employees') {
-      body = { displayName: value('displayName'), siteId: value('siteId') || null,
-        ...(action.mode === 'create' ? { externalId: value('externalId'), employmentStart: value('employmentStart') } : { status: value('status'), employmentEnd: value('employmentEnd') || null }) }
     } else body = { label: value('label'), fingerprint: value('fingerprint') }
     if (action.mode === 'edit') { path += `/${action.row!.id}`; method = 'PATCH' }
     save.mutate({ path, method, body })
   }
   const site = action?.row as Site | undefined
-  const employee = action?.row as Employee | undefined
   return <Stack spacing={2}>
     <Stack direction="row" sx={{ justifyContent: 'space-between' }}><Typography variant="h5">{names[kind]}</Typography>{writable && <Button variant="contained" onClick={() => open({ mode: 'create' })}>Agregar</Button>}</Stack>
     <ErrorNotice error={list.error} />
@@ -99,10 +88,10 @@ export function Directory({ kind, me }: { kind: Kind; me: Me }) {
     {list.isPending && <Typography role="status">Cargando…</Typography>}
     {list.isSuccess && !rows.length && <Alert severity="info">Todavía no hay registros.</Alert>}
     {!!rows.length && <TableContainer><Table aria-label={names[kind]}>
-      <TableHead><TableRow><TableCell>{kind === 'employees' ? 'Empleado' : 'Nombre / número'}</TableCell><TableCell>Detalle</TableCell><TableCell>Estado</TableCell>{writable && <TableCell>Acciones</TableCell>}</TableRow></TableHead>
+      <TableHead><TableRow><TableCell>Nombre / número</TableCell><TableCell>Detalle</TableCell><TableCell>Estado</TableCell>{writable && <TableCell>Acciones</TableCell>}</TableRow></TableHead>
       <TableBody>{rows.map(row => <TableRow key={row.id}>
-        <TableCell>{'displayName' in row ? row.displayName : 'name' in row ? row.name : row.label}</TableCell>
-        <TableCell>{'radiusMeters' in row ? `${row.timeZone} · Radio ${row.radiusMeters} m` : 'externalId' in row ? `${row.externalId} · Alta ${row.employmentStart}` : row.assignment ? `Empleado: ${row.assignment.employeeId}` : 'Sin asignar'}{'externalId' in row && 'currentScheduleId' in row && <div>Horario vigente hoy: <CurrentSchedule id={row.currentScheduleId || null} /></div>}</TableCell>
+        <TableCell>{'name' in row ? row.name : row.label}</TableCell>
+        <TableCell>{'radiusMeters' in row ? `${row.timeZone} · Radio ${row.radiusMeters} m` : row.assignment ? `Empleado: ${row.assignment.employeeName || row.assignment.employeeId}` : 'Sin asignar'}</TableCell>
         <TableCell>{statuses[row.status] || row.status}</TableCell>
         {writable && <TableCell>{kind !== 'cards' ? <Button onClick={() => open({ mode: 'edit', row })}>Editar</Button> : <>
           {row.status === 'inventory' && <Button onClick={() => open({ mode: 'assign', row })}>Asignar</Button>}
@@ -130,14 +119,6 @@ export function Directory({ kind, me }: { kind: Kind; me: Me }) {
             <TextField name="longitude" label="Longitud" type="number" required defaultValue={site?.longitude ?? ''} slotProps={{ htmlInput: { min: -180, max: 180, step: 'any' } }} />
             <TextField name="radiusMeters" label="Radio de geocerca (metros)" type="number" required defaultValue={site?.radiusMeters ?? 100} slotProps={{ htmlInput: { min: 20, max: 2000, step: 1 } }} />
             {action?.mode === 'edit' && <TextField select name="status" label="Estado" defaultValue={site?.status}>{['active', 'inactive'].map(value => <MenuItem key={value} value={value}>{statuses[value]}</MenuItem>)}</TextField>}
-          </> : kind === 'employees' ? <>
-            {action?.mode === 'create' && <TextField name="externalId" label="Identificador externo" required slotProps={{ htmlInput: { maxLength: 64 } }} />}
-            <TextField name="displayName" label="Nombre" required defaultValue={employee?.displayName || ''} slotProps={{ htmlInput: { maxLength: 160 } }} />
-            <EntitySelect kind="sites" name="siteId" label="Sede" value={employee?.siteId || ''} />
-            {action?.mode === 'create' ? <TextField name="employmentStart" label="Fecha de alta" type="date" required slotProps={{ inputLabel: { shrink: true } }} /> : <>
-              <TextField select name="status" label="Estado" defaultValue={employee?.status}>{['active', 'inactive'].map(value => <MenuItem key={value} value={value}>{statuses[value]}</MenuItem>)}</TextField>
-              <TextField name="employmentEnd" label="Fecha efectiva de baja" type="date" defaultValue={employee?.employmentEnd || ''} helperText="Obligatoria al dar de baja. Se revoca la tarjeta y termina el horario vigente; los históricos se conservan." slotProps={{ inputLabel: { shrink: true } }} />
-            </>}
           </> : <>
             <TextField name="label" label="Número impreso" required slotProps={{ htmlInput: { maxLength: 40 } }} />
             <TextField name="fingerprint" label="Huella de tarjeta" required slotProps={{ htmlInput: { minLength: 16, maxLength: 128 } }} helperText="Se registra una vez; no se podrá consultar después." />

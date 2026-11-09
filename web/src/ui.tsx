@@ -1,6 +1,6 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef } from 'react'
 import { Link } from 'react-router'
-import { Box, ButtonBase, Skeleton, Stack, Typography } from '@mui/material'
+import { Box, Button, ButtonBase, Dialog, Skeleton, Stack, Typography } from '@mui/material'
 import { color, font, gradient, phoneQuery, shadow } from './design'
 import { Icon, type IconName } from './Icons'
 
@@ -199,6 +199,35 @@ export function SidePanel({ title, subtitle, eyebrow, initials, icon, onClose, t
     {footer && <Stack direction="row" useFlexGap sx={{ flex: 'none', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: 1, p: '12px 18px 16px', borderTop: `1px solid ${color.lineSoft}`, background: color.white,
       [`@media ${phoneQuery}`]: { p: '12px 16px 24px', '& > *': { flex: '1 1 auto' } } }}>{footer}</Stack>}
   </Box>
+}
+
+/**
+ * Ventana para crear algo (PAD-03, PAD-07, PAD-08): encabezado azul con su
+ * ícono, el formulario y el pie con «Cancelar» y la acción. Mientras guarda no
+ * se cierra; el error va arriba del pie. `onSubmit` recibe el formulario.
+ */
+export function Modal({ id, icon, title, subtitle, onClose, onSubmit, submit, busy = false, error, wide = false, children }: {
+  id: string; icon: IconName; title: string; subtitle?: ReactNode; onClose: () => void; onSubmit: (form: HTMLFormElement) => void
+  submit: string; busy?: boolean; error?: ReactNode; wide?: boolean; children: ReactNode
+}) {
+  return <Dialog open onClose={() => { if (!busy) onClose() }} aria-labelledby={id} fullWidth maxWidth={wide ? 'md' : 'sm'}
+    slotProps={{ paper: { sx: { overflow: 'hidden', borderRadius: '20px', [`@media ${phoneQuery}`]: { m: 1.5, width: 'calc(100% - 24px)', maxHeight: 'calc(100% - 24px)' } } } }}>
+    <Box component="form" noValidate onSubmit={event => { event.preventDefault(); if (!busy) onSubmit(event.currentTarget) }} sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, fontFamily: font }}>
+      <Stack direction="row" sx={{ flex: 'none', alignItems: 'center', gap: 1.5, p: '18px 20px', color: color.white, background: gradient.sheet }}>
+        <Box aria-hidden="true" sx={{ width: 40, height: 40, flex: 'none', borderRadius: '12px', background: color.white, color: color.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} /></Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography component="h2" id={id} sx={{ fontSize: 18, fontWeight: 600 }}>{title}</Typography>
+          {subtitle && <Typography sx={{ fontSize: 13 }}>{subtitle}</Typography>}
+        </Box>
+      </Stack>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: '18px 20px', display: 'flex', flexDirection: 'column', gap: 1.75 }}>{children}</Box>
+      {error && <Box sx={{ px: '20px' }}>{error}</Box>}
+      <Stack direction="row" useFlexGap sx={{ flex: 'none', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 1, p: '14px 20px 18px', [`@media ${phoneQuery}`]: { '& > *': { flex: '1 1 auto' } } }}>
+        <Button variant="outlined" onClick={onClose} disabled={busy}>Cancelar</Button>
+        <Button variant="contained" type="submit" disabled={busy} sx={{ px: 3 }}>{busy ? 'Guardando…' : submit}</Button>
+      </Stack>
+    </Box>
+  </Dialog>
 }
 
 /** Mosaico de color con un ícono, como el del encabezado de una incidencia. */

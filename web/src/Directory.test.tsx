@@ -4,10 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
 import { Directory } from './Directory'
 
-function render(kind: 'sites' | 'employees' | 'cards', roles: string[], items: unknown[] = []) {
+function render(kind: 'sites' | 'cards', roles: string[], items: unknown[] = []) {
   const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   cache.setQueryData([kind], { pages: [{ items, nextCursor: null }], pageParams: [''] })
-  cache.setQueryData(['schedule', 'schedule-demo'], { name: 'Horario demo' })
   const html = renderToStaticMarkup(<QueryClientProvider client={cache}><Directory kind={kind} me={{ userId: 'self', displayName: 'Prueba', roles, tenant: { name: 'Empresa', timeZone: 'America/Mexico_City' } }} /></QueryClientProvider>)
   cache.clear()
   return html
@@ -35,11 +34,4 @@ it('el auditor ve tarjetas sin botones de escritura', () => {
   expect(html).not.toContain('>Agregar<')
   expect(html).not.toContain('>Asignar<')
   expect(html).not.toContain('>Revocar<')
-})
-
-it('muestra el horario vigente del empleado incluso a quien sólo consulta', () => {
-  expect(render('employees', ['auditor'], [{ id: 'e1', externalId: 'DEMO-001', displayName: 'Ana', employmentStart: '2026-10-01', status: 'active', currentScheduleId: 'schedule-demo' }])).toContain('Horario demo')
-})
-it('distingue un empleado sin horario vigente', () => {
-  expect(render('employees', ['supervisor'], [{ id: 'e1', externalId: 'DEMO-001', displayName: 'Ana', employmentStart: '2026-10-01', status: 'active', currentScheduleId: null }])).toContain('Sin horario vigente')
 })

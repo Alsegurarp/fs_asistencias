@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.27.0
+  version: 0.28.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -2101,6 +2101,48 @@ paths:
   /employees/{employeeId}/schedule-assignments:
     parameters:
       - $ref: "#/components/parameters/EmployeeId"
+    get:
+      tags: [personas]
+      operationId: listScheduleAssignments
+      summary: Los horarios que ha tenido una persona
+      description: |
+        Todas sus asignaciones, de la más reciente a la más antigua, con la
+        fecha desde la que aplica cada una y hasta cuándo. Son pocas por
+        persona: no se pagina. Con el alcance de `getEmployee`: Supervisión
+        sólo consulta a las personas de sus sedes (desde 0.28.0).
+      x-roles: [admin_empresa, rh, supervisor, auditor]
+      responses:
+        "200":
+          description: Asignaciones de la persona
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScheduleAssignment"
+              example:
+                items:
+                  - id: 1f3b5d7f-9a1c-4e3b-8d5f-7a9c1e3b5d7f
+                    employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    scheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
+                    validFrom: "2026-10-05"
+                    validTo: null
+                  - id: 0e2a4c6e-8a0c-4e2a-9c4e-6a8c0e2a4c6e
+                    employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    scheduleId: 7b9d1f3a-5c7e-4a9b-8d1f-3a5c7e9b1d3f
+                    validFrom: "2026-09-01"
+                    validTo: "2026-10-04"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     post:
       tags: [personas]
       operationId: assignSchedule

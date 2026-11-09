@@ -1,99 +1,79 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Stack, TextField, Typography } from '@mui/material'
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError, permissions, type Employee, type Me, type Page } from './api'
-import { EntitySelect, ErrorNotice } from './Directory'
-import { dateInZone } from './incidentModel'
+import { useState } from 'react'
+import { useSearchParams } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { Box, Button, Stack, Typography } from '@mui/material'
+import { api, type Me, permissions } from './api'
+import { todayIn } from './attendanceModel'
+import { color } from './design'
+import { PersonnelHeader } from './Personnel'
+import { useSchedules } from './personnelData'
+import { AssignScheduleModal, ScheduleModal } from './PersonnelForms'
+import { type EmployeeSummary, type ScheduleWithValidity, breakText, daysText, hoursText, isCurrent, shiftKind, validityText } from './personnelModel'
+import type { Screen, Section } from './sections'
+import { Badge, Note, Pane, SkeletonRows, StatusTabs, tableSx, visuallyHidden } from './ui'
 
-const weekdays: Record<string, string> = { monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles', thursday: 'Jueves', friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo' }
-export type Schedule = { id: string; name: string; timeZone: string; validFrom: string; validTo: string | null; days: { dayOfWeek: string; startTime: string; endTime: string; breakMinutes: number }[] }
-type Assignment = { id: string; employeeId: string; scheduleId: string; validFrom: string; validTo: string | null }
+type Props = { me: Me; context: string; section: Section; screens: Screen[]; screen: Screen }
 
-export function Schedules({ me }: { me: Me }) {
+/**
+ * Horarios (PAD-07): los vigentes y los históricos, con sus días, entrada y
+ * salida, comida, jornada, vigencia y cuántas personas activas tienen cada uno
+ * hoy. Un horario no se edita: se crea otro y se asigna desde una fecha, así
+ * las semanas ya calculadas conservan el suyo.
+ */
+export function Schedules(props: Props) {
+  const { me } = props
   const allowed = permissions(me.roles)
-  const cache = useQueryClient()
+  const today = todayIn(me.tenant!.timeZone)
+  const [params] = useSearchParams()
+  const tab = params.get('vigencia') === 'historicos' ? 'historicos' : 'vigentes'
   const [creating, setCreating] = useState(false)
-  const [assigning, setAssigning] = useState<Schedule | null>(null)
-  const list = useInfiniteQuery({ queryKey: ['schedules'], initialPageParam: '', enabled: allowed.schedules, queryFn: ({ pageParam }) => api<Page<Schedule>>(`/schedules${pageParam ? `?cursor=${encodeURIComponent(pageParam)}` : ''}`), getNextPageParam: page => page.nextCursor || undefined, retry: false })
-  useEffect(() => { if (list.error instanceof ApiError && list.error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) }, [list.error, cache])
-  if (!allowed.schedules) return <Alert severity="info">Tu rol no permite consultar horarios.</Alert>
-  const rows = list.data?.pages.flatMap(page => page.items) || []
-  return <Stack spacing={2}>
-    <Typography variant="h5">Horarios y asignaciones</Typography>
-    <Alert severity="info">Los horarios conservan su vigencia. Para cambiarlos, crea otro horario y asígnalo desde una nueva fecha. El cálculo de asistencia aún no compara marcajes contra el horario para determinar retardos o faltas.</Alert>
-    {allowed.editDirectory && <Button variant="contained" onClick={() => setCreating(true)}>Crear horario</Button>}
-    <ErrorNotice error={list.error} />{list.isError && <Button onClick={() => void list.refetch()}>Reintentar horarios</Button>}
-    {list.isPending && <Typography role="status">Cargando horarios…</Typography>}
-    {list.isSuccess && !rows.length && <Alert severity="info">Todavía no hay horarios.</Alert>}
-    {rows.map(schedule => <Stack key={schedule.id} spacing={1} sx={{ border: 1, borderColor: 'divider', p: 2, borderRadius: 1 }}>
-      <Typography variant="h6">{schedule.name}</Typography><Typography>{schedule.timeZone} · Desde {schedule.validFrom} · Hasta {schedule.validTo || 'Sin fecha de fin'}</Typography>
-      {schedule.days.map(day => <Typography key={day.dayOfWeek}>{weekdays[day.dayOfWeek]}: {day.startTime}–{day.endTime}{day.endTime < day.startTime && ' (salida al día siguiente)'} · Descanso: {day.breakMinutes} min</Typography>)}
-      {allowed.editDirectory && <Button onClick={() => setAssigning(schedule)}>Asignar {schedule.name}</Button>}
-    </Stack>)}
-    {list.hasNextPage && <Button disabled={list.isFetchingNextPage} onClick={() => void list.fetchNextPage()}>Cargar más horarios</Button>}
-    {creating && <ScheduleForm me={me} onClose={() => setCreating(false)} />}
-    {assigning && <AssignmentForm key={assigning.id} schedule={assigning} me={me} onClose={() => setAssigning(null)} />}
-  </Stack>
-}
-
-function ScheduleForm({ me, onClose }: { me: Me; onClose: () => void }) {
-  const cache = useQueryClient()
-  const [days, setDays] = useState(Object.keys(weekdays).slice(0, 5))
-  const [error, setError] = useState<Error | null>(null)
-  const save = useMutation({ mutationFn: (body: unknown) => api<Schedule>('/schedules', 'POST', body), onSuccess: async () => { onClose(); await cache.invalidateQueries({ queryKey: ['schedules'] }) }, onError: error => { if (error instanceof ApiError && error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) } })
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (save.isPending || !permissions(me.roles).editDirectory) return
-    setError(null)
-    if (!days.length) { setError(new Error('Selecciona al menos un día.')); return }
-    const data = new FormData(event.currentTarget)
-    const value = (name: string) => String(data.get(name) || '').trim()
-    save.mutate({ name: value('scheduleName'), timeZone: value('scheduleZone'), validFrom: value('scheduleFrom'), validTo: value('scheduleTo') || null,
-      days: days.map(dayOfWeek => ({ dayOfWeek, startTime: value(`${dayOfWeek}-start`), endTime: value(`${dayOfWeek}-end`), breakMinutes: Number(value(`${dayOfWeek}-break`)) })) })
-  }
-  return <Dialog open fullWidth maxWidth="md" onClose={() => { if (!save.isPending) onClose() }} aria-labelledby="schedule-title"><form onSubmit={submit}>
-    <DialogTitle id="schedule-title">Crear horario</DialogTitle><DialogContent><Stack spacing={2}>
-      <TextField name="scheduleName" label="Nombre del horario" required disabled={save.isPending} slotProps={{ htmlInput: { maxLength: 120 } }} />
-      <TextField name="scheduleZone" label="Zona horaria" defaultValue={me.tenant!.timeZone} required disabled={save.isPending} />
-      <TextField name="scheduleFrom" label="Vigente desde" type="date" defaultValue={dateInZone(new Date().toISOString(), me.tenant!.timeZone)} required disabled={save.isPending} slotProps={{ inputLabel: { shrink: true } }} />
-      <TextField name="scheduleTo" label="Vigente hasta (opcional)" type="date" disabled={save.isPending} slotProps={{ inputLabel: { shrink: true } }} />
-      <Typography>Selecciona los días laborables. Una salida anterior a la entrada corresponde al día siguiente.</Typography>
-      {Object.entries(weekdays).map(([day, label]) => <Stack key={day} spacing={1}>
-        <FormControlLabel label={label} control={<Checkbox name="scheduleDay" value={day} checked={days.includes(day)} disabled={save.isPending} onChange={(_, checked) => setDays(current => checked ? [...current, day] : current.filter(value => value !== day))} />} />
-        {days.includes(day) && <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-          <TextField name={`${day}-start`} label="Entrada" type="time" defaultValue="09:00" required disabled={save.isPending} slotProps={{ inputLabel: { shrink: true } }} />
-          <TextField name={`${day}-end`} label="Salida" type="time" defaultValue="17:00" required disabled={save.isPending} slotProps={{ inputLabel: { shrink: true } }} />
-          <TextField name={`${day}-break`} label="Descanso (minutos)" type="number" defaultValue={0} required disabled={save.isPending} slotProps={{ htmlInput: { min: 0, max: 480, step: 1 } }} />
-        </Stack>}
-      </Stack>)}
-      <ErrorNotice error={error} /><ErrorNotice error={save.error} />
-    </Stack></DialogContent><DialogActions><Button disabled={save.isPending} onClick={onClose}>Cancelar</Button><Button type="submit" variant="contained" disabled={save.isPending}>{save.isPending ? 'Guardando…' : 'Guardar horario'}</Button></DialogActions>
-  </form></Dialog>
-}
-
-function AssignmentForm({ schedule, me, onClose }: { schedule: Schedule; me: Me; onClose: () => void }) {
-  const cache = useQueryClient()
-  const [employeeId, setEmployee] = useState('')
-  const [result, setResult] = useState<Assignment | null>(null)
-  const employee = useQuery({ queryKey: ['employee', employeeId], queryFn: () => api<Employee & { currentScheduleId: string | null }>(`/employees/${employeeId}`), enabled: !!employeeId, retry: false })
-  const current = useQuery({ queryKey: ['schedule', employee.data?.currentScheduleId], queryFn: () => api<Schedule>(`/schedules/${employee.data!.currentScheduleId}`), enabled: !!employee.data?.currentScheduleId, retry: false })
-  const save = useMutation({ mutationFn: (body: unknown) => api<Assignment>(`/employees/${employeeId}/schedule-assignments`, 'POST', body), onSuccess: async row => { setResult(row); await Promise.all([cache.invalidateQueries({ queryKey: ['employees'] }), cache.invalidateQueries({ queryKey: ['employee', row.employeeId] })]) }, onError: error => { if (error instanceof ApiError && error.status === 403) void cache.invalidateQueries({ queryKey: ['me'] }) } })
-  useEffect(() => { if ([employee.error, current.error].some(error => error instanceof ApiError && error.status === 403)) void cache.invalidateQueries({ queryKey: ['me'] }) }, [employee.error, current.error, cache])
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (save.isPending || result || !employeeId || !permissions(me.roles).editDirectory) return
-    save.mutate({ scheduleId: schedule.id, validFrom: String(new FormData(event.currentTarget).get('assignmentFrom')) })
-  }
-  return <Dialog open fullWidth maxWidth="sm" onClose={() => { if (!save.isPending) onClose() }} aria-labelledby="assignment-title"><form onSubmit={submit}>
-    <DialogTitle id="assignment-title">Asignar {schedule.name}</DialogTitle><DialogContent><Stack spacing={2}>
-      <Alert severity="warning">La asignación anterior, si existe y se cruza con esta fecha, termina el día previo. La nueva fecha debe ser posterior al inicio de la última asignación.</Alert>
-      <EntitySelect kind="employees" name="assignmentEmployee" label="Empleado" value={employeeId} required emptyLabel="Selecciona un empleado" disabled={save.isPending || !!result} onChange={value => { setEmployee(value); save.reset() }} />
-      {employee.isFetching && <Typography role="status">Consultando empleado…</Typography>}
-      <ErrorNotice error={employee.error} />{employee.isError && <Button onClick={() => void employee.refetch()}>Reintentar empleado</Button>}
-      {employee.data && <Typography>Horario vigente hoy: {employee.data.currentScheduleId ? current.data?.name || 'Consultando horario…' : 'Sin horario vigente'}</Typography>}
-      <ErrorNotice error={current.error} />{current.isError && <Button onClick={() => void current.refetch()}>Reintentar horario vigente</Button>}
-      <TextField name="assignmentFrom" label="Asignar desde" type="date" defaultValue={schedule.validFrom} required disabled={save.isPending || !!result} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: schedule.validFrom, ...(schedule.validTo ? { max: schedule.validTo } : {}) } }} />
-      <Typography>Hasta: {schedule.validTo || 'Sin fecha de fin'}</Typography>
-      <ErrorNotice error={save.error} />
-      {result && <Alert severity="success">Horario asignado desde {result.validFrom} hasta {result.validTo || 'sin fecha de fin'}.</Alert>}
-    </Stack></DialogContent><DialogActions><Button disabled={save.isPending} onClick={onClose}>Cerrar</Button><Button type="submit" variant="contained" disabled={save.isPending || !!result || !employeeId || employee.isPending || employee.isError}>{save.isPending ? 'Asignando…' : 'Confirmar asignación'}</Button></DialogActions>
-  </form></Dialog>
+  const [assigning, setAssigning] = useState<ScheduleWithValidity | null>(null)
+  const schedules = useSchedules()
+  const counts = useQuery({ queryKey: ['employee-summary', 'status=active'], queryFn: () => api<EmployeeSummary>('/employees/summary?status=active'), retry: false })
+  const all = schedules.data || []
+  const current = all.filter(item => isCurrent(item, today))
+  const past = all.filter(item => !isCurrent(item, today))
+  const shown = tab === 'vigentes' ? current : past
+  const people = (id: string) => counts.data?.bySchedule.find(item => item.scheduleId === id)?.people ?? 0
+  return <>
+    <PersonnelHeader {...props} />
+    <Stack direction="row" useFlexGap sx={{ flex: 'none', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+      <StatusTabs label="Horarios por vigencia" current={tab} options={[
+        { key: 'vigentes', label: `Vigentes · ${current.length}`, to: '?' },
+        { key: 'historicos', label: `Históricos · ${past.length}`, to: '?vigencia=historicos' },
+      ]} />
+      {allowed.editDirectory && <Button variant="outlined" onClick={() => setCreating(true)} sx={{ minHeight: 40 }}>Crear horario</Button>}
+    </Stack>
+    <Pane titleId="horarios-tabla" title={schedules.isPending ? 'Cargando horarios…' : `${shown.length} ${shown.length === 1 ? 'horario' : 'horarios'} ${tab === 'vigentes' ? 'vigentes' : 'históricos'}`}
+      footer={<Typography sx={{ flex: 'none', p: '10px 16px', fontSize: 12.5, color: color.subtle, borderTop: `1px solid ${color.lineSoft}` }}>
+        {all.length} {all.length === 1 ? 'horario' : 'horarios'} · uno que terminó se conserva para las semanas que ya calculó
+      </Typography>}>
+      {schedules.isPending && <Typography role="status" sx={visuallyHidden}>Cargando horarios…</Typography>}
+      {schedules.isError ? <Box sx={{ p: 2 }}><Note tone="error">No pudimos cargar los horarios.</Note></Box>
+        : !schedules.isPending && !shown.length ? <Stack spacing={1} sx={{ p: 4, alignItems: 'center', textAlign: 'center' }}>
+          <Typography sx={{ fontWeight: 600 }}>{tab === 'vigentes' ? 'Todavía no hay horarios' : 'No hay horarios históricos'}</Typography>
+          <Typography sx={{ fontSize: 13, color: color.muted }}>{tab === 'vigentes' ? 'Crea uno con sus días, entrada, salida y comida; después se asigna a cada persona desde una fecha.' : 'Aquí quedan los horarios cuya vigencia ya terminó.'}</Typography>
+        </Stack>
+          : <Box sx={{ overflowX: 'auto' }}><Box component="table" sx={tableSx}>
+            <thead><tr>
+              <th scope="col">Horario</th><th scope="col">Días</th><th scope="col">Entrada y salida</th><th scope="col">Comida</th><th scope="col">Jornada</th><th scope="col">Vigencia</th><th scope="col">Personas</th>
+              {allowed.editDirectory && tab === 'vigentes' && <th scope="col"><Box component="span" sx={visuallyHidden}>Acciones</Box></th>}
+            </tr></thead>
+            <tbody>
+              {schedules.isPending ? <SkeletonRows columns={7} rows={4} /> : shown.map(item => <tr key={item.id}>
+                <td><strong>{item.name}</strong></td>
+                <td>{daysText(item.days)}</td>
+                <td>{hoursText(item.days)}</td>
+                <td>{breakText(item.days)}</td>
+                <td><Badge tone={shiftKind(item.days) === 'Diurna' ? 'info' : 'neutral'}>{shiftKind(item.days)}</Badge></td>
+                <Box component="td" sx={{ color: color.muted }}>{validityText(item.validFrom, item.validTo)}</Box>
+                <td>{tab === 'vigentes' ? people(item.id) : <Badge tone="neutral">Histórico</Badge>}</td>
+                {allowed.editDirectory && tab === 'vigentes' && <td><Button size="small" onClick={() => setAssigning(item)} aria-label={`Asignar ${item.name}`}>Asignar</Button></td>}
+              </tr>)}
+            </tbody>
+          </Box></Box>}
+    </Pane>
+    {creating && <ScheduleModal me={me} onClose={() => setCreating(false)} />}
+    {assigning && <AssignScheduleModal me={me} people={[]} schedules={all} scheduleId={assigning.id} today={today} onClose={() => setAssigning(null)} />}
+  </>
 }

@@ -8,7 +8,9 @@ Plataforma de control de jornada desarrollada por fastSolution.
 marco (PR #37), Asistencia (PR #38), Incidencias (PR #39), los días de la
 semana con su tiempo ordinario y extra (PR #40) y Cierres (PR #41). Sigue el
 Panel con la campana de avisos (contrato 0.27.0, en la rama
-`feat/portal-panel`), que cierra el bloque de Operación; después Padrón, Empresa,
+`feat/portal-panel`), que cierra el bloque de Operación, y Personal y horarios
+(contrato 0.28.0, en `feat/portal-personal`), primera del Padrón; después
+Importar, Dispositivos y tarjetas, Empresa,
 Reportes, Consola y acceso con la marca.
 [Orden y pendientes](docs/construir-el-portal.md).
 

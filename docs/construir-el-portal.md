@@ -3,7 +3,7 @@
 El portal sigue el [lienzo aprobado](https://claude.ai/artifact/6nguqVzZ7N9rtHX2LDScvq)
 el 7 de noviembre: 81 pantallas con código por sección (ACC, CTA, OPE, PAD,
 EMP, REP, EST, TEL y CON). El backend que piden ya está en `main` y en el
-ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia lo sube a 0.24.0, la de Incidencias a 0.25.0, los días de la semana a 0.26.0 y las horas del Panel a 0.27.0). Este documento dice en qué orden se
+ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia lo sube a 0.24.0, la de Incidencias a 0.25.0, los días de la semana a 0.26.0, las horas del Panel a 0.27.0 y los horarios de una persona a 0.28.0). Este documento dice en qué orden se
 construye, cómo está armado el marco y qué reglas evitan que dos personas
 hagan lo mismo.
 
@@ -18,7 +18,7 @@ ambiente nunca pierde una función.
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
 | 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana en la rama `feat/portal-panel` |
-| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Pendiente |
+| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios en la rama `feat/portal-personal`; siguen Importar y Dispositivos y tarjetas |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
@@ -32,6 +32,11 @@ ordinario y extra, que Cierres y el reporte de nómina también muestran. El
 Panel (OPE-01, OPE-12, TEL-01) entra con la campana de avisos (CTA-03). El
 menú Crear (CTA-04) entra en el bloque 2, cuando existan las ventanas que
 abre; hoy sólo existiría «Cerrar la semana».
+
+El bloque 2 entra en tres PR: Personal y horarios (PAD-01, PAD-03, PAD-07,
+PAD-08, PAD-10, EST-07), Importar (PAD-04 a 06 y PAD-09) y Dispositivos y
+tarjetas (PAD-02, PAD-11, PAD-12), que trae el buscador (CTA-05) y el menú
+Crear (CTA-04) cuando ya existen las ventanas que abren.
 
 ## Reglas para no duplicar
 
@@ -62,6 +67,7 @@ abre; hoy sólo existiría «Cerrar la semana».
 | «Más» en teléfono (TEL-06) | `web/src/More.tsx` |
 | Sesión terminada (ACC-07), cuenta sin empresa (EST-01), error (EST-05) y carga | `web/src/States.tsx`, `web/src/App.tsx` |
 | Íconos y marca de dos ondas | `web/src/Icons.tsx` |
+| Ventana para crear algo (`Modal`), con encabezado azul, formulario y pie | `web/src/ui.tsx` |
 | Piezas de las secciones: etiquetas de estado, filtros de un toque, búsqueda, sede, semana, tabla con paginador, filas de espera, avisos, ficha lateral (de persona o de registro, con pie de acciones), conmutador de vista, pestañas de estado y texto para lectores de pantalla (`visuallyHidden`) | `web/src/ui.tsx` |
 | Pendientes junto a una sección del menú, como las incidencias abiertas | `counts` de `Shell`, que llena `Portal.tsx` |
 | Campana de avisos (CTA-03) y lo que comparte con el Panel | `web/src/Notices.tsx` (`bell` de `Shell`); los avisos se arman en `web/src/panelModel.ts` |
@@ -95,7 +101,10 @@ abre; hoy sólo existiría «Cerrar la semana».
 | `/asistencia` | Asistencia; lo elegido va en la dirección: `semana`, `sede`, `filtro` (`alertas`, `extra`, `sin-entrada`, `en-turno`), `q`, `persona` y `ficha` (`marcajes`, `cierres`) |
 | `/incidencias` | Incidencias; en la dirección: `estado` (`resueltas`), `vista` (`tablero`), `q`, `tipo`, `sede`, `semana`, `mias`, `alta`, `bloquean` e `incidencia`, la que está abierta. Cierres y Asistencia llegan con `semana` e `incidencia` |
 | `/cierres` | Cierres; en la dirección: `semana`, `sede`, `pestana` (`bloqueadas`, `reabiertas`), `acuse` (`conformes`, `objecion`, `sin-acuse`) y `cierre`, el que está abierto: un enlace con `cierre` abre ese cierre aunque no esté en la página |
-| `/personal`, `/personal/horarios`, `/personal/importaciones` | Personal y horarios |
+| `/personal` | Personas; en la dirección: `estado` (`bajas`, `todas`), `horario`, `sin-tarjeta`, `sede`, `q` y `persona`, la ficha abierta |
+| `/personal/horarios` | Horarios; `vigencia=historicos` |
+| `/personal/importaciones` | Importaciones (pantalla anterior, con el encabezado de la sección) |
+| `/personal/fuentes` | Fuentes del padrón, para Administración y RH |
 | `/dispositivos`, `/dispositivos/tarjetas` | Dispositivos y tarjetas |
 | `/configuracion`, `/configuracion/sedes` | Configuración |
 | `/usuarios` | Usuarios y roles |
@@ -191,6 +200,23 @@ Diferencias deliberadas con el lienzo:
   no se guardan en el servidor. Un aviso cuya cifra cambia vuelve a contar.
   La campana es de quien ve la operación de la empresa; quien sólo es
   trabajador sigue viendo el aviso de la comida arriba de su pantalla.
+- **Personas: estado en un selector.** El lienzo pone «Activas · Dadas de
+  baja · Todas» como pestañas; van en un selector junto a la sede para que
+  los filtros de horario quepan en una fila.
+- **Personas: «Alta reciente»** es quien ingresó en las últimas dos semanas;
+  quien ingresa después de hoy dice «Ingresa …».
+- **Ficha: la tarjeta** dice desde cuándo la tiene sólo a quien consulta
+  tarjetas (Administración, RH y Auditoría); «Ver tarjeta» lleva a la lista
+  de tarjetas hasta que exista su detalle (PAD-11).
+- **Alta: la fecha de ingreso** es obligatoria en el API; el formulario la
+  llena con hoy. La tarjeta se elige sólo si quien da de alta gestiona
+  tarjetas.
+- **Horarios: crear abre una ventana**, no un panel lateral: es la regla del
+  lienzo para crear algo. Un horario no se edita: se crea otro y se asigna
+  desde una fecha.
+- **Fuentes del padrón** muestra el último punto tal como lo guarda la
+  fuente. Los cambios recientes salen de la bitácora y sólo los ve
+  Administración; «Detalle completo en la bitácora» llega con Reportes.
 
 ## Verificar
 
@@ -202,6 +228,7 @@ docker run --rm --network none zenit-web-check pnpm test
 Las pruebas del marco están en `Portal.test.tsx` y `States.test.tsx`; las de
 Asistencia, en `Attendance.test.tsx` y `attendanceModel.test.ts`; las del
 Panel y la campana, en `Panel.test.tsx` y `panelModel.test.ts`; las de
+Personal y horarios, en `Personnel.test.tsx` y `personnelModel.test.ts`; las de
 Incidencias, en `Incidents.test.tsx`; las de Cierres, en `Closures.test.tsx` y
 `closureModel.test.ts`; el
 contraste de los colores del lienzo, en `accessibility.test.ts`.

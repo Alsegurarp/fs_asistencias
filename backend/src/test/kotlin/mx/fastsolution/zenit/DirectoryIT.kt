@@ -79,6 +79,7 @@ class DirectoryIT : ApiTestBase() {
             Triple("GET", "/api/v1/employees/summary", readers),
             Triple("GET", "/api/v1/employees/$id", readers), Triple("PATCH", "/api/v1/employees/$id", writers),
             Triple("POST", "/api/v1/employees/$id/schedule-assignments", writers),
+            Triple("GET", "/api/v1/employees/$id/schedule-assignments", readers),
             Triple("POST", "/api/v1/imports/csv", writers), Triple("GET", "/api/v1/imports/$id", writers),
             Triple("GET", "/api/v1/imports", writers),
             Triple("GET", "/api/v1/cards", setOf("admin_empresa", "rh", "auditor")), Triple("POST", "/api/v1/cards", writers),
@@ -99,7 +100,7 @@ class DirectoryIT : ApiTestBase() {
             "auditor" to member(c, "auditor").token,
             "trabajador" to member(c, "trabajador").token,
         )
-        assertEquals(23, routes.size)
+        assertEquals(24, routes.size)
         for ((method, path, allowed) in routes) {
             val body = if (method == "GET") null else "{}"
             assertProblem(401, "unauthorized", call(method, path, body = body))
@@ -136,7 +137,7 @@ class DirectoryIT : ApiTestBase() {
         assertEquals(202, importB.status, importB.toString())
 
         // Lo ajeno no existe: ni se lee ni se cambia.
-        for (path in listOf("/api/v1/sites/$siteB", "/api/v1/schedules/$scheduleB", "/api/v1/employees/$employeeB", "/api/v1/imports/${importB.at<String>("id")}")) {
+        for (path in listOf("/api/v1/sites/$siteB", "/api/v1/schedules/$scheduleB", "/api/v1/employees/$employeeB", "/api/v1/employees/$employeeB/schedule-assignments", "/api/v1/imports/${importB.at<String>("id")}")) {
             assertProblem(404, "not_found", call("GET", path, a.adminToken))
         }
         assertProblem(404, "not_found", call("PATCH", "/api/v1/sites/$siteB", a.adminToken, """{"status":"inactive"}"""))
@@ -308,6 +309,15 @@ class DirectoryIT : ApiTestBase() {
         assertProblem(422, "validation", assign(UUID.randomUUID().toString(), today.plusDays(10)))
         assertProblem(422, "validation", assign("no-es-uuid", today.plusDays(10)))
         assertProblem(404, "not_found", call("POST", "/api/v1/employees/${UUID.randomUUID()}/schedule-assignments", c.adminToken, """{"scheduleId":"$first","validFrom":"$today"}"""))
+
+        // La persona ve sus horarios, el más reciente primero, con la fecha en que cerró el anterior.
+        val history = call("GET", "/api/v1/employees/$id/schedule-assignments", c.adminToken)
+        assertEquals(200, history.status, history.toString())
+        assertEquals(listOf(second, first), history.list("items[*].scheduleId"))
+        assertEquals(listOf(today.plusDays(5).toString(), today.minusDays(10).toString()), history.list("items[*].validFrom"))
+        assertEquals(listOf(today.plusDays(60).toString(), today.plusDays(4).toString()), history.list("items[*].validTo"))
+        assertEquals(emptyList<String>(), call("GET", "/api/v1/employees/${employee(c)}/schedule-assignments", c.adminToken).list("items[*].id"))
+        assertProblem(404, "not_found", call("GET", "/api/v1/employees/${UUID.randomUUID()}/schedule-assignments", c.adminToken))
 
         // Otra persona, con el segundo horario vigente desde hoy.
         val otherId = employee(c)
