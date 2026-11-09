@@ -6,6 +6,33 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 8 de noviembre de 2026 — Incidencias según el lienzo
+
+Rama `feat/portal-incidencias` desde `main` en `9327414` (PR #38 integrada y
+desplegada). Segunda pantalla del bloque 1: lista y tablero (OPE-03, OPE-05),
+resueltas con su historial (OPE-06), «Todo en orden» (EST-08) y teléfono
+(TEL-02, TEL-09). Retira la pantalla anterior de Incidencias; las piezas que
+todavía usan Cierres, Dispositivos, Usuarios y Mi asistencia pasan a
+`legacy.tsx`. El menú lleva el conteo de abiertas. El contrato sube a 0.25.0:
+`q` en `GET /incidents`, por nombre o número, antes de paginar, con su caso
+en `OperationIT`. Cierres y Asistencia abren Incidencias con la semana y la
+incidencia en la dirección.
+
+Arreglo encontrado al recorrerla: el texto sólo para lectores de pantalla
+medía 100 % (en `sx`, un ancho de 1 es 100 %) y desbordaba la página; ahora
+es una pieza de `ui.tsx` en píxeles, con prueba.
+
+Pruebas: 258 del portal en 24 archivos y la suite completa del backend, con
+el contrato validado. Recorrido en Chromium contra un entorno local aislado
+con 35 personas del simulador y 20 incidencias de una semana ya terminada:
+22 vistas de los cuatro roles de empresa y la operación, a 1440 y 390 px,
+sin errores de consola, sin respuestas fallidas, sin desborde y con un solo
+h1; asignar a RH, resolver como justificada, ajustar excluyendo una lectura
+repetida, confirmar una sincronización tarde, el historial de una resuelta,
+«Ver su semana», enlace directo sin sesión y Supervisión con sólo su sede.
+Repetido el de Asistencia: 28 vistas, sin hallazgos. Sin despliegue: espera
+la PR.
+
 ## 8 de noviembre de 2026 — Asistencia según el lienzo
 
 Rama `feat/portal-asistencia` desde `main` en `a11fdcc` (PR #37 integrada y

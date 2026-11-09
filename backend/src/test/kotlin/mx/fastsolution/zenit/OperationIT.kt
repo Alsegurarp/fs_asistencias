@@ -97,6 +97,13 @@ class OperationIT : WorkdayTestBase() {
         assertEquals(emptyList(), ids(incidents(c, "?assignee=me")))
         assertEquals(listOf(missing, duplicate, anomaly), ids(incidents(c, "?assignee=unassigned")))
         assertEquals(listOf(foreign), ids(incidents(c, "?assignee=assigned")))
+        // Por nombre o número de la persona, sin acentos ni mayúsculas, antes de paginar y junto con otros filtros.
+        val number = employee(c, three.employeeId).at<String>("externalId")
+        assertEquals(listOf(duplicate, anomaly), ids(incidents(c, "?q=${number.lowercase()}")))
+        assertEquals(listOf(anomaly), ids(incidents(c, "?q=$number&limit=1&sort=severity")))
+        assertEquals(listOf(duplicate), ids(incidents(c, "?q=$number&severity=low")))
+        assertEquals(listOf(foreign, missing, duplicate, anomaly), ids(incidents(c, "?q=p%C3%A9rsona")))
+        assertEquals(emptyList(), ids(incidents(c, "?q=nadie-con-este-nombre")))
 
         val counts = incidents(c, "/summary", rh.token)
         assertEquals(200, counts.status, counts.toString())
@@ -122,7 +129,7 @@ class OperationIT : WorkdayTestBase() {
         val released = assign(c, foreign, null)
         assertEquals(listOf<Any?>(null, null, null, null), listOf<Any?>(released.at("assigneeName"), released.at("assignedAt"), released.at("assignedBy"), released.at("assignedByName")))
 
-        for (bad in listOf("?severity=grave", "?assignee=yo", "?blocksClosure=si", "?sort=nombre", "?sort=resolved", "?sort=resolved&status=open")) {
+        for (bad in listOf("?severity=grave", "?assignee=yo", "?blocksClosure=si", "?sort=nombre", "?sort=resolved", "?sort=resolved&status=open", "?q=${"x".repeat(101)}")) {
             assertProblem(422, "validation", incidents(c, bad))
         }
         // Un cursor de otro orden daría una página equivocada.

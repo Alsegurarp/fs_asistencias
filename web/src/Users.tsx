@@ -3,7 +3,7 @@ import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTi
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, permissions, type Me, type Page, type TenantUser } from './api'
 import { EntitySelect, ErrorNotice } from './Directory'
-import { RecordName } from './Incidents'
+import { RecordName } from './legacy'
 import { showTime } from './incidentModel'
 
 const roles: Record<string, string> = { admin_empresa: 'Administración', rh: 'RH', supervisor: 'Supervisión', trabajador: 'Trabajador', auditor: 'Auditoría' }

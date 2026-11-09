@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.24.0
+  version: 0.25.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -3412,6 +3412,8 @@ paths:
         severidad, la más antigua; `resolved`, la resuelta más recientemente
         primero, y sólo con `status=resolved`. El cursor vale sólo para el
         orden con el que se pidió: con otro, responde 422 `invalid_cursor`.
+        `q` busca por nombre o número de la persona, en el servidor y antes
+        de paginar; los conteos de `getIncidentSummary` no lo usan.
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: status
@@ -3456,6 +3458,7 @@ paths:
             type: string
             enum: [opened, severity, resolved]
             default: opened
+        - $ref: "#/components/parameters/SearchText"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:

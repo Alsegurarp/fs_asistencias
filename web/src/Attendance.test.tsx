@@ -129,7 +129,7 @@ it('muestra la semana de cada persona como la calcula el servidor', async () => 
   expect([...container.querySelectorAll('button[aria-pressed]')].map(button => button.textContent)).toEqual(['Con alertas · 4', 'Con tiempo extra · 3', 'Sin entrada hoy · 4', 'En turno · 34'])
   expect(text()).toContain('1–3 de 42')
   // Una incidencia abre Incidencias en su semana.
-  expect(container.querySelector('tbody a[href="/incidencias"]')?.textContent).toBe('Falta un marcaje')
+  expect(container.querySelector('tbody a[href="/incidencias?incidencia=i1"]')?.textContent).toBe('Falta un marcaje')
 })
 
 it('filtra, busca y elige sede en el servidor, y lo deja en la dirección', async () => {

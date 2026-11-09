@@ -8,8 +8,13 @@ export type Adjustment = { kind: 'add_event' | 'exclude_event' | 'retype_event';
 export type Incident = {
   id: string; type: string; severity: string; status: 'open' | 'resolved'; employeeId: string | null; siteId: string | null;
   eventIds: string[]; openedAt: string; assigneeUserId: string | null;
-  resolution: { decision: string; reason: string; adjustment: Adjustment | null; resolvedBy: string; resolvedAt: string } | null;
+  resolution: { decision: string; reason: string; adjustment: Adjustment | null; resolvedBy: string; resolvedAt: string; resolvedByName?: string | null } | null;
+  /** Desde el contrato 0.20.0: nombres, hora del marcaje, quién asignó y si bloquea un cierre. */
+  employeeName?: string; employeeExternalId?: string; occurredAt?: string; assigneeName?: string | null;
+  assignedAt?: string | null; assignedBy?: string | null; assignedByName?: string | null; blocksClosure?: boolean;
 }
+/** Semana, sede e incidencia con las que otra pantalla abre Incidencias. */
+export type IncidentTarget = { week: string; siteId?: string; incidentId?: string }
 export type AttendanceEvent = { id: string; type: string; observedAt: string; locationVerdict: string; accuracyMeters: number | null }
 export type User = { id: string; displayName: string; email: string; status: string }
 export type Week = {

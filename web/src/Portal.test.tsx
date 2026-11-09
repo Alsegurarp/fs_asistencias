@@ -16,10 +16,13 @@ vi.mock('./api', async original => ({
 // Cierres e Incidencias simuladas: sólo se prueba que el marco pasa la semana elegida.
 vi.mock('./Closures', () => ({ Closures: ({ onIncidents }: { onIncidents: (target: { week: string; incidentId?: string }) => void }) =>
   <button type="button" onClick={() => onIncidents({ week: '2026-11-02', incidentId: 'inc-1' })}>Ver incidencias de la semana</button> }))
-vi.mock('./Incidents', async original => ({
-  ...await original<typeof import('./Incidents')>(),
-  Incidents: ({ initial }: { initial?: { week: string; incidentId?: string } }) => <p>Incidencias de {initial ? `${initial.week} · ${initial.incidentId}` : 'la semana actual'}</p>,
-}))
+vi.mock('./Incidents', async original => {
+  const { useLocation } = await import('react-router')
+  return {
+    ...await original<typeof import('./Incidents')>(),
+    Incidents: () => <p>Incidencias {useLocation().search || 'sin filtros'}</p>,
+  }
+})
 import { type Me } from './api'
 import { Portal } from './Portal'
 import { theme } from './theme'
@@ -241,11 +244,11 @@ it.each(['/no-existe', '/usuarios', '/mas'])('el marco no tiene fallas automáti
 
 it('desde Cierres abre Incidencias con la semana y la incidencia elegidas', async () => {
   await render(['admin_empresa'], '/cierres')
-  expect(text()).not.toContain('Incidencias de 2026')
+  expect(text()).not.toContain('Incidencias ?semana')
   await act(async () => [...container.querySelectorAll('button')].find(item => item.textContent === 'Ver incidencias de la semana')!.click())
-  expect(heading()).toBe('Incidencias')
   expect(container.querySelector('aside a[href="/incidencias"]')?.getAttribute('aria-current')).toBe('page')
-  expect(text()).toContain('Incidencias de 2026-11-02 · inc-1')
+  // La semana y la incidencia viajan en la dirección: un enlace o el botón atrás las conservan.
+  expect(text()).toContain('Incidencias ?semana=2026-11-02&incidencia=inc-1')
   await render(['admin_empresa'], '/incidencias')
-  expect(text()).toContain('Incidencias de la semana actual')
+  expect(text()).toContain('Incidencias sin filtros')
 })

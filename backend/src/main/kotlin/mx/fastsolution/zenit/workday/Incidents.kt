@@ -6,6 +6,7 @@ import mx.fastsolution.zenit.api.Page
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
+import mx.fastsolution.zenit.api.TextSearch
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.capture.Envelopes
 import mx.fastsolution.zenit.identity.CurrentPerson
@@ -132,6 +133,8 @@ data class IncidentFilter(
     val assignee: String? = null,
     val userId: UUID? = null,
     val blocksClosure: Boolean? = null,
+    /** Patrón de [TextSearch] sobre el nombre o número de la persona; sólo la lista lo usa. */
+    val text: String? = null,
 )
 
 data class OpenIncidentCounts(val total: Int, val unassigned: Int, val mine: Int, val high: Int, val medium: Int, val low: Int, val blockingClosure: Int)
@@ -159,6 +162,10 @@ class IncidentRepository(private val dsl: DSLContext) {
         val sql = StringBuilder("$SELECT where i.tenant_id = ?${SiteScope.clause("i.site_id")}")
         val binds = mutableListOf<Any?>(tenantId)
         where(filter, sql, binds)
+        if (filter.text != null) {
+            sql.append(TextSearch.clause("emp.display_name", "emp.external_id"))
+            binds.addAll(TextSearch.binds(filter.text, 2))
+        }
         when (sort) {
             "severity" -> {
                 if (after != null) {
@@ -392,6 +399,7 @@ class IncidentService(
         val assignee: String? = null,
         val blocksClosure: String? = null,
         val sort: String? = null,
+        val q: String? = null,
     )
 
     @Transactional(readOnly = true)
@@ -442,8 +450,9 @@ class IncidentService(
         val severity = checks.oneOf("severity", query.severity, SEVERITIES, required = false)
         val assignee = checks.oneOf("assignee", query.assignee, ASSIGNEES, required = false)
         val blocks = checks.oneOf("blocksClosure", query.blocksClosure, setOf("true", "false"), required = false)
+        val text = TextSearch.pattern(checks, query.q)
         return IncidentFilter(
-            status, type, site, date?.let { weekRange(tenantId, it) }, severity, assignee, person.userId, blocks?.toBooleanStrictOrNull(),
+            status, type, site, date?.let { weekRange(tenantId, it) }, severity, assignee, person.userId, blocks?.toBooleanStrictOrNull(), text,
         )
     }
 
@@ -604,11 +613,12 @@ class IncidentController(private val service: IncidentService) {
         @RequestParam assignee: String?,
         @RequestParam blocksClosure: String?,
         @RequestParam sort: String?,
+        @RequestParam q: String?,
         @RequestParam cursor: String?,
         @RequestParam limit: String?,
     ): Page<IncidentView> {
         val size = Paging.limit(limit)
-        val query = IncidentService.ListQuery(status, type, siteId, week, severity, assignee, blocksClosure, sort)
+        val query = IncidentService.ListQuery(status, type, siteId, week, severity, assignee, blocksClosure, sort, q)
         val rows = service.page(person, query, Paging.decode(cursor), size)
         val key: (IncidentRow) -> PageKey = when (sort) {
             "severity" -> { it -> PageKey(it.openedAt, it.id, IncidentRepository.rank(it.severity)) }

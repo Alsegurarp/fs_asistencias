@@ -87,6 +87,19 @@ export function dayLabel(date: string) {
   return `${dayShort[p.weekday]}, ${p.day} ${monthNames[p.month]}`
 }
 
+/** «jue 5 nov». */
+export function dayMonth(date: string) {
+  const p = parts(date)
+  return `${dayShort[p.weekday].toLowerCase()} ${p.day} ${monthNames[p.month]}`
+}
+
+const monthLong = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+/** «jueves 5 de noviembre». */
+export function longDate(date: string) {
+  const p = parts(date)
+  return `${dayLong[p.weekday]} ${p.day} de ${monthLong[p.month]}`
+}
+
 /** «lun 2». */
 export function shortDay(date: string) {
   const p = parts(date)

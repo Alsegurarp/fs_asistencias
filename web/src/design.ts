@@ -37,6 +37,9 @@ export const color = {
   /** Círculo de «día completo». */
   okMark: '#22A45A',
   infoBg: '#E7EFFD',
+  /** Conteo de pendientes en la barra inferior del teléfono. */
+  countBg: '#FFE3B8',
+  countInk: '#7A3B00',
   /** Tramo de tiempo extra en las barras de horas. */
   overtime: '#D97A1E',
   gradientFrom: '#2C66D0',

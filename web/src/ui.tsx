@@ -18,6 +18,9 @@ const tones: Record<Tone, { background: string; color: string }> = {
   info: { background: color.infoBg, color: color.link },
   neutral: { background: color.lineSoft, color: color.muted },
 }
+/** Texto sólo para lectores de pantalla. En `sx`, un ancho de 1 es 100 %: va en píxeles. */
+export const visuallyHidden = { position: 'absolute', width: '1px', height: '1px', p: 0, m: '-1px', overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0 } as const
+
 /** Color de texto suelto de cada tono, sobre blanco. */
 export const toneText: Record<Tone, string> = { ok: color.ok, warn: color.warnText, error: color.error, info: color.link, neutral: color.muted }
 
@@ -141,12 +144,18 @@ export type SheetTab = { key: string; label: string }
  * Ficha lateral sobre la tabla (escritorio) o a pantalla completa (teléfono).
  * No es modal: la tabla sigue a la mano. Escape la cierra y el foco va al
  * título al abrirla; quien la abre devuelve el foco al cerrarla.
+ *
+ * Con `initials`, encabezado azul de una persona (Asistencia); con `icon`,
+ * encabezado blanco de un registro (Incidencias). Las pestañas y el pie con
+ * las acciones son opcionales.
  */
-export function SidePanel({ title, subtitle, initials, onClose, tabs, tab, onTab, children }: {
-  title: string; subtitle?: ReactNode; initials: string; onClose: () => void; tabs: SheetTab[]; tab: string; onTab: (key: string) => void; children: ReactNode
+export function SidePanel({ title, subtitle, eyebrow, initials, icon, onClose, tabs = [], tab = '', onTab = () => undefined, footer, children }: {
+  title: string; subtitle?: ReactNode; eyebrow?: ReactNode; initials?: string; icon?: ReactNode; onClose: () => void
+  tabs?: SheetTab[]; tab?: string; onTab?: (key: string) => void; footer?: ReactNode; children: ReactNode
 }) {
   const id = useId()
   const heading = useRef<HTMLHeadingElement>(null)
+  const plain = !initials
   useEffect(() => { heading.current?.focus() }, [title])
   const keys = (event: KeyboardEvent<HTMLDivElement>) => {
     const index = tabs.findIndex(item => item.key === tab)
@@ -159,27 +168,65 @@ export function SidePanel({ title, subtitle, initials, onClose, tabs, tab, onTab
   return <Box component="section" aria-labelledby={`${id}-title`} onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); onClose() } }}
     sx={{ position: 'fixed', top: 60, right: 0, bottom: 0, width: 440, maxWidth: '100%', zIndex: 40, display: 'flex', flexDirection: 'column', background: color.white, borderRadius: '20px 0 0 20px', boxShadow: shadow.drawer, overflow: 'hidden',
       [`@media ${phoneQuery}`]: { top: 0, width: '100%', borderRadius: 0, zIndex: 1300 } }}>
-    <Stack direction="row" sx={{ flex: 'none', alignItems: 'center', gap: 1.5, p: '16px 18px', color: color.white, background: gradient.sheet }}>
-      <ButtonBase aria-label="Volver a la lista" onClick={onClose} sx={{ display: 'none', width: 44, height: 44, flex: 'none', borderRadius: '50%', background: 'rgba(255,255,255,0.16)', color: color.white,
-        [`@media ${phoneQuery}`]: { display: 'flex' }, '&.Mui-focusVisible': { outline: `2px solid ${color.white}` } }}><Icon name="arrowBack" /></ButtonBase>
-      <Box aria-hidden="true" sx={{ width: 44, height: 44, flex: 'none', borderRadius: '50%', background: color.white, color: color.link, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        [`@media ${phoneQuery}`]: { display: 'none' } }}>{initials}</Box>
+    <Stack direction="row" sx={{ flex: 'none', alignItems: plain ? 'flex-start' : 'center', gap: 1.5, p: plain ? '16px 18px 12px' : '16px 18px',
+      color: plain ? color.ink : color.white, background: plain ? color.white : gradient.sheet, borderBottom: plain ? `1px solid ${color.lineSoft}` : 0 }}>
+      <ButtonBase aria-label="Volver a la lista" onClick={onClose} sx={{ display: 'none', width: 44, height: 44, flex: 'none', borderRadius: '50%',
+        background: plain ? color.hover : 'rgba(255,255,255,0.16)', color: plain ? color.link : color.white,
+        [`@media ${phoneQuery}`]: { display: 'flex' }, '&.Mui-focusVisible': { outline: `2px solid ${plain ? color.accent : color.white}` } }}><Icon name="arrowBack" /></ButtonBase>
+      {initials && <Box aria-hidden="true" sx={{ width: 44, height: 44, flex: 'none', borderRadius: '50%', background: color.white, color: color.link, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        [`@media ${phoneQuery}`]: { display: 'none' } }}>{initials}</Box>}
+      {icon && <Box aria-hidden="true" sx={{ flex: 'none', [`@media ${phoneQuery}`]: { display: 'none' } }}>{icon}</Box>}
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography component="h2" id={`${id}-title`} ref={heading} tabIndex={-1} sx={{ fontSize: 17, fontWeight: 600, outline: 'none', [`@media ${phoneQuery}`]: { fontSize: 22, fontWeight: 700 } }} noWrap>{title}</Typography>
-        {subtitle && <Typography sx={{ mt: '2px', fontSize: 13 }}>{subtitle}</Typography>}
+        {eyebrow && <Typography sx={{ fontSize: 12, color: color.muted, mb: '2px' }}>{eyebrow}</Typography>}
+        <Typography component="h2" id={`${id}-title`} ref={heading} tabIndex={-1} sx={{ fontSize: plain ? 18 : 17, fontWeight: plain ? 700 : 600, outline: 'none', [`@media ${phoneQuery}`]: { fontSize: plain ? 20 : 22, fontWeight: 700 } }} noWrap={!plain}>{title}</Typography>
+        {subtitle && <Typography sx={{ mt: '2px', fontSize: 13, color: plain ? color.muted : 'inherit' }}>{subtitle}</Typography>}
       </Box>
-      <ButtonBase aria-label="Cerrar ficha" onClick={onClose} sx={{ width: 36, height: 36, flex: 'none', borderRadius: '50%', background: 'rgba(255,255,255,0.14)', color: color.white,
-        [`@media ${phoneQuery}`]: { display: 'none' }, '&:hover': { background: 'rgba(255,255,255,0.24)' }, '&.Mui-focusVisible': { outline: `2px solid ${color.white}` } }}><Icon name="close" size={18} strokeWidth={2} /></ButtonBase>
+      <ButtonBase aria-label={plain ? 'Cerrar detalle' : 'Cerrar ficha'} onClick={onClose} sx={{ width: 36, height: 36, flex: 'none', borderRadius: '50%',
+        background: plain ? color.hover : 'rgba(255,255,255,0.14)', color: plain ? color.muted : color.white,
+        [`@media ${phoneQuery}`]: { display: 'none' }, '&:hover': { background: plain ? color.selected : 'rgba(255,255,255,0.24)' }, '&.Mui-focusVisible': { outline: `2px solid ${plain ? color.accent : color.white}` } }}><Icon name="close" size={18} strokeWidth={2} /></ButtonBase>
     </Stack>
-    <Box role="tablist" aria-label="Ficha" onKeyDown={keys} sx={{ flex: 'none', display: 'flex', gap: 0.5, px: 1.5, borderBottom: `1px solid ${color.lineSoft}`, overflowX: 'auto' }}>
+    {tabs.length > 0 && <Box role="tablist" aria-label="Ficha" onKeyDown={keys} sx={{ flex: 'none', display: 'flex', gap: 0.5, px: 1.5, borderBottom: `1px solid ${color.lineSoft}`, overflowX: 'auto' }}>
       {tabs.map(item => <ButtonBase key={item.key} role="tab" id={`${id}-tab-${item.key}`} aria-selected={item.key === tab} aria-controls={`${id}-panel`} tabIndex={item.key === tab ? 0 : -1}
         onClick={() => onTab(item.key)} sx={{ minHeight: 44, px: 1.5, fontFamily: font, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', borderBottom: '2px solid transparent', color: color.muted,
           '&[aria-selected="true"]': { borderBottomColor: color.accent, color: color.deep }, '&:hover': { color: color.ink }, '&.Mui-focusVisible': { outline: `2px solid ${color.accent}`, outlineOffset: -2 } }}>
         {item.label}
       </ButtonBase>)}
-    </Box>
-    <Box role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-tab-${tab}`} sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: '14px 16px', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    </Box>}
+    <Box role={tabs.length ? 'tabpanel' : undefined} id={`${id}-panel`} aria-labelledby={tabs.length ? `${id}-tab-${tab}` : undefined}
+      sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: plain ? '14px 18px' : '14px 16px', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       {children}
     </Box>
+    {footer && <Stack direction="row" useFlexGap sx={{ flex: 'none', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: 1, p: '12px 18px 16px', borderTop: `1px solid ${color.lineSoft}`, background: color.white,
+      [`@media ${phoneQuery}`]: { p: '12px 16px 24px', '& > *': { flex: '1 1 auto' } } }}>{footer}</Stack>}
   </Box>
+}
+
+/** Mosaico de color con un ícono, como el del encabezado de una incidencia. */
+export function IconTile({ icon, tone, size = 40 }: { icon: IconName; tone: Tone; size?: number }) {
+  return <Box aria-hidden="true" sx={{ width: size, height: size, flex: 'none', borderRadius: '12px', background: tones[tone].background, color: tones[tone].color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Icon name={icon} size={Math.round(size / 2)} />
+  </Box>
+}
+
+/** Conmutador de dos o más vistas, como «Lista · Tablero». Cada opción es un enlace. */
+export function ViewSwitch({ label, options, current }: { label: string; options: { key: string; label: string; icon?: IconName; to: string }[]; current: string }) {
+  return <Box component="nav" aria-label={label} sx={{ display: 'flex', gap: '2px', p: '3px', background: color.white, border: `1px solid ${color.line}`, borderRadius: 999 }}>
+    {options.map(option => <Box component={Link} key={option.key} to={option.to} replace aria-current={option.key === current ? 'page' : undefined}
+      sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minHeight: 36, px: 1.75, borderRadius: 999, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: `${color.muted} !important`,
+        '&[aria-current="page"]': { background: gradient.button, color: `${color.white} !important` }, '&:hover:not([aria-current])': { background: color.hover } }}>
+      {option.icon && <Icon name={option.icon} size={16} />}{option.label}
+    </Box>)}
+  </Box>
+}
+
+/** Pestañas de estado como enlaces de la dirección, como «Abiertas · 6 · Resueltas · 27». */
+export function StatusTabs({ label, options, current, note }: { label: string; options: { key: string; label: string; to: string }[]; current: string; note?: ReactNode }) {
+  return <Stack direction="row" useFlexGap sx={{ flex: 'none', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
+    <Box component="nav" aria-label={label} sx={{ display: 'flex', gap: '2px', p: '3px', background: 'rgba(255,255,255,0.6)', borderRadius: '12px' }}>
+      {options.map(option => <Box component={Link} key={option.key} to={option.to} aria-current={option.key === current ? 'page' : undefined}
+        sx={{ display: 'flex', alignItems: 'center', minHeight: 36, px: 1.75, borderRadius: '10px', fontSize: 13, fontWeight: 600, textDecoration: 'none', color: `${color.muted} !important`,
+          '&[aria-current="page"]': { background: color.white, color: `${color.link} !important`, boxShadow: '0 1px 3px rgba(18,35,63,0.12)' } }}>{option.label}</Box>)}
+    </Box>
+    {note && <Typography sx={{ fontSize: 13, color: color.muted }}>{note}</Typography>}
+  </Stack>
 }
