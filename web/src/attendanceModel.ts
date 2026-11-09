@@ -12,7 +12,11 @@ export type WeekRow = {
   employeeId: string; externalId: string; displayName: string; siteId: string | null; scheduleId: string | null
   ruleSet: { id: string; version: number }; totals: Totals; alerts: AttendanceAlert[]
   openIncidents: { id: string; type: string }[]; closure: ClosureRef | null; today: Today | null
+  /** Desde el contrato 0.26.0; nulos en un cierre anterior. */
+  workedDays?: number | null; overtimeDays?: number | null
 }
+/** Un día de la semana con su reparto, del mismo cálculo que los totales. */
+export type DayTotals = { date: string; workedMinutes: number; breakMinutes: number; ordinaryMinutes: number; overtimeMinutes: number }
 export type WeekList = Page<WeekRow> & { weekStart: string; timeZone: string }
 export type AttendanceSummary = {
   date: string; weekStart: string; timeZone: string; siteId: string | null; people: number
@@ -27,6 +31,8 @@ export type Segment = { id: string; kind: 'work' | 'break'; startAt: string; end
 export type PersonWeek = {
   employeeId: string; weekStart: string; timeZone: string; ruleSet: { id: string; version: number }
   segments: Segment[]; totals: Totals; alerts: AttendanceAlert[]; openIncidentIds: string[]; closure: ClosureRef | null
+  /** Nulo en una semana cerrada antes del contrato 0.26.0. */
+  days?: DayTotals[] | null
 }
 export type Mark = {
   id: string; employeeId: string; siteId: string | null; deviceMode: 'personal' | 'terminal'
@@ -187,7 +193,7 @@ export type Flag = { label: string; tone: Tone; incidentId?: string }
  * La columna «Atención»: incidencias abiertas, un tramo sin salida que ya no
  * es el turno de hoy, topes rebasados y tiempo extra. Lo más grave primero.
  */
-export function attentionFlags(row: WeekRow): Flag[] {
+export function attentionFlags(row: WeekRow, overtimeMaxDays?: number): Flag[] {
   const flags: Flag[] = []
   const onShift = row.today?.state === 'on_shift' || row.today?.state === 'on_break'
   if (row.alerts.some(alert => alert.code === 'open_segment') && !onShift) flags.push({ label: 'Tramo sin salida', tone: 'error' })
@@ -202,7 +208,10 @@ export function attentionFlags(row: WeekRow): Flag[] {
     seen.add(label)
     flags.push({ label, tone: alert.severity === 'critical' ? 'error' : 'neutral' })
   }
-  if (row.totals.overtimeMinutes > 0 && !flags.some(flag => flag.label.startsWith('Extra'))) flags.push({ label: 'Tiempo extra', tone: 'warn' })
+  if (row.totals.overtimeMinutes > 0 && !flags.some(flag => flag.label.startsWith('Extra'))) {
+    // «Extra 3 de 4 días», como en el lienzo, cuando el servidor dice cuántos días y las reglas el máximo.
+    flags.push({ label: row.overtimeDays && overtimeMaxDays ? `Extra ${row.overtimeDays} de ${overtimeMaxDays} días` : 'Tiempo extra', tone: 'warn' })
+  }
   const rank: Record<Tone, number> = { error: 0, warn: 1, neutral: 2, info: 3, ok: 4 }
   return flags.sort((a, b) => rank[a.tone] - rank[b.tone])
 }
@@ -212,6 +221,9 @@ export type DayLine = {
   /** «08:00 – 16:00», «07:58 – en turno», «Programado 08:00 – 16:00». */
   range: string
   workedMinutes: number | null
+  /** El reparto del día que da el servidor; nulo si la semana no lo trae. */
+  ordinaryMinutes: number | null
+  overtimeMinutes: number | null
   state: 'done' | 'open' | 'missing' | 'planned' | 'absent' | 'pending'
 }
 
@@ -240,7 +252,7 @@ export function dayLines(week: PersonWeek, schedule: Schedule | undefined, today
     const worked = group.items.filter(item => item.kind === 'work').reduce((sum, item) => sum + item.minutes, 0)
     const range = `${timeIn(first.startAt, tz)} – ${open ? (current ? (open.kind === 'break' ? 'en descanso' : 'en turno') : 'sin salida') : timeIn(end.endAt!, tz)}`
     const existing = lines.get(group.date)
-    const line: DayLine = { date: group.date, range, workedMinutes: worked, state: open ? (current ? 'open' : 'missing') : 'done' }
+    const line: DayLine = { date: group.date, range, workedMinutes: worked, ordinaryMinutes: null, overtimeMinutes: null, state: open ? (current ? 'open' : 'missing') : 'done' }
     // Dos jornadas el mismo día: se suman y el rango va de la primera a la última.
     lines.set(group.date, existing ? { ...line, range: `${existing.range.split(' – ')[0]} – ${range.split(' – ')[1]}`, workedMinutes: (existing.workedMinutes || 0) + worked,
       state: existing.state === 'missing' || line.state === 'missing' ? 'missing' : line.state } : line)
@@ -252,9 +264,15 @@ export function dayLines(week: PersonWeek, schedule: Schedule | undefined, today
     const planned = scheduleDayOn(schedule, date)
     if (!planned) continue
     const window = `${planned.startTime.slice(0, 5)} – ${planned.endTime.slice(0, 5)}`
-    if (date > today) lines.set(date, { date, range: `Programado ${window}`, workedMinutes: null, state: 'planned' })
-    else if (date === today && planned.startTime.slice(0, 5) > nowTime) lines.set(date, { date, range: `Entra ${planned.startTime.slice(0, 5)}`, workedMinutes: null, state: 'pending' })
-    else lines.set(date, { date, range: `Sin marcas · programado ${window}`, workedMinutes: null, state: 'absent' })
+    const none = { workedMinutes: null, ordinaryMinutes: null, overtimeMinutes: null }
+    if (date > today) lines.set(date, { date, range: `Programado ${window}`, ...none, state: 'planned' })
+    else if (date === today && planned.startTime.slice(0, 5) > nowTime) lines.set(date, { date, range: `Entra ${planned.startTime.slice(0, 5)}`, ...none, state: 'pending' })
+    else lines.set(date, { date, range: `Sin marcas · programado ${window}`, ...none, state: 'absent' })
+  }
+  // El reparto de cada día lo da el servidor, con el mismo cálculo que los totales.
+  for (const day of week.days || []) {
+    const line = lines.get(day.date)
+    if (line && line.workedMinutes !== null) lines.set(day.date, { ...line, ordinaryMinutes: day.ordinaryMinutes, overtimeMinutes: day.overtimeMinutes })
   }
   return [...lines.values()].sort((a, b) => a.date.localeCompare(b.date))
 }

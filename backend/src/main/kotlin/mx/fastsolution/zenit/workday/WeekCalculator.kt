@@ -32,6 +32,13 @@ data class Totals(val workedMinutes: Int, val breakMinutes: Int, val ordinaryMin
 
 data class Alert(val code: String, val severity: String, val message: String)
 
+/**
+ * Un día de la semana: la fecha en que empezó la jornada, en la zona de la
+ * empresa, con lo que sumaron sus tramos. Lo ordinario y lo extraordinario
+ * salen del mismo reparto que da los totales: la suma de los días es la semana.
+ */
+data class DayTotals(val date: String, val workedMinutes: Int, val breakMinutes: Int, val ordinaryMinutes: Int, val overtimeMinutes: Int)
+
 data class RuleLimits(
     val weeklyOrdinaryMaxMinutes: Int,
     val weeklyOvertimeMaxMinutes: Int?,
@@ -44,7 +51,14 @@ data class RuleLimits(
     val weeklyExcessOvertimeMaxMinutes: Int? = null,
 )
 
-data class WeekCalculation(val segments: List<Segment>, val totals: Totals, val alerts: List<Alert>, val version: Int, val hasOpenSegment: Boolean)
+data class WeekCalculation(
+    val segments: List<Segment>,
+    val totals: Totals,
+    val alerts: List<Alert>,
+    val version: Int,
+    val hasOpenSegment: Boolean,
+    val days: List<DayTotals> = emptyList(),
+)
 
 /**
  * Calcula la jornada de una semana a partir de los marcajes. No guarda nada y
@@ -178,6 +192,13 @@ object WeekCalculator {
             }
         }
         if (overtime > 0) alerts += Alert("weekly_overtime", "info", "La semana tiene $overtime minutos extraordinarios por límites diarios o semanales.")
+        // Cada día con algún tramo, aunque sólo sea un descanso o un tramo todavía abierto.
+        val pausedPerDay = segments.filter { it.kind == "break" }.groupBy { segmentDays.getValue(it.id) }.mapValues { (_, day) -> day.sumOf { it.minutes } }
+        val days = (perDay.keys + pausedPerDay.keys).toSortedSet().map { date ->
+            val minutes = workedPerDay[date] ?: 0
+            val extra = overtimePerDay[date] ?: 0
+            DayTotals(date.toString(), minutes, pausedPerDay[date] ?: 0, minutes - extra, extra)
+        }
         limits.weeklyOvertimeMaxMinutes?.let { max ->
             if (overtime > max) alerts += Alert("weekly_overtime_limit_exceeded", "critical", "El tiempo extraordinario excede las ${max / 60} horas semanales.")
             limits.weeklyExcessOvertimeMaxMinutes?.let { excess ->
@@ -191,6 +212,7 @@ object WeekCalculator {
             alerts,
             version,
             hasOpen,
+            days,
         )
     }
 

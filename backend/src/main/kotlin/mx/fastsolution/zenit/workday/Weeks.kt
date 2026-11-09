@@ -69,6 +69,8 @@ data class WeekCore(
     val segments: List<Segment>,
     val totals: Totals,
     val alerts: List<Alert>,
+    /** Desde el contrato 0.26.0; un cierre anterior no los guardó. */
+    val days: List<DayTotals>,
 )
 
 /** La semana que se entrega: calculada al momento o, si está cerrada, tal como se congeló. */
@@ -80,6 +82,8 @@ data class WeekAttendanceView(
     @get:JsonRawValue val segments: String,
     @get:JsonRawValue val totals: String,
     @get:JsonRawValue val alerts: String,
+    /** Los días con su reparto, o `null` en un cierre anterior a 0.26.0. */
+    @get:JsonRawValue val days: String,
     val openIncidentIds: List<String>,
     val closure: ClosureRef?,
     val acknowledgement: AcknowledgementView? = null,
@@ -87,7 +91,7 @@ data class WeekAttendanceView(
 
 data class ComputedWeek(val core: WeekCore, val rules: RuleSetRow, val openIncidentIds: List<UUID>, val hasOpenSegment: Boolean)
 
-data class ClosureState(val id: UUID, val version: Int, val status: String, val ruleSet: String, val segments: String, val totals: String, val alerts: String)
+data class ClosureState(val id: UUID, val version: Int, val status: String, val ruleSet: String, val segments: String, val totals: String, val alerts: String, val days: String?)
 
 @Repository
 class RuleRepository(private val dsl: DSLContext) {
@@ -186,14 +190,14 @@ class WeekRepository(private val dsl: DSLContext) {
     fun latestClosure(tenantId: UUID, employeeId: UUID, weekStart: LocalDate): ClosureState? =
         dsl.fetchOne(
             "select id, version, status, cast(snapshot -> 'ruleSet' as text) as rule_set, cast(snapshot -> 'segments' as text) as segments, " +
-                "cast(snapshot -> 'totals' as text) as totals, cast(snapshot -> 'alerts' as text) as alerts from week_closure " +
+                "cast(snapshot -> 'totals' as text) as totals, cast(snapshot -> 'alerts' as text) as alerts, cast(snapshot -> 'days' as text) as days from week_closure " +
                 "where tenant_id = ? and employee_id = ? and week_start = cast(? as date) order by version desc limit 1",
             tenantId, employeeId, weekStart.toString(),
         )?.let {
             ClosureState(
                 it.get("id", UUID::class.java), it.get("version", Number::class.java).toInt(), it.get("status", String::class.java),
                 it.get("rule_set", String::class.java), it.get("segments", String::class.java), it.get("totals", String::class.java),
-                it.get("alerts", String::class.java),
+                it.get("alerts", String::class.java), it.get("days", String::class.java),
             )
         }
 }
@@ -236,14 +240,14 @@ class WeekService(
             )
             return WeekAttendanceView(
                 employeeId.toString(), weekStart.toString(), tenant.timeZone, closure.ruleSet, closure.segments, closure.totals,
-                closure.alerts, open.map { it.toString() }, reference, closures.find(tenantId, closure.id)?.acknowledgement,
+                closure.alerts, closure.days ?: "null", open.map { it.toString() }, reference, closures.find(tenantId, closure.id)?.acknowledgement,
             )
         }
         val computed = compute(tenant, employeeId, weekStart)
         return WeekAttendanceView(
             employeeId.toString(), weekStart.toString(), tenant.timeZone, json.writeValueAsString(computed.core.ruleSet),
             json.writeValueAsString(computed.core.segments), json.writeValueAsString(computed.core.totals),
-            json.writeValueAsString(computed.core.alerts), computed.openIncidentIds.map { it.toString() }, reference,
+            json.writeValueAsString(computed.core.alerts), json.writeValueAsString(computed.core.days), computed.openIncidentIds.map { it.toString() }, reference,
         )
     }
 
@@ -262,7 +266,7 @@ class WeekService(
         val calculation = calculate(marks, adjustments, policies.on(tenant, weekStart), weekStart, zone, ruleSet)
         val core = WeekCore(
             employeeId.toString(), weekStart.toString(), tenant.timeZone, RuleSetRef(ruleSet.id.toString(), ruleSet.version),
-            calculation.segments, calculation.totals, calculation.alerts,
+            calculation.segments, calculation.totals, calculation.alerts, calculation.days,
         )
         return ComputedWeek(core, ruleSet, weeks.openIncidents(tenant.id, employeeId, from, until), calculation.hasOpenSegment)
     }

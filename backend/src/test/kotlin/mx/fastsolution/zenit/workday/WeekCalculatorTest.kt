@@ -137,6 +137,50 @@ class WeekCalculatorTest {
         assertEquals(week(marks).segments.map { it.id }, week(marks).segments.map { it.id })
     }
 
+    /** La suma de los días es la semana, campo por campo. */
+    private fun assertDaysAddUp(result: WeekCalculation) {
+        assertEquals(
+            result.totals,
+            Totals(result.days.sumOf { it.workedMinutes }, result.days.sumOf { it.breakMinutes }, result.days.sumOf { it.ordinaryMinutes }, result.days.sumOf { it.overtimeMinutes }),
+        )
+    }
+
+    @Test
+    fun `each day carries its ordinary and overtime minutes, and the days add up to the week`() {
+        val rules = limits.copy(weeklyOrdinaryMaxMinutes = 2400, dailyOvertimeMaxMinutes = 240, overtimeMaxDays = 4)
+        // Lunes 9 h, martes 8 h con descanso, miércoles sin marcas, jueves 10 h, viernes entrada sin salida.
+        val result = week(
+            listOf(mark(0, "08:00", "clock_in"), mark(0, "17:00", "clock_out"), mark(1, "08:00", "clock_in"), mark(1, "12:00", "break_start"),
+                mark(1, "12:30", "break_end"), mark(1, "16:30", "clock_out"), mark(3, "07:00", "clock_in"), mark(3, "17:00", "clock_out"), mark(4, "08:00", "clock_in")),
+            policy = "marked", rules = rules,
+        )
+
+        assertEquals(
+            listOf(
+                DayTotals("2026-10-05", 540, 0, 480, 60),
+                DayTotals("2026-10-06", 480, 30, 480, 0),
+                DayTotals("2026-10-08", 600, 0, 480, 120),
+                DayTotals("2026-10-09", 0, 0, 0, 0),
+            ),
+            result.days,
+        )
+        assertDaysAddUp(result)
+        assertEquals(2, result.days.count { it.overtimeMinutes > 0 })
+    }
+
+    @Test
+    fun `the weekly limit moves later days into overtime, and a night shift stays on the day it began`() {
+        // Seis días de ocho horas con un tope semanal de 40: el sexto es todo extraordinario.
+        val six = week((0..5).flatMap { listOf(mark(it, "08:00"), mark(it, "16:00")) }, rules = limits.copy(weeklyOrdinaryMaxMinutes = 2400))
+        assertEquals(listOf(0, 0, 0, 0, 0, 480), six.days.map { it.overtimeMinutes })
+        assertDaysAddUp(six)
+
+        val night = week(listOf(mark(6, "20:00"), mark(6, "23:30"), mark(7, "00:00"), mark(7, "04:30")), policy = "marked")
+        assertEquals(listOf(DayTotals("2026-10-11", 480, 30, 420, 60)), night.days)
+        assertDaysAddUp(night)
+        assertTrue(week(emptyList()).days.isEmpty())
+    }
+
     @Test
     fun `daily overtime exists even when the week is below its limit`() {
         val result = week(listOf(mark(0, "08:00"), mark(0, "18:00")))

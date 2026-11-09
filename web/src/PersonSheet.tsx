@@ -66,7 +66,10 @@ function WeekTab({ week, loading, row, rule, schedule, today, marks, siteName }:
   const lines = dayLines(week, schedule, today, onShift)
   const ordinaryMax = rule?.weeklyOrdinaryMaxMinutes
   const overtimeMax = rule ? Number(rule.parameters.weeklyOvertimeMaxMinutes) || undefined : undefined
+  const overtimeMaxDays = rule ? Number(rule.parameters.overtimeMaxDays) || undefined : undefined
+  const overtimeDays = week.days ? week.days.filter(day => day.overtimeMinutes > 0).length : 0
   // Las alertas que piden atención; el tramo del turno en curso no es una.
+  // Rebasar el máximo de días ya lo dice una alerta del servidor.
   const notes = week.alerts.filter(alert => alert.severity !== 'info' && !(alert.code === 'open_segment' && onShift))
   const first = current ? marks?.filter(mark => mark.observedAt && dayOf(mark.observedAt, week.timeZone) === today).sort((a, b) => a.observedAt.localeCompare(b.observedAt))[0] : undefined
   const closure = week.closure ? (week.closure.status === 'closed' ? `semana cerrada, versión ${week.closure.version}` : `semana reabierta, versión ${week.closure.version}`) : 'semana sin cierre'
@@ -76,12 +79,17 @@ function WeekTab({ week, loading, row, rule, schedule, today, marks, siteName }:
       <Tile value={hours(week.totals.overtimeMinutes)} label={`Extra${overtimeMax ? ` / ${limitHours(overtimeMax)} h` : ''}`} divided />
       <Tile value={String(week.openIncidentIds.length)} label="Incidencias" divided />
     </Box>
+    {overtimeDays > 0 && overtimeMaxDays && overtimeDays <= overtimeMaxDays && <Note tone={overtimeDays >= overtimeMaxDays - 1 ? 'warn' : 'info'}>
+      <strong>Aviso:</strong> tiempo extra en {overtimeDays} de los {overtimeMaxDays} días que permite la ley por semana.
+    </Note>}
     {notes.map((alert, index) => <Note key={`${alert.code}-${index}`} tone={alert.severity === 'critical' ? 'error' : 'warn'}><strong>Aviso:</strong> {alert.message}</Note>)}
     {lines.length ? <Box component="ul" aria-label="Días de la semana" sx={{ listStyle: 'none', m: 0, p: 0 }}>
       {lines.map((line, index) => <Box component="li" key={line.date} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1, fontSize: 13, borderBottom: index < lines.length - 1 ? `1px solid ${color.lineSoft}` : 0 }}>
         <Box component="strong" sx={{ width: 84, flex: 'none' }}>{dayLabel(line.date)}</Box>
         <Box component="span" sx={{ flex: 1, color: line.state === 'planned' || line.state === 'pending' ? color.subtle : line.state === 'absent' ? color.warnText : color.muted }}>{line.range}</Box>
-        {line.workedMinutes !== null && line.state !== 'open' && <span>{hours(line.workedMinutes)}</span>}
+        {line.workedMinutes !== null && line.state !== 'open' && (line.ordinaryMinutes !== null
+          ? <span>{hours(line.ordinaryMinutes)}{!!line.overtimeMinutes && <Box component="span" sx={{ color: color.warnText }}> +{hours(line.overtimeMinutes)}</Box>}</span>
+          : <span>{hours(line.workedMinutes)}</span>)}
         {line.state === 'done' && <DoneMark />}
         {line.state === 'open' && <Badge tone="info">Abierto</Badge>}
         {line.state === 'missing' && <Badge tone="error">Sin salida</Badge>}
@@ -91,7 +99,8 @@ function WeekTab({ week, loading, row, rule, schedule, today, marks, siteName }:
       <Box component="strong" sx={{ color: color.ink }}>Evidencia de hoy:</Box> {markTypes[first.type].toLowerCase()} {timeIn(first.observedAt, week.timeZone)} · {deviceText(first, siteName)} · {markEvidence(first).charAt(0).toLowerCase() + markEvidence(first).slice(1)}
     </Box>}
     <Typography sx={{ fontSize: 12, color: color.subtle }}>
-      Calculada con reglas laborales {rule ? rule.validFrom.slice(0, 4) : ''}, versión {week.ruleSet.version} · {closure}. El tiempo de cada día es el trabajado; la división en ordinario y extra es de la semana.
+      Calculada con reglas laborales {rule ? rule.validFrom.slice(0, 4) : ''}, versión {week.ruleSet.version} · {closure}.
+      {week.days === null && ' Esta semana se cerró antes de que el cierre guardara el reparto de cada día: se muestra el tiempo trabajado.'}
     </Typography>
   </>
 }

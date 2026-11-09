@@ -39,9 +39,15 @@ it('un turno que cruza la medianoche con un descanso es una sola jornada, del d�
     ],
   }
   expect(dayLines(week, undefined, '2026-11-06', false, new Date('2026-11-06T16:00:00Z'))).toEqual([
-    { date: '2026-11-03', range: '22:00 – 05:30', workedMinutes: 420, state: 'done' },
-    { date: '2026-11-05', range: '08:00 – sin salida', workedMinutes: 0, state: 'missing' },
+    { date: '2026-11-03', range: '22:00 – 05:30', workedMinutes: 420, ordinaryMinutes: null, overtimeMinutes: null, state: 'done' },
+    { date: '2026-11-05', range: '08:00 – sin salida', workedMinutes: 0, ordinaryMinutes: null, overtimeMinutes: null, state: 'missing' },
   ])
+  // Con los días del servidor, cada línea lleva su reparto, del día en que empezó la jornada.
+  const withDays = dayLines({ ...week, days: [
+    { date: '2026-11-03', workedMinutes: 420, breakMinutes: 30, ordinaryMinutes: 420, overtimeMinutes: 0 },
+    { date: '2026-11-05', workedMinutes: 0, breakMinutes: 0, ordinaryMinutes: 0, overtimeMinutes: 0 },
+  ] }, undefined, '2026-11-06', false, new Date('2026-11-06T16:00:00Z'))
+  expect(withDays.map(line => [line.date, line.ordinaryMinutes, line.overtimeMinutes])).toEqual([['2026-11-03', 420, 0], ['2026-11-05', 0, 0]])
 })
 
 it('lo que pide atención va primero; el turno en curso no es un tramo sin salida', () => {
@@ -49,6 +55,10 @@ it('lo que pide atención va primero; el turno en curso no es un tramo sin salid
     totals: { workedMinutes: 600, breakMinutes: 0, ordinaryMinutes: 480, overtimeMinutes: 120 }, openIncidents: [],
     alerts: [{ code: 'open_segment', severity: 'warning', message: '' }, { code: 'daily_combined_limit_exceeded', severity: 'critical', message: '' }] }
   expect(attentionFlags(base).map(flag => flag.label)).toEqual(['Tramo sin salida', 'Tope diario excedido', 'Tiempo extra'])
+  // Con los días con extra y el máximo de las reglas, la etiqueta del lienzo.
+  expect(attentionFlags({ ...base, alerts: [], overtimeDays: 3 }, 4).map(flag => flag.label)).toEqual(['Extra 3 de 4 días'])
+  // Un cierre anterior a 0.26.0 no dice cuántos días: queda «Tiempo extra».
+  expect(attentionFlags({ ...base, alerts: [], overtimeDays: null }, 4).map(flag => flag.label)).toEqual(['Tiempo extra'])
   expect(attentionFlags({ ...base, today: { state: 'on_shift', since: null, lastMarkAt: null } }).map(flag => flag.label)).toEqual(['Tope diario excedido', 'Tiempo extra'])
   expect(attentionFlags({ ...base, alerts: [{ code: 'codigo_nuevo', severity: 'critical', message: '' }], totals: { ...base.totals, overtimeMinutes: 0 } })).toEqual([])
 })

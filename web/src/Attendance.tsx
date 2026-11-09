@@ -109,6 +109,7 @@ export function Attendance({ me, context, section, screens, screen }: Props) {
   const rule = rules.data || null
   const ordinaryMax = rule?.weeklyOrdinaryMaxMinutes
   const overtimeMax = rule ? Number(rule.parameters.weeklyOvertimeMaxMinutes) || undefined : undefined
+  const overtimeMaxDays = rule ? Number(rule.parameters.overtimeMaxDays) || undefined : undefined
   const description = rule && ordinaryMax ? `reglas ${rule.validFrom.slice(0, 4)}: ${limitHours(ordinaryMax)} h ordinarias${overtimeMax ? ` y hasta ${limitHours(overtimeMax)} h extra` : ''} por semana` : undefined
 
   const counts: Record<Attention, number | null | undefined> = {
@@ -143,7 +144,7 @@ export function Attendance({ me, context, section, screens, screen }: Props) {
       } while (from)
       const header = ['Persona', 'Número', 'Sede', 'Horario', 'Ordinarias', 'Extra', ...(current ? ['Hoy'] : []), 'Atención']
       const body = all.map(row => [row.displayName, row.externalId, siteName(row.siteId) || '', scheduleOf(row.scheduleId)?.name || '', hours(row.totals.ordinaryMinutes), hours(row.totals.overtimeMinutes),
-        ...(current ? [todayText(row, timeZone, scheduleOf(row.scheduleId), today)?.text || ''] : []), attentionFlags(row).map(flag => flag.label).join('; ')])
+        ...(current ? [todayText(row, timeZone, scheduleOf(row.scheduleId), today)?.text || ''] : []), attentionFlags(row, overtimeMaxDays).map(flag => flag.label).join('; ')])
       const link = document.createElement('a')
       link.href = URL.createObjectURL(new Blob([csv([header, ...body])], { type: 'text/csv;charset=utf-8' }))
       link.download = `asistencia-${weekStart || requested}.csv`
@@ -192,7 +193,7 @@ export function Attendance({ me, context, section, screens, screen }: Props) {
     {exportError && <Note tone="error">{exportError}</Note>}
     {phone
       ? <PhoneList rows={rows} loading={loading} failure={failure} onRetry={() => void list.refetch()} siteName={siteName} timeZone={timeZone} today={today} current={current}
-          scheduleOf={scheduleOf} ordinaryMax={ordinaryMax} weekLine={weekStart ? `${weekLabel(weekStart)} · ${weekProgress(weekStart, today)}` : undefined}
+          scheduleOf={scheduleOf} ordinaryMax={ordinaryMax} overtimeMaxDays={overtimeMaxDays} weekLine={weekStart ? `${weekLabel(weekStart)} · ${weekProgress(weekStart, today)}` : undefined}
           pager={<Pager text={pageText} hasPrevious={cursors.length > 1} hasNext={!!list.data?.nextCursor} onPrevious={() => setPages({ scope, cursors: cursors.slice(0, -1) })}
             onNext={() => setPages({ scope, cursors: [...cursors, list.data!.nextCursor!] })} />} onOpen={open}
           filtered={!!(filter || query || siteId)} onClear={clearFilters} />
@@ -216,7 +217,7 @@ export function Attendance({ me, context, section, screens, screen }: Props) {
                 <tbody>
                   {loading ? <SkeletonRows columns={2 + columns.filter(visible).length + 1} /> : rows.map(row => {
                     const todayLabel = visible('today') ? todayText(row, timeZone, scheduleOf(row.scheduleId), today) : null
-                    const flags = attentionFlags(row)
+                    const flags = attentionFlags(row, overtimeMaxDays)
                     return <tr key={row.employeeId} data-selected={row.employeeId === person}>
                       <td>
                         <Box component={Link} to={`?${withPerson(params, row.employeeId)}`} aria-current={row.employeeId === person ? 'true' : undefined}
@@ -295,12 +296,12 @@ function Empty({ filtered, onClear }: { filtered: boolean; onClear: () => void }
 
 type PhoneListProps = {
   rows: WeekRow[]; loading: boolean; failure: ApiError | null; onRetry: () => void; siteName: (id: string | null) => string | undefined; timeZone: string; today: string; current: boolean
-  scheduleOf: (id: string | null) => Schedule | undefined; ordinaryMax?: number; weekLine?: string; pager: React.ReactNode; onOpen: (employeeId: string, element: HTMLElement) => void
+  scheduleOf: (id: string | null) => Schedule | undefined; ordinaryMax?: number; overtimeMaxDays?: number; weekLine?: string; pager: React.ReactNode; onOpen: (employeeId: string, element: HTMLElement) => void
   filtered: boolean; onClear: () => void
 }
 
 /** TEL-07: una tarjeta por persona con su barra de horas. */
-function PhoneList({ rows, loading, failure, onRetry, siteName, timeZone, today, current, scheduleOf, ordinaryMax, weekLine, pager, onOpen, filtered, onClear }: PhoneListProps) {
+function PhoneList({ rows, loading, failure, onRetry, siteName, timeZone, today, current, scheduleOf, ordinaryMax, overtimeMaxDays, weekLine, pager, onOpen, filtered, onClear }: PhoneListProps) {
   if (failure) return <ListError error={failure} onRetry={onRetry} />
   if (loading) return <Typography role="status" sx={{ fontSize: 14, color: color.muted, p: 2 }}>Cargando la semana…</Typography>
   if (!rows.length) return <Box sx={{ background: color.white, borderRadius: '18px', boxShadow: shadow.card }}><Empty filtered={filtered} onClear={onClear} /></Box>
@@ -309,7 +310,7 @@ function PhoneList({ rows, loading, failure, onRetry, siteName, timeZone, today,
     <Typography component="h2" id="asistencia-lista" sx={{ fontSize: 13, color: color.muted }}>{weekLine || 'Semana'}</Typography>
     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       {rows.map(row => {
-        const flag = attentionFlags(row)[0]
+        const flag = attentionFlags(row, overtimeMaxDays)[0]
         const now = current ? todayText(row, timeZone, scheduleOf(row.scheduleId), today) : null
         const ordinary = Math.min(100, (row.totals.ordinaryMinutes / (max * 1.2)) * 100)
         const extra = Math.min(100 - ordinary, (row.totals.overtimeMinutes / (max * 1.2)) * 100)
