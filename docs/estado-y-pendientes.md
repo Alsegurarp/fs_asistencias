@@ -1,5 +1,15 @@
 # Estado y pendientes
 
+**Personal y horarios según el lienzo, 9 de noviembre (contrato 0.28.0):**
+primera pantalla del Padrón (bloque 2). Personas con filtros y búsqueda en el
+servidor, ficha con horario vigente, sus días y los anteriores, tarjeta,
+edición, baja con fecha efectiva y reactivación; alta con horario y tarjeta;
+Horarios vigentes e históricos, crear y asignar desde una fecha a varias
+personas; Fuentes del padrón. Aprobados el backend (102 unitarias y 122 de
+integración), el contrato y 279 pruebas del portal; recorrida con sesiones
+reales en local, a 1440 y 390 px. Siguen Importar y Dispositivos y tarjetas
+([orden y pendientes](construir-el-portal.md)). Espera la PR.
+
 **Panel según el lienzo, 9 de noviembre (contrato 0.27.0):** cuarta y última
 pantalla de Operación, en `/panel`, que es el inicio de Administración, RH,
 Supervisión y Auditoría, y la campana de avisos de la barra superior. Una

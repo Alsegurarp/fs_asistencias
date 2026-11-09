@@ -6,6 +6,43 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 9 de noviembre de 2026 — Personal y horarios según el lienzo
+
+Rama `feat/portal-personal` desde `feat/portal-panel` (sin integrar todavía).
+Primera PR del bloque 2: Personas (PAD-01) con su ficha, alta (PAD-03),
+Horarios con crear (PAD-07), asignar horario (PAD-08), Fuentes del padrón
+(PAD-10) y padrón vacío (EST-07). Retira la vista de personas de
+`Directory` (siguen sedes y tarjetas) y la pantalla anterior de Horarios con
+sus pruebas. Importaciones queda con la pantalla anterior bajo el encabezado
+de la sección hasta su PR. Piezas nuevas: `Modal` en `ui.tsx` y las cifras de
+las pestañas en `PageHeader`.
+
+Contrato 0.28.0: `GET /employees/{employeeId}/schedule-assignments`, las
+asignaciones de una persona con su vigencia, con el alcance de
+`getEmployee`, para que la ficha diga desde cuándo aplica el horario y cuáles
+tuvo antes. Pruebas en `DirectoryIT`: roles de la ruta, historia en orden y
+404 de otra empresa.
+
+Pruebas: backend con 102 unitarias y 122 de integración, sin fallas
+(el primer intento falló al descargar dependencias de Maven Central por
+tiempo de espera; el segundo pasó); contrato validado; 279 pruebas del
+portal en 27 archivos, en la estación y en el contenedor sin red.
+
+Recorrido en Chromium contra el entorno aislado `zenit-panel-qa`: 23 vistas
+de Administración, RH, Supervisión, Auditoría y la empresa nueva, a 1440 y
+390 px, sin errores de consola, sin respuestas fallidas, un solo h1 y sin
+desborde. Administración creó un horario (resumen «Jornada diurna · 35 h por
+semana»), lo asignó a dos personas desde una fecha, dio de alta a una
+persona con ese horario (la ficha lo mostró con sus días), la editó, la dio
+de baja y la reactivó, y la encontró por número; RH edita; Supervisión y
+Auditoría consultan sin acciones y no abren Fuentes; la empresa sin personal
+ve el padrón vacío. Un recorrido repetido sobre los mismos datos mostró la
+regla del servidor: una asignación debe empezar después de la anterior, y la
+ventana lo dijo por persona.
+
+Hallazgo corregido: en teléfono la etiqueta de estado se estiraba a la
+altura de la tarjeta. Sin despliegue: espera la PR.
+
 ## 9 de noviembre de 2026 — Panel según el lienzo
 
 Rama `feat/portal-panel` desde `docs/estado-portal-2026-11-09` (`main` en

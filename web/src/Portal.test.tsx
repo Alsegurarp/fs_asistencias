@@ -151,7 +151,7 @@ it('agrupa el menú como el lienzo y las secciones se pliegan', async () => {
 
 it('las pestañas de una sección dependen del rol', async () => {
   await render(['admin_empresa'], '/personal/horarios')
-  expect(links('Personal y horarios')).toEqual(['/personal', '/personal/horarios', '/personal/importaciones'])
+  expect(links('Personal y horarios')).toEqual(['/personal', '/personal/horarios', '/personal/importaciones', '/personal/fuentes'])
   expect(container.querySelector('a[href="/personal/horarios"]')?.getAttribute('aria-current')).toBe('page')
   expect(container.querySelector('a[href="/personal"][aria-current="page"]')?.closest('aside')).not.toBeNull()
   await render(['supervisor'], '/personal/importaciones')

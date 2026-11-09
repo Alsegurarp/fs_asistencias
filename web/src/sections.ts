@@ -3,7 +3,7 @@ import type { IconName } from './Icons'
 
 /** Lo que cada rol puede ver, más el permiso explícito del expediente. */
 export type Allowed = ReturnType<typeof permissions> & { dossier: boolean }
-export type ScreenKey = 'panel' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'sites' | 'users' | 'exports' | 'dossier' | 'personal' | 'tenants'
+export type ScreenKey = 'panel' | 'sources' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'sites' | 'users' | 'exports' | 'dossier' | 'personal' | 'tenants'
 
 export type Screen = {
   key: ScreenKey
@@ -23,7 +23,7 @@ export type Section = {
 }
 export type Group = { key: string; label: string; sections: Section[] }
 
-const can = (key: Exclude<ScreenKey, 'panel' | 'dossier' | 'tenants'>) => (allowed: Allowed) => allowed[key]
+const can = (key: Exclude<ScreenKey, 'panel' | 'sources' | 'dossier' | 'tenants'>) => (allowed: Allowed) => allowed[key]
 
 /**
  * Menú del lienzo (OPE, PAD, EMP). Mientras cada sección no se construya,
@@ -50,6 +50,7 @@ export const companyGroups: Group[] = [
       { key: 'employees', path: '/personal', tab: 'Personas', allowed: can('employees') },
       { key: 'schedules', path: '/personal/horarios', tab: 'Horarios', allowed: can('schedules') },
       { key: 'imports', path: '/personal/importaciones', tab: 'Importaciones', allowed: can('imports') },
+      { key: 'sources', path: '/personal/fuentes', tab: 'Fuentes del padrón', allowed: can('imports') },
     ] },
     { key: 'dispositivos', label: 'Dispositivos y tarjetas', short: 'Dispositivos', icon: 'devices',
       description: 'los teléfonos que leen las tarjetas y las tarjetas de tu personal', screens: [

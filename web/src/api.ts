@@ -45,8 +45,10 @@ export async function apiDownload(path: string, method = 'GET', body?: unknown):
 export type Me = { userId: string; displayName: string; roles: string[]; tenant: { name: string; timeZone: string; upcomingBreakPolicy?: UpcomingBreakPolicy | null } | null }
 export type Page<T> = { items: T[]; nextCursor: string | null }
 export type Site = { id: string; name: string; timeZone: string; latitude: number; longitude: number; radiusMeters: number; status: string }
-export type Employee = { id: string; externalId: string; displayName: string; siteId: string | null; employmentStart: string; employmentEnd: string | null; status: string; activeCardId: string | null; currentScheduleId?: string | null }
-export type Card = { id: string; label: string; status: string; assignment: { employeeId: string } | null }
+export type Employee = { id: string; externalId: string; displayName: string; siteId: string | null; employmentStart: string; employmentEnd: string | null; status: string; activeCardId: string | null; currentScheduleId?: string | null
+  /** Desde el contrato 0.21.0. */
+  source: 'manual' | 'csv' | 'api' | 'connector'; activeCardLabel?: string | null; createdAt?: string }
+export type Card = { id: string; label: string; status: string; assignment: { employeeId: string; employeeName?: string; employeeExternalId?: string; since?: string } | null }
 export type TenantUsage = { tenantId: string; month: string; timeZone: string; from: string; to: string; complete: boolean; employeesWithAttendance: number; employeesInPeriod: number; cardsAssigned: number; devicesActive: number; attendanceEvents: number }
 export type Tenant = { id: string; name: string; slug: string; timeZone: string; weekStartsOn: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'; breakPolicy: BreakPolicy; status: string; createdAt: string; autoCloseAfterHours: number | null; breakPolicyChange: BreakPolicyChange | null }
 export type BreakPolicy = 'not_considered' | 'marked'

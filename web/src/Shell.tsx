@@ -173,7 +173,11 @@ function AccountMenu({ me, email, context, onSignOut }: { me: Me; email?: string
 }
 
 /** Encabezado de página del lienzo: ruta, título, descripción y pestañas. `description` reemplaza la de la sección y `title` su nombre en el h1, como «Hola, Mariana» en el Panel. */
-export function PageHeader({ context, section, screens, current, actions, description = section.description, title = section.label }: { context: string; section: Section; screens: Screen[]; current: Screen; actions?: ReactNode; description?: string; title?: string }) {
+export function PageHeader({ context, section, screens, current, actions, description = section.description, title = section.label, counts = {} }: {
+  context: string; section: Section; screens: Screen[]; current: Screen; actions?: ReactNode; description?: string; title?: string
+  /** Cifra junto al nombre de una pestaña, como «Personas · 42». */
+  counts?: Partial<Record<Screen['key'], number>>
+}) {
   const heading = useRef<HTMLHeadingElement>(null)
   const location = useLocation()
   const shown = useRef(location.pathname)
@@ -198,7 +202,7 @@ export function PageHeader({ context, section, screens, current, actions, descri
       {screens.map(screen => <Box component={Link} key={screen.key} to={screen.path} aria-current={screen.key === current.key ? 'page' : undefined}
         sx={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, px: 1.75, borderBottom: '2px solid transparent', color: `${color.muted} !important`, fontSize: 14, fontWeight: 600, textDecoration: 'none',
           '&[aria-current="page"]': { borderBottomColor: color.accent, color: `${color.deep} !important` }, '&:hover': { color: `${color.ink} !important` } }}>
-        {screen.tab}
+        {screen.tab}{typeof counts[screen.key] === 'number' && ` · ${counts[screen.key]}`}
       </Box>)}
     </Box>}
   </>

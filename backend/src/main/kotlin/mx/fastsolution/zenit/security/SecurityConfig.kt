@@ -119,7 +119,7 @@ class SecurityConfig {
                     .hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/schedules").hasAnyRole(admin, rh)
                 // Padrón e importación.
-                it.requestMatchers(HttpMethod.GET, "/api/v1/employees", "/api/v1/employees/summary", "/api/v1/employees/{employeeId}")
+                it.requestMatchers(HttpMethod.GET, "/api/v1/employees", "/api/v1/employees/summary", "/api/v1/employees/{employeeId}", "/api/v1/employees/{employeeId}/schedule-assignments")
                     .hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/employees").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/employees/{employeeId}").hasAnyRole(admin, rh)

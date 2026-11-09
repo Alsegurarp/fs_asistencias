@@ -15,6 +15,8 @@ import { Imports } from './Imports'
 import { Incidents, type IncidentSummary } from './Incidents'
 import { PersonalAttendance } from './PersonalAttendance'
 import { Schedules } from './Schedules'
+import { Personnel, PersonnelHeader } from './Personnel'
+import { Sources } from './Sources'
 import { Tenants } from './Tenants'
 import { TenantSettings } from './TenantSettings'
 import { Users } from './Users'
@@ -91,6 +93,11 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   if (screen.key === 'attendance') return <Attendance me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'incidents') return <Incidents me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'closures') return <Closures me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'employees') return <Personnel me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'schedules') return <Schedules me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'sources') return <Sources me={me} context={context} section={section} screens={screens} screen={screen} />
+  // Importaciones se rehace en la siguiente PR del bloque 2; mientras, lleva el encabezado de su sección.
+  if (screen.key === 'imports') return <><PersonnelHeader me={me} context={context} section={section} screens={screens} screen={screen} /><LegacyScreen><Imports me={me} /></LegacyScreen></>
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
@@ -100,9 +107,7 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
 /** Las pantallas anteriores del portal, cada una en su dirección. */
 function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
   switch (screen) {
-    case 'employees': case 'sites': case 'cards': return <Directory key={screen} kind={screen} me={me} />
-    case 'schedules': return <Schedules me={me} />
-    case 'imports': return <Imports me={me} />
+    case 'sites': case 'cards': return <Directory key={screen} kind={screen} me={me} />
     case 'devices': return <Devices me={me} />
     case 'settings': return <TenantSettings me={me} />
     case 'users': return <Users me={me} />
@@ -110,7 +115,7 @@ function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
-    case 'panel': case 'attendance': case 'incidents': case 'closures': return null
+    case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': return null
   }
 }
 
