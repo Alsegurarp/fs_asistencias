@@ -6,11 +6,17 @@ import { MemoryRouter } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@mui/material'
 
-const server = vi.hoisted(() => ({ calls: [] as string[], handler: (path: string): Promise<unknown> => new Promise(() => path) }))
+const server = vi.hoisted(() => ({ calls: [] as string[], pending: 0, handler: (path: string): Promise<unknown> => new Promise(() => path) }))
 vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() }, identityBase: 'http://localhost:8082' }))
 vi.mock('./api', async original => ({
   ...await original<typeof import('./api')>(),
-  api: vi.fn((path: string) => { server.calls.push(path); return server.handler(path) }),
+  api: vi.fn((path: string) => {
+    server.calls.push(path); server.pending++
+    const done = () => { server.pending-- }
+    const answer = server.handler(path)
+    answer.then(done, done)
+    return answer
+  }),
 }))
 import { ApiError, type Me } from './api'
 import { Portal } from './Portal'
@@ -75,7 +81,7 @@ beforeEach(() => {
   cache = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   window.localStorage.clear()
-  server.calls = []; server.handler = defaultServer; phone = false
+  server.calls = []; server.pending = 0; server.handler = defaultServer; phone = false
   vi.stubGlobal('matchMedia', (query: string) => ({ matches: phone && query.includes('max-width:860px'), media: query, onchange: null,
     addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }))
 })
@@ -89,6 +95,13 @@ async function render(roles = ['admin_empresa'], tenant: Partial<NonNullable<Me[
     <MemoryRouter initialEntries={['/']}><Portal me={me} onSignOut={vi.fn()} /></MemoryRouter>
   </ThemeProvider></QueryClientProvider>))
   await loaded()
+  // Hay consultas que dependen de otras (los cierres de la semana anterior, las
+  // reglas): se espera a que el servidor simulado no tenga respuestas pendientes.
+  for (let quiet = 0, round = 0; quiet < 3; round++) {
+    if (round > 300) throw new Error(`Quedaron ${server.pending} respuestas pendientes`)
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)) })
+    quiet = server.pending === 0 ? quiet + 1 : 0
+  }
   await waitFor(() => !container.querySelector('main [aria-hidden="true"] .MuiSkeleton-root'))
 }
 const text = () => container.textContent || ''
@@ -137,8 +150,9 @@ it('lo que pide atención junta las incidencias más graves con lo pendiente, y 
 
 it('las horas de la semana muestran a quienes más llevan contra el tope, y la actividad reciente dice quién hizo qué', async () => {
   await render()
+  // El tope llega con las reglas, en otra consulta: puede llegar después del resumen.
+  await waitFor(() => section('Horas de la semana')?.querySelector('h2')?.textContent === 'Horas de la semana · tope 48 h (2026)')
   const hoursCard = section('Horas de la semana')!
-  expect(hoursCard.querySelector('h2')?.textContent).toBe('Horas de la semana · tope 48 h (2026)')
   expect([...hoursCard.querySelectorAll('li')].map(row => row.textContent)).toEqual(['Ana Torres32:00 + 3:10', 'Kevin Solís32:00'])
   expect(hrefs(hoursCard)).toEqual(['/asistencia?persona=e1', '/asistencia?persona=e3', '/asistencia'])
   expect(hoursCard.textContent).toContain('Ver la semana de las 42 personas')
@@ -207,7 +221,7 @@ it('el panel y la campana abierta no tienen fallas automáticas de accesibilidad
   await act(async () => bell.click())
   await waitFor(() => !!document.querySelector('[role="dialog"]'))
   expect(await accessibilityViolations(document.querySelector<HTMLElement>('[role="dialog"]')!)).toEqual([])
-})
+}, 15_000) // Dos revisiones de axe: en un equipo cargado pasan de los 5 s por omisión.
 
 it('en teléfono las tarjetas van una debajo de otra y la barra inferior empieza por el Panel', async () => {
   phone = true
