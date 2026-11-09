@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect } from 'react'
-import { Link, Navigate, Route, Routes, useNavigate } from 'react-router'
+import { Link, Navigate, Route, Routes } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Alert, Button, CircularProgress, Stack } from '@mui/material'
 import { api, type Me, permissions } from './api'
@@ -81,6 +81,7 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   // Las pantallas ya reconstruidas con el lienzo llevan su propio encabezado.
   if (screen.key === 'attendance') return <Attendance me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'incidents') return <Incidents me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'closures') return <Closures me={me} context={context} section={section} screens={screens} screen={screen} />
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
@@ -89,14 +90,7 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
 
 /** Las pantallas anteriores del portal, cada una en su dirección. */
 function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
-  const navigate = useNavigate()
   switch (screen) {
-    case 'closures': return <Closures me={me} onIncidents={target => {
-      const query = new URLSearchParams({ semana: target.week })
-      if (target.siteId) query.set('sede', target.siteId)
-      if (target.incidentId) query.set('incidencia', target.incidentId)
-      void navigate(`/incidencias?${query}`)
-    }} />
     case 'employees': case 'sites': case 'cards': return <Directory key={screen} kind={screen} me={me} />
     case 'schedules': return <Schedules me={me} />
     case 'imports': return <Imports me={me} />
@@ -107,7 +101,7 @@ function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
-    case 'attendance': case 'incidents': return null
+    case 'attendance': case 'incidents': case 'closures': return null
   }
 }
 

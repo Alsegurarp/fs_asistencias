@@ -87,7 +87,7 @@ contradice al contrato, manda el contrato.
 | --- | --- | --- |
 | Backend | `backend/` | API 0.15.0 con 70 operaciones en la entrega E4–E6: permiso, preparación, MFA nuevo y descarga de un uso. 67 unitarias/88 integraciones PostgreSQL aprobadas; incluye simulador y dirección real del visitante detrás del borde |
 | Contrato | `contracts/` | OpenAPI 3.1; es la frontera entre el backend, el portal y la app |
-| Portal web | `web/` | Marco del lienzo aprobado (direcciones, menú por rol, teléfono y estados) con Asistencia e Incidencias ya reconstruidas, y las pantallas anteriores dentro: catálogos, horarios/CSV, dispositivos, incidencias, cierres, exportes, expediente, usuarios y configuración. Las secciones se reconstruyen según [Construir el portal](construir-el-portal.md). Aceptación pública/del usuario pendiente |
+| Portal web | `web/` | Marco del lienzo aprobado (direcciones, menú por rol, teléfono y estados) con Asistencia, Incidencias y Cierres ya reconstruidas, y las pantallas anteriores dentro: catálogos, horarios/CSV, dispositivos, exportes, expediente, usuarios y configuración. Las secciones se reconstruyen según [Construir el portal](construir-el-portal.md). Aceptación pública/del usuario pendiente |
 | App Android | `android/` | Enrolamiento, firma ES256, cola cifrada, sincronización y recibos. Captura simulada comprobada contra backend local/HTTPS; semana/acuse visual aprobados en teléfono contra backend real local el 21. Faltan aceptación pública/del usuario, expediente y tarjeta autenticada |
 | Conector | `connector/` | Vacío; es el futuro agente que sincronice el padrón desde la red de un cliente |
 | Infraestructura | `infra/` | Imagen y realm del proveedor de identidad, guiones de la base y ensayo de respaldo |

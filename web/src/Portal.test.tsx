@@ -14,8 +14,6 @@ vi.mock('./api', async original => ({
   api: vi.fn((path: string) => path === '/me/dossier-permission' ? Promise.resolve({ enabled: state.dossier }) : new Promise(() => {})),
 }))
 // Cierres e Incidencias simuladas: sólo se prueba que el marco pasa la semana elegida.
-vi.mock('./Closures', () => ({ Closures: ({ onIncidents }: { onIncidents: (target: { week: string; incidentId?: string }) => void }) =>
-  <button type="button" onClick={() => onIncidents({ week: '2026-11-02', incidentId: 'inc-1' })}>Ver incidencias de la semana</button> }))
 vi.mock('./Incidents', async original => {
   const { useLocation } = await import('react-router')
   return {
@@ -162,9 +160,9 @@ it('las pestañas de una sección dependen del rol', async () => {
 })
 
 it('cada página tiene un solo h1 aunque monte una pantalla anterior', async () => {
-  await render(['admin_empresa'], '/cierres')
+  await render(['admin_empresa'], '/personal/horarios')
   expect(container.querySelectorAll('h1')).toHaveLength(1)
-  expect(container.textContent).toContain('Empresa Demo / Cierres semanales')
+  expect(container.textContent).toContain('Empresa Demo / Personal y horarios')
 })
 
 it('una dirección que no existe dice que no se encontró', async () => {
@@ -242,12 +240,9 @@ it.each(['/no-existe', '/usuarios', '/mas'])('el marco no tiene fallas automáti
   expect(await accessibilityViolations(container)).toEqual([])
 })
 
-it('desde Cierres abre Incidencias con la semana y la incidencia elegidas', async () => {
-  await render(['admin_empresa'], '/cierres')
-  expect(text()).not.toContain('Incidencias ?semana')
-  await act(async () => [...container.querySelectorAll('button')].find(item => item.textContent === 'Ver incidencias de la semana')!.click())
+it('Incidencias recibe la semana y la incidencia por la dirección', async () => {
+  await render(['admin_empresa'], '/incidencias?semana=2026-11-02&incidencia=inc-1')
   expect(container.querySelector('aside a[href="/incidencias"]')?.getAttribute('aria-current')).toBe('page')
-  // La semana y la incidencia viajan en la dirección: un enlace o el botón atrás las conservan.
   expect(text()).toContain('Incidencias ?semana=2026-11-02&incidencia=inc-1')
   await render(['admin_empresa'], '/incidencias')
   expect(text()).toContain('Incidencias sin filtros')

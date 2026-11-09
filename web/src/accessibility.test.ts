@@ -60,6 +60,11 @@ it('los colores de texto del lienzo cumplen contraste AA donde se usan', () => {
     ['conteo de la barra inferior', color.countInk, color.countBg],
     ['vista elegida sobre el botón azul', color.white, '#1D4A9F'],
     ['columna del tablero', color.muted, '#E3ECFB'],
+    ['blanco sobre el final del degradado de la corrida', color.white, '#1C4A9C'],
+    ['blanco sobre el círculo de la corrida', color.white, over('rgba(255,255,255,0.07)', color.gradientFrom)],
+    ['«Bloqueadas:» sobre su franja', color.warnInk, color.blockedBg],
+    ['causa del bloqueo en su píldora', color.warnInk, color.white],
+    ['objeción sobre su recuadro', color.error, '#FFF7F6'],
   ]
   for (const [name, front, background] of pairs) {
     const back = background.startsWith('rgba') ? over(background, color.page) : background

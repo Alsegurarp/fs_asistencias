@@ -6,6 +6,37 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 8 de noviembre de 2026 — Cierres según el lienzo
+
+Rama `feat/portal-cierres` desde `main` en `718e72c` (PR #40 integrada y
+desplegada). Tercera pantalla del bloque 1 (OPE-04, OPE-09 a 11, TEL-10):
+la última corrida de la semana con su avance, los acuses que filtran la
+lista, las pestañas de cerradas, bloqueadas y reabiertas, el diálogo «Cerrar
+las pendientes» con el alcance y quiénes seguirán bloqueadas, y el cierre de
+una persona con lo congelado, sus días trabajados, su acuse y reabrir con
+motivo. Retira la pantalla anterior de Cierres: el portal ya no cierra
+personas elegidas, sólo pide corridas. Las bloqueadas salen de las
+incidencias abiertas que bloquean el cierre, agrupadas por persona.
+
+Hallazgos al recorrerla, ya corregidos: dos personas del simulador con el
+mismo nombre en sedes distintas no se distinguían (las bloqueadas llevan su
+sede si el nombre se repite y las cerradas el número de empleado); para
+Supervisión, que sólo ve las corridas de su sede, el banner decía «Sin
+corridas» junto a nueve semanas cerradas por una corrida de toda la empresa
+(ahora lo explica); y pedir otra corrida tras una fallida validaba fuera de
+la petición, con un error sin atrapar si la sede no era válida.
+
+Pruebas: 253 del portal en 24 archivos, con el contraste de los colores
+nuevos. Recorrido en Chromium contra un entorno local aislado con 35
+personas del simulador y una semana terminada: 23 vistas de los cuatro roles
+de empresa y la operación, a 1440 y 390 px, sin errores de consola, sin
+respuestas fallidas y sin desborde. Una corrida real de toda la empresa
+cerró 15 de 35 en 5 segundos y bloqueó 20 (15 por incidencias y 5 tramos
+sin salida que pasaron a incidencias); la ficha mostró los días congelados;
+reabrir pasó a la persona a Reabiertas y una segunda corrida la volvió a
+cerrar; RH cierra sin reabrir, Auditoría consulta por enlace directo y
+Supervisión ve su sede. Sin despliegue: espera la PR.
+
 ## 8 de noviembre de 2026 — Días de la semana en el cálculo y el cierre
 
 Rama `feat/dias-de-la-semana` desde `main` en `a48f7ea` (PR #39 integrada y
