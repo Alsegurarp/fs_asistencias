@@ -1,5 +1,15 @@
 # Estado y pendientes
 
+**Importar CSV según el lienzo, 9 de noviembre (contrato 0.29.0):** segunda
+PR del Padrón. Importaciones con su historial y el modal de tres pasos:
+subir, revisar sin cambiar nada y aplicar las filas listas; aplicar una
+revisión del historial eligiendo otra vez el mismo archivo; descargar los
+errores. Cada importación dice altas, con cambios y sin cambios. Aprobados
+el backend (unitarias y de integración), el contrato y 285 pruebas del
+portal; recorrida con sesiones reales en local, a 1440 y 390 px, sin
+problemas. Sigue Dispositivos y tarjetas
+([orden y pendientes](construir-el-portal.md)). Espera la PR.
+
 **Personal y horarios según el lienzo, 9 de noviembre (contrato 0.28.0):**
 primera pantalla del Padrón (bloque 2). Personas con filtros y búsqueda en el
 servidor, ficha con horario vigente, sus días y los anteriores, tarjeta,
@@ -7,8 +17,7 @@ edición, baja con fecha efectiva y reactivación; alta con horario y tarjeta;
 Horarios vigentes e históricos, crear y asignar desde una fecha a varias
 personas; Fuentes del padrón. Aprobados el backend (102 unitarias y 122 de
 integración), el contrato y 279 pruebas del portal; recorrida con sesiones
-reales en local, a 1440 y 390 px. Siguen Importar y Dispositivos y tarjetas
-([orden y pendientes](construir-el-portal.md)). Espera la PR.
+reales en local, a 1440 y 390 px. Integrado con la PR #43.
 
 **Panel según el lienzo, 9 de noviembre (contrato 0.27.0):** cuarta y última
 pantalla de Operación, en `/panel`, que es el inicio de Administración, RH,
@@ -17,7 +26,8 @@ empresa sin personal ve sus primeros pasos. El resumen de asistencia trae
 quienes más horas llevan (`mostHours`). Aprobados el backend (102 unitarias
 y 122 de integración), el contrato y 269 pruebas del portal; recorrida con
 sesiones reales en local, a 1440 y 390 px, sin errores. El menú Crear pasa
-al bloque 2 ([orden y pendientes](construir-el-portal.md)). Espera la PR.
+al bloque 2 ([orden y pendientes](construir-el-portal.md)). Integrado con la
+PR #42.
 
 **Cierres según el lienzo, 8 de noviembre:** tercera pantalla de Operación.
 La última corrida de la semana con su avance, los acuses que filtran la

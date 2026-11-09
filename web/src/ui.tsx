@@ -206,9 +206,13 @@ export function SidePanel({ title, subtitle, eyebrow, initials, icon, onClose, t
  * ícono, el formulario y el pie con «Cancelar» y la acción. Mientras guarda no
  * se cierra; el error va arriba del pie. `onSubmit` recibe el formulario.
  */
-export function Modal({ id, icon, title, subtitle, onClose, onSubmit, submit, busy = false, error, wide = false, children }: {
+export function Modal({ id, icon, title, subtitle, onClose, onSubmit, submit, busy = false, error, wide = false, actions, closable = false, children }: {
   id: string; icon: IconName; title: string; subtitle?: ReactNode; onClose: () => void; onSubmit: (form: HTMLFormElement) => void
-  submit: string; busy?: boolean; error?: ReactNode; wide?: boolean; children: ReactNode
+  submit?: string; busy?: boolean; error?: ReactNode; wide?: boolean
+  /** Los botones del pie cuando no son «Cancelar» y el de enviar, como en un asistente por pasos. */
+  actions?: ReactNode
+  /** Muestra la ✕ para cerrar en el encabezado. */
+  closable?: boolean; children: ReactNode
 }) {
   return <Dialog open onClose={() => { if (!busy) onClose() }} aria-labelledby={id} fullWidth maxWidth={wide ? 'md' : 'sm'}
     slotProps={{ paper: { sx: { overflow: 'hidden', borderRadius: '20px', [`@media ${phoneQuery}`]: { m: 1.5, width: 'calc(100% - 24px)', maxHeight: 'calc(100% - 24px)' } } } }}>
@@ -217,14 +221,20 @@ export function Modal({ id, icon, title, subtitle, onClose, onSubmit, submit, bu
         <Box aria-hidden="true" sx={{ width: 40, height: 40, flex: 'none', borderRadius: '12px', background: color.white, color: color.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} /></Box>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography component="h2" id={id} sx={{ fontSize: 18, fontWeight: 600 }}>{title}</Typography>
-          {subtitle && <Typography sx={{ fontSize: 13 }}>{subtitle}</Typography>}
+          {subtitle && <Typography sx={{ fontSize: 13, overflowWrap: 'anywhere' }}>{subtitle}</Typography>}
         </Box>
+        {closable && <Box component="button" type="button" aria-label="Cerrar" disabled={busy} onClick={onClose}
+          sx={{ flex: 'none', width: 40, height: 40, border: 0, borderRadius: 999, background: 'transparent', color: color.white, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', '&:hover': { background: 'rgba(255,255,255,.16)' }, '&:focus-visible': { outline: `2px solid ${color.white}`, outlineOffset: 1 } }}>
+          <Icon name="close" size={18} />
+        </Box>}
       </Stack>
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: '18px 20px', display: 'flex', flexDirection: 'column', gap: 1.75 }}>{children}</Box>
       {error && <Box sx={{ px: '20px' }}>{error}</Box>}
       <Stack direction="row" useFlexGap sx={{ flex: 'none', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 1, p: '14px 20px 18px', [`@media ${phoneQuery}`]: { '& > *': { flex: '1 1 auto' } } }}>
-        <Button variant="outlined" onClick={onClose} disabled={busy}>Cancelar</Button>
-        <Button variant="contained" type="submit" disabled={busy} sx={{ px: 3 }}>{busy ? 'Guardando…' : submit}</Button>
+        {actions || <>
+          <Button variant="outlined" onClick={onClose} disabled={busy}>Cancelar</Button>
+          <Button variant="contained" type="submit" disabled={busy} sx={{ px: 3 }}>{busy ? 'Guardando…' : submit}</Button>
+        </>}
       </Stack>
     </Box>
   </Dialog>

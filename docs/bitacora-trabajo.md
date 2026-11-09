@@ -6,6 +6,42 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 9 de noviembre de 2026 — Importar CSV según el lienzo
+
+Rama `feat/portal-importar` desde `main` (`e5eadd9`, con el Panel y Personal
+y horarios integrados en las PR #42 y #43). Segunda PR del bloque 2:
+Importaciones (PAD-09) y el modal de importar en tres pasos (PAD-04 a 06).
+Reemplaza la pantalla anterior `Imports.tsx` y sus pruebas. «Importar CSV»
+abre el modal sobre Importaciones (`?importar=archivo`); `?importar=<id>`
+abre una importación del historial. `Modal` de `ui.tsx` admite botones
+propios en el pie y la ✕ para cerrar.
+
+Contrato 0.29.0: `counts` de cada importación trae `created`, `updated` y
+`unchanged`, las altas, las personas con cambios y las que ya estaban igual;
+la revisión lo anticipa. Migración `V018__import_change_counts.sql`, con los
+tres nulos en las importaciones anteriores. Pruebas en `DirectoryIT`:
+revisión, aplicación, repetición con un cambio y archivo que no es la
+plantilla.
+
+Pruebas: backend unitarias y de integración sin fallas; contrato validado;
+285 pruebas del portal en 28 archivos, en la estación y en el contenedor sin
+red.
+
+Recorrido en Chromium contra el entorno aislado `zenit-panel-qa`, a 1440 y
+390 px: Administración subió un archivo de cuatro filas (dos listas, una
+fecha mala y una sede inexistente), descargó los errores, aplicó dos altas y
+encontró a las dos personas en el padrón con origen CSV; dejó otro archivo
+revisado, lo aplicó desde el historial (con un archivo distinto el servidor
+respondió `review_mismatch` y la ventana lo explicó; con el mismo, «1 con
+cambios · 1 sin cambios») y la revisión quedó «Revisado y aplicado»; un
+archivo que no es la plantilla quedó como «Falló» sin ofrecer aplicar. RH
+consulta el historial y el detalle; Supervisión y Auditoría no entran. Sin
+errores de consola ni respuestas fallidas fuera del 409 esperado.
+
+Hallazgos corregidos en el recorrido: en teléfono el motivo de cada fila con
+error se cortaba, y tres cifras dejaban un hueco en la cuadrícula. Sin
+despliegue: espera la PR.
+
 ## 9 de noviembre de 2026 — Personal y horarios según el lienzo
 
 Rama `feat/portal-personal` desde `feat/portal-panel` (sin integrar todavía).
@@ -41,7 +77,7 @@ regla del servidor: una asignación debe empezar después de la anterior, y la
 ventana lo dijo por persona.
 
 Hallazgo corregido: en teléfono la etiqueta de estado se estiraba a la
-altura de la tarjeta. Sin despliegue: espera la PR.
+altura de la tarjeta. Integrado con la PR #43.
 
 ## 9 de noviembre de 2026 — Panel según el lienzo
 

@@ -348,6 +348,8 @@ class DirectoryIT : ApiTestBase() {
         assertEquals(true, dry.at<Boolean>("dryRun"))
         assertEquals(1, dry.at<Int>("templateVersion"))
         assertEquals(listOf(7, 2, 5), listOf(dry.at<Int>("counts.total"), dry.at<Int>("counts.accepted"), dry.at<Int>("counts.rejected")))
+        // La revisión anticipa qué hará cada fila aceptada.
+        assertEquals(listOf(2, 0, 0), listOf(dry.at<Int>("counts.created"), dry.at<Int>("counts.updated"), dry.at<Int>("counts.unchanged")))
         assertEquals(listOf(4, 5, 6, 7, 8), dry.at<List<Int>>("errors[*].row"))
         assertEquals(
             listOf("missing_external_id", "invalid_date", "duplicate_in_file", "site_not_found", "wrong_column_count"),
@@ -364,6 +366,7 @@ class DirectoryIT : ApiTestBase() {
         val applied = upload("/api/v1/imports/csv", c.adminToken, csv, dryRun = "false", key = key)
         assertEquals("applied", applied.at("status"))
         assertEquals(dry.at<String>("manifestHash"), applied.at("manifestHash"))
+        assertEquals(listOf(2, 0, 0), listOf(applied.at<Int>("counts.created"), applied.at<Int>("counts.updated"), applied.at<Int>("counts.unchanged")))
         assertEquals(setOf("C-1", "C-2"), employees().list("items[*].externalId").toSet())
         val first = employees().at<List<Map<String, Any?>>>("items[?(@.externalId=='C-1')]").single()
         assertEquals("Apellido, Nombre", first["displayName"])
@@ -378,6 +381,8 @@ class DirectoryIT : ApiTestBase() {
         // Repetir el archivo con otra clave no duplica a nadie; un nombre corregido se actualiza.
         val again = upload("/api/v1/imports/csv", c.adminToken, "external_id,display_name,employment_start,site_name\nC-2,Persona Dos Corregida,2026-02-01,\nC-1,\"Apellido, Nombre\",2026-01-05,Sucursal Centro\n".toByteArray(), dryRun = "false")
         assertEquals("applied", again.at("status"))
+        // C-2 cambió de nombre; C-1 ya estaba igual, aunque la sede venga con otras mayúsculas.
+        assertEquals(listOf(0, 1, 1), listOf(again.at<Int>("counts.created"), again.at<Int>("counts.updated"), again.at<Int>("counts.unchanged")))
         assertEquals(2, employees().at<Int>("items.length()"))
         assertTrue("Persona Dos Corregida" in employees().list("items[*].displayName"))
 
@@ -386,6 +391,7 @@ class DirectoryIT : ApiTestBase() {
         assertEquals(202, wrongHeader.status, wrongHeader.toString())
         assertEquals("failed", wrongHeader.at("status"))
         assertEquals("invalid_header", wrongHeader.at("errors[0].code"))
+        assertEquals(listOf(0, 0, 0), listOf(wrongHeader.at<Int>("counts.created"), wrongHeader.at<Int>("counts.updated"), wrongHeader.at<Int>("counts.unchanged")))
         assertNull(wrongHeader.at<Any?>("manifestHash"))
         assertEquals("invalid_encoding", upload("/api/v1/imports/csv", c.adminToken, byteArrayOf(0xC3.toByte(), 0x28)).at("errors[0].code"))
         assertEquals(2, employees().at<Int>("items.length()"))

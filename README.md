@@ -4,14 +4,13 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
-**Portal según el lienzo, 8 de noviembre:** contrato 0.26.0. Integrados el
+**Portal según el lienzo, 9 de noviembre:** contrato 0.29.0. Integrados el
 marco (PR #37), Asistencia (PR #38), Incidencias (PR #39), los días de la
-semana con su tiempo ordinario y extra (PR #40) y Cierres (PR #41). Sigue el
-Panel con la campana de avisos (contrato 0.27.0, en la rama
-`feat/portal-panel`), que cierra el bloque de Operación, y Personal y horarios
-(contrato 0.28.0, en `feat/portal-personal`), primera del Padrón; después
-Importar, Dispositivos y tarjetas, Empresa,
-Reportes, Consola y acceso con la marca.
+semana con su tiempo ordinario y extra (PR #40), Cierres (PR #41), el Panel
+con la campana de avisos (PR #42), que cierra el bloque de Operación, y
+Personal y horarios (PR #43), primera del Padrón. Importar CSV (contrato
+0.29.0) está en la rama `feat/portal-importar`; después Dispositivos y
+tarjetas, Empresa, Reportes, Consola y acceso con la marca.
 [Orden y pendientes](docs/construir-el-portal.md).
 
 **Consola de operación para el portal, 7 de noviembre:** contrato 0.23.0

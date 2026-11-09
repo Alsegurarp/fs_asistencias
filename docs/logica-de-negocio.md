@@ -84,6 +84,11 @@ Se registran en [Decisiones de negocio](decisiones-de-negocio.md).
   (`review_mismatch`). Cada revisión se aplica una sola vez, también con dos
   peticiones a la par, y la revisión aplicada apunta a la importación que la
   aplicó (`appliedByImportId`).
+- Desde el contrato 0.29.0 cada importación reparte sus filas aceptadas en
+  altas (`created`), personas cuyo nombre, sede o fecha de ingreso cambia
+  (`updated`) y personas que ya estaban igual (`unchanged`). Una revisión lo
+  anticipa con el padrón de ese momento; la aplicación dice lo que hizo. Las
+  importaciones anteriores no tienen el desglose.
 - Una tarjeta entra al inventario con su número impreso y su huella. La
   huella no sale en ninguna respuesta.
 - Sólo se asigna una tarjeta del inventario. La que ya tuvo titular no pasa a

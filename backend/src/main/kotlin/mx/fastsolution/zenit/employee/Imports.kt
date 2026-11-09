@@ -55,9 +55,13 @@ data class ImportRow(
     val createdBy: String? = null,
     val createdByName: String? = null,
     val appliedByImportId: UUID? = null,
+    /** Qué hacen las filas aceptadas en el padrón; nulo en las importaciones anteriores a 0.29.0. */
+    val created: Int? = null,
+    val updated: Int? = null,
+    val unchanged: Int? = null,
 )
 
-data class ImportCounts(val total: Int, val accepted: Int, val rejected: Int)
+data class ImportCounts(val total: Int, val accepted: Int, val rejected: Int, val created: Int?, val updated: Int?, val unchanged: Int?)
 
 data class ImportView(
     val id: String,
@@ -77,7 +81,7 @@ data class ImportView(
     companion object {
         fun of(row: ImportRow) = ImportView(
             row.id.toString(), row.status, row.dryRun, row.templateVersion,
-            ImportCounts(row.total, row.accepted, row.rejected), row.errors, row.manifestHash,
+            ImportCounts(row.total, row.accepted, row.rejected, row.created, row.updated, row.unchanged), row.errors, row.manifestHash,
             row.fileName,
             // Quien la subió es una persona de la empresa; otro actor no se expone como identificador.
             row.createdBy?.takeIf { runCatching { UUID.fromString(it) }.isSuccess },
@@ -99,10 +103,12 @@ class ImportRepository(private val dsl: DSLContext) {
     fun insert(tenantId: UUID, row: ImportRow, idempotencyKey: UUID, createdBy: String) {
         dsl.execute(
             "insert into employee_import (tenant_id, id, idempotency_key, content_sha256, dry_run, status, template_version, " +
-                "total, accepted, rejected, errors, manifest_hash, created_by, file_name, reviewed_import_id) " +
-                "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), cast(? as text), ?, cast(? as text), cast(? as uuid))",
+                "total, accepted, rejected, errors, manifest_hash, created_by, file_name, reviewed_import_id, created, updated, unchanged) " +
+                "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), cast(? as text), ?, cast(? as text), cast(? as uuid), " +
+                "cast(? as integer), cast(? as integer), cast(? as integer))",
             tenantId, row.id, idempotencyKey, row.contentSha256, row.dryRun, row.status, row.templateVersion,
             row.total, row.accepted, row.rejected, row.errors, row.manifestHash, createdBy, row.fileName, row.reviewedImportId,
+            row.created, row.updated, row.unchanged,
         )
     }
 
@@ -147,6 +153,9 @@ class ImportRepository(private val dsl: DSLContext) {
         createdBy = r.get("created_by", String::class.java),
         createdByName = r.get("created_by_name", String::class.java),
         appliedByImportId = r.get("applied_by_import_id", UUID::class.java),
+        created = r.get("created", Number::class.java)?.toInt(),
+        updated = r.get("updated", Number::class.java)?.toInt(),
+        unchanged = r.get("unchanged", Number::class.java)?.toInt(),
     )
 
     private companion object {
@@ -154,7 +163,7 @@ class ImportRepository(private val dsl: DSLContext) {
         const val SELECT =
             "select i.id, cast(i.content_sha256 as text) as content_sha256, i.dry_run, i.status, i.template_version, i.total, " +
                 "i.accepted, i.rejected, cast(i.errors as text) as errors, cast(i.manifest_hash as text) as manifest_hash, " +
-                "i.created_at, i.file_name, i.reviewed_import_id, i.created_by, nullif(u.display_name, '') as created_by_name, " +
+                "i.created_at, i.file_name, i.reviewed_import_id, i.created, i.updated, i.unchanged, i.created_by, nullif(u.display_name, '') as created_by_name, " +
                 "(select a.id from employee_import a where a.tenant_id = i.tenant_id and a.reviewed_import_id = i.id) " +
                 "as applied_by_import_id from employee_import i " +
                 "left join tenant_user u on u.tenant_id = i.tenant_id and cast(u.id as text) = i.created_by"
@@ -195,6 +204,9 @@ class ImportService(
         if (reviewedImportId != null) checkReview(tenantId, reviewedImportId, sha, dryRun)
 
         val parsed = parse(tenantId, content)
+        // Lo que cada fila aceptada hará en el padrón; una revisión lo anticipa y una aplicación lo hace.
+        val plan = parsed.accepted.map { it to employees.findByExternalId(tenantId, it.externalId) }
+        val changes = plan.groupingBy { (row, existing) -> change(row, existing) }.eachCount()
         val manifest = parsed.accepted
             .joinToString("\n") { "${it.externalId}|${it.displayName}|${it.employmentStart}|${it.siteId ?: ""}" }
         val row = ImportRow(
@@ -215,6 +227,9 @@ class ImportService(
             createdAt = OffsetDateTime.now(),
             fileName = cleanFileName(fileName),
             reviewedImportId = reviewedImportId,
+            created = changes[Change.CREATED] ?: 0,
+            updated = changes[Change.UPDATED] ?: 0,
+            unchanged = changes[Change.UNCHANGED] ?: 0,
         )
         try {
             imports.insert(tenantId, row, idempotencyKey, person.actorId)
@@ -228,7 +243,7 @@ class ImportService(
             }
         }
         if (row.status == "applied") {
-            apply(tenantId, parsed.accepted)
+            apply(tenantId, plan)
             // La carga aplicada es el nuevo punto de sincronización de la fuente CSV.
             sources.recordCsv(tenantId, row.id, TEMPLATE_VERSION)
         }
@@ -278,10 +293,17 @@ class ImportService(
     private fun cleanFileName(raw: String?): String? =
         raw?.substringAfterLast('/')?.substringAfterLast('\\')?.filterNot { it.isISOControl() }?.trim()?.take(MAX_FILE_NAME)?.ifEmpty { null }
 
+    private enum class Change { CREATED, UPDATED, UNCHANGED }
+
+    private fun change(row: AcceptedRow, existing: EmployeeRow?): Change = when {
+        existing == null -> Change.CREATED
+        existing.displayName != row.displayName || existing.siteId != row.siteId || existing.employmentStart != row.employmentStart -> Change.UPDATED
+        else -> Change.UNCHANGED
+    }
+
     /** Alta o actualización por identificador externo: repetir el archivo no duplica a nadie. */
-    private fun apply(tenantId: UUID, rows: List<AcceptedRow>) {
-        for (row in rows) {
-            val existing = employees.findByExternalId(tenantId, row.externalId)
+    private fun apply(tenantId: UUID, plan: List<Pair<AcceptedRow, EmployeeRow?>>) {
+        for ((row, existing) in plan) {
             if (existing == null) {
                 try {
                     employees.insert(tenantId, UUID.randomUUID(), row.externalId, row.displayName, row.siteId, row.employmentStart, "csv")
@@ -289,7 +311,7 @@ class ImportService(
                     // Alguien dio de alta a esa persona mientras corría la importación.
                     throw if (Conflicts.uniqueConstraint(e) == Conflicts.EMPLOYEE_EXTERNAL_ID) Conflicts.externalIdTaken() else e
                 }
-            } else if (existing.displayName != row.displayName || existing.siteId != row.siteId || existing.employmentStart != row.employmentStart) {
+            } else if (change(row, existing) == Change.UPDATED) {
                 employees.update(
                     tenantId, existing.id, row.displayName, row.siteId, existing.status, row.employmentStart, existing.employmentEnd,
                 )

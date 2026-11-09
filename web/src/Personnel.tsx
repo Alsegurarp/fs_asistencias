@@ -31,7 +31,7 @@ export function PersonnelHeader({ me, context, section, screens, screen, onCreat
     <PageHeader context={context} section={section} screens={screens} current={screen}
       counts={{ employees: counts.data?.active, schedules: schedules.data?.length }}
       actions={allowed.editDirectory ? <>
-        {allowed.imports && <ButtonLink to="/personal/importaciones" icon="upload">Importar CSV</ButtonLink>}
+        {allowed.imports && <ButtonLink to="/personal/importaciones?importar=archivo" icon="upload">Importar CSV</ButtonLink>}
         <Button variant="contained" onClick={create} sx={{ minHeight: 42, px: 2.5 }}>Dar de alta</Button>
       </> : undefined} />
     {creating && <NewPersonModal me={me} onClose={() => setCreating(false)} />}
@@ -230,7 +230,7 @@ function EmptyRoster({ canEdit, canImport, onCreate }: { canEdit: boolean; canIm
     <Typography sx={{ fontSize: 14, color: color.muted, maxWidth: 460 }}>Da de alta a tu personal uno por uno o sube el CSV de tu sistema de nómina. Después les asignas horario y tarjeta.</Typography>
     {canEdit && <Stack direction="row" useFlexGap spacing={1} sx={{ flexWrap: 'wrap', justifyContent: 'center' }}>
       <Button variant="contained" onClick={onCreate} sx={{ minHeight: 42, px: 2.5 }}>Dar de alta</Button>
-      {canImport && <ButtonLink to="/personal/importaciones">Importar CSV</ButtonLink>}
+      {canImport && <ButtonLink to="/personal/importaciones?importar=archivo">Importar CSV</ButtonLink>}
     </Stack>}
   </Box>
 }

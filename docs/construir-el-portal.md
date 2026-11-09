@@ -3,7 +3,7 @@
 El portal sigue el [lienzo aprobado](https://claude.ai/artifact/6nguqVzZ7N9rtHX2LDScvq)
 el 7 de noviembre: 81 pantallas con código por sección (ACC, CTA, OPE, PAD,
 EMP, REP, EST, TEL y CON). El backend que piden ya está en `main` y en el
-ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia lo sube a 0.24.0, la de Incidencias a 0.25.0, los días de la semana a 0.26.0, las horas del Panel a 0.27.0 y los horarios de una persona a 0.28.0). Este documento dice en qué orden se
+ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia lo sube a 0.24.0, la de Incidencias a 0.25.0, los días de la semana a 0.26.0, las horas del Panel a 0.27.0, los horarios de una persona a 0.28.0 y el desglose de cada importación a 0.29.0). Este documento dice en qué orden se
 construye, cómo está armado el marco y qué reglas evitan que dos personas
 hagan lo mismo.
 
@@ -17,8 +17,8 @@ ambiente nunca pierde una función.
 | Bloque | Qué entra | Pantallas del lienzo | Pantalla anterior que se retira | Estado |
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
-| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana en la rama `feat/portal-panel` |
-| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios en la rama `feat/portal-personal`; siguen Importar y Dispositivos y tarjetas |
+| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana integrado (PR #42) |
+| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios integrado (PR #43); Importar en la rama `feat/portal-importar`; sigue Dispositivos y tarjetas |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
@@ -103,7 +103,7 @@ Crear (CTA-04) cuando ya existen las ventanas que abren.
 | `/cierres` | Cierres; en la dirección: `semana`, `sede`, `pestana` (`bloqueadas`, `reabiertas`), `acuse` (`conformes`, `objecion`, `sin-acuse`) y `cierre`, el que está abierto: un enlace con `cierre` abre ese cierre aunque no esté en la página |
 | `/personal` | Personas; en la dirección: `estado` (`bajas`, `todas`), `horario`, `sin-tarjeta`, `sede`, `q` y `persona`, la ficha abierta |
 | `/personal/horarios` | Horarios; `vigencia=historicos` |
-| `/personal/importaciones` | Importaciones (pantalla anterior, con el encabezado de la sección) |
+| `/personal/importaciones` | Importaciones; `importar=archivo` abre el modal de importar e `importar=<id>`, una importación del historial |
 | `/personal/fuentes` | Fuentes del padrón, para Administración y RH |
 | `/dispositivos`, `/dispositivos/tarjetas` | Dispositivos y tarjetas |
 | `/configuracion`, `/configuracion/sedes` | Configuración |
@@ -214,6 +214,20 @@ Diferencias deliberadas con el lienzo:
 - **Horarios: crear abre una ventana**, no un panel lateral: es la regla del
   lienzo para crear algo. Un horario no se edita: se crea otro y se asigna
   desde una fecha.
+- **Importar: «Importar CSV»** abre el modal sobre Importaciones
+  (`?importar=archivo`), también desde Personas, para que al terminar se vea
+  el historial.
+- **Importar: aplicar una revisión del historial** pide elegir otra vez el
+  archivo: el servidor no lo guarda y comprueba que sea el mismo por su
+  huella. El lienzo lleva de «Revisar y aplicar» directo a revisar.
+- **Importar: la huella** es la de las filas aplicadas (`manifestHash`), no
+  la del archivo, y así lo dice; el lienzo dice «Huella del archivo». Las
+  importaciones anteriores al contrato 0.29.0 no dicen altas, con cambios y
+  sin cambios, sólo cuántas se aplicaron.
+- **Importar: la tabla de errores** muestra las primeras 100 filas; las
+  demás están en «Descargar errores», que también se ofrece al revisar.
+- **Importaciones: «Revisado y aplicado»** es el estado de una revisión que
+  ya se aplicó; la aplicación aparece en su propia fila como «Aplicado».
 - **Fuentes del padrón** muestra el último punto tal como lo guarda la
   fuente. Los cambios recientes salen de la bitácora y sólo los ve
   Administración; «Detalle completo en la bitácora» llega con Reportes.
@@ -229,6 +243,7 @@ Las pruebas del marco están en `Portal.test.tsx` y `States.test.tsx`; las de
 Asistencia, en `Attendance.test.tsx` y `attendanceModel.test.ts`; las del
 Panel y la campana, en `Panel.test.tsx` y `panelModel.test.ts`; las de
 Personal y horarios, en `Personnel.test.tsx` y `personnelModel.test.ts`; las de
+Importar, en `Imports.test.tsx` y `importsModel.test.ts`; las de
 Incidencias, en `Incidents.test.tsx`; las de Cierres, en `Closures.test.tsx` y
 `closureModel.test.ts`; el
 contraste de los colores del lienzo, en `accessibility.test.ts`.
