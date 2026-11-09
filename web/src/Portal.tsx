@@ -3,6 +3,7 @@ import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-r
 import { useQuery } from '@tanstack/react-query'
 import { Alert, Button, CircularProgress, Stack } from '@mui/material'
 import { api, type Me, permissions } from './api'
+import { Attendance } from './Attendance'
 import { color } from './design'
 import { Closures } from './Closures'
 import { Devices } from './Devices'
@@ -73,6 +74,8 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
     return <NoPermission me={me} section={section} screen={screen} home={home} />
   }
   const screens = section.key === personalSection.key ? [screen] : visibleScreens(section, allowed, roles)
+  // Las pantallas ya reconstruidas con el lienzo llevan su propio encabezado.
+  if (screen.key === 'attendance') return <Attendance me={me} context={context} section={section} screens={screens} screen={screen} />
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
@@ -96,6 +99,7 @@ function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
+    case 'attendance': return null
   }
 }
 

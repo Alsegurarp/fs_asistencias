@@ -5,6 +5,7 @@ import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.device.DeviceSignal
 import mx.fastsolution.zenit.api.Problems
+import mx.fastsolution.zenit.api.TextSearch
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.Role
 import mx.fastsolution.zenit.identity.SiteScope
@@ -151,7 +152,8 @@ class CompanyAttendanceRepository(private val dsl: DSLContext) {
         return sql.toString() to binds
     }
 
-    fun people(tenantId: UUID, week: Window, siteId: UUID?, scheduleOn: LocalDate, after: PageKey?, limit: Int): List<WeekPerson> {
+    /** `text`, patrón de [TextSearch]: sólo la tabla lo usa; los conteos del panel no. */
+    fun people(tenantId: UUID, week: Window, siteId: UUID?, scheduleOn: LocalDate, after: PageKey?, limit: Int, text: String? = null): List<WeekPerson> {
         val (where, whereBinds) = peopleWhere(tenantId, week, siteId)
         val sql = StringBuilder(
             "select e.id, e.external_id, e.display_name, e.site_id, e.created_at, " +
@@ -161,6 +163,10 @@ class CompanyAttendanceRepository(private val dsl: DSLContext) {
         )
         val binds = mutableListOf<Any>(scheduleOn.toString(), scheduleOn.toString())
         binds.addAll(whereBinds)
+        if (text != null) {
+            sql.append(TextSearch.clause("e.display_name", "e.external_id"))
+            binds.addAll(TextSearch.binds(text, 2))
+        }
         if (after != null) {
             sql.append(" and (e.created_at, e.id) > (cast(? as timestamptz), cast(? as uuid))")
             binds += after.at
@@ -319,11 +325,12 @@ class CompanyAttendanceService(
     private val json: JsonMapper,
 ) {
     @Transactional(readOnly = true)
-    fun page(person: CurrentPerson, week: String?, siteId: String?, attention: String?, after: PageKey?, limit: Int): AttendanceWeekListView {
+    fun page(person: CurrentPerson, week: String?, siteId: String?, attention: String?, q: String?, after: PageKey?, limit: Int): AttendanceWeekListView {
         val checks = Checks()
         val day = checks.date("week", week, required = true)
         val site = checks.uuid("siteId", siteId, required = false)
         checks.oneOf("attention", attention, ATTENTION, required = false)
+        val text = TextSearch.pattern(checks, q)
         checks.done()
         val tenant = tenants.find(person.requireTenant()) ?: throw Problems.notFound()
         val zone = ZoneId.of(tenant.timeZone)
@@ -341,7 +348,7 @@ class CompanyAttendanceService(
         // por lotes hasta llenarla: el filtro sale del cálculo, no de la base.
         val batch = if (attention == null) limit + 1 else BATCH
         while (true) {
-            val people = repository.people(tenant.id, window, site, scheduleOn, cursor, batch)
+            val people = repository.people(tenant.id, window, site, scheduleOn, cursor, batch, text)
             for (week in resolve(tenant, people, weekStart, today)) {
                 if (passes(week, attention)) matches += week
                 if (matches.size > limit) break
@@ -508,9 +515,10 @@ class CompanyAttendanceController(private val service: CompanyAttendanceService)
         @RequestParam week: String?,
         @RequestParam siteId: String?,
         @RequestParam attention: String?,
+        @RequestParam q: String?,
         @RequestParam cursor: String?,
         @RequestParam limit: String?,
-    ): AttendanceWeekListView = service.page(person, week, siteId, attention, Paging.decode(cursor), Paging.limit(limit))
+    ): AttendanceWeekListView = service.page(person, week, siteId, attention, q, Paging.decode(cursor), Paging.limit(limit))
 
     @GetMapping("/summary")
     fun summary(

@@ -60,6 +60,7 @@ export type TenantUser ={ id: string; email: string; displayName: string; roles:
 export function permissions(roles: string[]) {
   return {
     personal: roles.includes('trabajador'),
+    attendance: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     sites: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     employees: roles.some(r => ['admin_empresa', 'rh', 'supervisor', 'auditor'].includes(r)),
     cards: roles.some(r => ['admin_empresa', 'rh', 'auditor'].includes(r)),

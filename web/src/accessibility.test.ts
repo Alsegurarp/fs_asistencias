@@ -45,6 +45,18 @@ it('los colores de texto del lienzo cumplen contraste AA donde se usan', () => {
     ['enlace sobre el fondo', color.link, color.page],
     ['insignia de pendientes', color.warnInk, color.warnBg],
     ['texto principal sobre vidrio', color.ink, 'rgba(255,255,255,0.7)'],
+    ['etiqueta verde', color.ok, color.okBg],
+    ['etiqueta naranja', color.warnText, color.warnBg],
+    ['etiqueta roja', color.error, color.errorBg],
+    ['etiqueta azul', color.link, color.infoBg],
+    ['etiqueta gris', color.muted, color.lineSoft],
+    ['aviso naranja', color.noteInk, color.warnBg],
+    ['«En turno» sobre blanco', color.ok, color.white],
+    ['«Sin entrada» sobre blanco', color.warnText, color.white],
+    ['«En turno» en la fila elegida', color.ok, color.selected],
+    ['blanco sobre el encabezado de la ficha', color.white, '#2459BE'],
+    ['texto secundario sobre las cifras de la ficha', color.muted, color.rowHover],
+    ['filtro elegido sobre su mosaico', color.deep, '#EEF4FE'],
   ]
   for (const [name, front, background] of pairs) {
     const back = background.startsWith('rgba') ? over(background, color.page) : background

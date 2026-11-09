@@ -155,19 +155,24 @@ function AccountMenu({ me, email, context, onSignOut }: { me: Me; email?: string
   </>
 }
 
-/** Encabezado de página del lienzo: ruta, título, descripción y pestañas. */
-export function PageHeader({ context, section, screens, current, actions }: { context: string; section: Section; screens: Screen[]; current: Screen; actions?: ReactNode }) {
+/** Encabezado de página del lienzo: ruta, título, descripción y pestañas. `description` reemplaza la de la sección. */
+export function PageHeader({ context, section, screens, current, actions, description = section.description }: { context: string; section: Section; screens: Screen[]; current: Screen; actions?: ReactNode; description?: string }) {
   const heading = useRef<HTMLHeadingElement>(null)
   const location = useLocation()
+  const shown = useRef(location.pathname)
   useEffect(() => { document.title = `${section.label} · Zenit` }, [section.label])
-  // Al navegar dentro del portal, el lector de pantalla empieza por el título nuevo.
-  useEffect(() => { if (location.key !== 'default') heading.current?.focus() }, [location.key])
+  // Al llegar a otra pantalla, el lector de pantalla empieza por el título nuevo.
+  // Un cambio sólo de filtros o de ficha (`?…`) no mueve el foco.
+  useEffect(() => {
+    if (location.key !== 'default' && shown.current !== location.pathname) heading.current?.focus()
+    shown.current = location.pathname
+  }, [location.key, location.pathname])
   return <>
     <Stack direction="row" useFlexGap sx={{ flex: 'none', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 1.5 }}>
       <Box>
         <Typography sx={{ fontSize: 13, color: color.subtle }}>{context} / {section.label}</Typography>
         <Typography component="h1" ref={heading} tabIndex={-1} sx={{ mt: '2px', fontSize: 24, fontWeight: 700, letterSpacing: '-0.01em', outline: 'none' }}>
-          {section.label}{section.description && <Box component="span" sx={{ fontSize: 15, fontWeight: 500, color: color.muted }}> · {section.description}</Box>}
+          {section.label}{description && <Box component="span" sx={{ fontSize: 15, fontWeight: 500, color: color.muted }}> · {description}</Box>}
         </Typography>
       </Box>
       {actions && <Stack direction="row" useFlexGap spacing={1} sx={{ flexWrap: 'wrap' }}>{actions}</Stack>}

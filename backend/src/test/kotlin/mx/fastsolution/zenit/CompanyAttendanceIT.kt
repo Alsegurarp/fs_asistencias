@@ -105,6 +105,30 @@ class CompanyAttendanceIT : WorkdayTestBase() {
     }
 
     @Test
+    fun `the table searches by name or number in the server, before paging`() {
+        val c = companyWithFinishedWeek()
+        val first = staffed(c)
+        val second = staffed(c)
+        shift(first, 40, 32)
+        shift(second, 40, 26)
+        val rows = weeks(c, "?week=$yesterday")
+        fun external(who: Staffed): String = rows.at<List<String>>("items[?(@.employeeId=='${who.employeeId}')].externalId").single()
+
+        // Por número, sin distinguir mayúsculas.
+        assertEquals(listOf(second.employeeId), ids(weeks(c, "?week=$yesterday&q=${external(second).lowercase()}")))
+        // Por nombre, sin distinguir acentos: «pérsona» encuentra a «Persona».
+        assertEquals(listOf(first.employeeId, second.employeeId), ids(weeks(c, "?week=$yesterday&q=p%C3%A9rsona")))
+        // Se busca antes de paginar: la primera página ya es la del resultado.
+        assertEquals(listOf(second.employeeId), ids(weeks(c, "?week=$yesterday&limit=1&q=${external(second)}")))
+        // Se combina con los demás filtros.
+        assertEquals(listOf(second.employeeId), ids(weeks(c, "?week=$yesterday&attention=overtime&q=persona")))
+        assertEquals(emptyList(), ids(weeks(c, "?week=$yesterday&attention=overtime&q=${external(first)}")))
+        // Los conteos del panel no dependen de la búsqueda.
+        assertEquals(2, summary(c, "?date=$yesterday").at<Int>("people"))
+        assertProblem(422, "validation", weeks(c, "?week=$yesterday&q=${"x".repeat(101)}"))
+    }
+
+    @Test
     fun `the summary counts the same people the table shows, and what needs a look`() {
         val c = companyWithFinishedWeek()
         val siteId = newSite(c)

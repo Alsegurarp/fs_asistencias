@@ -1,5 +1,18 @@
 # Guía del portal web
 
+**Actualización del 8 de noviembre, Asistencia:** primera pantalla de
+Operación reconstruida con el lienzo, en `/asistencia` y como inicio de
+Administración, RH, Supervisión y Auditoría. Tabla de la semana de cada
+persona con ordinarias y extra contra el tope de las reglas vigentes, lo de
+hoy y lo que pide atención; filtros «Con alertas», «Con tiempo extra», «Sin
+entrada hoy» y «En turno» con sus conteos, búsqueda por nombre o número y
+sede, todo en el servidor (`q` es nuevo en el contrato 0.24.0). La ficha de
+una persona se abre sobre la tabla con su semana día por día, sus marcajes
+con la evidencia y sus cierres con el acuse. «Exportar vista» baja un CSV con
+todas las páginas de lo filtrado. Semana, filtros, búsqueda, persona y
+pestaña viven en la dirección: un enlace o el botón atrás los conservan. En
+teléfono, tarjetas con la barra de horas y la ficha a pantalla completa.
+
 **Actualización del 8 de noviembre, marco del lienzo:** el portal ya tiene la
 barra superior, el menú lateral ocultable con grupos plegables (Operación,
 Padrón, Empresa), la barra inferior de teléfono con «Más», el menú de la
@@ -318,6 +331,8 @@ Notas:
 
 | Pantalla | Rutas |
 | --- | --- |
+| Asistencia: tabla, filtros y conteos (búsqueda desde 0.24.0) | `GET /attendance/weeks?week=&siteId=&attention=&q=`, `GET /attendance/summary?date=&siteId=`, `GET /rule-sets?effectiveOn=` |
+| Asistencia: ficha de una persona | `GET /employees/{employeeId}/attendance?week=`, `GET /attendance-events?employeeId=&from=&to=`, `GET /week-closures?week=&employeeId=` (seis semanas) |
 | Marcajes | `GET /attendance-events` |
 | Semana de una persona | `GET /employees/{employeeId}/attendance?week=` |
 | Incidencias | `GET /incidents`, `GET /incidents/{incidentId}`, `PATCH /incidents/{incidentId}` |
