@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.26.0
+  version: 0.27.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -2325,6 +2325,10 @@ paths:
           vigentes y los acuses de esos cierres.
         - `devices` es nulo para quien no consulta dispositivos. Un lector
           está en silencio si no ha dado señal en las últimas 24 horas.
+        - `mostHours`: hasta cinco personas con más horas en la semana de
+          `date`, ordinarias más extra, de más a menos y por nombre si
+          empatan; quien no trabajó no entra. Sale del mismo cálculo que la
+          tabla, con su alcance por sede (desde 0.27.0).
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - name: date
@@ -2375,6 +2379,12 @@ paths:
                 devices:
                   active: 6
                   silent: 1
+                mostHours:
+                  - employeeId: 0b6f1d9e-2c43-4f1a-9a57-6d2c1e8b7a10
+                    displayName: Ana Torres
+                    siteId: 4a1e2b3c-5d6e-4f70-8a9b-0c1d2e3f4a5b
+                    ordinaryMinutes: 1920
+                    overtimeMinutes: 190
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7263,7 +7273,7 @@ components:
     AttendanceSummary:
       type: object
       additionalProperties: false
-      required: [date, weekStart, timeZone, siteId, people, day, week, incidents, previousWeek, devices]
+      required: [date, weekStart, timeZone, siteId, people, day, week, incidents, previousWeek, devices, mostHours]
       properties:
         date:
           type: string
@@ -7353,6 +7363,27 @@ components:
                 silent:
                   type: integer
             - type: "null"
+        mostHours:
+          type: array
+          maxItems: 5
+          description: Quienes más horas llevan en la semana, de más a menos.
+          items:
+            type: object
+            additionalProperties: false
+            required: [employeeId, displayName, siteId, ordinaryMinutes, overtimeMinutes]
+            properties:
+              employeeId:
+                type: string
+                format: uuid
+              displayName:
+                type: string
+              siteId:
+                type: [string, "null"]
+                format: uuid
+              ordinaryMinutes:
+                type: integer
+              overtimeMinutes:
+                type: integer
 
     IncidentType:
       type: string

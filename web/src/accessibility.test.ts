@@ -65,6 +65,11 @@ it('los colores de texto del lienzo cumplen contraste AA donde se usan', () => {
     ['«Bloqueadas:» sobre su franja', color.warnInk, color.blockedBg],
     ['causa del bloqueo en su píldora', color.warnInk, color.white],
     ['objeción sobre su recuadro', color.error, '#FFF7F6'],
+    ['cifra naranja del Panel sobre su recuadro', color.warnText, color.rowHover],
+    ['nombre de una cifra del Panel', color.muted, color.rowHover],
+    ['aviso del Panel sobre el inicio del degradado', color.white, color.gradientFrom],
+    ['enlace del Panel sobre blanco', color.link, color.white],
+    ['punto de la campana sobre la barra superior', color.countInk, color.countBg],
   ]
   for (const [name, front, background] of pairs) {
     const back = background.startsWith('rgba') ? over(background, color.page) : background

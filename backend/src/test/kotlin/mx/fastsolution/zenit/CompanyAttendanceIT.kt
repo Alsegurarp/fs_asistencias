@@ -204,6 +204,12 @@ class CompanyAttendanceIT : WorkdayTestBase() {
         assertEquals(mapOf("open" to 1, "highSeverity" to 0, "unassigned" to 1), totals.at<Map<String, Any?>>("incidents"))
         assertEquals(mapOf("weekStart" to lastWeek.minusDays(7).toString(), "people" to 3, "closed" to 0, "agreed" to 0, "objected" to 0), totals.at<Map<String, Any?>>("previousWeek"))
         assertEquals(3, totals.at<Int>("devices.active"))
+        // Las horas de cada quien salen del mismo cálculo que su semana, de más a menos, sin quien no trabajó.
+        val worked = listOf(done, forgot, outside).associateWith { week(c, it.employeeId).at<Int>("totals.ordinaryMinutes") + week(c, it.employeeId).at<Int>("totals.overtimeMinutes") }
+        val ranked = worked.filterValues { it > 0 }.entries.sortedByDescending { it.value }
+        assertEquals(ranked.map { it.key.employeeId }, totals.at<List<String>>("mostHours[*].employeeId"))
+        assertEquals(ranked.map { it.value }, totals.at<List<Int>>("mostHours[*].ordinaryMinutes").zip(totals.at<List<Int>>("mostHours[*].overtimeMinutes")).map { (o, e) -> o + e })
+        assertEquals(done.employeeId, totals.at<List<String>>("mostHours[*].employeeId").first())
         // Quien necesita revisión en la tabla es quien cuenta el panel.
         assertEquals(listOf(forgot.employeeId, outside.employeeId), ids(weeks(c, "?week=$yesterday&attention=alerts")))
 

@@ -6,6 +6,68 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 9 de noviembre de 2026 — Panel según el lienzo
+
+Rama `feat/portal-panel` desde `docs/estado-portal-2026-11-09` (`main` en
+`6faf0d7` más la actualización de documentos). Cuarta y última pantalla del
+bloque 1: Panel (OPE-01, TEL-01) en `/panel`, que pasa a ser el inicio de
+Administración, RH, Supervisión y Auditoría, primeros pasos de una empresa sin
+personal (OPE-12) y la campana de avisos (CTA-03). Las rutas salen de la nota
+del lienzo; cada tarjeta se oculta si el rol no la puede leer. El menú Crear
+(CTA-04) pasa al bloque 2, por decisión del usuario: hoy sólo abriría «Cerrar
+la semana».
+
+Contrato 0.27.0: `GET /attendance/summary` trae `mostHours`, las cinco
+personas con más horas de la semana, del mismo recorrido que los totales.
+Se eligió en lugar de ordenar `GET /attendance/weeks` por horas, que
+obligaría a calcular a todas las personas en cada página. Prueba de
+integración en `CompanyAttendanceIT`.
+
+Pruebas: backend con 102 unitarias y 122 de integración contra PostgreSQL,
+sin fallas (`backend-it`); contrato y ejemplos validados (`contract-lint`);
+269 del portal en 26 archivos (16 nuevas: Panel, campana, modelo y contraste
+de los colores nuevos), en la estación y en el contenedor sin red, con
+TypeScript y compilación.
+
+Recorrido en Chromium 136 (Playwright 1.52.0) contra un entorno local
+aislado (`zenit-panel-qa`, base en memoria), con cuentas de contraseña y
+segundo factor configurado en el primer ingreso: una empresa con 35
+personas del simulador, una corrida real de la semana anterior (15
+cerradas, 20 bloqueadas: 15 por incidencias y 5 tramos sin salida), una
+objeción de una trabajadora ligada a su persona y un cambio de comida
+programado; otra cuya semana empieza el domingo, con 14 personas, para ver
+las horas de la semana en curso; y una empresa nueva. 20 vistas de
+Administración, RH, Supervisión, Auditoría, la empresa nueva y una
+trabajadora, a 1440 y 390 px: un solo h1, sin desborde, sin errores de
+consola y sin respuestas fallidas. Tarjetas por rol como se esperaba; la
+campana contó 4 avisos, «Marcar como vistos» lo recordó al recargar y un
+aviso llevó a las bloqueadas; «Terminar el cierre» abrió Cierres de la
+semana anterior; una persona de las horas abrió su ficha; los primeros
+pasos llevaron a Sedes; la trabajadora entra a Mi asistencia, sin campana,
+y `/panel` le dice que no es para su rol.
+
+Hallazgo corregido: la actividad decía «Carmen Vega ligó con su persona la
+cuenta de Carmen Vega» cuando una cuenta se liga sola al entrar; ahora dice
+«entró por primera vez». Sin despliegue: espera la PR.
+
+## 9 de noviembre de 2026 — Revisión del estado antes del Panel
+
+`main` en `6faf0d7`, sin cambios locales y al día con `origin`. La PR #41
+(Cierres) ya está integrada; los documentos que decían «en la rama» o
+«espera la PR» se actualizaron. El despliegue de `6faf0d7` no está
+registrado: no hay registro en `build/despliegue/registros/` de esta
+estación, `https://zenit.fastsolution.com.mx` no respondió en 20 segundos y
+Docker Desktop estaba detenido, así que no se desplegó ni se comprobó.
+
+Se corrigió el estado del backend en el [índice de documentos](README.md),
+que seguía en el API 0.15.0: el contrato vigente es 0.26.0, con 92
+operaciones. El README raíz suma los avances del portal del 8 de noviembre.
+
+Siguiente: Panel (OPE-01) con la campana de avisos (CTA-03), en
+`feat/portal-panel`, que cierra el bloque 1. Las 17 tareas abiertas y los
+seis P0 no cambian: dependen de datos y accesos externos
+([seguimiento](TareasPendientes.md)).
+
 ## 8 de noviembre de 2026 — Cierres según el lienzo
 
 Rama `feat/portal-cierres` desde `main` en `718e72c` (PR #40 integrada y

@@ -69,7 +69,7 @@ it.each(['admin_empresa', 'rh', 'auditor'])('muestra incidencias, cierres y repo
 
 it('el supervisor ve asistencia, incidencias y cierres, pero no reportes ni usuarios', async () => {
   await render(['supervisor'])
-  expect(sideLinks()).toEqual(['/asistencia', '/incidencias', '/cierres', '/personal', '/configuracion'])
+  expect(sideLinks()).toEqual(['/panel', '/asistencia', '/incidencias', '/cierres', '/personal', '/configuracion'])
 })
 
 it.each(['trabajador', 'operador_saas'])('Asistencia de la empresa no está disponible para %s', async role => {
@@ -122,10 +122,10 @@ it.each(['admin_empresa', 'supervisor', 'trabajador'])('avisa a %s del cambio de
   expect(text()).not.toContain('Aviso sobre la comida')
 })
 
-it('el inicio abre la primera sección de cada rol', async () => {
+it('el inicio abre el Panel, o Mi asistencia para quien sólo es trabajador', async () => {
   await render(['admin_empresa'])
-  expect(container.querySelector('a[aria-current="page"]')?.getAttribute('href')).toBe('/asistencia')
-  expect(heading()).toBe('Asistencia')
+  expect(container.querySelector('a[aria-current="page"]')?.getAttribute('href')).toBe('/panel')
+  expect(heading()).toMatch(/^Hola, Mariana · /)
   await render(['trabajador'])
   expect(heading()).toBe('Mi asistencia')
   expect(container.querySelector('aside')).toBeNull()
@@ -146,7 +146,7 @@ it('agrupa el menú como el lienzo y las secciones se pliegan', async () => {
   const groups = [...container.querySelectorAll('aside details')]
   expect(groups.map(group => group.querySelector('summary')?.textContent)).toEqual(['Operación', 'Padrón', 'Empresa'])
   expect(groups.every(group => group.hasAttribute('open'))).toBe(true)
-  expect(sideLinks()).toEqual(['/asistencia', '/incidencias', '/cierres', '/personal', '/dispositivos', '/configuracion', '/usuarios', '/reportes'])
+  expect(sideLinks()).toEqual(['/panel', '/asistencia', '/incidencias', '/cierres', '/personal', '/dispositivos', '/configuracion', '/usuarios', '/reportes'])
 })
 
 it('las pestañas de una sección dependen del rol', async () => {
@@ -225,14 +225,14 @@ it('en teléfono el menú pasa a la barra inferior con Más', async () => {
   phone = true
   await render(['admin_empresa'])
   expect(container.querySelector('aside')).toBeNull()
-  expect(links('Secciones')).toEqual(['/asistencia', '/incidencias', '/cierres', '/mas'])
+  expect(links('Secciones')).toEqual(['/panel', '/asistencia', '/incidencias', '/mas'])
   await render(['admin_empresa'], '/usuarios')
   expect(container.querySelector('nav[aria-label="Secciones"] a[href="/mas"]')?.getAttribute('aria-current')).toBe('page')
   await render(['admin_empresa'], '/mas')
   expect(heading()).toBe('Más')
   expect([...container.querySelectorAll('main h2')].map(item => item.textContent)).toEqual(['Operación', 'Padrón', 'Empresa'])
   await render(['supervisor'])
-  expect(links('Secciones')).toEqual(['/asistencia', '/incidencias', '/cierres', '/mas'])
+  expect(links('Secciones')).toEqual(['/panel', '/asistencia', '/incidencias', '/mas'])
 })
 
 it.each(['/no-existe', '/usuarios', '/mas'])('el marco no tiene fallas automáticas de accesibilidad en %s', async path => {
@@ -246,4 +246,26 @@ it('Incidencias recibe la semana y la incidencia por la dirección', async () =>
   expect(text()).toContain('Incidencias ?semana=2026-11-02&incidencia=inc-1')
   await render(['admin_empresa'], '/incidencias')
   expect(text()).toContain('Incidencias sin filtros')
+})
+
+it('la campana cuenta los avisos sin ver, los lista y recuerda cuáles ya se vieron', async () => {
+  const upcomingBreakPolicy = { breakPolicy: 'marked' as const, effectiveOn: '2026-11-16', effectiveAt: '2026-11-16T06:00:00Z' }
+  await render(['admin_empresa'], '/usuarios', { tenant: { ...tenant!, upcomingBreakPolicy } })
+  const bell = () => container.querySelector<HTMLButtonElement>('button[aria-label^="Avisos"]')!
+  expect(bell().getAttribute('aria-label')).toBe('Avisos, 1 sin ver')
+  await act(async () => bell().click())
+  await waitFor(() => !!document.querySelector('[role="dialog"]'))
+  const dialog = document.querySelector('[role="dialog"]')!
+  expect(dialog.textContent).toContain('Cambio programado')
+  expect(dialog.textContent).toContain('La comida se marca desde el lun 16 nov')
+  expect(dialog.querySelector('a')?.getAttribute('href')).toBe('/configuracion')
+  await act(async () => [...dialog.querySelectorAll('button')].find(item => item.textContent === 'Marcar como vistos')!.click())
+  expect(bell().getAttribute('aria-label')).toBe('Avisos')
+  await render(['admin_empresa'], '/usuarios', { tenant: { ...tenant!, upcomingBreakPolicy } })
+  expect(bell().getAttribute('aria-label')).toBe('Avisos')
+})
+
+it('quien no ve la operación de la empresa no tiene campana', async () => {
+  await render(['trabajador'])
+  expect(container.querySelector('button[aria-label^="Avisos"]')).toBeNull()
 })

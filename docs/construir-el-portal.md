@@ -3,7 +3,7 @@
 El portal sigue el [lienzo aprobado](https://claude.ai/artifact/6nguqVzZ7N9rtHX2LDScvq)
 el 7 de noviembre: 81 pantallas con código por sección (ACC, CTA, OPE, PAD,
 EMP, REP, EST, TEL y CON). El backend que piden ya está en `main` y en el
-ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia lo sube a 0.24.0, la de Incidencias a 0.25.0 y los días de la semana a 0.26.0). Este documento dice en qué orden se
+ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia lo sube a 0.24.0, la de Incidencias a 0.25.0, los días de la semana a 0.26.0 y las horas del Panel a 0.27.0). Este documento dice en qué orden se
 construye, cómo está armado el marco y qué reglas evitan que dos personas
 hagan lo mismo.
 
@@ -17,7 +17,7 @@ ambiente nunca pierde una función.
 | Bloque | Qué entra | Pantallas del lienzo | Pantalla anterior que se retira | Estado |
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
-| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres en la rama `feat/portal-cierres`; sigue Panel |
+| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana en la rama `feat/portal-panel` |
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Pendiente |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
@@ -28,8 +28,10 @@ El bloque 1 entra en cuatro PR, una por pantalla y en ese orden: Asistencia
 (OPE-02, OPE-07, OPE-08, EST-09, TEL-07, TEL-08), Incidencias (OPE-03,
 OPE-05, OPE-06, EST-08, TEL-02, TEL-09), Cierres y Panel. Entre Incidencias y
 Cierres va la fase 6 del backend: los días de la semana con su tiempo
-ordinario y extra, que Cierres y el reporte de nómina también muestran. El menú Crear (CTA-04) aparece con los primeros modales que abre, en
-los bloques 1 y 2.
+ordinario y extra, que Cierres y el reporte de nómina también muestran. El
+Panel (OPE-01, OPE-12, TEL-01) entra con la campana de avisos (CTA-03). El
+menú Crear (CTA-04) entra en el bloque 2, cuando existan las ventanas que
+abre; hoy sólo existiría «Cerrar la semana».
 
 ## Reglas para no duplicar
 
@@ -62,6 +64,7 @@ los bloques 1 y 2.
 | Íconos y marca de dos ondas | `web/src/Icons.tsx` |
 | Piezas de las secciones: etiquetas de estado, filtros de un toque, búsqueda, sede, semana, tabla con paginador, filas de espera, avisos, ficha lateral (de persona o de registro, con pie de acciones), conmutador de vista, pestañas de estado y texto para lectores de pantalla (`visuallyHidden`) | `web/src/ui.tsx` |
 | Pendientes junto a una sección del menú, como las incidencias abiertas | `counts` de `Shell`, que llena `Portal.tsx` |
+| Campana de avisos (CTA-03) y lo que comparte con el Panel | `web/src/Notices.tsx` (`bell` de `Shell`); los avisos se arman en `web/src/panelModel.ts` |
 | Piezas de las pantallas anteriores que todavía se usan (`RecordName`, `WeekSummary`) | `web/src/legacy.tsx` |
 | Listas cortas pedidas completas (sedes, horarios) | `web/src/lists.ts` |
 
@@ -87,7 +90,8 @@ los bloques 1 y 2.
 
 | Dirección | Pantalla |
 | --- | --- |
-| `/` | La primera sección del rol: Asistencia para Administración, RH, Supervisión y Auditoría |
+| `/` | La primera sección del rol: el Panel para Administración, RH, Supervisión y Auditoría |
+| `/panel` | Panel; una empresa sin personal ve ahí sus primeros pasos (OPE-12) a Administración |
 | `/asistencia` | Asistencia; lo elegido va en la dirección: `semana`, `sede`, `filtro` (`alertas`, `extra`, `sin-entrada`, `en-turno`), `q`, `persona` y `ficha` (`marcajes`, `cierres`) |
 | `/incidencias` | Incidencias; en la dirección: `estado` (`resueltas`), `vista` (`tablero`), `q`, `tipo`, `sede`, `semana`, `mias`, `alta`, `bloquean` e `incidencia`, la que está abierta. Cierres y Asistencia llegan con `semana` e `incidencia` |
 | `/cierres` | Cierres; en la dirección: `semana`, `sede`, `pestana` (`bloqueadas`, `reabiertas`), `acuse` (`conformes`, `objecion`, `sin-acuse`) y `cierre`, el que está abierto: un enlace con `cierre` abre ese cierre aunque no esté en la página |
@@ -117,12 +121,10 @@ los bloques 1 y 2.
 
 | Falta | Llega con |
 | --- | --- |
-| Panel (OPE-01): mientras no exista, el inicio es la primera sección del rol y los estados dicen «Ir al inicio» | Bloque 1 |
 | Cierres de una persona más allá de seis semanas: `GET /week-closures` pide la semana, y la ficha consulta las seis últimas en seis llamadas fijas | Una ruta de cierres por persona, si se necesita más historia |
-| Avisos de la campana (CTA-03) | Bloque 1 |
 | Historial completo de una incidencia: la incidencia trae su apertura, su asignación actual y su resolución; lo demás está en la bitácora, que sólo ven Administración y Auditoría | Bitácora en Reportes (bloque 4) |
 | Buscador (CTA-05) | Bloque 2 |
-| Menú Crear (CTA-04) | Bloques 1 y 2 |
+| Menú Crear (CTA-04) | Bloque 2, con las ventanas de alta de persona, horario, tarjeta y lector |
 | Mi perfil y seguridad de la cuenta en el menú (CTA-01) | Bloque 3 |
 | «En línea · datos de las…», «Instalar Zenit» y sin conexión | Bloque 6 |
 | «Ayuda y soporte» en el menú de la cuenta | Sin destino definido: falta decidir el canal de soporte |
@@ -170,6 +172,25 @@ Diferencias deliberadas con el lienzo:
 - **Cierres en Supervisión.** Supervisión sólo ve las corridas de su sede;
   si la última fue de toda la empresa, el banner lo dice en lugar de «Sin
   corridas».
+- **Panel: sin «Hoy · Esta semana».** El lienzo tiene ese conmutador sin
+  decir qué cambia; el Panel muestra hoy y la semana en curso a la vez.
+- **Panel: «sin salida»** cuenta a quien tiene un tramo sin cerrar en la
+  semana que ya no es su turno, no sólo el de ayer.
+- **Panel: horas de la semana.** Salen de `mostHours` del resumen (contrato
+  0.27.0), del mismo cálculo que la tabla: ordenar la tabla por horas
+  obligaría a calcular a todas las personas en cada página.
+- **Panel: actividad reciente** dice quién actuó, sin su rol, y no tiene el
+  enlace «Bitácora» hasta que exista en Reportes (bloque 4). La sincronización
+  de marcajes no se registra en la bitácora, así que no aparece.
+- **Panel: lo que pide atención** son las cuatro incidencias abiertas más
+  graves y, agrupadas, las objeciones y bloqueadas de la semana anterior y
+  los lectores sin señal.
+- **Primeros pasos** sólo los ve Administración; «Descargar la plantilla»
+  lleva a Importaciones, donde está la plantilla, y no hay «Ayuda y soporte».
+- **Campana.** «Marcar como vistos» se recuerda en el navegador: los avisos
+  no se guardan en el servidor. Un aviso cuya cifra cambia vuelve a contar.
+  La campana es de quien ve la operación de la empresa; quien sólo es
+  trabajador sigue viendo el aviso de la comida arriba de su pantalla.
 
 ## Verificar
 
@@ -179,7 +200,8 @@ docker run --rm --network none zenit-web-check pnpm test
 ```
 
 Las pruebas del marco están en `Portal.test.tsx` y `States.test.tsx`; las de
-Asistencia, en `Attendance.test.tsx` y `attendanceModel.test.ts`; las de
+Asistencia, en `Attendance.test.tsx` y `attendanceModel.test.ts`; las del
+Panel y la campana, en `Panel.test.tsx` y `panelModel.test.ts`; las de
 Incidencias, en `Incidents.test.tsx`; las de Cierres, en `Closures.test.tsx` y
 `closureModel.test.ts`; el
 contraste de los colores del lienzo, en `accessibility.test.ts`.

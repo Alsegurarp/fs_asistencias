@@ -36,6 +36,8 @@ type ShellProps = {
   notice?: ReactNode
   /** Pendientes de una sección junto a su nombre, como las incidencias abiertas. */
   counts?: Partial<Record<string, { value: number; label: string }>>
+  /** La campana de avisos (CTA-03), junto al menú de la cuenta. */
+  bell?: ReactNode
 }
 
 /**
@@ -43,7 +45,7 @@ type ShellProps = {
  * plegables y contenido con desplazamiento propio. En teléfono el menú pasa a
  * la barra inferior (TEL-06) y la página se desplaza completa.
  */
-export function Shell({ me, email, groups, firstPath, context, onSignOut, notice, counts = {} }: ShellProps) {
+export function Shell({ me, email, groups, firstPath, context, onSignOut, notice, counts = {}, bell }: ShellProps) {
   const phone = useMediaQuery(phoneQuery)
   const [hidden, setHidden] = useState(readHidden)
   const { pathname } = useLocation()
@@ -68,6 +70,7 @@ export function Shell({ me, email, groups, firstPath, context, onSignOut, notice
         <Icon name="building" size={18} /><span>{context}</span>
       </Stack>
       <Box sx={{ flex: 1 }} />
+      {bell}
       <AccountMenu me={me} email={email} context={context} onSignOut={onSignOut} />
     </Box>
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', [`@media ${phoneQuery}`]: { display: 'block' } }}>
@@ -169,8 +172,8 @@ function AccountMenu({ me, email, context, onSignOut }: { me: Me; email?: string
   </>
 }
 
-/** Encabezado de página del lienzo: ruta, título, descripción y pestañas. `description` reemplaza la de la sección. */
-export function PageHeader({ context, section, screens, current, actions, description = section.description }: { context: string; section: Section; screens: Screen[]; current: Screen; actions?: ReactNode; description?: string }) {
+/** Encabezado de página del lienzo: ruta, título, descripción y pestañas. `description` reemplaza la de la sección y `title` su nombre en el h1, como «Hola, Mariana» en el Panel. */
+export function PageHeader({ context, section, screens, current, actions, description = section.description, title = section.label }: { context: string; section: Section; screens: Screen[]; current: Screen; actions?: ReactNode; description?: string; title?: string }) {
   const heading = useRef<HTMLHeadingElement>(null)
   const location = useLocation()
   const shown = useRef(location.pathname)
@@ -186,7 +189,7 @@ export function PageHeader({ context, section, screens, current, actions, descri
       <Box>
         <Typography sx={{ fontSize: 13, color: color.subtle }}>{context} / {section.label}</Typography>
         <Typography component="h1" ref={heading} tabIndex={-1} sx={{ mt: '2px', fontSize: 24, fontWeight: 700, letterSpacing: '-0.01em', outline: 'none' }}>
-          {section.label}{description && <Box component="span" sx={{ fontSize: 15, fontWeight: 500, color: color.muted }}> · {description}</Box>}
+          {title}{description && <Box component="span" sx={{ fontSize: 15, fontWeight: 500, color: color.muted }}> · {description}</Box>}
         </Typography>
       </Box>
       {actions && <Stack direction="row" useFlexGap spacing={1} sx={{ flexWrap: 'wrap' }}>{actions}</Stack>}
