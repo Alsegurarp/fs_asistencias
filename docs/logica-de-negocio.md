@@ -341,6 +341,11 @@ persona: no pueden dar números distintos.
   del panel cuentan a las mismas personas que ve en la tabla.
 - **Lectores sin señal:** activos que no han dado señal en 24 horas. El panel
   no los cuenta para quien no consulta dispositivos.
+- **Quienes más horas llevan (`mostHours`, desde 0.27.0):** hasta cinco
+  personas de la semana, por ordinarias más extra, de más a menos y por
+  nombre si empatan; quien no trabajó no entra. Salen del mismo recorrido que
+  los totales, sin otra consulta: ordenar la tabla por horas obligaría a
+  calcular a todas las personas en cada página.
 
 El cálculo lee marcajes, ajustes, incidencias y cierres de hasta 200 personas
 por consulta. Con 300 personas y una semana completa, medido en el entorno de

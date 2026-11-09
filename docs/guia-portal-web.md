@@ -1,5 +1,15 @@
 # Guía del portal web
 
+**Actualización del 9 de noviembre, Panel (contrato 0.27.0):** cuarta y
+última pantalla de Operación, en `/panel`, que pasa a ser el inicio de
+Administración, RH, Supervisión y Auditoría. Asistencia de hoy, la semana
+anterior con sus cierres y acuses y «Terminar el cierre», las cifras de la
+semana, lo que pide atención, quienes más horas llevan contra el tope y la
+actividad reciente de la bitácora (Administración y Auditoría). Una empresa
+sin personal ve sus primeros pasos. La campana de la barra superior junta el
+cambio de comida, las incidencias de severidad alta y lo pendiente de la
+semana anterior; «Marcar como vistos» se recuerda en el navegador.
+
 **Actualización del 8 de noviembre, Cierres:** tercera pantalla de Operación
 con el lienzo, en `/cierres`. La última corrida de la semana con su avance,
 los acuses (conformes, con objeción, sin acuse) que filtran la lista, las
@@ -261,7 +271,8 @@ Lo primero es `GET /api/v1/me`:
 Una persona puede tener varios roles: el menú es la unión de lo que cada uno
 permite. `tenant.breakPolicy` y `tenant.timeZone` se usan en todo el portal.
 Si `tenant.upcomingBreakPolicy` no es nulo, el portal avisa a todos los roles
-de la empresa qué cambia con la comida y desde qué día.
+de la empresa qué cambia con la comida y desde qué día: en el banner del Panel,
+en la campana y, en las demás pantallas, arriba del contenido.
 
 La política de comida no se cambia en «Editar configuración»: quien administra
 la programa en Configuración con «Programar cambio de comida» y un motivo, y
@@ -359,6 +370,10 @@ Notas:
 
 | Pantalla | Rutas |
 | --- | --- |
+| Panel: totales de hoy y de la semana, quienes más horas llevan (`mostHours` desde 0.27.0) y reglas | `GET /attendance/summary?date=`, `GET /rule-sets?effectiveOn=` |
+| Panel: semana anterior, lo que pide atención y actividad | `GET /week-closures/summary?week=`, `GET /incidents?status=open&sort=severity&limit=5`, `GET /audit-log?limit=5` (Administración y Auditoría) |
+| Panel: primeros pasos de una empresa sin personal (Administración) | `GET /sites`, `GET /schedules`, `GET /employees/summary`, `GET /cards/summary`, `GET /users/summary` |
+| Campana de avisos | Las mismas del Panel, sin `audit-log`; el cambio de comida viene en `GET /me` |
 | Asistencia: tabla, filtros y conteos (búsqueda desde 0.24.0; `workedDays` y `overtimeDays` desde 0.26.0) | `GET /attendance/weeks?week=&siteId=&attention=&q=`, `GET /attendance/summary?date=&siteId=`, `GET /rule-sets?effectiveOn=` |
 | Asistencia: ficha de una persona | `GET /employees/{employeeId}/attendance?week=`, `GET /attendance-events?employeeId=&from=&to=`, `GET /week-closures?week=&employeeId=` (seis semanas) |
 | Marcajes | `GET /attendance-events` |

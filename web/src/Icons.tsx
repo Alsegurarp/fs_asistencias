@@ -34,6 +34,7 @@ const paths = {
   sync: <><path d="M20 12a8 8 0 0 1-13.7 5.6M4 12a8 8 0 0 1 13.7-5.6" /><path d="M18 3v4h-4M6 21v-4h4" /></>,
   logout: <><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="M9 8l-4 4 4 4M5 12h10" /></>,
   more: <path d="M4 7h16M4 12h16M4 17h16" />,
+  bell: <><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.6 2H4.4z" /><path d="M10 21a2.2 2.2 0 0 0 4 0" /></>,
 } as const
 
 export type IconName = keyof typeof paths

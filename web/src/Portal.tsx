@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect } from 'react'
-import { Link, Navigate, Route, Routes } from 'react-router'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Alert, Button, CircularProgress, Stack } from '@mui/material'
 import { api, type Me, permissions } from './api'
@@ -22,6 +22,8 @@ import { upcomingText } from './BreakPolicyChange'
 import { LegacyScreen, PageHeader, Shell, rolesText } from './Shell'
 import { StateCard } from './States'
 import { More } from './More'
+import { NoticesButton, useNotices } from './Notices'
+import { Panel } from './Panel'
 import {
   type Allowed, type Screen, type Section, companyGroups, consoleGroups, dossierCallbackPath, homePath, joinNames,
   personalScreen, personalSection, roleLabel, rolesFor, sessionEndedPath, visibleGroups, visibleScreens,
@@ -49,13 +51,19 @@ export function Portal({ me, email, onSignOut, notice }: PortalProps) {
     <ScreenPage me={me} section={section} screen={screen} allowed={allowed} roles={roles} context={context} home={home} dossierPending={dossierPending} callback={callback} />
 
   const upcoming = me.tenant?.upcomingBreakPolicy
+  const { pathname } = useLocation()
+  // El Panel lleva el aviso de la comida en su propio banner.
+  const breakNotice = upcoming && pathname !== '/panel'
+  // La campana (CTA-03) es de quien ve la operación de la empresa; los avisos salen de las mismas rutas del Panel.
+  const notices = useNotices(me, !!me.tenant && allowed.attendance)
   // Las incidencias abiertas, junto a su sección en el menú.
   const incidentCount = useQuery({ queryKey: ['incident-summary', ''], queryFn: () => api<IncidentSummary>('/incidents/summary'), enabled: allowed.incidents, retry: false, staleTime: 60_000 })
   const open = incidentCount.data?.open.total
   const counts = open ? { incidencias: { value: open, label: `${open} ${open === 1 ? 'abierta' : 'abiertas'}` } } : {}
   return <Routes>
     <Route element={<Shell me={me} email={email} groups={groups} firstPath={firstPath} context={context} onSignOut={onSignOut} counts={counts}
-      notice={<>{notice}{upcoming && <Alert severity="info" role="status" aria-live="polite">Aviso sobre la comida: {upcomingText(upcoming)}</Alert>}</>} />}>
+      bell={me.tenant && allowed.attendance ? <NoticesButton notices={notices} /> : undefined}
+      notice={<>{notice}{breakNotice && <Alert severity="info" role="status" aria-live="polite">Aviso sobre la comida: {upcomingText(upcoming)}</Alert>}</>} />}>
       <Route index element={home ? <Navigate to={home} replace /> : <NoScreens me={me} />} />
       {all.flatMap(section => section.screens.map(screen => <Route key={screen.path} path={screen.path} element={page(section, screen)} />))}
       <Route path={personalScreen.path} element={page(personalSection, personalScreen)} />
@@ -79,6 +87,7 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   }
   const screens = section.key === personalSection.key ? [screen] : visibleScreens(section, allowed, roles)
   // Las pantallas ya reconstruidas con el lienzo llevan su propio encabezado.
+  if (screen.key === 'panel') return <Panel me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'attendance') return <Attendance me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'incidents') return <Incidents me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'closures') return <Closures me={me} context={context} section={section} screens={screens} screen={screen} />
@@ -101,7 +110,7 @@ function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
-    case 'attendance': case 'incidents': case 'closures': return null
+    case 'panel': case 'attendance': case 'incidents': case 'closures': return null
   }
 }
 

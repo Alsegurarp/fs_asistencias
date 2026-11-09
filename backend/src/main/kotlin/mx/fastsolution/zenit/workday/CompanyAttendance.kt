@@ -62,6 +62,9 @@ data class PreviousWeekCounts(val weekStart: String, val people: Int, val closed
 
 data class DeviceCounts(val active: Int, val silent: Int)
 
+/** Una de las personas con más horas en la semana, para el panel. */
+data class HoursRow(val employeeId: String, val displayName: String, val siteId: String?, val ordinaryMinutes: Int, val overtimeMinutes: Int)
+
 data class AttendanceSummaryView(
     val date: String,
     val weekStart: String,
@@ -73,6 +76,7 @@ data class AttendanceSummaryView(
     val incidents: IncidentCounts,
     val previousWeek: PreviousWeekCounts,
     val devices: DeviceCounts?,
+    val mostHours: List<HoursRow>,
 )
 
 /** Persona que entra a una semana, con lo que la tabla necesita del padrón. */
@@ -422,6 +426,7 @@ class CompanyAttendanceService(
             incidents = incidents,
             previousWeek = repository.closures(tenant.id, previousStart, window(previousStart, zone), site),
             devices = if (seesDevices) repository.devices(tenant.id, site, OffsetDateTime.now().minus(DeviceSignal.SILENT_AFTER)) else null,
+            mostHours = mostHours(resolved),
         )
     }
 
@@ -481,6 +486,17 @@ class CompanyAttendanceService(
         }
     }
 
+    /**
+     * Quienes más horas llevan en la semana, ordinarias más extra. Sale del
+     * mismo cálculo que el resto del panel: ordenar la tabla por horas
+     * obligaría a calcular a todas las personas en cada página.
+     */
+    private fun mostHours(resolved: List<PersonWeek>): List<HoursRow> =
+        resolved.filter { it.totals.ordinaryMinutes + it.totals.overtimeMinutes > 0 }
+            .sortedWith(compareByDescending<PersonWeek> { it.totals.ordinaryMinutes + it.totals.overtimeMinutes }.thenBy { it.person.displayName }.thenBy { it.person.id })
+            .take(MOST_HOURS)
+            .map { HoursRow(it.person.id.toString(), it.person.displayName, it.person.siteId?.toString(), it.totals.ordinaryMinutes, it.totals.overtimeMinutes) }
+
     private fun passes(week: PersonWeek, attention: String?): Boolean = when (attention) {
         null -> true
         "alerts" -> week.needsAttention
@@ -522,6 +538,7 @@ class CompanyAttendanceService(
     private companion object {
         /** Personas por consulta: el mismo tope de una página. */
         const val BATCH = Paging.MAX_LIMIT
+        const val MOST_HOURS = 5
         val ATTENTION = setOf("alerts", "overtime", "no_entry_today", "on_shift")
         val TODAY_ONLY = setOf("no_entry_today", "on_shift")
         val ON_SHIFT = setOf("on_shift", "on_break")

@@ -22,7 +22,14 @@ export type AttendanceSummary = {
   date: string; weekStart: string; timeZone: string; siteId: string | null; people: number
   day: { marked: number; attendanceEvents: number; onShift: number | null; noEntry: number | null; foreignSite: number }
   week: { ordinaryMinutes: number; overtimeMinutes: number; withOvertime: number; withAttention: number; missingExit: number }
+  incidents?: { open: number; highSeverity: number; unassigned: number }
+  previousWeek?: { weekStart: string; people: number; closed: number; agreed: number; objected: number }
+  /** Nulo para quien no consulta dispositivos. */
+  devices?: { active: number; silent: number } | null
+  /** Desde el contrato 0.27.0: hasta cinco personas con más horas en la semana. */
+  mostHours?: HoursRow[]
 }
+export type HoursRow = { employeeId: string; displayName: string; siteId: string | null; ordinaryMinutes: number; overtimeMinutes: number }
 export type RuleSet = { id: string; version: number; validFrom: string; validTo: string | null; weeklyOrdinaryMaxMinutes: number; parameters: Record<string, string> }
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
 export type ScheduleDay = { dayOfWeek: DayOfWeek; startTime: string; endTime: string; breakMinutes: number }

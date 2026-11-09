@@ -1,5 +1,14 @@
 # Estado y pendientes
 
+**Panel según el lienzo, 9 de noviembre (contrato 0.27.0):** cuarta y última
+pantalla de Operación, en `/panel`, que es el inicio de Administración, RH,
+Supervisión y Auditoría, y la campana de avisos de la barra superior. Una
+empresa sin personal ve sus primeros pasos. El resumen de asistencia trae
+quienes más horas llevan (`mostHours`). Aprobados el backend (102 unitarias
+y 122 de integración), el contrato y 269 pruebas del portal; recorrida con
+sesiones reales en local, a 1440 y 390 px, sin errores. El menú Crear pasa
+al bloque 2 ([orden y pendientes](construir-el-portal.md)). Espera la PR.
+
 **Cierres según el lienzo, 8 de noviembre:** tercera pantalla de Operación.
 La última corrida de la semana con su avance, los acuses que filtran la
 lista, las pestañas de cerradas, bloqueadas (de las incidencias que bloquean)
