@@ -17,7 +17,7 @@ ambiente nunca pierde una función.
 | Bloque | Qué entra | Pantallas del lienzo | Pantalla anterior que se retira | Estado |
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
-| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38) e Incidencias (PR #39) integradas; la fase 6 del backend en la rama `feat/dias-de-la-semana`; siguen Cierres y Panel |
+| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres en la rama `feat/portal-cierres`; sigue Panel |
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Pendiente |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
@@ -90,7 +90,7 @@ los bloques 1 y 2.
 | `/` | La primera sección del rol: Asistencia para Administración, RH, Supervisión y Auditoría |
 | `/asistencia` | Asistencia; lo elegido va en la dirección: `semana`, `sede`, `filtro` (`alertas`, `extra`, `sin-entrada`, `en-turno`), `q`, `persona` y `ficha` (`marcajes`, `cierres`) |
 | `/incidencias` | Incidencias; en la dirección: `estado` (`resueltas`), `vista` (`tablero`), `q`, `tipo`, `sede`, `semana`, `mias`, `alta`, `bloquean` e `incidencia`, la que está abierta. Cierres y Asistencia llegan con `semana` e `incidencia` |
-| `/cierres` | Operación |
+| `/cierres` | Cierres; en la dirección: `semana`, `sede`, `pestana` (`bloqueadas`, `reabiertas`), `acuse` (`conformes`, `objecion`, `sin-acuse`) y `cierre`, el que está abierto: un enlace con `cierre` abre ese cierre aunque no esté en la página |
 | `/personal`, `/personal/horarios`, `/personal/importaciones` | Personal y horarios |
 | `/dispositivos`, `/dispositivos/tarjetas` | Dispositivos y tarjetas |
 | `/configuracion`, `/configuracion/sedes` | Configuración |
@@ -157,6 +157,19 @@ Diferencias deliberadas con el lienzo:
   incidencias.
 - **El historial de una resuelta** se arma con lo que guarda la incidencia:
   abierta, asignada, resuelta y, si hubo ajuste, semana recalculada.
+- **Cierres: sin cerrar personas elegidas.** El portal cierra sólo por
+  corrida, de toda la empresa o de una sede, y la corrida deja fuera a quien
+  tenga algo abierto. Así hay un solo camino para cerrar y no un tope de 500
+  personas por petición.
+- **Cierres: quién pidió la corrida** se muestra con su nombre, sin su rol.
+- **Cierres: bloqueadas** salen de las incidencias abiertas que bloquean el
+  cierre, agrupadas por persona. Un tramo sin salida aparece cuando una
+  corrida lo vuelve incidencia «Falta la marca que cierra».
+- **Cierres: nombres repetidos.** Dos bloqueadas que se llaman igual llevan
+  su sede; en las cerradas va el número de empleado junto al nombre.
+- **Cierres en Supervisión.** Supervisión sólo ve las corridas de su sede;
+  si la última fue de toda la empresa, el banner lo dice en lugar de «Sin
+  corridas».
 
 ## Verificar
 
@@ -167,5 +180,6 @@ docker run --rm --network none zenit-web-check pnpm test
 
 Las pruebas del marco están en `Portal.test.tsx` y `States.test.tsx`; las de
 Asistencia, en `Attendance.test.tsx` y `attendanceModel.test.ts`; las de
-Incidencias, en `Incidents.test.tsx`; el
+Incidencias, en `Incidents.test.tsx`; las de Cierres, en `Closures.test.tsx` y
+`closureModel.test.ts`; el
 contraste de los colores del lienzo, en `accessibility.test.ts`.

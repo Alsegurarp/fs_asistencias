@@ -1,5 +1,13 @@
 # Guía del portal web
 
+**Actualización del 8 de noviembre, Cierres:** tercera pantalla de Operación
+con el lienzo, en `/cierres`. La última corrida de la semana con su avance,
+los acuses (conformes, con objeción, sin acuse) que filtran la lista, las
+pestañas de cerradas, bloqueadas y reabiertas, y «Cerrar las pendientes», que
+pide una corrida para toda la empresa o una sede y la sigue mientras se
+puede seguir trabajando. El cierre de una persona muestra lo congelado, sus
+días trabajados y su acuse; Administración lo reabre con motivo.
+
 **Actualización del 8 de noviembre, días de la semana (contrato 0.26.0):**
 la semana calculada trae `days`, cada día con su tiempo trabajado, de
 descanso, ordinario y extra, del mismo reparto que da los totales, y el
@@ -475,73 +483,68 @@ backend real; estas pruebas usan respuestas simuladas.
 
 ## Cierre
 
-Implementado en `web/src/Closures.tsx`. La consulta usa una fecha de la semana
-y, opcionalmente, un empleado, con cursor. El API no filtra esta lista por
-sede: la sede sirve para filtrar la selección de empleados y para definir
-el alcance de una corrida. Se muestran todas las versiones, incluidas las
-reabiertas; el detalle conserva los totales de esa versión, sus reglas,
-huella, autor y acuse. Un autor nulo se identifica como cierre programado.
+Implementado en `web/src/Closures.tsx` y `web/src/ClosureSheet.tsx`, en
+`/cierres`. Abre la última semana terminada. La semana, el alcance (toda la
+empresa o una sede), la pestaña (`pestana`: `bloqueadas`, `reabiertas`), el
+acuse (`acuse`: `conformes`, `objecion`, `sin-acuse`) y el cierre abierto
+(`cierre`) viven en la dirección.
 
-Administrador y RH pueden cerrar; supervisor y auditor sólo consultan.
-Sólo el administrador puede reabrir, con motivo de 10 a 500 caracteres. Una
-selección vacía no se envía, para que nunca se interprete como cerrar toda la
-empresa. El cierre directo admite de 1 a 500 empleados; una sede es opcional.
-Los campos y el cierre del diálogo se deshabilitan durante la petición.
-Los errores conservan la selección y muestran la referencia de correlación.
+| Parte | Rutas |
+| --- | --- |
+| Conteos y acuses de la semana | `GET /week-closures/summary?week=&siteId=` |
+| Última corrida y su avance | `GET /week-closure-runs?week=`, `GET /week-closure-runs/{runId}` |
+| Cerradas y reabiertas | `GET /week-closures?week=&status=&siteId=&acknowledgement=`, con cursor |
+| Bloqueadas | `GET /incidents?week=&blocksClosure=true&status=open&siteId=`, agrupadas por persona |
+| Cierre de una persona | `GET /week-closures/{closureId}`; sus días, de `GET /employees/{employeeId}/attendance?week=` |
+| Reabrir | `POST /week-closures/{closureId}/reopen` |
 
-El resultado separa cierres vigentes y bloqueados. Cada incidencia ligada a
-un bloqueo abre su detalle con la semana correspondiente en Incidencias.
-Si el tramo procede de un ajuste sin marcaje original, puede no haber una
-incidencia ligada: el portal lo explica y no inventa una corrección.
+- **La corrida.** El banner muestra la última corrida de la semana y del
+  alcance: quién la pidió o si fue el cierre programado, cuántas cerró de
+  cuántas, cuántas quedaron bloqueadas y si el cierre automático está
+  activo. Sin corridas, dice cuántas semanas hay cerradas.
+- **Cerrar las pendientes** (Administración y RH) abre un diálogo con el
+  alcance, cuántas personas hay, cuántas se cerrarán y quiénes seguirán
+  bloqueadas y por qué. Pide `POST /week-closure-runs`; el portal ya no
+  cierra personas elegidas. Una semana que no termina deja el botón
+  deshabilitado con la fecha desde la que se puede.
+- **El seguimiento.** Mientras corre, la pantalla consulta la corrida cada
+  cinco segundos y se detiene en `done`, en `failed` o ante un error; un 429
+  la pausa con «Reanudar». Al terminar actualiza conteos, listas,
+  incidencias y Asistencia. Una fallida ofrece «Pedir otra con el mismo
+  alcance».
+- **Bloqueadas.** Salen de las incidencias abiertas que bloquean el cierre.
+  Un tramo sin salida bloquea desde que una corrida lo vuelve incidencia
+  «Falta la marca que cierra». Cada una lleva a su incidencia en
+  Incidencias, con la semana. Si dos bloqueadas se llaman igual, llevan su
+  sede; en las cerradas va el número de empleado junto al nombre.
+- **El cierre de una persona** muestra lo congelado (ordinarias, extra y
+  días trabajados), el acuse con la nota de una objeción, quién cerró, las
+  reglas y la huella. Una versión reabierta o un cierre anterior al contrato
+  0.26.0 dicen «—» en días trabajados.
+- **Reabrir** es de Administración, con motivo de 10 a 500 caracteres. Un 409
+  `closure_not_closed` quiere decir que otra persona ya la reabrió: la ficha
+  lo dice y vuelve a pedir el cierre.
+- **Supervisión** ve sólo las corridas de su sede: la de toda la empresa no
+  aparece y el banner lo explica; lo que cerró sí. Auditoría consulta.
 
-1. Elegir la semana y, opcionalmente, una sede.
-2. `POST /week-closures`. La respuesta separa `closed` y `blocked`.
-3. Para cada bloqueado, llevar a lo que falta: sus incidencias vienen en
-   `incidentIds`.
-4. Repetir el cierre: no duplica nada.
-
-Un 422 con el error `week_not_finished` quiere decir que la semana todavía no
-termina.
-
-### Toda la empresa: la corrida de cierre
-
-La pantalla lista las corridas de la semana, con origen, sede, estado y
-conteos. El detalle sigue las pendientes cada cinco segundos y se detiene
-al terminar, fallar o recibir un error; un error permite reintentar el
-seguimiento. Al terminar se actualizan cierres, incidencias y jornadas.
-Una corrida fallida permite solicitar otra con la misma semana y sede.
-El detalle muestra por páginas las personas bloqueadas, la causa y enlaces
-a sus incidencias. También permite revisar las incidencias de la semana y sede.
-El registro por persona sobrevive a una interrupción; un reintento de la misma
-corrida actualiza el motivo o retira a quien logra cerrar. Una corrida terminada
-conserva su detalle aunque otra cierre después a esas personas. Los conteos
-avanzan por tandas y pueden retrasarse respecto a la lista durante la ejecución.
-Las corridas antiguas sólo conservan conteos; la pantalla lo explica cuando
-no tienen detalle nominal registrado.
-
-La validación ejecutada y el guion de aceptación están en
+La validación del backend y el guion de aceptación están en
 [Validación de cierres](validacion-cierres.md).
 
-`POST /week-closures` responde en la misma petición y admite hasta 500
-personas. Para cerrar a toda la empresa conviene la corrida, que no tiene
-tope y no hace esperar a la pantalla:
-
-1. `POST /week-closure-runs` con la semana y, opcionalmente, una sede.
-   Responde 202 con la corrida en `queued`.
-2. Consultar `GET /week-closure-runs/{runId}` cada pocos segundos hasta `done`
-   o `failed`. Mientras corre, `closed` y `blocked` avanzan por tandas: sirven
-   para una barra de avance sobre `total`.
-3. Al terminar, mostrar cuántas se cerraron y cuántas no. Para ver cuáles
-   faltan: `GET /incidents?status=open&week=`.
+Reglas de las corridas que la pantalla respeta:
 
 - Mientras una corrida de esa semana y ese alcance no termina, pedirla otra
   vez devuelve la misma: el botón se puede oprimir dos veces sin daño.
 - `failed` no deshace nada: lo que alcanzó a cerrar sigue cerrado. Se pide
   otra.
-- `GET /week-closure-runs?week=` lista las corridas de una semana, también las
-  que abrió el cierre programado, con `origin` en `scheduled`.
-- Un cierre hecho por el sistema trae `closedBy` en nulo: mostrar «cierre
+- `closed` y `total` cuentan a todas las personas del alcance, también las
+  que ya estaban cerradas: una segunda corrida dice «15 cerradas de 35»
+  aunque sólo haya cerrado una más.
+- `GET /week-closure-runs?week=` lista de la más antigua a la más reciente,
+  también las que abrió el cierre programado, con `origin` en `scheduled`.
+- Un cierre hecho por el sistema trae `closedBy` en nulo: se muestra «Cierre
   programado» donde iría el nombre de quien cerró.
+- `POST /week-closures` cierra hasta 500 personas en la misma petición; el
+  portal no lo usa.
 
 ## Usuarios y roles
 

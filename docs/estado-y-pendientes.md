@@ -1,10 +1,19 @@
 # Estado y pendientes
 
+**Cierres según el lienzo, 8 de noviembre:** tercera pantalla de Operación.
+La última corrida de la semana con su avance, los acuses que filtran la
+lista, las pestañas de cerradas, bloqueadas (de las incidencias que bloquean)
+y reabiertas, «Cerrar las pendientes» como corrida de toda la empresa o de
+una sede, el cierre de una persona con sus días congelados y reabrir con
+motivo. Recorrida con sesiones reales en local, cerrando y reabriendo de
+verdad. Sigue Panel, la última del bloque 1
+([orden y pendientes](construir-el-portal.md)). Espera la PR.
+
 **Días de la semana, 8 de noviembre (contrato 0.26.0):** fase 6 del backend.
 La semana trae cada día con su tiempo ordinario y extra, el cierre lo
 congela y la asistencia de la empresa dice cuántos días llevan extra. La
 ficha de Asistencia muestra «8:00 +1:05» y la tabla «Extra 3 de 4 días».
-Siguen Cierres y Panel ([orden y pendientes](construir-el-portal.md)).
+Integrado con la PR #40 y desplegado el 8 de noviembre.
 
 **Incidencias según el lienzo, 8 de noviembre (contrato 0.25.0):**
 segunda pantalla de Operación. Lista y tablero, búsqueda y filtros en el

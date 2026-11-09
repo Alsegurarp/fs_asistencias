@@ -40,6 +40,12 @@ export const color = {
   /** Conteo de pendientes en la barra inferior del teléfono. */
   countBg: '#FFE3B8',
   countInk: '#7A3B00',
+  /** Franja de personas bloqueadas en Cierres y su borde. */
+  blockedBg: '#FFF6EA',
+  blockedLine: '#F6E2C4',
+  blockedPill: '#F0D3A8',
+  /** Tramo bloqueado en la barra de una corrida, sobre azul. */
+  runBlocked: '#FFB35C',
   /** Tramo de tiempo extra en las barras de horas. */
   overtime: '#D97A1E',
   gradientFrom: '#2C66D0',
@@ -61,6 +67,8 @@ export const gradient = {
   tile: 'linear-gradient(145deg, #EEF4FE 0%, #DCE7FC 100%)',
   /** Ícono destacado de las pantallas de estado y avatar. */
   badge: 'linear-gradient(145deg, #2C66D0 0%, #1C4A9C 100%)',
+  /** Tarjeta azul de una corrida de cierre y encabezado de un diálogo. */
+  banner: 'linear-gradient(115deg, #2C66D0 0%, #2459BE 45%, #1C4A9C 100%)',
   /** Encabezado de una ficha lateral. */
   sheet: 'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.04) 110px, rgba(255,255,255,0) 170px), linear-gradient(115deg, #2C66D0 0%, #2459BE 45%, #1C4A9C 100%)',
 } as const
@@ -72,6 +80,7 @@ export const shadow = {
   menu: '0 24px 60px rgba(13,38,92,0.28)',
   bottomNav: '0 -6px 20px rgba(31,79,168,0.08)',
   drawer: '-24px 0 48px rgba(13,38,92,0.18)',
+  banner: '0 14px 30px rgba(29,74,159,0.22)',
 } as const
 
 /** Tarjeta de vidrio del criterio de diseño; las tablas y fichas van en blanco sólido. */
