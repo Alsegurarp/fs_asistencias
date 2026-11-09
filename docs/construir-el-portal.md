@@ -18,8 +18,8 @@ ambiente nunca pierde una función.
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
 | 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana integrado (PR #42) |
-| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios integrado (PR #43); Importar en la rama `feat/portal-importar`; sigue Dispositivos y tarjetas |
-| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente |
+| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; sigue Dispositivos y tarjetas ([qué falta](#lo-que-sigue-dispositivos-y-tarjetas-y-empresa)) |
+| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente ([qué falta](#lo-que-sigue-dispositivos-y-tarjetas-y-empresa)) |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
 | 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pendiente |
@@ -37,6 +37,119 @@ El bloque 2 entra en tres PR: Personal y horarios (PAD-01, PAD-03, PAD-07,
 PAD-08, PAD-10, EST-07), Importar (PAD-04 a 06 y PAD-09) y Dispositivos y
 tarjetas (PAD-02, PAD-11, PAD-12), que trae el buscador (CTA-05) y el menú
 Crear (CTA-04) cuando ya existen las ventanas que abren.
+
+## Lo que sigue: Dispositivos y tarjetas, y Empresa
+
+Revisado el 9 de noviembre contra el lienzo y el contrato 0.29.0. Cada
+apartado dice qué pantallas entran, qué rutas ya existen, qué le falta al
+API y qué depende de una decisión o de algo externo. Lo que se necesita de
+Alexis está al final, en [Qué se necesita para probar y
+avanzar](#qué-se-necesita-para-probar-y-avanzar).
+
+### Bloque 2, última PR: Dispositivos y tarjetas
+
+Rama `feat/portal-dispositivos`. Retira `Devices.tsx`, las tarjetas de
+`Directory.tsx` (con lo que `Directory` queda sólo con sedes hasta el
+bloque 3) y sus pruebas.
+
+| Pantalla | Qué es | Rutas que ya existen |
+| --- | --- | --- |
+| PAD-02 Lectores | Lectores con sus cifras (activos, sin señal más de 24 h, revocados o reemplazados), modelo, fecha de activación, sede o persona, versión de la app, última señal y revocar. «Activar lector» abre el panel con terminal de sede o teléfono personal, la sede o la persona, el nombre y el código de un solo uso con su vencimiento | `GET /devices?mode=&status=&silent=&q=`, `GET /devices/summary`, `POST /devices/{id}/revocation`, `POST /device-enrollments` |
+| PAD-11 Tarjetas | Pestañas por estado (todas, activas, en inventario, perdidas o dañadas, revocadas, reemplazadas), quién la tiene y desde cuándo; el detalle con su historial, la última lectura, asignar y revocar como revocada, perdida o dañada | `GET /cards?status=&q=`, `GET /cards/summary`, `POST /cards/{id}/assignments`, `POST /cards/{id}/revocation` |
+| PAD-12 Registrar tarjeta | Etiqueta, huella y, si se quiere, asignarla en el mismo paso a una persona sin tarjeta | `POST /cards`, `POST /cards/{id}/assignments`, `GET /employees?withoutCard=true` |
+| CTA-05 Buscador | Personas, tarjetas y lectores desde la barra superior; Enter abre el primero y Esc cierra | `GET /employees?q=`, `GET /cards?q=`, `GET /devices?q=`, con pocos resultados de cada una |
+| CTA-04 Menú Crear | Dar de alta, crear horario, activar lector, registrar tarjeta y cerrar la semana, según el rol; cada opción abre su ventana sobre la página actual. «Invitar» llega con el bloque 3 y «Generar un reporte» con el bloque 4 | Las de cada ventana |
+
+Lo que le falta al API (contrato 0.30.0, en la misma PR):
+
+- **Detalle de una tarjeta.** El lienzo muestra quién la registró, su
+  historial de asignaciones y su última lectura con el lector. Hoy no hay
+  `GET /cards/{cardId}`: la lista sólo trae la asignación actual y la última.
+  Propuesta: `GET /cards/{cardId}` con `createdByName`, `assignments` (todas,
+  con desde y hasta) y `lastRead` (cuándo y en qué lector), con los mismos
+  roles que la lista.
+
+Diferencias con el lienzo que hay que confirmar:
+
+- **«Asignar a otra persona» una tarjeta que ya tuvo titular.** La regla
+  vigente dice que una tarjeta que ya tuvo titular no pasa a otra persona: se
+  revoca y se asigna otra del inventario. Propuesta: respetar la regla y que
+  el detalle ofrezca «Reponer con otra del inventario».
+- **«Tecnología: Cifrada».** El API no guarda la tecnología; `keyVersion`
+  sólo existe en la tarjeta real. Propuesta: no mostrar la columna hasta que
+  exista la tarjeta real.
+- **Registrar la huella desde el navegador.** El navegador no lee la
+  tarjeta: la huella se escribe a mano, como hoy. Sirve para la tarjeta
+  simulada. Con la tarjeta real, registrar desde la app o desde un lector
+  de escritorio es una decisión pendiente (ver abajo).
+
+Prueba en el entorno aislado: el simulador de lectores (`device-sim`)
+activa lectores, manda marcajes con tarjetas simuladas y deja un lector sin
+señal; no hace falta un teléfono.
+
+### Bloque 3: Empresa
+
+Dos PR: Configuración con sedes, comida y reglas (EMP-01, 02, 03, 07, 08) y
+Usuarios y roles con Mi perfil (EMP-04, 05, 06, CTA-01, TEL-11). Retira
+`TenantSettings`, `BreakPolicyChange`, `Users` y lo que queda de
+`Directory`.
+
+| Pantalla | Qué es | Rutas que ya existen |
+| --- | --- | --- |
+| EMP-01 Configuración | Nombre, zona horaria, inicio de semana y cierre automático; cifras de sedes, personas y lectores; política de comida y reglas; sedes con su zona en un mapa | `GET/PATCH /tenant`, `GET /sites`, `GET /rule-sets` |
+| EMP-07 Editar sede | Nombre, zona horaria, punto en el mapa (arrastrable), latitud, longitud, radio, activa | `GET/POST/PATCH /sites` |
+| EMP-02 y 08 Comida | Ver el cambio programado y cancelarlo; programar otro con motivo | `POST /tenant/break-policy-changes`, `…/{id}/cancellation` |
+| EMP-03 Reglas | Topes por año y reglas por día, de consulta | `GET /rule-sets` |
+| EMP-04 Usuarios | Cifras, pestañas por rol, estado, cuenta vinculada, expediente; el panel «Editar acceso» con rol, sedes de Supervisión, permiso de expediente, pedir contraseña nueva, soltar la liga y deshabilitar | `GET /users`, `GET /users/summary`, `PATCH /users/{id}`, `POST /users/{id}/password-change`, `POST /users/{id}/unlink`, `PUT /users/{id}/dossier-permission` |
+| EMP-05 Invitar | Nombre, correo, rol, sedes y permiso de expediente | `POST /users` |
+| EMP-06 Permisos por rol | Tabla de consulta | Ninguna: es texto fijo |
+| CTA-01 y TEL-11 Mi perfil | Datos de la cuenta y su seguridad | `GET /me`; contraseña y segundo factor en la consola de cuenta de Keycloak |
+
+Lo que le falta al API o al ambiente:
+
+- **Cifras por sede**: terminales y personas de cada sede en la tabla de
+  Configuración. Hoy se pueden sacar consultando sede por sede, lo que rompe
+  la regla 4. Propuesta: `people` y `devices` en cada sede de `GET /sites`.
+- **El correo de la invitación.** «Recibe un correo y entra con contraseña y
+  segundo factor» necesita SMTP en Keycloak, que sigue pendiente. Sin correo
+  la invitación queda creada y la persona entra con el enlace que se le
+  comparta por otro medio.
+- **El mapa.** Hace falta un proveedor de mapas. La política de seguridad
+  del portal sólo permite contenido propio; el mapa necesita permitir sus
+  mosaicos.
+
+### Qué se necesita para probar y avanzar
+
+Para empezar Dispositivos y tarjetas no hace falta nada más: se prueba con
+el entorno aislado y el simulador. Lo que sigue destraba el resto o lo
+lleva al ambiente publicado.
+
+**Para seguir con el desarrollo**
+
+| Qué | Para qué | Bloquea |
+| --- | --- | --- |
+| Decidir «Asignar a otra persona» (propuesta: respetar la regla vigente) | El detalle de una tarjeta | Dispositivos y tarjetas |
+| Decidir cómo se registra una tarjeta real: escribiendo la huella, leyéndola con la app o con un lector de escritorio | PAD-12 con tarjeta real | Sólo la tarjeta real; con la simulada se avanza |
+| Elegir el proveedor de mapas (propuesta: OpenStreetMap, sin llave ni costo, con su atribución) y aceptar abrir la política de seguridad a sus mosaicos | El mapa de sedes | Configuración; sin mapa se edita con latitud, longitud y radio |
+| Datos de SMTP para Keycloak: servidor, puerto, usuario, contraseña y remitente, entregados fuera del repositorio | Que la invitación llegue por correo y se recupere una contraseña olvidada | Invitar de punta a punta; la pantalla se puede construir antes |
+| Decidir el canal de «Ayuda y soporte» (correo, WhatsApp o página) | El menú de la cuenta | Nada más |
+
+**Para probar en el ambiente publicado**
+
+| Qué | Para qué |
+| --- | --- |
+| Confirmar si ya se desplegó `main` en <https://zenit.fastsolution.com.mx> o autorizar el despliegue (`deploy/servidor/desplegar.sh`, que no se ha corrido) | Desde Cierres (PR #41) hasta Importar (PR #44) no hay despliegue registrado. Importar trae la migración V018 |
+| Acceso por SSH al servidor, o que lo corra Gabriel | Desplegar y ver los registros |
+| Cuentas de prueba por rol en el ambiente publicado (Administración, RH, Supervisión, Auditoría), con su segundo factor | El recorrido del portal público por rol |
+| Un teléfono Android con la app instalada y NFC | Activar un lector de verdad y marcar con la tarjeta simulada |
+| Tarjetas reales (DESFire EV3) y su clave | Verificar la tarjeta real; hoy sólo se acepta la simulada |
+
+**Para cerrar cada PR**
+
+1. Abrir la PR con el enlace que dejo al subir la rama e integrarla con CI
+   en verde.
+2. Confirmar las diferencias con el lienzo anotadas en la PR (regla 6).
+3. Decir si se despliega: no se despliega sin esa confirmación.
 
 ## Reglas para no duplicar
 
@@ -132,11 +245,11 @@ Crear (CTA-04) cuando ya existen las ventanas que abren.
 | --- | --- |
 | Cierres de una persona más allá de seis semanas: `GET /week-closures` pide la semana, y la ficha consulta las seis últimas en seis llamadas fijas | Una ruta de cierres por persona, si se necesita más historia |
 | Historial completo de una incidencia: la incidencia trae su apertura, su asignación actual y su resolución; lo demás está en la bitácora, que sólo ven Administración y Auditoría | Bitácora en Reportes (bloque 4) |
-| Buscador (CTA-05) | Bloque 2 |
-| Menú Crear (CTA-04) | Bloque 2, con las ventanas de alta de persona, horario, tarjeta y lector |
+| Buscador (CTA-05) | Dispositivos y tarjetas |
+| Menú Crear (CTA-04) | Dispositivos y tarjetas, con las ventanas de alta de persona, horario, tarjeta y lector; «Invitar» con el bloque 3 y «Generar un reporte» con el 4 |
 | Mi perfil y seguridad de la cuenta en el menú (CTA-01) | Bloque 3 |
 | «En línea · datos de las…», «Instalar Zenit» y sin conexión | Bloque 6 |
-| «Ayuda y soporte» en el menú de la cuenta | Sin destino definido: falta decidir el canal de soporte |
+| «Ayuda y soporte» en el menú de la cuenta | Sin destino definido: falta decidir el canal de soporte ([qué se necesita](#qué-se-necesita-para-probar-y-avanzar)) |
 | Empresa suspendida (EST-02) | Falta que `/me` distinga la suspensión: hoy responde igual que una cuenta sin acceso (sin empresa ni roles) y el portal muestra EST-01 |
 | Pantallas de acceso con la marca (ACC-01 a 06) | Bloque 6 |
 

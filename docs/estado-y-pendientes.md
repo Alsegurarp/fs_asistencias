@@ -1,5 +1,13 @@
 # Estado y pendientes
 
+**Lo que sigue en el portal, 9 de noviembre:** el bloque 2 termina con
+Dispositivos y tarjetas, el buscador y el menú Crear; después va el bloque 3,
+Empresa. Qué pantallas entran, qué le falta al API (el detalle de una
+tarjeta y las cifras por sede) y qué se necesita de Alexis para probar y
+avanzar (decisiones, SMTP, mapa, despliegue, cuentas por rol, teléfono y
+tarjetas) está en
+[Lo que sigue](construir-el-portal.md#lo-que-sigue-dispositivos-y-tarjetas-y-empresa).
+
 **Importar CSV según el lienzo, 9 de noviembre (contrato 0.29.0):** segunda
 PR del Padrón. Importaciones con su historial y el modal de tres pasos:
 subir, revisar sin cambiar nada y aplicar las filas listas; aplicar una
@@ -7,8 +15,8 @@ revisión del historial eligiendo otra vez el mismo archivo; descargar los
 errores. Cada importación dice altas, con cambios y sin cambios. Aprobados
 el backend (unitarias y de integración), el contrato y 285 pruebas del
 portal; recorrida con sesiones reales en local, a 1440 y 390 px, sin
-problemas. Sigue Dispositivos y tarjetas
-([orden y pendientes](construir-el-portal.md)). Espera la PR.
+problemas. Integrado con la PR #44 (`main` en `8a52b0c`), sin despliegue
+registrado.
 
 **Personal y horarios según el lienzo, 9 de noviembre (contrato 0.28.0):**
 primera pantalla del Padrón (bloque 2). Personas con filtros y búsqueda en el
