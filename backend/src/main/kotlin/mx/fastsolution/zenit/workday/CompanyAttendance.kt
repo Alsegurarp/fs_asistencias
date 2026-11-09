@@ -45,6 +45,9 @@ data class AttendanceWeekRowView(
     val openIncidents: List<IncidentRef>,
     val closure: ClosureRef?,
     val today: TodayView?,
+    /** Días con tiempo trabajado y días con tiempo extra; nulos en un cierre anterior a 0.26.0. */
+    val workedDays: Int?,
+    val overtimeDays: Int?,
 )
 
 data class AttendanceWeekListView(val weekStart: String, val timeZone: String, val items: List<AttendanceWeekRowView>, val nextCursor: String?)
@@ -90,6 +93,8 @@ data class FrozenWeek(
     val ruleSet: RuleSetRef,
     val totals: Totals,
     val alerts: String,
+    /** Los días que congeló, como texto; nulo si el cierre es anterior a 0.26.0. */
+    val days: String?,
 )
 
 /** La semana de una persona ya resuelta: congelada o calculada al momento. */
@@ -103,6 +108,8 @@ data class PersonWeek(
     val today: TodayView?,
     /** Tramos sin cerrar que ya no son el turno en curso: falta su salida. */
     val staleOpenSegments: Int,
+    /** Los días de la semana; nulos si el cierre no los guardó. */
+    val days: List<DayTotals>?,
 ) {
     val needsAttention: Boolean
         get() = openIncidents.isNotEmpty() || staleOpenSegments > 0 ||
@@ -111,6 +118,7 @@ data class PersonWeek(
     fun view() = AttendanceWeekRowView(
         person.id.toString(), person.externalId, person.displayName, person.siteId?.toString(), person.scheduleId?.toString(),
         ruleSet, totals, alerts, openIncidents, closure, today,
+        days?.count { it.workedMinutes > 0 }, days?.count { it.overtimeMinutes > 0 },
     )
 }
 
@@ -199,7 +207,8 @@ class CompanyAttendanceRepository(private val dsl: DSLContext) {
     fun frozen(tenantId: UUID, weekStart: LocalDate, ids: List<UUID>): Map<UUID, FrozenWeek> =
         dsl.fetch(
             "select distinct on (employee_id) employee_id, id, version, status, rule_set_id, rule_set_version, worked_minutes, " +
-                "break_minutes, ordinary_minutes, overtime_minutes, cast(snapshot -> 'alerts' as text) as alerts from week_closure " +
+                "break_minutes, ordinary_minutes, overtime_minutes, cast(snapshot -> 'alerts' as text) as alerts, " +
+                "cast(snapshot -> 'days' as text) as days from week_closure " +
                 "where tenant_id = ? and week_start = cast(? as date) and employee_id = any(?) " +
                 "order by employee_id, version desc",
             tenantId, weekStart.toString(), array(ids),
@@ -212,6 +221,7 @@ class CompanyAttendanceRepository(private val dsl: DSLContext) {
                     it.get("ordinary_minutes", Int::class.java), it.get("overtime_minutes", Int::class.java),
                 ),
                 it.get("alerts", String::class.java),
+                it.get("days", String::class.java),
             )
         }
 
@@ -442,7 +452,7 @@ class CompanyAttendanceService(
             val reference = closure?.let { ClosureRef(it.id.toString(), it.version, it.status) }
             if (closure != null && closure.status == "closed") {
                 // Una semana cerrada ya terminó: no hay turno en curso ni tramos abiertos.
-                return@map PersonWeek(person, closure.ruleSet, closure.totals, alerts(closure.alerts), open, reference, null, 0)
+                return@map PersonWeek(person, closure.ruleSet, closure.totals, alerts(closure.alerts), open, reference, null, 0, days(closure.days))
             }
             val personMarks = marks[person.id].orEmpty()
             val calculation = weeks.calculate(personMarks, adjustments[person.id].orEmpty(), breakPolicy!!, weekStart, zone, ruleSet!!)
@@ -466,7 +476,7 @@ class CompanyAttendanceService(
             }
             PersonWeek(
                 person, RuleSetRef(ruleSet.id.toString(), ruleSet.version), calculation.totals, calculation.alerts,
-                open, reference, todayView, stale,
+                open, reference, todayView, stale, calculation.days,
             )
         }
     }
@@ -477,6 +487,19 @@ class CompanyAttendanceService(
         "overtime" -> week.totals.overtimeMinutes > 0
         "no_entry_today" -> week.today?.state == "no_entry"
         else -> week.today?.state in ON_SHIFT
+    }
+
+    /** Los días que congeló un cierre; nulos si es anterior a 0.26.0. */
+    private fun days(raw: String?): List<DayTotals>? {
+        if (raw.isNullOrBlank() || raw == "null") return null
+        val node = json.readTree(raw)
+        return (0 until node.size()).map { index ->
+            val day = node.get(index)
+            DayTotals(
+                day.get("date").asString(), day.get("workedMinutes").asInt(), day.get("breakMinutes").asInt(),
+                day.get("ordinaryMinutes").asInt(), day.get("overtimeMinutes").asInt(),
+            )
+        }
     }
 
     /** Las alertas que congeló un cierre, tal como las guardó. */

@@ -6,6 +6,24 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 8 de noviembre de 2026 — Días de la semana en el cálculo y el cierre
+
+Rama `feat/dias-de-la-semana` desde `main` en `a48f7ea` (PR #39 integrada y
+desplegada). Fase 6 del backend de la maqueta, decidida antes del piloto: el
+cálculo ya repartía cada día en ordinario y extra y lo descartaba; ahora
+`WeekCalculator` lo entrega en `days`, `WeekCore` lo congela en el cierre,
+la semana de una persona lo entrega (calculada o congelada) y la asistencia
+de la empresa dice cuántos días trabajó cada persona y cuántos llevan extra.
+Un cierre anterior no guardó los días: se entregan nulos y nada se recalcula.
+Contrato 0.26.0. El portal muestra el reparto por día en la ficha de
+Asistencia, «Extra N de M días» en la tabla y el aviso del lienzo.
+
+Pruebas: unitarias del cálculo (la suma de los días es la semana, el tope
+semanal pasa días enteros a extra, un turno de noche se queda en su día) y de
+integración (los días suman los totales, se congelan al cerrar y un cierre
+sin días responde nulos), suite completa del backend y 258 del portal. Sin
+despliegue: espera la PR.
+
 ## 8 de noviembre de 2026 — Incidencias según el lienzo
 
 Rama `feat/portal-incidencias` desde `main` en `9327414` (PR #38 integrada y

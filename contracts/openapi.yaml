@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.25.0
+  version: 0.26.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -2154,6 +2154,10 @@ paths:
         entrega tal como se congeló, y `closure` dice cuál cierre es. En los
         dos casos `openIncidentIds` trae las incidencias abiertas de ahora:
         un marcaje que llega después del cierre deja una.
+
+        `days` trae cada día con su tiempo trabajado, ordinario y extra, del
+        mismo reparto que da `totals`. Una semana cerrada antes de 0.26.0 no
+        los guardó: ahí vale `null`.
       x-roles: [admin_empresa, rh, supervisor, auditor]
       parameters:
         - $ref: "#/components/parameters/Week"
@@ -2186,6 +2190,12 @@ paths:
                   ordinaryMinutes: 480
                   overtimeMinutes: 0
                 alerts: []
+                days:
+                  - date: "2026-10-05"
+                    workedMinutes: 480
+                    breakMinutes: 0
+                    ordinaryMinutes: 480
+                    overtimeMinutes: 0
                 openIncidentIds: []
                 closure: null
         "401":
@@ -2280,6 +2290,8 @@ paths:
                         message: La semana tiene 190 minutos extraordinarios por límites diarios o semanales.
                     openIncidents: []
                     closure: null
+                    workedDays: 5
+                    overtimeDays: 2
                     today:
                       state: on_shift
                       since: "2026-11-06T13:58:00Z"
@@ -3380,6 +3392,12 @@ paths:
                   ordinaryMinutes: 480
                   overtimeMinutes: 0
                 alerts: []
+                days:
+                  - date: "2026-10-05"
+                    workedMinutes: 480
+                    breakMinutes: 0
+                    ordinaryMinutes: 480
+                    overtimeMinutes: 0
                 openIncidentIds: [6e8a0c2e-4b6d-4f8a-8c0e-2b4d6f8a0c2e]
                 closure: null
         "401":
@@ -7011,6 +7029,30 @@ components:
         overtimeMinutes:
           type: integer
           description: Tiempo extraordinario por exceso diario según clasificación diurna/nocturna/mixta y por exceso semanal, sin contar dos veces los mismos minutos.
+    DayTotals:
+      type: object
+      additionalProperties: false
+      required: [date, workedMinutes, breakMinutes, ordinaryMinutes, overtimeMinutes]
+      description: >-
+        Un día de la semana: la fecha en que empezó la jornada, en la zona
+        horaria de la empresa, con lo que sumaron sus tramos. Un turno que
+        cruza la medianoche cuenta en el día en que empezó. Lo ordinario y lo
+        extraordinario salen del mismo reparto que `totals`: la suma de los
+        días, campo por campo, es la semana. Sólo vienen los días con algún
+        tramo, aunque sea abierto o un descanso.
+      properties:
+        date:
+          type: string
+          format: date
+        workedMinutes:
+          type: integer
+        breakMinutes:
+          type: integer
+        ordinaryMinutes:
+          type: integer
+        overtimeMinutes:
+          type: integer
+          description: Extraordinario de ese día, por su máximo diario o porque ya se llenó el tope semanal.
     WorkSegment:
       type: object
       required: [id, kind, startAt, endAt, minutes, startEventId, endEventId, version]
@@ -7063,7 +7105,7 @@ components:
           type: string
     WeekAttendance:
       type: object
-      required: [employeeId, weekStart, timeZone, ruleSet, segments, totals, alerts, openIncidentIds, closure]
+      required: [employeeId, weekStart, timeZone, ruleSet, segments, totals, alerts, days, openIncidentIds, closure]
       properties:
         employeeId:
           type: string
@@ -7085,6 +7127,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AttendanceAlert"
+        days:
+          description: Nulo en una semana cerrada antes del contrato 0.26.0, que no los guardó.
+          oneOf:
+            - type: array
+              items:
+                $ref: "#/components/schemas/DayTotals"
+            - type: "null"
         openIncidentIds:
           type: array
           items:
@@ -7132,7 +7181,7 @@ components:
     AttendanceWeekRow:
       type: object
       additionalProperties: false
-      required: [employeeId, externalId, displayName, siteId, scheduleId, ruleSet, totals, alerts, openIncidents, closure, today]
+      required: [employeeId, externalId, displayName, siteId, scheduleId, ruleSet, totals, alerts, openIncidents, closure, today, workedDays, overtimeDays]
       properties:
         employeeId:
           type: string
@@ -7187,6 +7236,14 @@ components:
           oneOf:
             - $ref: "#/components/schemas/AttendanceToday"
             - type: "null"
+        workedDays:
+          type: [integer, "null"]
+          description: Días de la semana con tiempo trabajado; nulo en un cierre anterior a 0.26.0.
+        overtimeDays:
+          type: [integer, "null"]
+          description: >-
+            Días con tiempo extraordinario, el número que limita
+            `overtimeMaxDays` de las reglas; nulo en un cierre anterior a 0.26.0.
     AttendanceWeekList:
       type: object
       additionalProperties: false

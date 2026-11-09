@@ -2,6 +2,7 @@ package mx.fastsolution.zenit
 
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Tag
+import java.sql.DriverManager
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.test.Test
@@ -77,7 +78,7 @@ class CompanyAttendanceIT : WorkdayTestBase() {
             assertEquals(listOf(null), rows.at<List<Any?>>("$row.today"))
         }
         val overtime = week(c, long.employeeId).at<Int>("totals.overtimeMinutes")
-        assertTrue(overtime > 0, "doce horas en un día pasan el máximo ordinario")
+        assertTrue(overtime > 0, "catorce horas en un día pasan el máximo ordinario")
         assertEquals(listOf(long.employeeId), ids(weeks(c, "?week=$yesterday&attention=overtime")))
         assertEquals(listOf(regular.employeeId, long.employeeId), ids(weeks(c, "?week=$yesterday&siteId=$siteId")))
 
@@ -102,6 +103,52 @@ class CompanyAttendanceIT : WorkdayTestBase() {
         // «Hoy» sólo existe en la semana de hoy.
         assertProblem(422, "validation", weeks(c, "?week=$yesterday&attention=no_entry_today"))
         assertProblem(422, "validation", weeks(c, "?week=$yesterday&attention=on_shift"))
+    }
+
+    @Test
+    fun `each day carries its ordinary and overtime minutes, adds up to the week and is frozen with the closure`() {
+        val c = companyWithFinishedWeek()
+        val long = staffed(c)
+        val regular = staffed(c)
+        shift(long, 40, 26)
+        shift(regular, 40, 32)
+        fun sums(reply: Reply): List<Int> {
+            val days = reply.at<List<Map<String, Number>>>("days")
+            return listOf("workedMinutes", "breakMinutes", "ordinaryMinutes", "overtimeMinutes").map { field -> days.sumOf { it.getValue(field).toInt() } }
+        }
+        fun totals(reply: Reply) = listOf("workedMinutes", "breakMinutes", "ordinaryMinutes", "overtimeMinutes").map { reply.at<Int>("totals.$it") }
+        fun counts(who: Staffed): List<Int?> {
+            val rows = weeks(c, "?week=$yesterday")
+            val row = "items[?(@.employeeId=='${who.employeeId}')]"
+            return listOf(rows.at<List<Int?>>("$row.workedDays").single(), rows.at<List<Int?>>("$row.overtimeDays").single())
+        }
+
+        val open = week(c, long.employeeId)
+        assertEquals(totals(open), sums(open))
+        val days = open.at<List<Map<String, Any>>>("days")
+        assertEquals(1, days.size)
+        assertTrue((days.single()["overtimeMinutes"] as Number).toInt() > 0, "catorce horas en un día pasan el máximo ordinario")
+        assertEquals(listOf<Int?>(1, 1), counts(long))
+        assertEquals(listOf<Int?>(1, 0), counts(regular))
+        assertEquals(totals(week(c, regular.employeeId)), sums(week(c, regular.employeeId)))
+
+        // Al cerrar, los días quedan congelados con lo demás.
+        val closureId = closureOf(close(c, listOf(long.employeeId)), long.employeeId)["id"] as String
+        val frozen = week(c, long.employeeId)
+        assertEquals("closed", frozen.at("closure.status"))
+        assertEquals(days, frozen.at<List<Map<String, Any>>>("days"))
+        assertEquals(listOf<Int?>(1, 1), counts(long))
+
+        // Un cierre anterior a 0.26.0 no guardó los días: la semana y la fila lo dicen con nulos.
+        DriverManager.getConnection(databaseUrl, "zenit_migrator", secret("db_migrator_password")).use { db ->
+            db.prepareStatement("update week_closure set snapshot = (snapshot::jsonb - 'days')::json where id = cast(? as uuid)").use {
+                it.setString(1, closureId)
+                assertEquals(1, it.executeUpdate())
+            }
+        }
+        assertNull(week(c, long.employeeId).at<Any?>("days"))
+        assertEquals(listOf<Int?>(null, null), counts(long))
+        assertEquals(totals(open), totals(week(c, long.employeeId)))
     }
 
     @Test

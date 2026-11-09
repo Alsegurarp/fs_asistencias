@@ -3,7 +3,7 @@
 El portal sigue el [lienzo aprobado](https://claude.ai/artifact/6nguqVzZ7N9rtHX2LDScvq)
 el 7 de noviembre: 81 pantallas con código por sección (ACC, CTA, OPE, PAD,
 EMP, REP, EST, TEL y CON). El backend que piden ya está en `main` y en el
-ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia lo sube a 0.24.0 y la de Incidencias a 0.25.0). Este documento dice en qué orden se
+ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia lo sube a 0.24.0, la de Incidencias a 0.25.0 y los días de la semana a 0.26.0). Este documento dice en qué orden se
 construye, cómo está armado el marco y qué reglas evitan que dos personas
 hagan lo mismo.
 
@@ -17,7 +17,7 @@ ambiente nunca pierde una función.
 | Bloque | Qué entra | Pantallas del lienzo | Pantalla anterior que se retira | Estado |
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
-| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia integrada (PR #38); Incidencias en la rama `feat/portal-incidencias`; siguen la fase 6 del backend, Cierres y Panel |
+| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38) e Incidencias (PR #39) integradas; la fase 6 del backend en la rama `feat/dias-de-la-semana`; siguen Cierres y Panel |
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Pendiente |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
@@ -118,7 +118,6 @@ los bloques 1 y 2.
 | Falta | Llega con |
 | --- | --- |
 | Panel (OPE-01): mientras no exista, el inicio es la primera sección del rol y los estados dicen «Ir al inicio» | Bloque 1 |
-| Tiempo extra de cada día en la ficha de Asistencia («8:00 +1:05»): la semana calculada sólo trae los totales de la semana; el cálculo del servidor sí lo tiene por día. La ficha muestra el tiempo trabajado de cada día | Fase 6 del backend, decidida antes del piloto; va antes de Cierres |
 | Cierres de una persona más allá de seis semanas: `GET /week-closures` pide la semana, y la ficha consulta las seis últimas en seis llamadas fijas | Una ruta de cierres por persona, si se necesita más historia |
 | Avisos de la campana (CTA-03) | Bloque 1 |
 | Historial completo de una incidencia: la incidencia trae su apertura, su asignación actual y su resolución; lo demás está en la bitácora, que sólo ven Administración y Auditoría | Bitácora en Reportes (bloque 4) |
@@ -142,10 +141,11 @@ Diferencias deliberadas con el lienzo:
   T-0031». El marcaje no guarda con qué tarjeta se hizo y Supervisión no lee
   los lectores: la ficha dice «Terminal de *sede*» o «Teléfono personal», sin
   tarjeta.
-- **Atención en Asistencia.** El lienzo muestra «Extra 3 de 4 días»; ese
-  conteo por día no viene del servidor. La columna muestra lo que sí viene:
-  «Tiempo extra», los topes rebasados, el tramo sin salida que ya no es el
-  turno de hoy y cada incidencia abierta, que abre Incidencias en su semana.
+- **Atención en Asistencia.** Además de «Extra 3 de 4 días», como en el
+  lienzo, la columna muestra los topes rebasados, el tramo sin salida que ya
+  no es el turno de hoy y cada incidencia abierta, que abre Incidencias. Una
+  semana cerrada antes del contrato 0.26.0 no guardó sus días: ahí dice
+  «Tiempo extra» y la ficha muestra lo trabajado de cada día.
 - **Días sin marcas.** Un día con horario que ya pasó y no tiene marcas dice
   «Sin marcas · programado …»; el lienzo no tiene ese caso.
 - **Incidencias: semana elegida.** Cuando se llega desde Cierres con una

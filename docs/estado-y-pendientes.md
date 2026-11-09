@@ -1,12 +1,19 @@
 # Estado y pendientes
 
+**Días de la semana, 8 de noviembre (contrato 0.26.0):** fase 6 del backend.
+La semana trae cada día con su tiempo ordinario y extra, el cierre lo
+congela y la asistencia de la empresa dice cuántos días llevan extra. La
+ficha de Asistencia muestra «8:00 +1:05» y la tabla «Extra 3 de 4 días».
+Siguen Cierres y Panel ([orden y pendientes](construir-el-portal.md)).
+
 **Incidencias según el lienzo, 8 de noviembre (contrato 0.25.0):**
 segunda pantalla de Operación. Lista y tablero, búsqueda y filtros en el
 servidor, detalle con las marcas del día para asignar y resolver, resueltas
 con su historial, teléfono y el conteo de abiertas en el menú. Recorrida con
 sesiones reales en local, resolviendo de verdad. Siguen la fase 6 del backend
 (el extra de cada día, decidida antes del piloto), Cierres y Panel
-([orden y pendientes](construir-el-portal.md)).
+([orden y pendientes](construir-el-portal.md)). Integrado con la PR #39 y
+desplegado el 8 de noviembre.
 
 **Asistencia según el lienzo, 8 de noviembre (contrato 0.24.0):** primera
 pantalla de Operación. La semana de cada persona con ordinarias y extra contra

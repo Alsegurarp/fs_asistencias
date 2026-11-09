@@ -31,20 +31,25 @@ const row = (employeeId: string, displayName: string, externalId: string, siteId
   employeeId, displayName, externalId, siteId, scheduleId, ruleSet: { id: 'r', version: 2 }, totals: totals(1920), alerts: [], openIncidents: [], closure: null, today: null, ...extra,
 })
 const ana = row('e1', 'Ana Torres', '0187', 's2', 'h1', { totals: totals(1920, 190), alerts: [{ code: 'weekly_overtime', severity: 'info', message: 'La semana tiene 190 minutos extraordinarios.' }],
-  today: { state: 'on_shift', since: '2026-11-06T13:58:00Z', lastMarkAt: '2026-11-06T13:58:00Z' } })
+  today: { state: 'on_shift', since: '2026-11-06T13:58:00Z', lastMarkAt: '2026-11-06T13:58:00Z' }, workedDays: 5, overtimeDays: 3 })
 const luis = row('e2', 'Luis Hernández', '0114', 's1', 'h2', { totals: totals(1440), alerts: [{ code: 'open_segment', severity: 'warning', message: 'Falta el marcaje que cierra un tramo.' }],
   openIncidents: [{ id: 'i1', type: 'missing_pair' }], today: { state: 'off_shift', since: null, lastMarkAt: '2026-11-06T15:00:00Z' } })
 const paola = row('e4', 'Paola Ruiz', '0211', 's1', 'h3', { totals: totals(1915), openIncidents: [{ id: 'i2', type: 'foreign_site' }], today: { state: 'no_entry', since: null, lastMarkAt: null } })
 const later = row('e5', '=Marta Ríos', '0300', 's1', 'h2', { today: { state: 'no_entry', since: null, lastMarkAt: null } })
 const summary = { date: '2026-11-06', weekStart: '2026-11-02', timeZone: 'America/Mexico_City', siteId: null, people: 42,
   day: { marked: 38, attendanceEvents: 81, onShift: 34, noEntry: 4, foreignSite: 1 }, week: { ordinaryMinutes: 71160, overtimeMinutes: 405, withOvertime: 3, withAttention: 4, missingExit: 3 } }
-const rule = { id: 'r', version: 2, validFrom: '2026-01-01', validTo: '2026-12-31', weeklyOrdinaryMaxMinutes: 2880, parameters: { weeklyOvertimeMaxMinutes: '540' } }
+const rule = { id: 'r', version: 2, validFrom: '2026-01-01', validTo: '2026-12-31', weeklyOrdinaryMaxMinutes: 2880, parameters: { weeklyOvertimeMaxMinutes: '540', overtimeMaxDays: '4' } }
 const anaWeek = { employeeId: 'e1', weekStart: '2026-11-02', timeZone: 'America/Mexico_City', ruleSet: { id: 'r', version: 2 }, openIncidentIds: [], closure: null, totals: totals(1920, 190),
   alerts: [{ code: 'weekly_overtime', severity: 'info', message: 'Extra de la semana.' }, { code: 'open_segment', severity: 'warning', message: 'Falta el marcaje que cierra un tramo.' }],
   segments: [
     { id: 'a', kind: 'work', startAt: '2026-11-02T14:00:00Z', endAt: '2026-11-02T22:00:00Z', minutes: 480 },
     { id: 'b', kind: 'work', startAt: '2026-11-03T13:57:00Z', endAt: '2026-11-03T23:02:00Z', minutes: 545 },
     { id: 'c', kind: 'work', startAt: '2026-11-06T13:58:00Z', endAt: null, minutes: 0 },
+  ],
+  days: [
+    { date: '2026-11-02', workedMinutes: 480, breakMinutes: 0, ordinaryMinutes: 480, overtimeMinutes: 0 },
+    { date: '2026-11-03', workedMinutes: 545, breakMinutes: 0, ordinaryMinutes: 480, overtimeMinutes: 65 },
+    { date: '2026-11-06', workedMinutes: 0, breakMinutes: 0, ordinaryMinutes: 0, overtimeMinutes: 0 },
   ] }
 const mark = (id: string, type: string, observedAt: string, extra: object) => ({ id, employeeId: 'e1', siteId: 's2', deviceMode: 'terminal', type, outcome: 'accepted', observedAt,
   receivedAt: observedAt, delaySeconds: 0, locationVerdict: 'inside', accuracyMeters: 12, incidentIds: [], payloadHash: 'x', ...extra })
@@ -122,7 +127,7 @@ it('muestra la semana de cada persona como la calcula el servidor', async () => 
   expect(text()).toContain('2 – 8 nov 2026')
   expect(container.querySelector('h2')?.textContent).toBe('42 personas · lunes a jueves completos, viernes en curso')
   expect(cells()).toEqual([
-    ['Ana Torres 0187', 'Bodega Norte', 'Matutino 6 días', '32:00 / 48', '3:10 / 9', 'En turno 07:58', 'Tiempo extra'],
+    ['Ana Torres 0187', 'Bodega Norte', 'Matutino 6 días', '32:00 / 48', '3:10 / 9', 'En turno 07:58', 'Extra 3 de 4 días'],
     ['Luis Hernández 0114', 'Matriz Centro', 'Oficina L–V', '24:00 / 48', '0:00', 'Salió 09:00', 'Tramo sin salidaFalta un marcaje'],
     ['Paola Ruiz 0211', 'Matriz Centro', 'Mixto', '31:55 / 48', '0:00', 'Entra 14:00', 'Marcó en otra sede'],
   ])
@@ -191,13 +196,16 @@ it('abre la ficha con la semana día por día, sus marcajes y sus cierres', asyn
   expect(sheet.textContent).toContain('0187 · Bodega Norte · L–S 08:00–16:00')
   expect(sheet.textContent).toContain('32:00Ordinarias / 48 h3:10Extra / 9 h0Incidencias')
   expect([...sheet.querySelectorAll('li')].map(li => li.textContent)).toEqual([
-    'Lun, 2 nov08:00 – 16:008:00', 'Mar, 3 nov07:57 – 17:029:05', 'Mié, 4 novSin marcas · programado 08:00 – 16:00',
+    'Lun, 2 nov08:00 – 16:008:00', 'Mar, 3 nov07:57 – 17:028:00 +1:05', 'Mié, 4 novSin marcas · programado 08:00 – 16:00',
     'Jue, 5 novSin marcas · programado 08:00 – 16:00', 'Vie, 6 nov07:58 – en turnoAbierto', 'Sáb, 7 novProgramado 08:00 – 16:00',
   ])
   // El tramo del turno en curso no es un aviso.
   expect(sheet.textContent).not.toContain('Falta el marcaje')
   expect(sheet.textContent).toContain('Evidencia de hoy: entrada 07:58 · Terminal de Bodega Norte · dentro de la sede · precisión 12 m')
   expect(sheet.textContent).toContain('Calculada con reglas laborales 2026, versión 2 · semana sin cierre')
+  // El reparto de cada día es del servidor: un día con extra cuenta para el máximo de días de la ley.
+  expect(sheet.textContent).toContain('Aviso: tiempo extra en 1 de los 4 días que permite la ley por semana.')
+  expect(sheet.textContent).not.toContain('se cerró antes de que el cierre guardara')
 
   await click('Marcajes')
   expect(location).toContain('ficha=marcajes')
@@ -263,7 +271,7 @@ it('exporta la vista completa a CSV sin abrir fórmulas en la hoja de cálculo',
   // Con BOM, para que Excel lea los acentos.
   expect([...new Uint8Array(await blob!.arrayBuffer()).slice(0, 3)]).toEqual([0xEF, 0xBB, 0xBF])
   const content = await blob!.text()
-  expect(content.split('\r\n').slice(0, 2)).toEqual(['Persona,Número,Sede,Horario,Ordinarias,Extra,Hoy,Atención', 'Ana Torres,0187,Bodega Norte,Matutino 6 días,32:00,3:10,En turno 07:58,Tiempo extra'])
+  expect(content.split('\r\n').slice(0, 2)).toEqual(['Persona,Número,Sede,Horario,Ordinarias,Extra,Hoy,Atención', 'Ana Torres,0187,Bodega Norte,Matutino 6 días,32:00,3:10,En turno 07:58,Extra 3 de 4 días'])
   expect(content).toContain("'=Marta Ríos,0300")
   expect(download).toHaveBeenCalledOnce()
 })

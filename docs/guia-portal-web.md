@@ -1,5 +1,14 @@
 # Guía del portal web
 
+**Actualización del 8 de noviembre, días de la semana (contrato 0.26.0):**
+la semana calculada trae `days`, cada día con su tiempo trabajado, de
+descanso, ordinario y extra, del mismo reparto que da los totales, y el
+cierre los congela. Cada fila de `GET /attendance/weeks` dice en
+`workedDays` y `overtimeDays` cuántos días trabajó y cuántos llevan extra.
+Con eso la ficha de Asistencia muestra «8:00 +1:05» y la tabla «Extra 3 de 4
+días», con el máximo de días de las reglas (`overtimeMaxDays`). Una semana
+cerrada antes de 0.26.0 los trae nulos.
+
 **Actualización del 8 de noviembre, Incidencias:** segunda pantalla de
 Operación con el lienzo, en `/incidencias`. Abiertas y resueltas en lista o
 tablero (sin asignar, asignadas y resueltas esta semana); búsqueda por nombre
@@ -342,7 +351,7 @@ Notas:
 
 | Pantalla | Rutas |
 | --- | --- |
-| Asistencia: tabla, filtros y conteos (búsqueda desde 0.24.0) | `GET /attendance/weeks?week=&siteId=&attention=&q=`, `GET /attendance/summary?date=&siteId=`, `GET /rule-sets?effectiveOn=` |
+| Asistencia: tabla, filtros y conteos (búsqueda desde 0.24.0; `workedDays` y `overtimeDays` desde 0.26.0) | `GET /attendance/weeks?week=&siteId=&attention=&q=`, `GET /attendance/summary?date=&siteId=`, `GET /rule-sets?effectiveOn=` |
 | Asistencia: ficha de una persona | `GET /employees/{employeeId}/attendance?week=`, `GET /attendance-events?employeeId=&from=&to=`, `GET /week-closures?week=&employeeId=` (seis semanas) |
 | Marcajes | `GET /attendance-events` |
 | Semana de una persona | `GET /employees/{employeeId}/attendance?week=` |
@@ -379,6 +388,11 @@ La respuesta de la semana ya viene calculada. El portal la dibuja; no suma.
 - `segments`: tramos de trabajo y de descanso, con inicio, fin y minutos. Uno
   con `endAt` nulo está abierto: mostrarlo como «sin salida».
 - `totals`: minutos trabajados, de descanso, ordinarios y extraordinarios.
+- `days` (desde 0.26.0): cada día con algún tramo, con sus minutos
+  trabajados, de descanso, ordinarios y extraordinarios. Un turno que cruza
+  la medianoche cuenta en el día en que empezó. La suma de los días es
+  `totals`: el portal no reparte nada. Nulo en una semana cerrada antes de
+  0.26.0, que no lo guardó.
 - `alerts`: avisos con gravedad `info`, `warning` o `critical`. Mostrar su
   `message`. Pueden aparecer códigos nuevos.
 - `openIncidentIds`: lo que falta revisar de esa semana.
