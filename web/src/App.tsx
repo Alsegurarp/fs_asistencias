@@ -14,10 +14,13 @@ type Session = 'starting' | 'signedIn' | 'signedOut' | 'ended' | 'unavailable'
 // Un solo viaje al inicio de sesión, también con el montaje doble de StrictMode.
 let signingIn = false
 
-/** Vuelve a la misma pantalla después de iniciar sesión, salvo desde «sesión terminada». */
-function returnUrl() {
-  const path = window.location.pathname === sessionEndedPath ? '/' : window.location.pathname
-  return `${window.location.origin}${path}`
+/**
+ * Vuelve a la misma pantalla después de iniciar sesión, con lo elegido en la
+ * dirección (semana, filtros, persona), salvo desde «sesión terminada».
+ */
+export function returnUrl() {
+  if (window.location.pathname === sessionEndedPath) return `${window.location.origin}/`
+  return `${window.location.origin}${window.location.pathname}${window.location.search}`
 }
 
 export function App() {

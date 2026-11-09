@@ -6,6 +6,39 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 8 de noviembre de 2026 — Asistencia según el lienzo
+
+Rama `feat/portal-asistencia` desde `main` en `a11fdcc` (PR #37 integrada y
+desplegada en el ambiente publicado ese día). Primera pantalla de Operación
+del bloque 1: tabla de la semana de cada persona (OPE-02), ficha con semana,
+marcajes y cierres (OPE-02, OPE-07, OPE-08), carga (EST-09) y teléfono
+(TEL-07, TEL-08), en `/asistencia`, que pasa a ser el inicio de
+Administración, RH, Supervisión y Auditoría. Piezas compartidas para las
+siguientes secciones en `ui.tsx`. El contrato sube a 0.24.0: `q` en
+`GET /attendance/weeks`, buscado en el servidor antes de paginar, con su
+prueba de integración.
+
+Arreglos del marco al recorrerlo: el encabezado de página ya no toma el foco
+cuando sólo cambian los parámetros de la dirección (al cambiar de pestaña de
+la ficha, Escape dejaba de cerrarla), y el regreso del inicio de sesión
+conserva los parámetros, no sólo la ruta.
+
+Pruebas: 257 del portal en 24 archivos y la suite completa del backend, con
+el contrato validado. Recorrido en Chromium contra un entorno local aislado
+con 34 personas del simulador de dispositivos en dos sedes y un horario
+asignado a la mitad: 28 vistas de Administración, RH, Supervisión (con una
+sola sede) y Auditoría, a 1440 y 390 px, sin errores de consola, sin
+respuestas fallidas, con un solo h1 y sin desborde; filtros, búsqueda, sede,
+segunda página, semana anterior, ficha y sus pestañas, Escape y atrás,
+exportar (CSV de 34 filas) y enlace directo a una ficha sin sesión. Quien
+opera el servicio recibe la pantalla de sin permiso.
+
+Hallazgos: la semana calculada no trae el tiempo extra de cada día, que el
+lienzo muestra en la ficha; `GET /week-closures` pide la semana, así que la
+ficha consulta los cierres de las últimas seis; el marcaje no dice con qué
+tarjeta se hizo. Detalle en [Construir el portal](construir-el-portal.md).
+Sin despliegue: espera la PR.
+
 ## 8 de noviembre de 2026 — Marco del portal según el lienzo
 
 Rama `feat/portal-base` desde `main` en `eafc2ad`. El portal adopta el marco

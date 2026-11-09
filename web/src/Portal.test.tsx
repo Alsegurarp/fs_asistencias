@@ -66,9 +66,15 @@ it.each(['admin_empresa', 'rh', 'auditor'])('muestra incidencias, cierres y repo
   expect(sideLinks()).toEqual(expect.arrayContaining(['/incidencias', '/cierres', '/reportes']))
 })
 
-it('el supervisor ve incidencias y cierres, pero no reportes ni usuarios', async () => {
+it('el supervisor ve asistencia, incidencias y cierres, pero no reportes ni usuarios', async () => {
   await render(['supervisor'])
-  expect(sideLinks()).toEqual(['/incidencias', '/cierres', '/personal', '/configuracion'])
+  expect(sideLinks()).toEqual(['/asistencia', '/incidencias', '/cierres', '/personal', '/configuracion'])
+})
+
+it.each(['trabajador', 'operador_saas'])('Asistencia de la empresa no está disponible para %s', async role => {
+  await render([role], '/asistencia', role === 'operador_saas' ? { tenant: null } : {})
+  expect(heading()).toBe('Esta sección no está disponible para tu rol')
+  expect(text()).toContain('Asistencia sólo lo ven Administración, RH, Supervisión y Auditoría')
 })
 
 it('sólo el administrador ve Usuarios y roles', async () => {
@@ -117,8 +123,8 @@ it.each(['admin_empresa', 'supervisor', 'trabajador'])('avisa a %s del cambio de
 
 it('el inicio abre la primera sección de cada rol', async () => {
   await render(['admin_empresa'])
-  expect(container.querySelector('a[aria-current="page"]')?.getAttribute('href')).toBe('/incidencias')
-  expect(heading()).toBe('Incidencias')
+  expect(container.querySelector('a[aria-current="page"]')?.getAttribute('href')).toBe('/asistencia')
+  expect(heading()).toBe('Asistencia')
   await render(['trabajador'])
   expect(heading()).toBe('Mi asistencia')
   expect(container.querySelector('aside')).toBeNull()
@@ -139,7 +145,7 @@ it('agrupa el menú como el lienzo y las secciones se pliegan', async () => {
   const groups = [...container.querySelectorAll('aside details')]
   expect(groups.map(group => group.querySelector('summary')?.textContent)).toEqual(['Operación', 'Padrón', 'Empresa'])
   expect(groups.every(group => group.hasAttribute('open'))).toBe(true)
-  expect(sideLinks()).toEqual(['/incidencias', '/cierres', '/personal', '/dispositivos', '/configuracion', '/usuarios', '/reportes'])
+  expect(sideLinks()).toEqual(['/asistencia', '/incidencias', '/cierres', '/personal', '/dispositivos', '/configuracion', '/usuarios', '/reportes'])
 })
 
 it('las pestañas de una sección dependen del rol', async () => {
@@ -218,14 +224,14 @@ it('en teléfono el menú pasa a la barra inferior con Más', async () => {
   phone = true
   await render(['admin_empresa'])
   expect(container.querySelector('aside')).toBeNull()
-  expect(links('Secciones')).toEqual(['/incidencias', '/cierres', '/personal', '/mas'])
+  expect(links('Secciones')).toEqual(['/asistencia', '/incidencias', '/cierres', '/mas'])
   await render(['admin_empresa'], '/usuarios')
   expect(container.querySelector('nav[aria-label="Secciones"] a[href="/mas"]')?.getAttribute('aria-current')).toBe('page')
   await render(['admin_empresa'], '/mas')
   expect(heading()).toBe('Más')
   expect([...container.querySelectorAll('main h2')].map(item => item.textContent)).toEqual(['Operación', 'Padrón', 'Empresa'])
   await render(['supervisor'])
-  expect(links('Secciones')).toEqual(['/incidencias', '/cierres', '/personal', '/configuracion'])
+  expect(links('Secciones')).toEqual(['/asistencia', '/incidencias', '/cierres', '/mas'])
 })
 
 it.each(['/no-existe', '/usuarios', '/mas'])('el marco no tiene fallas automáticas de accesibilidad en %s', async path => {

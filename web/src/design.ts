@@ -27,7 +27,18 @@ export const color = {
   white: '#FFFFFF',
   warnBg: '#FFF1DD',
   warnInk: '#8A4200',
+  /** Texto de etiqueta naranja y de aviso, sobre warnBg. */
+  warnText: '#9A4A00',
+  noteInk: '#6E3500',
   error: '#B3261E',
+  errorBg: '#FDECEB',
+  ok: '#177A42',
+  okBg: '#E4F5EA',
+  /** Círculo de «día completo». */
+  okMark: '#22A45A',
+  infoBg: '#E7EFFD',
+  /** Tramo de tiempo extra en las barras de horas. */
+  overtime: '#D97A1E',
   gradientFrom: '#2C66D0',
   gradientTo: '#1B4596',
 } as const
@@ -47,6 +58,8 @@ export const gradient = {
   tile: 'linear-gradient(145deg, #EEF4FE 0%, #DCE7FC 100%)',
   /** Ícono destacado de las pantallas de estado y avatar. */
   badge: 'linear-gradient(145deg, #2C66D0 0%, #1C4A9C 100%)',
+  /** Encabezado de una ficha lateral. */
+  sheet: 'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.04) 110px, rgba(255,255,255,0) 170px), linear-gradient(115deg, #2C66D0 0%, #2459BE 45%, #1C4A9C 100%)',
 } as const
 
 export const shadow = {
@@ -55,6 +68,7 @@ export const shadow = {
   table: '0 1px 2px rgba(18,35,63,0.04), 0 8px 24px rgba(31,79,168,0.06)',
   menu: '0 24px 60px rgba(13,38,92,0.28)',
   bottomNav: '0 -6px 20px rgba(31,79,168,0.08)',
+  drawer: '-24px 0 48px rgba(13,38,92,0.18)',
 } as const
 
 /** Tarjeta de vidrio del criterio de diseño; las tablas y fichas van en blanco sólido. */

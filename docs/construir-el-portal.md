@@ -3,7 +3,7 @@
 El portal sigue el [lienzo aprobado](https://claude.ai/artifact/6nguqVzZ7N9rtHX2LDScvq)
 el 7 de noviembre: 81 pantallas con código por sección (ACC, CTA, OPE, PAD,
 EMP, REP, EST, TEL y CON). El backend que piden ya está en `main` y en el
-ambiente publicado (contrato 0.23.0). Este documento dice en qué orden se
+ambiente publicado (contrato 0.23.0; la búsqueda de Asistencia sube a 0.24.0). Este documento dice en qué orden se
 construye, cómo está armado el marco y qué reglas evitan que dos personas
 hagan lo mismo.
 
@@ -16,23 +16,27 @@ ambiente nunca pierde una función.
 
 | Bloque | Qué entra | Pantallas del lienzo | Pantalla anterior que se retira | Estado |
 | --- | --- | --- | --- | --- |
-| 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | En la rama `feat/portal-base` |
-| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Siguiente |
+| 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
+| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia en la rama `feat/portal-asistencia`; siguen Incidencias, Cierres y Panel |
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Pendiente |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
 | 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pendiente |
 
-El menú Crear (CTA-04) aparece con los primeros modales que abre, en los
-bloques 1 y 2.
+El bloque 1 entra en cuatro PR, una por pantalla y en ese orden: Asistencia
+(OPE-02, OPE-07, OPE-08, EST-09, TEL-07, TEL-08), Incidencias, Cierres y
+Panel. El menú Crear (CTA-04) aparece con los primeros modales que abre, en
+los bloques 1 y 2.
 
 ## Reglas para no duplicar
 
 1. Quien tome un bloque lo avisa al equipo y abre `feat/portal-<bloque>`
    antes de escribir código. Una persona lleva un bloque a la vez.
-2. `design.ts`, `theme.ts`, `Shell.tsx`, `sections.ts` y el cliente del API
-   sólo cambian en el bloque 0 o en una PR chica avisada antes.
+2. `design.ts`, `theme.ts`, `Shell.tsx`, `sections.ts`, `ui.tsx` y el
+   cliente del API sólo cambian en el bloque 0 o en una PR chica avisada
+   antes. Una pieza nueva de `ui.tsx` entra con la primera pantalla que la
+   usa, y las demás la reusan.
 3. Cada PR de sección borra la pantalla anterior que reemplaza y sus pruebas.
    Nunca conviven dos versiones de la misma pantalla.
 4. Listas, filtros, búsquedas y conteos salen del servidor, con las rutas del
@@ -54,6 +58,8 @@ bloques 1 y 2.
 | «Más» en teléfono (TEL-06) | `web/src/More.tsx` |
 | Sesión terminada (ACC-07), cuenta sin empresa (EST-01), error (EST-05) y carga | `web/src/States.tsx`, `web/src/App.tsx` |
 | Íconos y marca de dos ondas | `web/src/Icons.tsx` |
+| Piezas de las secciones: etiquetas de estado, filtros de un toque, búsqueda, sede, semana, tabla con paginador, filas de espera, avisos y ficha lateral | `web/src/ui.tsx` |
+| Listas cortas pedidas completas (sedes, horarios) | `web/src/lists.ts` |
 
 - **Sesión.** Sin sesión, el portal va directo al inicio de sesión del
   servicio de identidad (ACC-01) y vuelve a la misma dirección; un enlace
@@ -77,7 +83,8 @@ bloques 1 y 2.
 
 | Dirección | Pantalla |
 | --- | --- |
-| `/` | La primera sección del rol |
+| `/` | La primera sección del rol: Asistencia para Administración, RH, Supervisión y Auditoría |
+| `/asistencia` | Asistencia; lo elegido va en la dirección: `semana`, `sede`, `filtro` (`alertas`, `extra`, `sin-entrada`, `en-turno`), `q`, `persona` y `ficha` (`marcajes`, `cierres`) |
 | `/incidencias`, `/cierres` | Operación |
 | `/personal`, `/personal/horarios`, `/personal/importaciones` | Personal y horarios |
 | `/dispositivos`, `/dispositivos/tarjetas` | Dispositivos y tarjetas |
@@ -106,6 +113,8 @@ bloques 1 y 2.
 | Falta | Llega con |
 | --- | --- |
 | Panel (OPE-01): mientras no exista, el inicio es la primera sección del rol y los estados dicen «Ir al inicio» | Bloque 1 |
+| Tiempo extra de cada día en la ficha de Asistencia («8:00 +1:05»): la semana calculada sólo trae los totales de la semana; el cálculo del servidor sí lo tiene por día. La ficha muestra el tiempo trabajado de cada día | Agregar los días a la semana calculada, en el backend |
+| Cierres de una persona más allá de seis semanas: `GET /week-closures` pide la semana, y la ficha consulta las seis últimas en seis llamadas fijas | Una ruta de cierres por persona, si se necesita más historia |
 | Avisos de la campana (CTA-03) | Bloque 1 |
 | Buscador (CTA-05) | Bloque 2 |
 | Menú Crear (CTA-04) | Bloques 1 y 2 |
@@ -115,7 +124,7 @@ bloques 1 y 2.
 | Empresa suspendida (EST-02) | Falta que `/me` distinga la suspensión: hoy responde igual que una cuenta sin acceso (sin empresa ni roles) y el portal muestra EST-01 |
 | Pantallas de acceso con la marca (ACC-01 a 06) | Bloque 6 |
 
-Dos diferencias deliberadas con el lienzo:
+Diferencias deliberadas con el lienzo:
 
 - **Mi asistencia** no está en el lienzo. Se conserva en el menú de la cuenta
   y es el inicio de quien sólo tiene el rol de trabajador, hasta decidir si
@@ -123,6 +132,16 @@ Dos diferencias deliberadas con el lienzo:
 - **El panel de marca** del lienzo muestra una cifra de ejemplo («Asistencia
   de hoy 38 / 42»). El portal no la muestra: antes de entrar no hay datos
   reales.
+- **Marcajes de la ficha.** El lienzo dice «Terminal Bodega Norte · tarjeta
+  T-0031». El marcaje no guarda con qué tarjeta se hizo y Supervisión no lee
+  los lectores: la ficha dice «Terminal de *sede*» o «Teléfono personal», sin
+  tarjeta.
+- **Atención en Asistencia.** El lienzo muestra «Extra 3 de 4 días»; ese
+  conteo por día no viene del servidor. La columna muestra lo que sí viene:
+  «Tiempo extra», los topes rebasados, el tramo sin salida que ya no es el
+  turno de hoy y cada incidencia abierta, que abre Incidencias en su semana.
+- **Días sin marcas.** Un día con horario que ya pasó y no tiene marcas dice
+  «Sin marcas · programado …»; el lienzo no tiene ese caso.
 
 ## Verificar
 
@@ -131,5 +150,6 @@ docker build --target build --tag zenit-web-check web
 docker run --rm --network none zenit-web-check pnpm test
 ```
 
-Las pruebas del marco están en `Portal.test.tsx` y `States.test.tsx`; el
+Las pruebas del marco están en `Portal.test.tsx` y `States.test.tsx`; las de
+Asistencia, en `Attendance.test.tsx` y `attendanceModel.test.ts`; el
 contraste de los colores del lienzo, en `accessibility.test.ts`.

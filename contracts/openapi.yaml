@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.23.0
+  version: 0.24.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -2227,6 +2227,10 @@ paths:
         Los dos últimos responden 422 con `not_current_week` si la semana no
         es la de hoy.
 
+        `q` busca por nombre o número de la persona, en el servidor y antes
+        de paginar, como en `listEmployees`. Se combina con los demás
+        filtros; los conteos de `getAttendanceSummary` no lo usan.
+
         Supervisión ve sólo a las personas de sus sedes y no ve la semana de
         quien marcó esa semana en una sede ajena: esa fila no aparece, como en
         los cierres.
@@ -2243,6 +2247,7 @@ paths:
           schema:
             type: string
             enum: [alerts, overtime, no_entry_today, on_shift]
+        - $ref: "#/components/parameters/SearchText"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:

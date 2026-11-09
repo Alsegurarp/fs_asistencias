@@ -1,5 +1,15 @@
 # Estado y pendientes
 
+**Asistencia según el lienzo, 8 de noviembre (contrato 0.24.0):** primera
+pantalla de Operación. La semana de cada persona con ordinarias y extra contra
+el tope de las reglas, lo de hoy y lo que pide atención; filtros con sus
+conteos, búsqueda por nombre o número y sede en el servidor; ficha con la
+semana día por día, los marcajes con su evidencia y los cierres con su acuse;
+exportar la vista a CSV; teléfono. Recorrida con sesiones reales en local.
+Falta: el tiempo extra de cada día (la semana calculada sólo trae el de la
+semana) y siguen Incidencias, Cierres y Panel
+([orden y pendientes](construir-el-portal.md)).
+
 **Marco del portal según el lienzo, 8 de noviembre:** primer bloque del
 portal. Colores, tipografía Inter servida desde el portal, una dirección por
 pantalla, barra superior, menú lateral ocultable con grupos plegables, barra
@@ -10,7 +20,8 @@ Recorrido con sesiones reales de los cinco roles en local, a 1440 y 390 px,
 incluido el expediente con verificación y descarga. Falta: que `/me`
 distinga una empresa suspendida (hoy se ve como cuenta sin acceso), decidir
 si se queda «Mi asistencia» y el canal de «Ayuda y soporte»
-([orden y pendientes](construir-el-portal.md)).
+([orden y pendientes](construir-el-portal.md)). Integrado con la PR #37 y
+desplegado el 8 de noviembre.
 
 **Consola de operación para el portal, 7 de noviembre (contrato 0.23.0):**
 quinta y última fase del backend de la maqueta. La lista de empresas busca
