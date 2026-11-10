@@ -84,6 +84,12 @@ class PilotCardsIT : CaptureTestBase() {
         assertEquals(201, reply.status, reply.toString())
         assertEquals("clock_in", reply.at("type"))
 
+        // El detalle dice que la registró la terminal y que ella la leyó.
+        val detail = call("GET", "/api/v1/cards/${card.cardId}", c.adminToken)
+        assertEquals("device", detail.at("registeredBy.type"))
+        assertEquals("Recepción", detail.at("registeredBy.name"))
+        assertEquals("Recepción", detail.at("lastRead.deviceName"))
+
         // El alta queda en la bitácora a nombre del dispositivo, sin la huella.
         val audit = call("GET", "/api/v1/audit-log?limit=200", c.adminToken)
         assertEquals(200, audit.status, audit.toString())

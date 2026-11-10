@@ -5,6 +5,7 @@ import { Alert, Button, CircularProgress, Stack } from '@mui/material'
 import { api, type Me, permissions } from './api'
 import { Attendance } from './Attendance'
 import { color } from './design'
+import { Cards } from './Cards'
 import { Closures } from './Closures'
 import { Devices } from './Devices'
 import { Directory } from './Directory'
@@ -97,6 +98,8 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   if (screen.key === 'schedules') return <Schedules me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'sources') return <Sources me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'imports') return <Imports me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'devices') return <Devices me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'cards') return <Cards me={me} context={context} section={section} screens={screens} screen={screen} />
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
@@ -106,15 +109,14 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
 /** Las pantallas anteriores del portal, cada una en su dirección. */
 function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
   switch (screen) {
-    case 'sites': case 'cards': return <Directory key={screen} kind={screen} me={me} />
-    case 'devices': return <Devices me={me} />
+    case 'sites': return <Directory kind={screen} me={me} />
     case 'settings': return <TenantSettings me={me} />
     case 'users': return <Users me={me} />
     case 'exports': return <Exports me={me} />
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
-    case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': return null
+    case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': case 'devices': case 'cards': return null
   }
 }
 

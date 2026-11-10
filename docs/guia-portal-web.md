@@ -1,5 +1,11 @@
 # Guía del portal web
 
+**Actualización del 10 de noviembre, Dispositivos y tarjetas (contrato 0.31.0):**
+- **Lectores (PAD-02):** con sus cifras (activos, sin señal más de 24 h, revocados o reemplazados), búsqueda y revocar con motivo. «Activar lector» abre un panel para una terminal de sede o un teléfono personal, con el código de un solo uso y su vencimiento.
+- **Tarjetas (PAD-11):** pestañas por estado con sus cifras, quién tiene cada tarjeta y desde cuándo. El detalle trae quién la registró (persona o terminal), la última lectura, el historial, y las acciones asignar, reponer con otra del inventario y revocar como revocada, perdida o dañada.
+- **Registrar tarjeta (PAD-12):** etiqueta y huella, con la opción de asignarla en el mismo paso a quien no tiene tarjeta.
+- **API:** el detalle sale de `GET /cards/{cardId}`.
+
 **Actualización del 9 de noviembre, Importar CSV (contrato 0.29.0):**
 Importaciones con el lienzo (PAD-09) y el modal de tres pasos: subir,
 revisar sin cambiar nada y aplicar las filas listas (PAD-04 a 06). El
@@ -383,8 +389,8 @@ para eso está `disabled`. Conviene decirlo en la propia pantalla.
 | Horarios de una persona | `GET /employees/{employeeId}/schedule-assignments` (desde 0.28.0), `POST /employees/{employeeId}/schedule-assignments` |
 | Fuentes del padrón | `GET /integrations/checkpoints`; cambios recientes, `GET /audit-log?group=directory` (Administración) |
 | Importaciones | `GET /imports`, `POST /imports/csv` (revisar con `dryRun=true`, aplicar con `dryRun=false` y `reviewedImportId`), `GET /imports/{importId}`; altas, con cambios y sin cambios desde 0.29.0 |
-| Tarjetas | `GET /cards`, `POST /cards`, `POST /cards/{cardId}/assignments`, `POST /cards/{cardId}/revocation` |
-| Dispositivos | `GET /devices`, `POST /device-enrollments`, `POST /devices/{deviceId}/revocation` |
+| Tarjetas | `GET /cards`, `GET /cards/summary`, `GET /cards/{cardId}`, `POST /cards`, `POST /cards/{cardId}/assignments`, `POST /cards/{cardId}/revocation` |
+| Dispositivos | `GET /devices`, `GET /devices/summary`, `POST /device-enrollments`, `POST /devices/{deviceId}/revocation` |
 | De dónde viene el padrón | `GET /integrations/checkpoints` |
 
 Notas:

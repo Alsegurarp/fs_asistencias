@@ -18,7 +18,7 @@ ambiente nunca pierde una función.
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
 | 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana integrado (PR #42) |
-| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; sigue Dispositivos y tarjetas ([qué falta](#lo-que-sigue-dispositivos-y-tarjetas-y-empresa)) |
+| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas en `feat/portal-dispositivos` (sobre la PR #45); siguen el buscador y el menú Crear en su propia PR |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente ([qué falta](#lo-que-sigue-dispositivos-y-tarjetas-y-empresa)) |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
@@ -47,6 +47,18 @@ Alexis está al final, en [Qué se necesita para probar y
 avanzar](#qué-se-necesita-para-probar-y-avanzar).
 
 ### Bloque 2, última PR: Dispositivos y tarjetas
+
+**Estado del 10 de noviembre:** Lectores, Tarjetas y Registrar tarjeta
+están hechos en `feat/portal-dispositivos`, con `GET /cards/{cardId}`
+(contrato 0.31.0). Para no hacer una PR enorme, el buscador (CTA-05) y el
+menú Crear (CTA-04), que tocan la barra superior, van en la PR siguiente.
+Las diferencias con el lienzo quedaron así:
+
+- **«Asignar a otra persona»:** no existe; se respeta la regla vigente. El detalle ofrece «Reponer con otra del inventario» y revocar.
+- **«Tecnología»:** no se muestra.
+- **Huella:** se escribe a mano, sólo para la tarjeta simulada. Las del piloto las prepara una terminal.
+
+Detalle original del plan:
 
 Rama `feat/portal-dispositivos`. Retira `Devices.tsx`, las tarjetas de
 `Directory.tsx` (con lo que `Directory` queda sólo con sedes hasta el
