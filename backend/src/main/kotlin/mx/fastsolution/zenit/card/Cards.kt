@@ -112,6 +112,35 @@ data class CardView(
 
 data class CardSummaryView(val total: Int, val byStatus: Map<String, Int>)
 
+/** Quién registró la tarjeta: una persona del portal o una terminal que la preparó. */
+data class CardRegistrarView(val type: String, val name: String?)
+
+data class CardHistoryView(
+    val employeeId: String,
+    val employeeName: String,
+    val employeeExternalId: String,
+    val since: String,
+    val until: String?,
+    val replacedCardId: String?,
+)
+
+data class CardLastReadView(val observedAt: String, val deviceId: String, val deviceName: String)
+
+/** El detalle de una tarjeta: lo de la lista, quién la registró, todas sus asignaciones y su última lectura. */
+data class CardDetailView(
+    val id: String,
+    val label: String,
+    val status: String,
+    val keyVersion: Int?,
+    val assignment: CardHolder?,
+    val latestAssignment: LatestHolderView?,
+    val createdAt: String,
+    val updatedAt: String,
+    val registeredBy: CardRegistrarView?,
+    val assignments: List<CardHistoryView>,
+    val lastRead: CardLastReadView?,
+)
+
 data class CardAssignmentView(
     val id: String,
     val cardId: String,
@@ -180,6 +209,43 @@ class CardRepository(private val dsl: DSLContext) {
         dsl.fetchOne(
             "select id, card_id from card_assignment where tenant_id = ? and employee_id = ? and until is null", tenantId, employeeId,
         )?.let { OpenAssignment(it.get("id", UUID::class.java), it.get("card_id", UUID::class.java)) }
+
+    /** Todas las asignaciones de la tarjeta, de la más reciente a la primera. */
+    fun history(tenantId: UUID, cardId: UUID): List<CardHistoryView> =
+        dsl.fetch(
+            "select a.employee_id, e.display_name, e.external_id, a.since, a.until, a.replaced_card_id from card_assignment a " +
+                "join employee e on e.tenant_id = a.tenant_id and e.id = a.employee_id " +
+                "where a.tenant_id = ? and a.card_id = ? order by a.since desc, a.id desc",
+            tenantId, cardId,
+        ).map {
+            CardHistoryView(
+                it.get("employee_id", UUID::class.java).toString(), it.get("display_name", String::class.java), it.get("external_id", String::class.java),
+                it.get("since", OffsetDateTime::class.java).toInstant().toString(), it.get("until", OffsetDateTime::class.java)?.toInstant()?.toString(),
+                it.get("replaced_card_id", UUID::class.java)?.toString(),
+            )
+        }
+
+    /** El último marcaje guardado con la tarjeta y el lector que la leyó. */
+    fun lastRead(tenantId: UUID, cardId: UUID): CardLastReadView? =
+        dsl.fetchOne(
+            "select e.observed_at, d.id as device_id, coalesce(d.label, case when d.mode = 'personal' then 'Teléfono de ' || o.display_name else 'Terminal' end, d.model) as device_name " +
+                "from attendance_event e join device d on d.tenant_id = e.tenant_id and d.id = e.device_id " +
+                "left join employee o on o.tenant_id = d.tenant_id and o.id = d.employee_id " +
+                "where e.tenant_id = ? and e.card_id = ? order by e.observed_at desc limit 1",
+            tenantId, cardId,
+        )?.let {
+            CardLastReadView(it.get("observed_at", OffsetDateTime::class.java).toInstant().toString(), it.get("device_id", UUID::class.java).toString(), it.get("device_name", String::class.java))
+        }
+
+    /** Quién la registró, según la bitácora: la persona del portal o la terminal que la preparó. */
+    fun registrar(tenantId: UUID, cardId: UUID): CardRegistrarView? =
+        dsl.fetchOne(
+            "select l.actor_type, coalesce(u.display_name, d.label, case when d.mode = 'terminal' then 'Terminal' end) as name from audit_log l " +
+                "left join tenant_user u on l.actor_type = 'user' and u.tenant_id = l.tenant_id and u.id::text = l.actor_id " +
+                "left join device d on l.actor_type = 'device' and d.tenant_id = l.tenant_id and d.id::text = l.actor_id " +
+                "where l.tenant_id = ? and l.action = 'card.registered' and l.target_type = 'card' and l.target_id = ? order by l.at limit 1",
+            tenantId, cardId.toString(),
+        )?.let { CardRegistrarView(if (it.get("actor_type", String::class.java) == "device") "device" else "user", it.get("name", String::class.java)) }
 
     fun holderAt(tenantId: UUID, cardId: UUID, at: OffsetDateTime): UUID? =
         dsl.fetchOne("select employee_id from card_assignment where tenant_id = ? and card_id = ? " +
@@ -297,6 +363,17 @@ class CardService(
         return cards.summary(person.requireTenant(), text)
     }
 
+    @Transactional(readOnly = true)
+    fun detail(person: CurrentPerson, cardId: UUID): CardDetailView {
+        val tenantId = person.requireTenant()
+        val card = cards.find(tenantId, cardId) ?: throw Problems.notFound()
+        val view = CardView.of(card)
+        return CardDetailView(
+            view.id, view.label, view.status, view.keyVersion, view.assignment, view.latestAssignment, view.createdAt, view.updatedAt,
+            cards.registrar(tenantId, cardId), cards.history(tenantId, cardId), cards.lastRead(tenantId, cardId),
+        )
+    }
+
     /**
      * Asigna una tarjeta del inventario. Si la persona ya tenía una, cierra esa
      * asignación, marca la anterior como reemplazada y activa la nueva, todo en
@@ -393,6 +470,9 @@ class CardController(private val service: CardService) {
 
     @GetMapping("/summary")
     fun summary(@AuthenticationPrincipal person: CurrentPerson, @RequestParam q: String?): CardSummaryView = service.summary(person, q)
+
+    @GetMapping("/{cardId}")
+    fun detail(@AuthenticationPrincipal person: CurrentPerson, @PathVariable cardId: UUID): CardDetailView = service.detail(person, cardId)
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

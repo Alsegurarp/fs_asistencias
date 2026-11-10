@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.30.0
+  version: 0.31.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -2766,6 +2766,66 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/Unprocessable"
+
+  /cards/{cardId}:
+    parameters:
+      - $ref: "#/components/parameters/CardId"
+    get:
+      tags: [credenciales]
+      operationId: getCard
+      summary: Detalle de una tarjeta
+      description: |
+        Lo mismo que la lista, más quién la registró (una persona del portal
+        o la terminal que la preparó), todas sus asignaciones de la más
+        reciente a la primera y su última lectura con el lector que la leyó.
+        `registeredBy` es nulo si la bitácora no lo tiene; `lastRead`, si
+        nunca se leyó.
+      x-roles: [admin_empresa, rh, auditor]
+      responses:
+        "200":
+          description: La tarjeta
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardDetail"
+              example:
+                id: 7b9d1f3a-5c7e-4a9b-8d0f-2a4c6e8a0b1d
+                label: T-0058
+                status: active
+                keyVersion: null
+                assignment:
+                  employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                  employeeName: Persona de Ejemplo Uno
+                  employeeExternalId: "0211"
+                  since: "2026-09-02T15:00:00Z"
+                latestAssignment:
+                  employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                  employeeName: Persona de Ejemplo Uno
+                  employeeExternalId: "0211"
+                  since: "2026-09-02T15:00:00Z"
+                  until: null
+                createdAt: "2026-09-01T16:00:00Z"
+                updatedAt: "2026-09-02T15:00:00Z"
+                registeredBy:
+                  type: user
+                  name: Persona de RH
+                assignments:
+                  - employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
+                    employeeName: Persona de Ejemplo Uno
+                    employeeExternalId: "0211"
+                    since: "2026-09-02T15:00:00Z"
+                    until: null
+                    replacedCardId: null
+                lastRead:
+                  observedAt: "2026-11-10T14:59:00Z"
+                  deviceId: 1c3e5a7b-9d0f-4a2c-8e4b-6d8f0a2c4e6b
+                  deviceName: Terminal Recepción
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /cards/{cardId}/assignments:
     parameters:
@@ -6535,6 +6595,62 @@ components:
         updatedAt:
           type: string
           format: date-time
+    CardDetail:
+      allOf:
+        - $ref: "#/components/schemas/Card"
+        - type: object
+          required: [registeredBy, assignments, lastRead]
+          properties:
+            registeredBy:
+              oneOf:
+                - type: object
+                  required: [type, name]
+                  properties:
+                    type:
+                      type: string
+                      enum: [user, device]
+                    name:
+                      type: [string, "null"]
+                      description: Nombre de la persona o de la terminal; nulo si ya no existe.
+                - type: "null"
+            assignments:
+              type: array
+              description: De la más reciente a la primera.
+              items:
+                type: object
+                required: [employeeId, employeeName, employeeExternalId, since, until, replacedCardId]
+                properties:
+                  employeeId:
+                    type: string
+                    format: uuid
+                  employeeName:
+                    type: string
+                  employeeExternalId:
+                    type: string
+                  since:
+                    type: string
+                    format: date-time
+                  until:
+                    type: [string, "null"]
+                    format: date-time
+                  replacedCardId:
+                    type: [string, "null"]
+                    format: uuid
+                    description: La tarjeta que esta asignación reemplazó.
+            lastRead:
+              oneOf:
+                - type: object
+                  required: [observedAt, deviceId, deviceName]
+                  properties:
+                    observedAt:
+                      type: string
+                      format: date-time
+                    deviceId:
+                      type: string
+                      format: uuid
+                    deviceName:
+                      type: string
+                - type: "null"
     CardCreate:
       type: object
       additionalProperties: false
