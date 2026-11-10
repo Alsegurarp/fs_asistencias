@@ -1,5 +1,18 @@
 # Decisiones de negocio
 
+## Tarjetas del piloto — 10 de noviembre de 2026
+
+Alexis decide hacer el piloto con las tarjetas MIFARE Classic 1K que ya
+tiene y comprar DESFire EV3 cuando haya capital (responde Q08). La tarjeta
+**no guarda datos de la persona**: sólo un código aleatorio con la firma del
+servidor ligada al identificador de la tarjeta, para que una tarjeta perdida
+no exponga a nadie. Se acepta el riesgo de que una tarjeta se clone con
+equipo especial; lo compensan la geocerca, el lector activado, la revisión
+de Supervisión y la revocación en el portal. El diagnóstico de las tarjetas
+(Classic 1K con claves de fábrica, probablemente con identificador
+cambiable) y el diseño están en
+[Tarjetas del piloto](guia-app-android.md#tarjetas-del-piloto-mifare-classic).
+
 ## Datos operativos recibidos — 6 de noviembre de 2026
 
 Primer destino: `Cliente-demo`, con IP recibida en el archivo privado de

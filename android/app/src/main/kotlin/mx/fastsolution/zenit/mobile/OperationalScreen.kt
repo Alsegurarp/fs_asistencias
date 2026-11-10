@@ -34,6 +34,7 @@ internal fun OperationalScreen(
     onRenewSession: () -> Unit,
     onSelectType: (String?) -> Unit,
     onOpenPresentation: () -> Unit,
+    onPrepareCard: (Boolean) -> Unit = {},
 ) {
     var registering by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = registering) { registering = false }
@@ -217,6 +218,19 @@ internal fun OperationalScreen(
                                         modifier = Modifier.fillMaxWidth()) { Text("Renovar sesión de asistencia") }
                                     if (!state.sessionUsable && state.pendingCount > 0) Text("Envíe los registros pendientes desde Actividad antes de renovar la sesión.", style = MaterialTheme.typography.bodySmall)
                                 }
+                            }
+                            if (state.registered && !state.personal && state.pilotCards) SectionCard("Preparar tarjetas",
+                                "Escribe en la tarjeta un código firmado por el servidor, sin datos de la persona, y la deja en inventario para asignarla en el portal.") {
+                                if (state.preparingCard) {
+                                    Text("Aproxime la tarjeta nueva y manténgala inmóvil hasta que termine.", style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.primary)
+                                    if (state.isCapturing) LinearProgressIndicator(Modifier.fillMaxWidth())
+                                    TextButton(onClick = { onPrepareCard(false) }, enabled = !state.isCapturing) { Text("Cancelar") }
+                                } else {
+                                    Button(onClick = { onPrepareCard(true) }, enabled = !state.isCapturing && nfcAvailable,
+                                        modifier = Modifier.fillMaxWidth()) { Text("Preparar una tarjeta") }
+                                }
+                                if (state.message.isNotBlank() && !state.isCapturing) Text(state.message, style = MaterialTheme.typography.bodySmall)
                             }
                             if (state.registered) ExpandablePanel("Opciones del teléfono", "Conexión y cambio de vinculación") {
                                 Text("Servidor: ${state.serverUrl}", style = MaterialTheme.typography.bodySmall)

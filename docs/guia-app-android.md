@@ -87,11 +87,10 @@ publicado dentro de la app y conserva su autenticación y permisos; Empleado
 abre vinculación mediante código de RH. La dirección publicada viene
 preseleccionada. No se incluyen cuentas ni contraseñas personales en el código.
 
-«Consultar tarjeta» muestra nombre, puesto, horario e ID leídos físicamente
-de la credencial Zenit, sin registrar asistencia ni modificarla. No muestra
-UID, huellas, tecnologías, memoria, sectores o claves. Requiere tarjeta MF1K
-compatible, soporte MIFARE Classic del teléfono y la configuración de acceso
-de fábrica usada actualmente. No implementa autenticación DESFire.
+La tarjeta no guarda datos de la persona (decisión del 10 de noviembre de
+2026): sólo un código firmado. Por eso ya no existe «Consultar tarjeta», que
+leía nombre, puesto y horario de la tarjeta; quién es la persona sale del
+padrón del servidor. Ver [Tarjetas del piloto](#tarjetas-del-piloto-mifare-classic).
 
 La presentación visual sigue disponible en debug con datos de ejemplo y sin
 pedir credenciales. La captura de asistencia por UID conserva su restricción
@@ -410,12 +409,15 @@ El campo `card` lleva un esquema y una prueba.
 
 | Esquema | Estado |
 | --- | --- |
-| `desfire_ev3_aes` | El de la tarjeta real. El servidor todavía no lo verifica y lo rechaza con `card_unknown`. Su formato depende de la prueba con tarjetas y teléfonos reales |
+| `mifare_classic_signed` | Tarjeta del piloto (MIFARE Classic 1K). La prueba es `<uid>.<código>.<firma>` y `keyVersion` la versión de la clave. El servidor comprueba la firma y busca la tarjeta registrada. Se puede clonar con equipo especial: riesgo aceptado hasta DESFire |
+| `desfire_ev3_aes` | La tarjeta definitiva. El servidor todavía no lo verifica y lo rechaza con `card_unknown` |
 | `uid_sha256` | Tarjeta simulada, para desarrollar. No está autenticada. La prueba es la misma huella con la que se registró la tarjeta en el portal |
 
 La tarjeta simulada nace apagada: sólo se acepta donde el servidor tiene
-`CAPTURE_SIMULATED_CARDS=true`. Es para datos ficticios; nunca basta para
-aceptar un marcaje real.
+`CAPTURE_SIMULATED_CARDS=true`, y la app sólo la usa en debug. Es para datos
+ficticios; nunca basta para aceptar un marcaje real. Las tarjetas del piloto
+también nacen apagadas: necesitan `CAPTURE_PILOT_CARDS=true` y la clave del
+secreto `pilot_card_key`. Con ellas la app marca también en release.
 
 ## 8. Semana y acuse, en modalidad personal
 
@@ -665,85 +667,89 @@ túnel ADB. El recorrido publicado pasó el 19 de octubre de 2026.
       corregirla.
 - [ ] Ni la aserción ni el sobre aparecen en los registros de la app.
 
-## Administración integrada y tarjetas MF1K
+## Tarjetas del piloto (MIFARE Classic)
 
-Administración integra el portal publicado mediante WebView, con navegación
-limitada al host HTTPS de Zenit, sin interfaz JavaScript nativa, acceso a
-archivos ni contenido mixto. El login, OTP y los recorridos administrativos
-en esta vista siguen pendientes de validación manual.
+Decisión del 10 de noviembre de 2026: el piloto usa las tarjetas MIFARE
+Classic 1K disponibles y se pasa a DESFire EV3 cuando haya presupuesto. La
+tarjeta **no guarda datos de la persona**, para que una tarjeta perdida no
+exponga a nadie.
 
-«Preparar tarjetas» muestra dos empleados de ejemplo locales, listos para cargar:
+### Qué lleva la tarjeta
 
-| ID | Nombre completo | Puesto | Horario |
-| --- | --- | --- | --- |
-| EJ-001 | Mariana Torres Hernández | Coordinadora de operaciones | Lunes a viernes, 08:00–16:00 |
-| EJ-002 | Diego Ramírez López | Auxiliar de almacén | Lunes a viernes, 09:00–17:00 |
+| Dónde | Qué |
+| --- | --- |
+| Sectores 1 y 2 (bloques 4–6 y 8–10) | `ZNC1`, versión de la clave, código aleatorio de 16 bytes y firma de 64 bytes; el resto en ceros |
+| Bloques finales de los sectores 1 y 2 | La clave A y B de la empresa, con los permisos de fábrica (`FF 07 80 69`) |
+| Sectores 3 a 8 | En ceros: ahí el formato anterior guardaba nombre y puesto |
+| Sector 0 y sectores 9 a 15 | No se tocan |
 
-El cliente no aprueba solicitudes en esta pantalla. El flujo acordado es:
-cliente solicita, equipo operador aprueba y cliente recibe empleados listos
-para cargar. Los ejemplos no crean empleados, horarios ni aprobaciones en el
-servidor. Ese circuito requiere contrato, permisos y persistencia backend.
+La firma es del servidor (ECDSA P-256) sobre `zenit-classic-v1`, el
+identificador de la tarjeta, la versión de la clave y el código. Por eso:
 
-### Cargar y consultar
+- **Si se pierde**, quien la encuentre no obtiene ningún dato. Se revoca en
+  el portal (perdida) y deja de marcar, aunque alguien la haya copiado.
+- **Nadie puede fabricar** una tarjeta válida para otra persona sin la clave
+  del servidor. Copiar el código a otra tarjeta tampoco sirve: la firma está
+  ligada al identificador.
+- **Sí se puede clonar** una tarjeta existente, identificador incluido, con
+  equipo especial (la Classic tiene el cifrado roto y estas tarjetas parecen
+  «mágicas», con identificador cambiable). Es el riesgo aceptado del piloto;
+  lo compensan la geocerca, el lector activado, la revisión de Supervisión y
+  la revocación.
+- La clave de los sectores sólo detiene las apps de celular (leer, copiar o
+  borrar con NFC Tools). Sale de la clave del servidor, es distinta por
+  empresa y llega al dispositivo en la sesión, guardada cifrada.
 
-Selecciona un empleado, pulsa «Cargar tarjeta», revisa sus datos y confirma.
-Acerca la tarjeta y mantenla inmóvil. Si ya se consultó una tarjeta en esa
-vista, se exige el mismo UID internamente. La pantalla muestra espera,
-detección/lectura, escritura y verificación, con indicador de actividad.
-Después de 20 segundos sin detección se cancela la confirmación y se informa
-que no se detectó tarjeta; hay que confirmar de nuevo. Salir cancela la espera.
+### Preparar una tarjeta (terminal)
 
-La escritura física sólo se confirma tras releer y comparar todos los bytes.
-La lista distingue «Listo para cargar» de una carga verificada en este teléfono.
-«Leer tarjeta y validar datos» abre una consulta física posterior, independiente
-de los datos de la lista. Muestra sólo los datos del empleado y estados de
-operación: área vacía, carga incompleta o imposibilidad de lectura. No presenta
-identificadores técnicos ni respuestas JSON sin interpretar.
+1. En una terminal activada, pestaña Dispositivo, «Preparar una tarjeta».
+2. Acercar la tarjeta y mantenerla inmóvil. La app pide al servidor un código
+   firmado para ese identificador, lo escribe, cambia la clave, borra los
+   sectores 3 a 8, relee y comprueba. Sólo entonces da de alta la tarjeta en
+   inventario (`POST /device-cards`).
+3. La app muestra la etiqueta `ZC-XXXXXXXX`. Escribirla en la tarjeta con
+   marcador y, en el portal, asignarla a la persona (Tarjetas).
 
-### Borrar para reutilizar
+Si se retira antes de terminar, no se informa éxito: se vuelve a preparar.
+Una tarjeta que ya tiene una credencial válida no se reescribe, porque
+perdería el código con el que está asignada: la app sólo confirma su alta y
+muestra su etiqueta.
 
-Primero acerca la tarjeta a la pantalla de empleados para identificarla.
-Pulsa «Borrar datos Zenit», revisa la advertencia, confirma y acerca la misma
-tarjeta. El borrado elimina el área reservada, incluso datos ajenos cuando
-se confirma expresamente. Sólo después de verificar que quedó vacía se
-elimina la asignación local y se permite cargar otro empleado. No da de baja
-al empleado ni revoca o elimina asignaciones del servidor.
+### Marcar
 
-La carga ordinaria rechaza datos desconocidos y tarjetas asignadas localmente
-a otro empleado; informa que se necesita borrado explícito para reutilizarlas.
-Un fallo de clave, permisos o compatibilidad no se resuelve borrando: la
-operación se detiene y se muestra un mensaje sencillo para solicitar ayuda.
+Al acercar la tarjeta, la app lee la credencial con la clave de la empresa,
+comprueba la firma sin red y firma el sobre con
+`mifare_classic_signed`. Una tarjeta sin preparar, de otra tecnología o con
+firma inválida se rechaza en el teléfono con un mensaje, sin guardar nada.
+El servidor vuelve a comprobar la firma y busca la tarjeta registrada y su
+titular, como con cualquier tarjeta.
 
-### Alcance técnico y límites
+### Encender el piloto en un ambiente
 
-La implementación usa `MifareClassic` con la clave A de fábrica, gestionada
-internamente. Otra clave requiere configuración técnica posterior; no se
-buscan ni recuperan claves. Se autentican y leen todos los bloques previstos
-antes de modificar datos. Se requiere Classic de 1 KB y soporte del teléfono.
+1. Generar la clave una vez: `gradle :backend:pilotCardKey` (en local, dentro
+   de la imagen de construcción del backend). Imprime una JWK P-256 privada.
+2. Guardarla en el secreto `pilot_card_key` (en local, `secrets/pilot_card_key`,
+   fuera del repositorio). Cambiarla deja inválidas todas las tarjetas ya
+   escritas: se respalda con los demás secretos.
+3. Encender `CAPTURE_PILOT_CARDS=true` y reiniciar el backend. Los
+   dispositivos reciben la configuración al renovar la sesión.
 
-Formato privado, no NDEF: 24 bloques de datos de los sectores 1 a 8, 384 bytes,
-cabecera versionada de 16 bytes con longitud y CRC32, JSON UTF-8 y relleno cero.
-Nunca se escriben sector 0, trailers, claves ni permisos. La sobrescritura
-reemplaza esa área sin borrar antes. El borrado escribe ceros sólo en esa área,
-no en todo el chip. Una cabecera provisional permite reconocer una operación
-incompleta; la escritura de múltiples bloques no es atómica. Si se retira la
-tarjeta, no se informa éxito y hay que volver a consultar/reintentar.
+El servidor publicado todavía no tiene el secreto ni el interruptor en su
+`compose.yaml`: se agregan con el despliegue, que necesita autorización.
 
-El contenido puede copiarse: CRC32 detecta daños, no acredita autenticidad, y
-la clave de fábrica no protege datos personales. No hay asociación de estas
-credenciales con empleados del servidor ni captura autenticada de asistencia.
-El bloqueo local de reasignación no sustituye autorización backend.
+### Herramienta de diagnóstico (debug)
 
-### Verificación del 20 de octubre de 2026
+`CardProbeActivity`, sólo en debug, identifica una tarjeta sin escribirla:
+tecnología, versión DESFire y qué sectores Classic abren con claves de
+fábrica. Se abre con
+`adb shell am start -n mx.fastsolution.zenit/.mobile.testing.CardProbeActivity`
+y escribe en logcat con la etiqueta `ZenitCardProbe`. El 10 de noviembre
+identificó las tarjetas disponibles: Classic 1K, identificador de 4 bytes,
+SAK 08, claves de fábrica en los 16 sectores y bloque 0 terminado en
+`bcdefghi`, típico de tarjetas con identificador cambiable.
 
-APK debug y APK de instrumentación compilados; lint aprobado y 13 pruebas
-unitarias sin fallos. Cuatro pruebas del formato cubren UTF-8, capacidad en
-bytes, relleno, exclusión de sector 0/trailers y detección de daños o escritura
-incompleta. La versión final se instaló por Wi-Fi en Samsung SM-S928B sin borrar
-datos. No se ejecutó instrumentación en esta revisión ni se repitió release.
+### Lo que se retiró
 
-El usuario reportó que no pudo sobrescribir una tarjeta; se añadió borrado
-explícito y se aclaró el bloqueo de reasignación local. No se da por determinada
-la causa física ni por validado el borrado. Siguen pendientes login/OTP dentro
-de WebView, lectura/escritura/borrado con tarjetas y semana/acuse contra backend
-publicado. La instalación y las pruebas unitarias no cierran esos recorridos.
+«Consultar tarjeta», «Preparar tarjetas» con empleados de ejemplo y el formato
+MF1K de 384 bytes con nombre, puesto y horario en JSON. Una tarjeta escrita
+con ese formato queda limpia al prepararla para el piloto.

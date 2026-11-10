@@ -3,5 +3,6 @@
     <application>
         <activity android:name=".PresentationActivity" android:exported="false" />
         <activity android:name=".testing.BreakPolicyVisualActivity" android:exported="false" />
+        <activity android:name=".testing.CardProbeActivity" android:exported="true" />
     </application>
 </manifest>

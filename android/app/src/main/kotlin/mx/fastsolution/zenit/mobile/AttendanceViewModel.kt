@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import java.time.Instant
 import android.os.SystemClock
+import android.nfc.Tag
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,10 @@ data class CaptureUiState(
     val legacyCount: Int = 0,
     val receipts: List<String> = emptyList(),
     val personal: Boolean = false,
+    /** El servidor acepta las tarjetas del piloto. */
+    val pilotCards: Boolean = false,
+    /** La siguiente tarjeta que se acerque se prepara en lugar de marcar. */
+    val preparingCard: Boolean = false,
 )
 
 class AttendanceViewModel(application: Application) : AndroidViewModel(application) {
@@ -56,6 +61,7 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
             legacyCount = legacyCount,
             registered = device != null,
             personal = device?.optString("mode") == "personal",
+            pilotCards = device?.optJSONObject("session")?.optJSONObject("pilotCards") != null,
             serverUrl = device?.getString("baseUrl") ?: current.serverUrl,
             deviceLabel = device?.let {
                 val label = it.optJSONObject("employee")?.optString("displayName") ?: it.optJSONObject("site")?.optString("name").orEmpty()
@@ -125,14 +131,42 @@ class AttendanceViewModel(application: Application) : AndroidViewModel(applicati
         AttendanceSyncWorker.schedule(getApplication())
     }
 
-    fun captureTag(tagId: ByteArray) {
+    fun preparingCard(on: Boolean) {
+        if (captureState.value.isCapturing) return
+        captureState.value = captureState.value.copy(preparingCard = on, message = if (on) "Aproxime la tarjeta que va a preparar." else "")
+    }
+
+    /** La última tarjeta leída y cuándo: al sostenerla, Android la vuelve a detectar. */
+    private var lastTag: Pair<String, Long>? = null
+
+    fun onTag(tag: Tag) {
         val observedAt = Instant.now()
         val elapsed = SystemClock.elapsedRealtime()
         val selected = declaredType
+        val id = tag.id.joinToString("") { "%02x".format(it) }
+        val previous = lastTag
+        if (previous != null && previous.first == id && elapsed - previous.second < SAME_TAG_MS) {
+            if (!captureState.value.isCapturing) captureState.value = captureState.value.copy(message = "Esta tarjeta ya se leyó hace un momento. Retírela del lector.")
+            return
+        }
+        lastTag = id to elapsed
+        if (captureState.value.preparingCard) {
+            perform {
+                repository.prepareCard(tag)
+                captureState.value = captureState.value.copy(preparingCard = false)
+            }
+            return
+        }
         perform {
-            repository.capture(tagId, selected, observedAt, elapsed)
+            val evidence = repository.readCard(tag)
+            repository.capture(evidence, selected, observedAt, elapsed)
             AttendanceSyncWorker.schedule(getApplication())
         }
+    }
+
+    private companion object {
+        /** La misma tarjeta dentro de este tiempo es la misma lectura; el servidor usa la misma ventana para los duplicados. */
+        const val SAME_TAG_MS = 60_000L
     }
 
     private fun perform(action: suspend () -> Unit) = viewModelScope.launch {

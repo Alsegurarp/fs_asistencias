@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
                 onSynchronize = viewModel::synchronize,
                 onRenewSession = viewModel::renewSession,
                 onSelectType = viewModel::selectType,
+                onPrepareCard = viewModel::preparingCard,
                 onRequestLocation = {
                     // Android 12+ ignora la solicitud si FINE se pide sin COARSE.
                     requestLocationPermission.launch(
@@ -87,7 +88,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
     }
 
     override fun onTagDiscovered(tag: Tag) {
-        viewModel.captureTag(tag.id)
+        viewModel.onTag(tag)
     }
 
     private fun hasLocationPermission(): Boolean =

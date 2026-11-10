@@ -95,6 +95,13 @@ tasks.register<JavaExec>("simulate") {
     mainClass.set("mx.fastsolution.zenit.simulator.DeviceSimulatorKt")
 }
 
+tasks.register<JavaExec>("pilotCardKey") {
+    description = "Genera la clave que firma las tarjetas del piloto (JWK P-256 privada) y la imprime."
+    group = "application"
+    classpath = simulator.runtimeClasspath
+    mainClass.set("mx.fastsolution.zenit.simulator.PilotCardKeyGenerator")
+}
+
 tasks.bootJar {
     archiveFileName.set("backend.jar")
 }

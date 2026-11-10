@@ -36,6 +36,16 @@ data class CaptureProperties(
      * apagado: nunca basta para aceptar un marcaje con datos reales.
      */
     val simulatedCards: Boolean = false,
+    /**
+     * Acepta las tarjetas MIFARE Classic del piloto, con código firmado y sin
+     * datos de la persona. Se pueden clonar con equipo especial: es un riesgo
+     * aceptado hasta usar DESFire. Necesita además [pilotCardKey].
+     */
+    val pilotCards: Boolean = false,
+    /** JWK P-256 privada que firma las tarjetas del piloto. Se entrega fuera del repositorio. */
+    val pilotCardKey: String? = null,
+    /** Versión de [pilotCardKey]; se escribe en cada tarjeta. Cambiarla deja inválidas las tarjetas anteriores. */
+    val pilotCardKeyVersion: Int = 1,
     /** Intentos fallidos de activación que se toleran por dirección y por minuto. */
     val activationFailuresPerMinute: Int = 10,
     /** Peticiones que se le aceptan a un dispositivo por minuto. */

@@ -48,6 +48,12 @@ zenit:
     # Tarjeta simulada del prototipo: no está autenticada. Nace apagada y sólo
     # se enciende a propósito, con datos ficticios.
     simulated-cards: ${CAPTURE_SIMULATED_CARDS:false}
+    # Tarjetas MIFARE Classic del piloto: código firmado, sin datos de la
+    # persona. Se pueden clonar con equipo especial (riesgo aceptado hasta
+    # DESFire). Necesitan también la clave del secreto pilot_card_key.
+    pilot-cards: ${CAPTURE_PILOT_CARDS:false}
+    pilot-card-key: ${pilot_card_key:}
+    pilot-card-key-version: ${CAPTURE_PILOT_CARD_KEY_VERSION:1}
   jobs:
     # Trabajos que se atienden fuera de la petición, como preparar un exporte.
     enabled: ${JOBS_ENABLED:true}

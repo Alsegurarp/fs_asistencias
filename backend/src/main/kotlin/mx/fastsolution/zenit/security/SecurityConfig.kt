@@ -215,7 +215,10 @@ private fun claimRule(name: String, rule: (Jwt) -> Boolean) = OAuth2TokenValidat
 }
 
 /** Rutas que sólo llama un dispositivo, con su propia credencial. */
-private val DEVICE_ROUTES = setOf("/api/v1/device-sessions", "/api/v1/attendance-events", "/api/v1/attendance-events/batch")
+private val DEVICE_ROUTES = setOf(
+    "/api/v1/device-sessions", "/api/v1/attendance-events", "/api/v1/attendance-events/batch",
+    "/api/v1/device-cards", "/api/v1/device-cards/credentials",
+)
 
 private val ACKNOWLEDGEMENT = Regex("^/api/v1/week-closures/[^/]+/acknowledgements$")
 

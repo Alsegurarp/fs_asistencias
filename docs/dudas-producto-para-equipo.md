@@ -176,6 +176,14 @@ Confirmar quién integra teléfono/backend y prueba compatibilidad.
 La captura Android release sigue bloqueada hasta completar esa integración.
 **Resuelven:** producto, hardware y seguridad. **Desbloquea:** tarea 4.
 
+**Respuesta del 10 de noviembre de 2026 (Alexis):** el piloto usa las
+MIFARE Classic 1K disponibles y se compran DESFire EV3 cuando haya capital.
+La tarjeta no guarda datos de la persona: sólo un código aleatorio con la
+firma del servidor ligada a su identificador. Riesgo aceptado: una Classic
+se puede clonar con equipo especial. Implementado como
+`mifare_classic_signed` ([Tarjetas del piloto](guia-app-android.md#tarjetas-del-piloto-mifare-classic)).
+DESFire sigue pendiente.
+
 ### Q09. ¿Qué material físico y casos reproducibles tendremos para validar?
 
 El teléfono de ensayos ya está documentado; falta confirmar tarjetas

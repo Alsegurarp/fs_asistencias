@@ -130,6 +130,7 @@ abstract class CaptureTestBase : ApiTestBase() {
         declared: String? = null,
         location: Map<String, Any?>? = here(),
         scheme: String = "uid_sha256",
+        keyVersion: Int? = null,
         signer: ECKey = p.key,
         kid: String = p.id,
         extra: Map<String, Any?> = emptyMap(),
@@ -137,7 +138,7 @@ abstract class CaptureTestBase : ApiTestBase() {
         val payload = linkedMapOf<String, Any?>(
             "envelopeVersion" to 1, "idempotencyKey" to key, "sessionId" to session, "sequence" to sequence,
             "observedAt" to observedAt.toString(), "timeZone" to "America/Mexico_City",
-            "card" to mapOf("scheme" to scheme, "proof" to cardPrint), "location" to location, "app" to mapOf("version" to "0.1.0"),
+            "card" to (mapOf("scheme" to scheme, "proof" to cardPrint) + (keyVersion?.let { mapOf("keyVersion" to it) } ?: emptyMap())), "location" to location, "app" to mapOf("version" to "0.1.0"),
         )
         if (declared != null) payload["declaredType"] = declared
         payload.putAll(extra)

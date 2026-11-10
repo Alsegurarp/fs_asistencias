@@ -60,7 +60,8 @@ bloque 3) y sus pruebas.
 | CTA-05 Buscador | Personas, tarjetas y lectores desde la barra superior; Enter abre el primero y Esc cierra | `GET /employees?q=`, `GET /cards?q=`, `GET /devices?q=`, con pocos resultados de cada una |
 | CTA-04 Menú Crear | Dar de alta, crear horario, activar lector, registrar tarjeta y cerrar la semana, según el rol; cada opción abre su ventana sobre la página actual. «Invitar» llega con el bloque 3 y «Generar un reporte» con el bloque 4 | Las de cada ventana |
 
-Lo que le falta al API (contrato 0.30.0, en la misma PR):
+Lo que le falta al API (contrato 0.31.0, en la misma PR; la 0.30.0 la
+tomaron las tarjetas del piloto):
 
 - **Detalle de una tarjeta.** El lienzo muestra quién la registró, su
   historial de asignaciones y su última lectura con el lector. Hoy no hay
@@ -80,8 +81,9 @@ Diferencias con el lienzo que hay que confirmar:
   exista la tarjeta real.
 - **Registrar la huella desde el navegador.** El navegador no lee la
   tarjeta: la huella se escribe a mano, como hoy. Sirve para la tarjeta
-  simulada. Con la tarjeta real, registrar desde la app o desde un lector
-  de escritorio es una decisión pendiente (ver abajo).
+  simulada. Las tarjetas del piloto se registran desde una terminal
+  («Preparar una tarjeta», 10 de noviembre) y llegan al inventario con
+  etiqueta `ZC-`; el portal sólo las asigna. Conviene que PAD-12 lo diga.
 
 Prueba en el entorno aislado: el simulador de lectores (`device-sim`)
 activa lectores, manda marcajes con tarjetas simuladas y deja un lector sin
