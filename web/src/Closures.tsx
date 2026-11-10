@@ -72,6 +72,13 @@ export function Closures({ me, context, section, screens, screen }: Props) {
   const summary = useQuery({ queryKey: ['closure-summary', scope.toString()], queryFn: () => api<ClosureSummary>(`/week-closures/summary?${scope}`), retry: false })
   const weekStart = summary.data?.weekStart
   const finished = !!weekStart && addDays(weekStart, 7) <= today
+  // `?cerrar=1` (menú Crear) abre la confirmación en cuanto la semana se puede cerrar.
+  const asked = params.get('cerrar') === '1'
+  useEffect(() => {
+    if (!asked || !weekStart) return
+    if (allowed.closeWeeks && finished) setConfirming(true)
+    change({ cerrar: null }, true)
+  }, [asked, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps
   const sites = useQuery({ queryKey: ['sites', 'all'], queryFn: () => allPages<Site>('/sites'), retry: false, staleTime: 60_000 })
   const siteName = (id: string | null) => (id ? sites.data?.find(site => site.id === id)?.name : undefined)
   const tenant = useQuery({ queryKey: ['tenant'], queryFn: () => api<Tenant>('/tenant'), retry: false, staleTime: 60_000 })

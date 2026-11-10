@@ -202,7 +202,7 @@ it('oculta y vuelve a mostrar el menú lateral, y lo recuerda', async () => {
 
 it('el menú de la cuenta muestra quién entró y cierra la sesión', async () => {
   await render(['admin_empresa', 'trabajador'])
-  const account = container.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!
+  const account = container.querySelector<HTMLButtonElement>('button[aria-label^="Cuenta de"]')!
   expect(account.getAttribute('aria-label')).toBe('Cuenta de Mariana Ortiz, Administración y Trabajador')
   expect(account.textContent).toBe('MO')
   await act(async () => account.click())
@@ -216,7 +216,7 @@ it('el menú de la cuenta muestra quién entró y cierra la sesión', async () =
 
 it('sin el rol de trabajador el menú de la cuenta no ofrece Mi asistencia', async () => {
   await render(['rh'])
-  await act(async () => container.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!.click())
+  await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label^="Cuenta de"]')!.click())
   await waitFor(() => !!document.querySelector('[role="menu"]'))
   expect(document.querySelector('[role="menu"]')!.textContent).not.toContain('Mi asistencia')
 })

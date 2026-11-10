@@ -27,6 +27,7 @@ import { StateCard } from './States'
 import { More } from './More'
 import { NoticesButton, useNotices } from './Notices'
 import { Panel } from './Panel'
+import { CreateMenu, GlobalSearch } from './TopBar'
 import {
   type Allowed, type Screen, type Section, companyGroups, consoleGroups, dossierCallbackPath, homePath, joinNames,
   personalScreen, personalSection, roleLabel, rolesFor, sessionEndedPath, visibleGroups, visibleScreens,
@@ -66,6 +67,7 @@ export function Portal({ me, email, onSignOut, notice }: PortalProps) {
   return <Routes>
     <Route element={<Shell me={me} email={email} groups={groups} firstPath={firstPath} context={context} onSignOut={onSignOut} counts={counts}
       bell={me.tenant && allowed.attendance ? <NoticesButton notices={notices} /> : undefined}
+      search={me.tenant ? <GlobalSearch me={me} /> : undefined} create={me.tenant ? <CreateMenu me={me} /> : undefined}
       notice={<>{notice}{breakNotice && <Alert severity="info" role="status" aria-live="polite">Aviso sobre la comida: {upcomingText(upcoming)}</Alert>}</>} />}>
       <Route index element={home ? <Navigate to={home} replace /> : <NoScreens me={me} />} />
       {all.flatMap(section => section.screens.map(screen => <Route key={screen.path} path={screen.path} element={page(section, screen)} />))}
