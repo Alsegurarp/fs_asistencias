@@ -42,9 +42,7 @@ class WelcomeActivity : ComponentActivity() {
                             AccessCard("Mi asistencia", "Registra tu asistencia y consulta tu resumen semanal.", "Continuar") {
                                 startActivity(Intent(this@WelcomeActivity, MainActivity::class.java))
                             }
-                            ExpandablePanel("Ayuda de acceso", "Código de vinculación y consulta de tarjeta") {
-                                OutlinedButton(onClick = { startActivity(Intent(this@WelcomeActivity, NfcDiagnosticActivity::class.java)) },
-                                    modifier = Modifier.fillMaxWidth()) { Text("Consultar tarjeta NFC") }
+                            ExpandablePanel("Ayuda de acceso", "Código de vinculación") {
                                 Text("Para vincular tu teléfono por primera vez, solicita un código a Recursos Humanos. Si ya está vinculado, pulsa Continuar.",
                                     style = MaterialTheme.typography.bodySmall)
                                 if (BuildConfig.DEBUG) TextButton(onClick = {

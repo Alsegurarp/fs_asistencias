@@ -1,5 +1,7 @@
 package mx.fastsolution.zenit.device
 
+import mx.fastsolution.zenit.card.PilotCardFormat
+import mx.fastsolution.zenit.card.PilotCardKeys
 import com.nimbusds.jose.JWSObject
 import jakarta.servlet.http.HttpServletRequest
 import mx.fastsolution.zenit.api.Checks
@@ -142,6 +144,13 @@ data class DeviceView(
 
 data class OfflinePolicyView(val maxAgeHours: Long, val maxEvents: Int)
 
+/**
+ * Lo que el dispositivo necesita para leer las tarjetas del piloto: la clave
+ * de los sectores de su empresa y la clave pública para comprobar la firma
+ * sin red. Sólo viene cuando el ambiente acepta esas tarjetas.
+ */
+data class PilotCardsView(val scheme: String, val keyVersion: Int, val sectorKey: String, val verificationKey: String)
+
 /** Qué lectores pide la lista. `text` es el patrón ya escapado de `TextSearch`. */
 data class DeviceFilter(
     val mode: String? = null,
@@ -167,6 +176,7 @@ data class DeviceSessionView(
     /** El cambio de la política de comida que viene, para avisar a la persona y cambiar de regla al llegar la hora. */
     val upcomingBreakPolicy: UpcomingBreakPolicyView?,
     val offlinePolicy: OfflinePolicyView,
+    val pilotCards: PilotCardsView?,
 )
 
 data class NamedTenantView(val name: String, val timeZone: String)
@@ -393,6 +403,7 @@ class DeviceService(
     private val capture: CaptureProperties,
     private val audit: AuditLog,
     private val policies: BreakPolicies,
+    private val pilotCardKeys: PilotCardKeys,
 ) {
     private val activationFailures = FixedWindowLimiter(Duration.ofMinutes(1))
 
@@ -582,6 +593,11 @@ class DeviceService(
         breakPolicy = policies.current(tenant),
         upcomingBreakPolicy = policies.upcoming(tenant),
         offlinePolicy = OfflinePolicyView(capture.offlineMaxAgeHours, capture.offlineMaxEvents),
+        pilotCards = if (pilotCardKeys.enabled) {
+            PilotCardsView(PilotCardFormat.SCHEME, pilotCardKeys.keyVersion, PilotCardFormat.hex(pilotCardKeys.sectorKey(tenant.id)), pilotCardKeys.verificationKey())
+        } else {
+            null
+        },
     )
 
     private companion object {

@@ -1,13 +1,15 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.29.0
+  version: 0.30.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
     atiende todas sus operaciones. Dos cosas no existen todavía detrás de
-    ellas: la verificación de la tarjeta real, y otra fuente del padrón que no
-    sea la carga por archivo.
+    ellas: la verificación de la tarjeta DESFire, y otra fuente del padrón que
+    no sea la carga por archivo. Las tarjetas MIFARE Classic del piloto
+    (`mifare_classic_signed`) se verifican por su firma, pero se pueden
+    clonar: son un riesgo aceptado hasta usar DESFire.
 
     Convenciones:
 
@@ -2984,6 +2986,7 @@ paths:
                   offlinePolicy:
                     maxAgeHours: 72
                     maxEvents: 1000
+                  pilotCards: null
         "410":
           description: El código ya se usó o expiró
           content:
@@ -3187,8 +3190,117 @@ paths:
                 offlinePolicy:
                   maxAgeHours: 72
                   maxEvents: 1000
+                pilotCards: null
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /device-cards/credentials:
+    post:
+      tags: [captura]
+      operationId: issuePilotCardCredential
+      summary: Firma un código nuevo para una tarjeta del piloto
+      description: |
+        Sólo una terminal activa, en un ambiente que acepta las tarjetas del
+        piloto. El servidor genera un código aleatorio y lo firma junto con
+        el identificador de la tarjeta (`uid`) y la versión de la clave. La
+        terminal lo escribe en la tarjeta, lo relee y después lo da de alta
+        con `registerPilotCard`. No se guarda nada hasta ese alta. La tarjeta
+        no lleva datos de la persona.
+
+        Lo firmado son los bytes ASCII `zenit-classic-v1`, la longitud del
+        identificador (un byte), el identificador, la versión de la clave (un
+        byte) y el código. La firma es ECDSA P-256 con SHA-256, de 64 bytes
+        (`r` seguido de `s`).
+
+        Responde 409 con `code` `pilot_cards_disabled` si el ambiente no las
+        acepta, y 403 si quien llama no es una terminal.
+      security:
+        - deviceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PilotCardIssue"
+            example:
+              uid: a9c6cc10
+      responses:
+        "200":
+          description: Código firmado, listo para escribirse
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PilotCardCredential"
+              example:
+                uid: a9c6cc10
+                keyVersion: 1
+                token: 3f1c9a0b7d2e4f6a8b0c1d2e3f405162
+                signature: 3q2-7wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /device-cards:
+    post:
+      tags: [captura]
+      operationId: registerPilotCard
+      summary: Da de alta en inventario una tarjeta del piloto ya escrita
+      description: |
+        La terminal manda lo que escribió y comprobó en la tarjeta. El servidor
+        verifica la firma y la registra en inventario, con una etiqueta
+        `ZC-` para encontrarla en el portal, donde se asigna a una persona.
+        La huella guardada liga el código a su identificador; ni uno ni otro
+        se guardan solos. Repetir el alta de la misma tarjeta devuelve la que
+        ya existe con 200. Una firma que no corresponde responde 422 con
+        `invalid_signature`.
+      security:
+        - deviceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PilotCardRegistration"
+            example:
+              uid: a9c6cc10
+              keyVersion: 1
+              token: 3f1c9a0b7d2e4f6a8b0c1d2e3f405162
+              signature: 3q2-7wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      responses:
+        "201":
+          description: Tarjeta registrada en inventario
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+              example:
+                id: 7b9d1f3a-5c7e-4a9b-8d0f-2a4c6e8a0b1d
+                label: ZC-3F1C9A0B
+                status: inventory
+                keyVersion: 1
+                assignment: null
+                latestAssignment: null
+                createdAt: "2026-11-10T16:20:00Z"
+                updatedAt: "2026-11-10T16:20:00Z"
+        "200":
+          description: La tarjeta ya estaba registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/Unprocessable"
 
@@ -6684,7 +6796,7 @@ components:
           maxLength: 20
     DeviceSession:
       type: object
-      required: [sessionId, startedAt, serverTime, tokenMaxAgeSeconds, locationReuseSeconds, breakPolicy, upcomingBreakPolicy, offlinePolicy]
+      required: [sessionId, startedAt, serverTime, tokenMaxAgeSeconds, locationReuseSeconds, breakPolicy, upcomingBreakPolicy, offlinePolicy, pilotCards]
       properties:
         sessionId:
           type: string
@@ -6721,6 +6833,71 @@ components:
               type: integer
             maxEvents:
               type: integer
+        pilotCards:
+          description: |
+            Lo que el dispositivo necesita para leer las tarjetas del piloto.
+            Nulo si el ambiente no las acepta.
+          oneOf:
+            - type: object
+              required: [scheme, keyVersion, sectorKey, verificationKey]
+              properties:
+                scheme:
+                  type: string
+                  enum: [mifare_classic_signed]
+                keyVersion:
+                  type: integer
+                  description: Versión de la clave con la que se firman hoy las tarjetas.
+                sectorKey:
+                  type: string
+                  pattern: "^[0-9a-f]{12}$"
+                  description: |
+                    Clave A y B de los sectores de las tarjetas de la empresa, en
+                    hexadecimal. Impide leerlas o borrarlas con una app de
+                    celular; no detiene un ataque a la Classic.
+                verificationKey:
+                  type: string
+                  description: Clave pública P-256 en X.509 (base64), para comprobar la firma sin red.
+            - type: "null"
+    PilotCardIssue:
+      type: object
+      additionalProperties: false
+      required: [uid]
+      properties:
+        uid:
+          type: string
+          pattern: "^([0-9a-fA-F]{8}|[0-9a-fA-F]{14}|[0-9a-fA-F]{20})$"
+          description: Identificador de la tarjeta, de 4, 7 o 10 bytes, en hexadecimal.
+    PilotCardCredential:
+      type: object
+      required: [uid, keyVersion, token, signature]
+      properties:
+        uid:
+          type: string
+          description: El identificador en minúsculas.
+        keyVersion:
+          type: integer
+        token:
+          type: string
+          pattern: "^[0-9a-f]{32}$"
+          description: Código aleatorio de 16 bytes, en hexadecimal.
+        signature:
+          type: string
+          description: Firma de 64 bytes en base64url sin relleno.
+    PilotCardRegistration:
+      type: object
+      additionalProperties: false
+      required: [uid, keyVersion, token, signature]
+      properties:
+        uid:
+          type: string
+          pattern: "^([0-9a-fA-F]{8}|[0-9a-fA-F]{14}|[0-9a-fA-F]{20})$"
+        keyVersion:
+          type: integer
+        token:
+          type: string
+          pattern: "^[0-9a-fA-F]{32}$"
+        signature:
+          type: string
     Device:
       type: object
       required:
@@ -6882,8 +7059,14 @@ components:
           properties:
             scheme:
               type: string
-              enum: [desfire_ev3_aes, uid_sha256]
+              enum: [desfire_ev3_aes, mifare_classic_signed, uid_sha256]
               description: |
+                `mifare_classic_signed` es la tarjeta del piloto: `proof` es
+                `<uid>.<código>.<firma>` (los dos primeros en hexadecimal, la
+                firma en base64url) y `keyVersion` es la versión de la clave
+                con la que se firmó. El servidor comprueba la firma y busca la
+                tarjeta registrada; se acepta sólo en un ambiente que enciende
+                el piloto. Se puede clonar con equipo especial.
                 `uid_sha256` es la señal no autenticada del prototipo y nunca
                 basta para aceptar un marcaje con datos reales.
                 El servidor sólo la acepta en un ambiente que la enciende a

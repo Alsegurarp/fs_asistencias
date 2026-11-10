@@ -1,5 +1,30 @@
 # Estado y pendientes
 
+**Tarjetas del piloto, 10 de noviembre (contrato 0.30.0):** decidido usar las
+MIFARE Classic 1K disponibles hasta comprar DESFire EV3. La tarjeta guarda
+sólo un código aleatorio con la firma del servidor ligada a su identificador,
+sin datos de la persona. Una terminal la prepara y la da de alta en
+inventario; el portal la asigna; la app comprueba la firma sin red y marca
+también en release; el servidor vuelve a comprobarla. Nace apagado
+(`CAPTURE_PILOT_CARDS` y el secreto `pilot_card_key`). Se retiraron
+«Consultar tarjeta» y el formato que guardaba nombre y puesto. Aprobados el
+contrato, el backend (unitarias y 128 de integración, 6 del piloto) y
+Android (18 unitarias, lint, APK debug y release). Riesgo aceptado: la
+Classic se puede clonar. [Detalle](guia-app-android.md#tarjetas-del-piloto-mifare-classic).
+Probado con la tarjeta física en el Samsung contra el backend local:
+preparar, marcar entrada y salida, rechazo al perderla y sectores cerrados
+a las claves de fábrica ([acta](qa-android-tarjetas-piloto-2026-11-10.md)).
+Faltan asignar y revocar desde el portal, el despliegue y la release en el
+teléfono.
+
+**Lo que sigue en el portal, 9 de noviembre:** el bloque 2 termina con
+Dispositivos y tarjetas, el buscador y el menú Crear; después va el bloque 3,
+Empresa. Qué pantallas entran, qué le falta al API (el detalle de una
+tarjeta y las cifras por sede) y qué se necesita de Alexis para probar y
+avanzar (decisiones, SMTP, mapa, despliegue, cuentas por rol, teléfono y
+tarjetas) está en
+[Lo que sigue](construir-el-portal.md#lo-que-sigue-dispositivos-y-tarjetas-y-empresa).
+
 **Importar CSV según el lienzo, 9 de noviembre (contrato 0.29.0):** segunda
 PR del Padrón. Importaciones con su historial y el modal de tres pasos:
 subir, revisar sin cambiar nada y aplicar las filas listas; aplicar una
@@ -7,8 +32,8 @@ revisión del historial eligiendo otra vez el mismo archivo; descargar los
 errores. Cada importación dice altas, con cambios y sin cambios. Aprobados
 el backend (unitarias y de integración), el contrato y 285 pruebas del
 portal; recorrida con sesiones reales en local, a 1440 y 390 px, sin
-problemas. Sigue Dispositivos y tarjetas
-([orden y pendientes](construir-el-portal.md)). Espera la PR.
+problemas. Integrado con la PR #44 (`main` en `8a52b0c`), sin despliegue
+registrado.
 
 **Personal y horarios según el lienzo, 9 de noviembre (contrato 0.28.0):**
 primera pantalla del Padrón (bloque 2). Personas con filtros y búsqueda en el

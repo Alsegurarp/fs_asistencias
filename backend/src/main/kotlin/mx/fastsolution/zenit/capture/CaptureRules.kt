@@ -32,6 +32,7 @@ data class EnvelopePayload(
     val declaredType: String?,
     val cardScheme: String,
     val cardProof: String,
+    val cardKeyVersion: Long?,
     val location: LocationSample?,
     val appVersion: String,
 )
@@ -42,7 +43,8 @@ class InvalidPayload(message: String) : RuntimeException(message)
 object Envelopes {
     val TYPES = setOf("clock_in", "clock_out", "break_start", "break_end")
     const val SIMULATED_SCHEME = "uid_sha256"
-    private val SCHEMES = setOf("desfire_ev3_aes", SIMULATED_SCHEME)
+    const val PILOT_SCHEME = "mifare_classic_signed"
+    private val SCHEMES = setOf("desfire_ev3_aes", PILOT_SCHEME, SIMULATED_SCHEME)
     private val UNAVAILABLE = setOf("permission_denied", "disabled", "timeout")
     private val TOP = setOf(
         "envelopeVersion", "idempotencyKey", "sessionId", "sequence", "observedAt", "timeZone", "elapsedRealtimeMs",
@@ -69,7 +71,7 @@ object Envelopes {
         if (scheme !in SCHEMES) fail("card.scheme no es un esquema conocido")
         val proof = text(card, "proof") ?: fail("falta card.proof")
         if (proof.isEmpty() || proof.length > MAX_PROOF) fail("card.proof fuera de tamaño")
-        whole(card, "keyVersion")
+        val keyVersion = whole(card, "keyVersion")
 
         val app = map(raw, "app") ?: fail("falta app")
         only(app, setOf("version"), "app")
@@ -86,6 +88,7 @@ object Envelopes {
             declaredType = declared,
             cardScheme = scheme,
             cardProof = proof,
+            cardKeyVersion = keyVersion,
             location = map(raw, "location")?.let(::location),
             appVersion = version,
         )

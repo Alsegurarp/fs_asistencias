@@ -6,6 +6,18 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 9 de noviembre de 2026 — Lo que sigue: Dispositivos y tarjetas, y Empresa
+
+Sin código. Con Importar integrado (PR #44, `main` en `8a52b0c`), se revisó
+el lienzo de PAD-02, PAD-11, PAD-12, CTA-04, CTA-05 y del bloque 3 contra el
+contrato 0.29.0. Quedó en
+[construir-el-portal.md](construir-el-portal.md#lo-que-sigue-dispositivos-y-tarjetas-y-empresa):
+las pantallas y rutas de cada uno, lo que le falta al API (`GET /cards/{cardId}`
+con historial y última lectura; personas y lectores por sede), las
+diferencias que hay que confirmar (una tarjeta que ya tuvo titular no pasa a
+otra persona; la tecnología de la tarjeta; registrar la huella desde el
+navegador) y lo que se necesita para probar y avanzar.
+
 ## 9 de noviembre de 2026 — Importar CSV según el lienzo
 
 Rama `feat/portal-importar` desde `main` (`e5eadd9`, con el Panel y Personal

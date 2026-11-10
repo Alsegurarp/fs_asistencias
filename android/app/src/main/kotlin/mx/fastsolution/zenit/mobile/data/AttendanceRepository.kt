@@ -2,6 +2,8 @@ package mx.fastsolution.zenit.mobile.data
 
 import android.app.KeyguardManager
 import android.content.Context
+import android.nfc.Tag
+import android.nfc.tech.MifareClassic
 import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.room.withTransaction
@@ -16,7 +18,12 @@ import kotlinx.coroutines.withContext
 import mx.fastsolution.zenit.mobile.BuildConfig
 import mx.fastsolution.zenit.mobile.capture.BreakPolicySchedule
 import mx.fastsolution.zenit.mobile.capture.SessionPolicy
-import mx.fastsolution.zenit.mobile.capture.TagEvidenceHasher
+import mx.fastsolution.zenit.mobile.capture.CardEvidence
+import mx.fastsolution.zenit.mobile.capture.PilotCardConfig
+import mx.fastsolution.zenit.mobile.capture.PilotCardException
+import mx.fastsolution.zenit.mobile.capture.PilotCardFormat
+import mx.fastsolution.zenit.mobile.capture.PilotCardIo
+import mx.fastsolution.zenit.mobile.capture.PilotCredential
 import mx.fastsolution.zenit.mobile.location.CurrentLocationProvider
 import mx.fastsolution.zenit.mobile.security.DeviceSigner
 import mx.fastsolution.zenit.mobile.security.OfflineEventCipher
@@ -114,9 +121,88 @@ class AttendanceRepository(private val context: Context) {
         }
     }
 
-    suspend fun capture(tagId: ByteArray, declaredType: String?, observedAt: Instant, elapsedRealtimeMs: Long) = withContext(Dispatchers.IO) {
+    /** Tarjeta simulada del prototipo: sólo debug y datos ficticios. */
+    suspend fun capture(tagId: ByteArray, declaredType: String?, observedAt: Instant, elapsedRealtimeMs: Long) =
+        capture(CardEvidence.simulated(tagId), declaredType, observedAt, elapsedRealtimeMs)
+
+    /** La configuración del piloto que mandó el servidor en la sesión; nula si el ambiente no lo acepta. */
+    fun pilotCards(): PilotCardConfig? = store.registration()?.let(::pilotConfig)
+
+    /**
+     * Lo que la tarjeta aporta al sobre. Con el piloto encendido se lee la
+     * credencial y se comprueba su firma sin red; sin piloto, sólo debug usa
+     * la tarjeta simulada.
+     */
+    suspend fun readCard(tag: Tag): CardEvidence = withContext(Dispatchers.IO) {
+        val config = pilotCards()
+        if (config == null) {
+            check(BuildConfig.DEBUG) { "Este servidor todavía no acepta tarjetas. Consulte a Recursos Humanos." }
+            return@withContext CardEvidence.simulated(tag.id)
+        }
+        val card = MifareClassic.get(tag) ?: throw PilotCardException("Esta tarjeta no es una tarjeta Zenit del piloto.")
+        val credential = try {
+            card.connect()
+            PilotCardIo.read(card, tag.id, config.sectorKey)
+        } catch (error: java.io.IOException) {
+            throw PilotCardException("Se retiró la tarjeta antes de terminar. Acérquela de nuevo y manténgala inmóvil.")
+        } finally { runCatching { card.close() } }
+        credential ?: throw PilotCardException("Esta tarjeta no está preparada. Prepárela en una terminal antes de usarla.")
+        check(credential.keyVersion == config.keyVersion && PilotCardFormat.verify(credential, config.verificationKey)) {
+            "La tarjeta no tiene una firma válida. Entréguela a Recursos Humanos."
+        }
+        credential.evidence()
+    }
+
+    /**
+     * Prepara una tarjeta en la terminal: el servidor firma un código para su
+     * identificador, se escribe, se relee y se da de alta en inventario.
+     * Devuelve la etiqueta con la que se asigna en el portal.
+     */
+    suspend fun prepareCard(tag: Tag): String = withContext(Dispatchers.IO) {
         lock.withLock {
-            check(BuildConfig.DEBUG) { "La verificación de tarjetas reales todavía no está disponible." }
+            val registration = requireRegistration()
+            check(registration.getString("mode") == "terminal") { "Sólo una terminal prepara tarjetas." }
+            val config = checkNotNull(pilotConfig(registration)) { "Este servidor no acepta tarjetas del piloto." }
+            val card = MifareClassic.get(tag) ?: throw PilotCardException("Esta tarjeta no es una MIFARE Classic. No sirve para el piloto.")
+            val api = CaptureApi(registration.getString("baseUrl"))
+            val uid = PilotCardFormat.hex(tag.id)
+            // Una tarjeta ya preparada no se reescribe: perdería el código con el que está asignada.
+            val existing = try {
+                card.connect()
+                PilotCardIo.read(card, tag.id, config.sectorKey)
+            } catch (error: java.io.IOException) {
+                throw PilotCardException("Se retiró la tarjeta antes de terminar. Acérquela de nuevo y vuelva a prepararla.")
+            } finally { runCatching { card.close() } }
+            if (existing != null && existing.keyVersion == config.keyVersion && PilotCardFormat.verify(existing, config.verificationKey)) {
+                val registered = api.post("/device-cards", JSONObject().put("uid", uid).put("keyVersion", existing.keyVersion)
+                    .put("token", PilotCardFormat.hex(existing.token)).put("signature", PilotCardFormat.base64Url(existing.signature)),
+                    signer(registration).assertion(registration))
+                val label = registered.getString("label")
+                store.saveNotice("Esta tarjeta ya estaba preparada: $label. No se reescribió.")
+                return@withLock label
+            }
+            val issued = api.post("/device-cards/credentials", JSONObject().put("uid", uid), signer(registration).assertion(registration))
+            check(issued.getString("uid") == uid && issued.getInt("keyVersion") == config.keyVersion) { "El servidor firmó otra tarjeta. Vuelva a intentarlo." }
+            val credential = PilotCredential(tag.id, config.keyVersion, PilotCardFormat.parseHex(issued.getString("token")),
+                PilotCardFormat.fromBase64Url(issued.getString("signature")))
+            check(PilotCardFormat.verify(credential, config.verificationKey)) { "La firma del servidor no es válida. No se escribió la tarjeta." }
+            try {
+                card.connect()
+                PilotCardIo.write(card, config.sectorKey, credential)
+            } catch (error: java.io.IOException) {
+                throw PilotCardException("Se retiró la tarjeta antes de terminar. Acérquela de nuevo y vuelva a prepararla.")
+            } finally { runCatching { card.close() } }
+            val registered = api.post("/device-cards", JSONObject().put("uid", uid).put("keyVersion", config.keyVersion)
+                .put("token", issued.getString("token")).put("signature", issued.getString("signature")), signer(registration).assertion(registration))
+            val label = registered.getString("label")
+            store.saveNotice("Tarjeta $label preparada y en inventario. Escriba la etiqueta en la tarjeta y asígnela en el portal.")
+            label
+        }
+    }
+
+    suspend fun capture(evidence: CardEvidence, declaredType: String?, observedAt: Instant, elapsedRealtimeMs: Long) = withContext(Dispatchers.IO) {
+        lock.withLock {
+            check(evidence.scheme != "uid_sha256" || BuildConfig.DEBUG) { "La tarjeta simulada sólo existe en la versión de pruebas." }
             val registration = requireRegistration()
             check(sessionUsable(registration, observedAt)) { "La sesión venció o alcanzó su límite. Sincronice y renueva la sesión." }
             check(ContextCompat.getSystemService(context, KeyguardManager::class.java)?.isDeviceSecure == true) { "Active el bloqueo de pantalla para marcar." }
@@ -134,7 +220,8 @@ class AttendanceRepository(private val context: Context) {
                 .put("sessionId", session.getString("sessionId")).put("sequence", sequence)
                 .put("observedAt", observedAt.toString()).put("timeZone", ZoneId.systemDefault().id)
                 .put("elapsedRealtimeMs", elapsedRealtimeMs)
-                .put("card", JSONObject().put("scheme", "uid_sha256").put("proof", TagEvidenceHasher.sha256(tagId)))
+                .put("card", JSONObject().put("scheme", evidence.scheme).put("proof", evidence.proof)
+                    .apply { evidence.keyVersion?.let { put("keyVersion", it) } })
                 .put("app", JSONObject().put("version", BuildConfig.VERSION_NAME))
             if (declaredType != null) payload.put("declaredType", declaredType)
             if (location != null) {
@@ -232,6 +319,17 @@ class AttendanceRepository(private val context: Context) {
         }
         val policy = session.getJSONObject("offlinePolicy")
         require(policy.getLong("maxAgeHours") in 1..72 && policy.getInt("maxEvents") in 1..1000)
+        session.optJSONObject("pilotCards")?.let { pilot ->
+            require(pilot.getString("scheme") == PilotCardFormat.SCHEME)
+            require(pilot.getInt("keyVersion") in 0..255)
+            require(Regex("^[0-9a-f]{12}$").matches(pilot.getString("sectorKey")))
+            require(pilot.getString("verificationKey").isNotBlank())
+        }
+    }
+
+    private fun pilotConfig(registration: JSONObject): PilotCardConfig? {
+        val pilot = registration.optJSONObject("session")?.optJSONObject("pilotCards") ?: return null
+        return PilotCardConfig(pilot.getInt("keyVersion"), PilotCardFormat.parseHex(pilot.getString("sectorKey")), pilot.getString("verificationKey"))
     }
 
     companion object {

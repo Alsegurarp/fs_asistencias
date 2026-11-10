@@ -152,6 +152,9 @@ services:
       IDENTITY_ADMIN_URL: ${IDENTITY_ADMIN_URL:-}
       # Apagada salvo que se pida: la tarjeta simulada no está autenticada.
       CAPTURE_SIMULATED_CARDS: ${CAPTURE_SIMULATED_CARDS:-false}
+      # Tarjetas Classic del piloto. Apagadas, o sin clave en pilot_card_key, se rechazan.
+      CAPTURE_PILOT_CARDS: ${CAPTURE_PILOT_CARDS:-false}
+      CAPTURE_PILOT_CARD_KEY_VERSION: ${CAPTURE_PILOT_CARD_KEY_VERSION:-1}
       # Minutos durante los que un exporte listo se puede descargar.
       EXPORTS_TTL_MINUTES: ${EXPORTS_TTL_MINUTES:-15}
       # Apagado, este proceso no atiende trabajos encolados.
@@ -167,6 +170,8 @@ services:
       - db_app_password
       # Correos de quienes operan el servicio. Vacío, nadie da de alta empresas.
       - operator_emails
+      # Clave que firma las tarjetas del piloto. Vacía, no se aceptan.
+      - pilot_card_key
     depends_on:
       db:
         condition: service_healthy
@@ -258,6 +263,19 @@ services:
           echo "operator_emails: creado vacío; nadie opera hasta que se escriban correos."
         else
           echo "operator_emails: ya existe; no se cambia."
+        fi
+        # Clave de las tarjetas del piloto: nace vacía y se genera aparte
+        # (ver la guía de la app). No se sobrescribe: cambiarla invalida las
+        # tarjetas ya escritas.
+        if [ -d /out/pilot_card_key ]; then
+          rmdir /out/pilot_card_key
+        fi
+        if [ ! -f /out/pilot_card_key ]; then
+          : > /out/pilot_card_key
+          chmod 644 /out/pilot_card_key
+          echo "pilot_card_key: creado vacío; no se aceptan tarjetas del piloto hasta escribir la clave."
+        else
+          echo "pilot_card_key: ya existe; no se cambia."
         fi
         chmod 700 /out
     volumes:
@@ -553,6 +571,8 @@ secrets:
     file: ./secrets/keycloak.conf
   operator_emails:
     file: ./secrets/operator_emails
+  pilot_card_key:
+    file: ./secrets/pilot_card_key
 
 volumes:
   zenit-db:

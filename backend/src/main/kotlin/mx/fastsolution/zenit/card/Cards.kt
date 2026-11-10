@@ -123,10 +123,10 @@ data class CardAssignmentView(
 
 @Repository
 class CardRepository(private val dsl: DSLContext) {
-    fun insert(tenantId: UUID, id: UUID, label: String, fingerprint: String) {
+    fun insert(tenantId: UUID, id: UUID, label: String, fingerprint: String, keyVersion: Int? = null) {
         dsl.execute(
-            "insert into card (tenant_id, id, label, fingerprint, status) values (?, ?, ?, ?, 'inventory')",
-            tenantId, id, label, fingerprint,
+            "insert into card (tenant_id, id, label, fingerprint, key_version, status) values (?, ?, ?, ?, cast(? as integer), 'inventory')",
+            tenantId, id, label, fingerprint, keyVersion,
         )
     }
 

@@ -33,7 +33,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" android:exported="false" />
-        <activity android:name=".NfcDiagnosticActivity" android:exported="false" />
     </application>
 
 </manifest>

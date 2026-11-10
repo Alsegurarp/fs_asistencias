@@ -8,6 +8,7 @@ import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.card.CardRepository
+import mx.fastsolution.zenit.card.PilotCardService
 import mx.fastsolution.zenit.device.CurrentDevice
 import mx.fastsolution.zenit.device.DeviceKeys
 import mx.fastsolution.zenit.device.DeviceRepository
@@ -284,6 +285,7 @@ class CaptureProcessor(
     private val capture: CaptureProperties,
     private val policies: BreakPolicies,
     private val audit: AuditLog,
+    private val pilotCards: PilotCardService,
 ) {
     @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = [IdempotencyConflict::class])
     fun process(device: CurrentDevice, envelope: String, headerKey: UUID?): Processed {
@@ -348,11 +350,19 @@ class CaptureProcessor(
             return reject("too_old", "El marcaje es más viejo de lo que se acepta.")
         }
 
-        if (payload.cardScheme != Envelopes.SIMULATED_SCHEME) {
-            return reject("card_unknown", "El servidor todavía no verifica ese esquema de tarjeta.")
+        val fingerprint = when (payload.cardScheme) {
+            Envelopes.SIMULATED_SCHEME -> {
+                if (!capture.simulatedCards) return reject("card_unknown", "Este ambiente no acepta la tarjeta simulada.")
+                payload.cardProof
+            }
+            Envelopes.PILOT_SCHEME -> {
+                if (!pilotCards.enabled) return reject("card_unknown", "Este ambiente no acepta tarjetas del piloto.")
+                pilotCards.verify(payload.cardProof, payload.cardKeyVersion)?.fingerprint
+                    ?: return reject("card_unknown", "La tarjeta no tiene una firma válida.")
+            }
+            else -> return reject("card_unknown", "El servidor todavía no verifica ese esquema de tarjeta.")
         }
-        if (!capture.simulatedCards) return reject("card_unknown", "Este ambiente no acepta la tarjeta simulada.")
-        val card = cards.findByFingerprint(tenantId, payload.cardProof) ?: return reject("card_unknown", "La tarjeta no está registrada.")
+        val card = cards.findByFingerprint(tenantId, fingerprint) ?: return reject("card_unknown", "La tarjeta no está registrada.")
         if (card.status in NEVER_HELD) return reject("card_unknown", "La tarjeta no tiene titular.")
         val holder = card.employeeId ?: if (card.status == "revoked") cards.holderAt(tenantId, card.id, payload.observedAt) else null
         if (holder == null) return reject("card_revoked", "La tarjeta ya no está activa.")
