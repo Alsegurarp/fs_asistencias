@@ -1,5 +1,23 @@
 # Decisiones de negocio
 
+## Portal: lienzo, mapas, correo y soporte — 10 de noviembre de 2026
+
+Tras el recorrido del portal en local, Alexis decide:
+
+- **Tarjetas:** se muestra la columna «Tecnología». Se acepta reponer con otra
+  tarjeta del inventario en lugar de «Asignar a otra persona». «Cerrar la
+  semana» lleva a Cierres, e «Invitar» y «Generar un reporte» llegan con los
+  bloques 3 y 4.
+- **Mapas:** OpenStreetMap, con su atribución.
+- **Ayuda y soporte:** por ahora, el correo rene.alexis.segura@gmail.com y el
+  número 56 3300 1126.
+- **SMTP:** el de Brevo que ya usa la landing. La credencial está fuera del
+  repositorio, en `secrets/smtp.env`, y en local ya está configurada en el
+  Keycloak con un correo de prueba enviado. El remitente es una dirección
+  @gmail.com: para producción conviene autenticar `fastsolution.com.mx` en
+  Brevo y usar un remitente de ese dominio, porque con un remitente @gmail.com
+  los proveedores suelen mandar el correo a spam o rechazarlo.
+
 ## Tarjetas del piloto — 10 de noviembre de 2026
 
 Alexis decide hacer el piloto con las tarjetas MIFARE Classic 1K que ya

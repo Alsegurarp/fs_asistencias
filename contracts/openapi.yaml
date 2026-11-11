@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.31.0
+  version: 0.32.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -2668,6 +2668,7 @@ paths:
                     label: ZN-000123
                     status: active
                     keyVersion: 1
+                    technology: mifare_classic_signed
                     assignment:
                       employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
                       employeeName: Persona de Ejemplo Uno
@@ -2718,6 +2719,7 @@ paths:
                 label: ZN-000123
                 status: inventory
                 keyVersion: 1
+                technology: mifare_classic_signed
                 assignment: null
                 latestAssignment: null
                 createdAt: "2026-10-05T15:45:00Z"
@@ -2793,6 +2795,7 @@ paths:
                 label: T-0058
                 status: active
                 keyVersion: null
+                technology: manual
                 assignment:
                   employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
                   employeeName: Persona de Ejemplo Uno
@@ -2820,6 +2823,7 @@ paths:
                   observedAt: "2026-11-10T14:59:00Z"
                   deviceId: 1c3e5a7b-9d0f-4a2c-8e4b-6d8f0a2c4e6b
                   deviceName: Terminal Recepción
+                readCount: 42
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2912,6 +2916,7 @@ paths:
                 label: ZN-000123
                 status: lost
                 keyVersion: 1
+                technology: mifare_classic_signed
                 assignment: null
                 latestAssignment:
                   employeeId: 5a7c9e1b-3d5f-4b6a-8c0e-2a4c6e8b0d12
@@ -3345,6 +3350,7 @@ paths:
                 label: ZC-3F1C9A0B
                 status: inventory
                 keyVersion: 1
+                technology: mifare_classic_signed
                 assignment: null
                 latestAssignment: null
                 createdAt: "2026-11-10T16:20:00Z"
@@ -6535,9 +6541,16 @@ components:
     CardStatus:
       type: string
       enum: [inventory, assigned, active, revoked, lost, damaged, replaced]
+    CardTechnology:
+      type: string
+      enum: [manual, mifare_classic_signed]
+      description: >-
+        `manual`: la huella se escribió a mano al registrarla (tarjeta
+        simulada o sin firma). `mifare_classic_signed`: tarjeta del piloto,
+        preparada por una terminal con un código firmado.
     Card:
       type: object
-      required: [id, label, status, keyVersion, assignment, latestAssignment, createdAt, updatedAt]
+      required: [id, label, status, keyVersion, technology, assignment, latestAssignment, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -6549,6 +6562,8 @@ components:
           $ref: "#/components/schemas/CardStatus"
         keyVersion:
           type: [integer, "null"]
+        technology:
+          $ref: "#/components/schemas/CardTechnology"
         assignment:
           description: Quien la tiene hoy.
           oneOf:
@@ -6599,7 +6614,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/Card"
         - type: object
-          required: [registeredBy, assignments, lastRead]
+          required: [registeredBy, assignments, lastRead, readCount]
           properties:
             registeredBy:
               oneOf:
@@ -6651,6 +6666,10 @@ components:
                     deviceName:
                       type: string
                 - type: "null"
+            readCount:
+              type: integer
+              minimum: 0
+              description: Cuántos marcajes se guardaron con la tarjeta.
     CardCreate:
       type: object
       additionalProperties: false

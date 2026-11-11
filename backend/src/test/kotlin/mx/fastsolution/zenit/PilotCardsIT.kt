@@ -89,6 +89,8 @@ class PilotCardsIT : CaptureTestBase() {
         assertEquals("device", detail.at("registeredBy.type"))
         assertEquals("Recepción", detail.at("registeredBy.name"))
         assertEquals("Recepción", detail.at("lastRead.deviceName"))
+        assertEquals("mifare_classic_signed", detail.at("technology"))
+        assertEquals(1, detail.at<Int>("readCount"))
 
         // El alta queda en la bitácora a nombre del dispositivo, sin la huella.
         val audit = call("GET", "/api/v1/audit-log?limit=200", c.adminToken)

@@ -171,7 +171,7 @@ class PilotCardService(
         val fingerprint = PilotCardFormat.fingerprint(uid, token)
         cards.findByFingerprint(device.tenantId, fingerprint)?.let { return cards.find(device.tenantId, it.id)!! to false }
         val id = UUID.randomUUID()
-        cards.insert(device.tenantId, id, label(fingerprint), fingerprint, keys.keyVersion)
+        cards.insert(device.tenantId, id, label(fingerprint), fingerprint, keys.keyVersion, PilotCardFormat.SCHEME)
         audit.record(device.tenantId, "device", device.id.toString(), "card.registered", "card", id, mapOf("scheme" to PilotCardFormat.SCHEME))
         return cards.find(device.tenantId, id)!! to true
     }

@@ -49,7 +49,7 @@ export type Employee = { id: string; externalId: string; displayName: string; si
   /** Desde el contrato 0.21.0. */
   source: 'manual' | 'csv' | 'api' | 'connector'; activeCardLabel?: string | null; createdAt?: string }
 export type Card = {
-  id: string; label: string; status: string; keyVersion?: number | null
+  id: string; label: string; status: string; keyVersion?: number | null; technology?: string
   assignment: { employeeId: string; employeeName?: string; employeeExternalId?: string; since?: string } | null
   /** Quien la tuvo por última vez; `until` nulo si sigue asignada. */
   latestAssignment?: { employeeId: string; employeeName: string; employeeExternalId: string; since: string; until: string | null } | null

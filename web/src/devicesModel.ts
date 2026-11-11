@@ -15,6 +15,7 @@ export type CardDetail = Card & {
   registeredBy: CardRegistrar | null
   assignments: CardHistory[]
   lastRead: { observedAt: string; deviceId: string; deviceName: string } | null
+  readCount: number
 }
 
 /** Un lector activo sin contacto en este tiempo está «sin señal»; el servidor usa el mismo umbral. */
@@ -96,7 +97,19 @@ const cardStatuses: Record<string, { label: string; tone: Tone }> = {
 }
 export function cardStatus(status: string) { return cardStatuses[status] || { label: status, tone: 'neutral' as Tone } }
 
-/** Quién la tiene hoy, o quién la tuvo por última vez y hasta cuándo. */
+const technologies: Record<string, string> = {
+  manual: 'Huella manual',
+  mifare_classic_signed: 'MIFARE Classic firmada',
+}
+/** «Tecnología»: cómo se registró la tarjeta y qué lleva dentro. */
+export function cardTechnology(technology?: string) { return technology ? technologies[technology] || technology : '—' }
+
+/** «Lecturas»: cuántos marcajes tiene y cuándo y dónde fue el último. */
+export function readsText(card: Pick<CardDetail, 'readCount' | 'lastRead'>, timeZone: string, today: string) {
+  if (!card.lastRead) return 'Todavía no se ha leído'
+  return `${card.readCount} · la última ${readText(card.lastRead.observedAt, timeZone, today)} · ${card.lastRead.deviceName}`
+}
+
 /**
  * «Asignada a»: la persona que la tiene o, si ya no la tiene nadie, quién la
  * tuvo. La fecha en que la dejó va en «Desde», para no repetirla.

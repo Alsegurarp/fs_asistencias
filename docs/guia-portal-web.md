@@ -1,5 +1,9 @@
 # Guía del portal web
 
+**Actualización del 10 de noviembre, tras el recorrido en local (contrato 0.32.0):**
+- **Filas:** un clic en cualquier parte de la fila abre su detalle en Tarjetas, Asistencia, Personal, Cierres e Incidencias.
+- **Tarjetas:** nueva columna «Tecnología» («Huella manual» o «MIFARE Classic firmada»). Una tarjeta sin titular dice «Antes: <persona>», con la fecha en «Desde». El detalle trae la tecnología y «Lecturas», con cuántos marcajes tiene la tarjeta y cuándo y dónde fue el último. El historial del detalle sigue siendo de asignaciones.
+
 **Actualización del 10 de noviembre, buscador y menú Crear:**
 - **Buscador (CTA-05):** en la barra superior busca personas, tarjetas y lectores, con pocos resultados de cada tipo y sólo en lo que el rol ve. Enter abre el primero, las flechas recorren la lista, Esc cierra y la tecla «/» enfoca la búsqueda.
 - **Menú Crear (CTA-04), tecla «C»:** dar de alta a una persona, crear un horario, activar un lector y registrar una tarjeta, cada uno en su ventana sobre la página actual. «Cerrar la semana» lleva a Cierres con la confirmación abierta (`/cierres?cerrar=1`). Sólo aparece lo que el rol puede hacer; «Invitar» llega con el bloque 3 y «Generar un reporte» con el bloque 4.

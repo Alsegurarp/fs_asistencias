@@ -34,6 +34,7 @@ data class CardRow(
     val label: String,
     val status: String,
     val keyVersion: Int?,
+    val technology: String,
     val employeeId: UUID?,
     val assignedSince: OffsetDateTime?,
     val createdAt: OffsetDateTime,
@@ -78,6 +79,7 @@ data class CardView(
     val label: String,
     val status: String,
     val keyVersion: Int?,
+    val technology: String,
     val assignment: CardHolder?,
     val latestAssignment: LatestHolderView?,
     val createdAt: String,
@@ -91,6 +93,7 @@ data class CardView(
                 label = row.label,
                 status = row.status,
                 keyVersion = row.keyVersion,
+                technology = row.technology,
                 // La vigente es la más reciente sin fin: de ahí salen los nombres.
                 assignment = if (row.employeeId != null && row.assignedSince != null && latest != null && latest.until == null) {
                     CardHolder(row.employeeId.toString(), latest.employeeName, latest.employeeExternalId, row.assignedSince.toInstant().toString())
@@ -126,12 +129,13 @@ data class CardHistoryView(
 
 data class CardLastReadView(val observedAt: String, val deviceId: String, val deviceName: String)
 
-/** El detalle de una tarjeta: lo de la lista, quién la registró, todas sus asignaciones y su última lectura. */
+/** El detalle de una tarjeta: lo de la lista, quién la registró, todas sus asignaciones, cuántas lecturas tiene y la última. */
 data class CardDetailView(
     val id: String,
     val label: String,
     val status: String,
     val keyVersion: Int?,
+    val technology: String,
     val assignment: CardHolder?,
     val latestAssignment: LatestHolderView?,
     val createdAt: String,
@@ -139,6 +143,7 @@ data class CardDetailView(
     val registeredBy: CardRegistrarView?,
     val assignments: List<CardHistoryView>,
     val lastRead: CardLastReadView?,
+    val readCount: Int,
 )
 
 data class CardAssignmentView(
@@ -152,10 +157,10 @@ data class CardAssignmentView(
 
 @Repository
 class CardRepository(private val dsl: DSLContext) {
-    fun insert(tenantId: UUID, id: UUID, label: String, fingerprint: String, keyVersion: Int? = null) {
+    fun insert(tenantId: UUID, id: UUID, label: String, fingerprint: String, keyVersion: Int? = null, technology: String = MANUAL) {
         dsl.execute(
-            "insert into card (tenant_id, id, label, fingerprint, key_version, status) values (?, ?, ?, ?, cast(? as integer), 'inventory')",
-            tenantId, id, label, fingerprint, keyVersion,
+            "insert into card (tenant_id, id, label, fingerprint, key_version, technology, status) values (?, ?, ?, ?, cast(? as integer), ?, 'inventory')",
+            tenantId, id, label, fingerprint, keyVersion, technology,
         )
     }
 
@@ -237,6 +242,10 @@ class CardRepository(private val dsl: DSLContext) {
             CardLastReadView(it.get("observed_at", OffsetDateTime::class.java).toInstant().toString(), it.get("device_id", UUID::class.java).toString(), it.get("device_name", String::class.java))
         }
 
+    /** Cuántos marcajes se guardaron con la tarjeta. */
+    fun readCount(tenantId: UUID, cardId: UUID): Int =
+        dsl.fetchOne("select count(*) from attendance_event where tenant_id = ? and card_id = ?", tenantId, cardId)!!.get(0, Number::class.java).toInt()
+
     /** Quién la registró, según la bitácora: la persona del portal o la terminal que la preparó. */
     fun registrar(tenantId: UUID, cardId: UUID): CardRegistrarView? =
         dsl.fetchOne(
@@ -270,6 +279,7 @@ class CardRepository(private val dsl: DSLContext) {
         label = r.get("label", String::class.java),
         status = r.get("status", String::class.java),
         keyVersion = r.get("key_version", Number::class.java)?.toInt(),
+        technology = r.get("technology", String::class.java),
         employeeId = r.get("employee_id", UUID::class.java),
         assignedSince = r.get("since", OffsetDateTime::class.java),
         createdAt = r.get("created_at", OffsetDateTime::class.java),
@@ -289,8 +299,11 @@ class CardRepository(private val dsl: DSLContext) {
         /** Los estados de una tarjeta, en el orden en que se muestran. */
         val STATUSES = linkedSetOf("inventory", "assigned", "active", "lost", "damaged", "revoked", "replaced")
 
+        /** La huella se escribió a mano: la tarjeta simulada o sin firma. */
+        const val MANUAL = "manual"
+
         private const val SELECT =
-            "select c.id, c.label, c.status, c.key_version, c.created_at, c.updated_at, a.employee_id, a.since " +
+            "select c.id, c.label, c.status, c.key_version, c.technology, c.created_at, c.updated_at, a.employee_id, a.since " +
                 "from card c left join card_assignment a " +
                 "on a.tenant_id = c.tenant_id and a.card_id = c.id and a.until is null"
 
@@ -302,7 +315,7 @@ class CardRepository(private val dsl: DSLContext) {
                 "left join employee h on h.tenant_id = c.tenant_id and h.id = l.employee_id"
 
         private const val NAMED =
-            "select c.id, c.label, c.status, c.key_version, c.created_at, c.updated_at, a.employee_id, a.since, " +
+            "select c.id, c.label, c.status, c.key_version, c.technology, c.created_at, c.updated_at, a.employee_id, a.since, " +
                 "l.employee_id as latest_employee_id, h.display_name as latest_employee_name, " +
                 "h.external_id as latest_employee_external_id, l.since as latest_since, l.until as latest_until $NAMED_FROM"
     }
@@ -369,8 +382,8 @@ class CardService(
         val card = cards.find(tenantId, cardId) ?: throw Problems.notFound()
         val view = CardView.of(card)
         return CardDetailView(
-            view.id, view.label, view.status, view.keyVersion, view.assignment, view.latestAssignment, view.createdAt, view.updatedAt,
-            cards.registrar(tenantId, cardId), cards.history(tenantId, cardId), cards.lastRead(tenantId, cardId),
+            view.id, view.label, view.status, view.keyVersion, view.technology, view.assignment, view.latestAssignment, view.createdAt, view.updatedAt,
+            cards.registrar(tenantId, cardId), cards.history(tenantId, cardId), cards.lastRead(tenantId, cardId), cards.readCount(tenantId, cardId),
         )
     }
 

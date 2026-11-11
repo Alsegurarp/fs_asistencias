@@ -55,7 +55,8 @@ menú Crear (CTA-04), que tocan la barra superior, van en la PR siguiente.
 Las diferencias con el lienzo quedaron así:
 
 - **«Asignar a otra persona»:** no existe; se respeta la regla vigente. El detalle ofrece «Reponer con otra del inventario» y revocar.
-- **«Tecnología»:** no se muestra.
+- **«Tecnología»:** se muestra desde el contrato 0.32.0, a pedido del responsable del producto (10 nov): «Huella manual» para la que se registró escribiendo la huella y «MIFARE Classic firmada» para la del piloto. Las tarjetas ya registradas se clasifican por su versión de clave (V020).
+- **«Cerrar la semana»** lleva a Cierres con la confirmación abierta; aceptado el 10 nov. «Invitar» y «Generar un reporte» llegan con los bloques 3 y 4.
 - **Huella:** se escribe a mano, sólo para la tarjeta simulada. Las del piloto las prepara una terminal.
 
 Detalle original del plan:
@@ -144,9 +145,9 @@ lleva al ambiente publicado.
 | --- | --- | --- |
 | Decidir «Asignar a otra persona» (propuesta: respetar la regla vigente) | El detalle de una tarjeta | Dispositivos y tarjetas |
 | Decidir cómo se registra una tarjeta real: escribiendo la huella, leyéndola con la app o con un lector de escritorio | PAD-12 con tarjeta real | Sólo la tarjeta real; con la simulada se avanza |
-| Elegir el proveedor de mapas (propuesta: OpenStreetMap, sin llave ni costo, con su atribución) y aceptar abrir la política de seguridad a sus mosaicos | El mapa de sedes | Configuración; sin mapa se edita con latitud, longitud y radio |
-| Datos de SMTP para Keycloak: servidor, puerto, usuario, contraseña y remitente, entregados fuera del repositorio | Que la invitación llegue por correo y se recupere una contraseña olvidada | Invitar de punta a punta; la pantalla se puede construir antes |
-| Decidir el canal de «Ayuda y soporte» (correo, WhatsApp o página) | El menú de la cuenta | Nada más |
+| ~~Proveedor de mapas~~ **Resuelto el 10 nov:** OpenStreetMap, con su atribución; la política de seguridad se abre a sus mosaicos | El mapa de sedes | — |
+| ~~Datos de SMTP~~ **Resuelto el 10 nov:** Brevo, con la credencial en `secrets/smtp.env` y configurado en el Keycloak local. Para producción falta un remitente del dominio propio | Que la invitación llegue por correo y se recupere una contraseña olvidada | Producción, por el remitente |
+| ~~Canal de «Ayuda y soporte»~~ **Resuelto el 10 nov:** correo rene.alexis.segura@gmail.com y número 56 3300 1126 | El menú de la cuenta | — |
 
 **Para probar en el ambiente publicado**
 

@@ -8,7 +8,7 @@ import { color, phoneQuery } from './design'
 import { DevicesHeader, PhoneList } from './Devices'
 import { type Picked, PersonPicker, refreshDevices } from './DeviceForms'
 import {
-  type CardDetail, type CardSummary, cardCount, cardFilters, cardHolder, cardSince, cardStatus, readText, revocable, revocationReasons,
+  type CardDetail, type CardSummary, cardCount, cardFilters, cardHolder, cardSince, cardStatus, cardTechnology, readsText, revocable, revocationReasons,
 } from './devicesModel'
 import { dateInZone } from './incidentModel'
 import { problemText } from './personnelData'
@@ -114,11 +114,12 @@ export function Cards(props: Props) {
         {list.isPending && <Typography role="status" sx={visuallyHidden}>Cargando tarjetas…</Typography>}
         {failure || (!list.isPending && !rows.length ? empty
           : <Box component="table" sx={tableSx}>
-            <thead><tr><th scope="col">Tarjeta</th><th scope="col">Estado</th><th scope="col">Asignada a</th><th scope="col">Desde</th></tr></thead>
+            <thead><tr><th scope="col">Tarjeta</th><th scope="col">Estado</th><th scope="col">Tecnología</th><th scope="col">Asignada a</th><th scope="col">Desde</th></tr></thead>
             <tbody>
-              {list.isPending ? <SkeletonRows columns={4} rows={8} /> : rows.map(card => <tr key={card.id} data-selected={card.id === selected} onClick={clickRow}>
+              {list.isPending ? <SkeletonRows columns={5} rows={8} /> : rows.map(card => <tr key={card.id} data-selected={card.id === selected} onClick={clickRow}>
                 <td>{name(card)}</td>
                 <td><Badge tone={cardStatus(card.status).tone}>{cardStatus(card.status).label}</Badge></td>
+                <Box component="td" sx={{ color: color.muted }}>{cardTechnology(card.technology)}</Box>
                 <td>{holder(card)}</td>
                 <Box component="td" sx={{ color: color.muted }}>{since(card)}</Box>
               </tr>)}
@@ -170,8 +171,9 @@ function CardSheet({ me, cardId, row, today, onClose }: { me: Me; cardId: string
     <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 2, rowGap: 1, fontSize: 13.5, '& dt': { color: color.muted }, '& dd': { m: 0, fontWeight: 500 } }}>
       <dt>Asignada a</dt><dd>{holder ? `${holder.employeeName} · ${holder.employeeExternalId}` : '—'}</dd>
       <dt>Desde</dt><dd>{holder?.since ? shortDate(dateInZone(holder.since, timeZone)) : '—'}</dd>
+      <dt>Tecnología</dt><dd>{cardTechnology(card.technology)}</dd>
       <dt>Registrada</dt><dd>{registered}</dd>
-      <dt>Última lectura</dt><dd>{card.lastRead ? `${readText(card.lastRead.observedAt, timeZone, today)} · ${card.lastRead.deviceName}` : 'Todavía no se ha leído'}</dd>
+      <dt>Lecturas</dt><dd>{readsText(card, timeZone, today)}</dd>
     </Box>
     {action === 'asignar' && <AssignForm card={card} onDone={() => setAction(null)} />}
     {action === 'reponer' && holder && <ReplaceForm card={card} holderName={holder.employeeName || 'la persona'} employeeId={holder.employeeId} onDone={() => setAction(null)} />}

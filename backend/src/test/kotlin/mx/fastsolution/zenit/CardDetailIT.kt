@@ -29,12 +29,15 @@ class CardDetailIT : CaptureTestBase() {
         assertEquals(1, fresh.at<Int>("assignments.length()"))
         assertNull(fresh.at<String?>("assignments[0].until"))
         assertNull(fresh.at<Any?>("lastRead"))
+        assertEquals(0, fresh.at<Int>("readCount"))
+        assertEquals("manual", fresh.at("technology"))
 
         val t = terminal(c, siteId, elsewhere())
         assertEquals(201, mark(t, print, Instant.now().minusSeconds(120)).status)
         val read = call("GET", "/api/v1/cards/$id", c.adminToken)
         assertEquals("Recepción", read.at("lastRead.deviceName"))
         assertEquals(t.id, read.at("lastRead.deviceId"))
+        assertEquals(1, read.at<Int>("readCount"))
 
         // Perdida: la asignación queda cerrada y el historial la conserva.
         assertEquals(200, call("POST", "/api/v1/cards/$id/revocation", c.adminToken, """{"reason":"lost"}""").status)

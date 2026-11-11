@@ -37,19 +37,19 @@ const devices = [
   device('d3', { mode: 'personal', siteId: null, employeeId: 'e1', employeeName: 'Hugo Peña', label: null, model: 'SM-S928B', lastSeenAt: '2026-11-10T14:42:00Z', enrolledAt: '2026-10-20T16:00:00Z' }),
 ]
 const card = (id: string, label: string, extra: Partial<Card> = {}): Card => ({
-  id, label, status: 'active', keyVersion: null, createdAt: '2026-09-01T16:00:00Z', updatedAt: '2026-09-02T16:00:00Z',
+  id, label, status: 'active', keyVersion: null, technology: 'manual', createdAt: '2026-09-01T16:00:00Z', updatedAt: '2026-09-02T16:00:00Z',
   assignment: { employeeId: 'e2', employeeName: 'Paola Ruiz', employeeExternalId: '0211', since: '2026-09-02T15:00:00Z' },
   latestAssignment: { employeeId: 'e2', employeeName: 'Paola Ruiz', employeeExternalId: '0211', since: '2026-09-02T15:00:00Z', until: null }, ...extra,
 })
 const cards = [
   card('c1', 'T-0058'),
-  card('c2', 'T-0019', { status: 'lost', assignment: null, latestAssignment: { employeeId: 'e3', employeeName: 'Luis Hernández', employeeExternalId: '0114', since: '2026-09-01T15:00:00Z', until: '2026-10-22T17:00:00Z' } }),
+  card('c2', 'T-0019', { status: 'lost', keyVersion: 1, technology: 'mifare_classic_signed', assignment: null, latestAssignment: { employeeId: 'e3', employeeName: 'Luis Hernández', employeeExternalId: '0114', since: '2026-09-01T15:00:00Z', until: '2026-10-22T17:00:00Z' } }),
   card('c3', 'T-0061', { status: 'inventory', assignment: null, latestAssignment: null, createdAt: '2026-09-01T16:00:00Z' }),
 ]
 const detail: CardDetail = {
   ...cards[0], registeredBy: { type: 'user', name: 'Rocío Navarro' },
   assignments: [{ employeeId: 'e2', employeeName: 'Paola Ruiz', employeeExternalId: '0211', since: '2026-09-02T15:00:00Z', until: null, replacedCardId: null }],
-  lastRead: { observedAt: '2026-11-10T14:59:00Z', deviceId: 'd1', deviceName: 'Terminal Recepción' },
+  lastRead: { observedAt: '2026-11-10T14:59:00Z', deviceId: 'd1', deviceName: 'Terminal Recepción' }, readCount: 42,
 }
 const people = [{ id: 'e9', displayName: 'Andrea Lozano', externalId: '0215', status: 'active', siteId: 's2', employmentStart: '2026-11-01', employmentEnd: null, source: 'manual' }]
 
@@ -69,7 +69,7 @@ function defaultServer({ path, method }: Call): Promise<unknown> {
     case '/cards/summary': return answer({ total: 62, byStatus: { inventory: 12, assigned: 0, active: 40, lost: 3, damaged: 1, revoked: 4, replaced: 2 } })
     case '/cards': return answer({ items: url.searchParams.get('status') === 'inventory' ? [cards[2]] : cards, nextCursor: null })
     case '/cards/c1': return answer(detail)
-    case '/cards/c3': return answer({ ...cards[2], registeredBy: { type: 'device', name: 'Terminal Recepción' }, assignments: [], lastRead: null })
+    case '/cards/c3': return answer({ ...cards[2], registeredBy: { type: 'device', name: 'Terminal Recepción' }, assignments: [], lastRead: null, readCount: 0 })
     case '/employees': return answer({ items: people, nextCursor: null })
   }
   return Promise.reject(new ApiError(404, 'not_found', `Sin respuesta simulada para ${path}`))
@@ -191,9 +191,9 @@ it('Tarjetas tiene pestañas por estado con sus cifras y dice quién tiene cada 
   expect([...container.querySelectorAll('nav[aria-label="Estado de las tarjetas"] a')].map(item => item.textContent))
     .toEqual(['Todas · 62', 'Activas · 40', 'En inventario · 12', 'Perdidas o dañadas · 4', 'Revocadas · 4', 'Reemplazadas · 2'])
   expect(rows()).toEqual([
-    ['T-0058', 'Activa', 'Paola Ruiz · 0211', '2 sep'],
-    ['T-0019', 'Perdida', 'Antes: Luis Hernández', '22 oct'],
-    ['T-0061', 'En inventario', '—', '1 sep'],
+    ['T-0058', 'Activa', 'Huella manual', 'Paola Ruiz · 0211', '2 sep'],
+    ['T-0019', 'Perdida', 'MIFARE Classic firmada', 'Antes: Luis Hernández', '22 oct'],
+    ['T-0061', 'En inventario', 'Huella manual', '—', '1 sep'],
   ])
   await act(async () => [...container.querySelectorAll<HTMLAnchorElement>('nav[aria-label="Estado de las tarjetas"] a')].find(item => item.textContent?.startsWith('Perdidas'))!.click())
   await settle()
@@ -203,7 +203,7 @@ it('Tarjetas tiene pestañas por estado con sus cifras y dice quién tiene cada 
 it('el detalle de una tarjeta dice quién la registró, su última lectura y su historial', async () => {
   await render('/dispositivos/tarjetas?tarjeta=c1')
   expect(facts('T-0058')).toEqual([
-    'Asignada a: Paola Ruiz · 0211', 'Desde: 2 sep 2026', 'Registrada: 1 sep 2026 · Rocío Navarro', 'Última lectura: hoy 08:59 · Terminal Recepción',
+    'Asignada a: Paola Ruiz · 0211', 'Desde: 2 sep 2026', 'Tecnología: Huella manual', 'Registrada: 1 sep 2026 · Rocío Navarro', 'Lecturas: 42 · la última hoy 08:59 · Terminal Recepción',
   ])
   expect([...sheet('T-0058').querySelectorAll('ol li')].map(item => item.textContent)).toEqual(['Asignada a Paola Ruiz2 sep 2026', 'Registrada en inventario1 sep 2026 · Rocío Navarro'])
   expect([...sheet('T-0058').querySelectorAll('button')].map(item => item.textContent)).toEqual(expect.arrayContaining(['Reponer con otra del inventario', 'Revocar']))
@@ -239,7 +239,7 @@ it('revocar una tarjeta pide el motivo; reponerla pasa otra del inventario a la 
 it('una tarjeta en inventario se asigna a quien no tiene; la registrada por una terminal lo dice', async () => {
   await render('/dispositivos/tarjetas?tarjeta=c3')
   expect(facts('T-0061')).toContain('Registrada: 1 sep 2026 · Terminal Recepción')
-  expect(facts('T-0061')).toContain('Última lectura: Todavía no se ha leído')
+  expect(facts('T-0061')).toContain('Lecturas: Todavía no se ha leído')
   await click('Asignar'); await settle()
   expect(server.calls.some(call => call.path.startsWith('/employees?') && call.path.includes('withoutCard=true') && call.path.includes('status=active'))).toBe(true)
   await click('Andrea Lozano0215 · sin tarjeta')
@@ -271,7 +271,7 @@ it('Auditoría consulta sin botones de escritura; Supervisión no ve la sección
   expect(text()).not.toContain('Activar lector')
   expect(text()).not.toContain('Registrar tarjeta')
   await render('/dispositivos/tarjetas?tarjeta=c1', ['auditor'])
-  expect(text()).toContain('Última lectura')
+  expect(text()).toContain('Lecturas')
   expect([...document.querySelectorAll('button')].some(item => ['Revocar', 'Reponer con otra del inventario', 'Asignar'].includes(item.textContent || ''))).toBe(false)
   await render('/dispositivos/tarjetas', ['supervisor'])
   expect(text()).toContain('Esta sección no está disponible para tu rol')
