@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef } from 'react'
+import { type KeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode, useEffect, useId, useRef } from 'react'
 import { Link } from 'react-router'
 import { Box, Button, ButtonBase, Dialog, Skeleton, Stack, Typography } from '@mui/material'
 import { color, font, gradient, phoneQuery, shadow } from './design'
@@ -113,11 +113,25 @@ export function Pager({ text, onPrevious, onNext, hasPrevious, hasNext }: { text
 }
 
 /** Estilos de una tabla del lienzo sobre `<table>`: encabezado fijo y fila elegida. */
+/**
+ * Abre la fila con un clic en cualquier parte de ella: reenvía el clic a su
+ * enlace principal, el que lleva `data-row-link`. Los botones y enlaces de la
+ * fila siguen funcionando por su cuenta, seleccionar texto no abre nada y con
+ * el teclado se sigue usando el enlace.
+ */
+export function clickRow(event: ReactMouseEvent<HTMLElement>) {
+  const target = event.target as Element
+  if (target.closest('a, button, input, select, textarea, label, summary, [role="button"]')) return
+  if (window.getSelection?.()?.toString()) return
+  event.currentTarget.querySelector<HTMLElement>('[data-row-link]')?.click()
+}
+
 export const tableSx = {
   width: '100%', borderCollapse: 'collapse', fontSize: 13,
   '& th': { position: 'sticky', top: 0, zIndex: 1, background: color.white, textAlign: 'left', fontWeight: 600, color: color.subtle, fontSize: 11, letterSpacing: '0.05em', textTransform: 'uppercase', p: '10px 12px', borderBottom: `1px solid ${color.line}`, whiteSpace: 'nowrap' },
   '& td': { p: '9px 12px', borderBottom: `1px solid ${color.lineSoft}`, verticalAlign: 'middle', whiteSpace: 'nowrap' },
   '& tbody tr:hover td': { background: color.rowHover },
+  '& tbody tr:has([data-row-link])': { cursor: 'pointer' },
   '& tbody tr[data-selected="true"] td': { background: color.selected },
 } as const
 

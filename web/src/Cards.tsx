@@ -14,7 +14,7 @@ import { dateInZone } from './incidentModel'
 import { problemText } from './personnelData'
 import { shortDate } from './personnelModel'
 import type { Screen, Section } from './sections'
-import { Badge, IconTile, Note, Pager, Pane, SearchBox, SidePanel, SkeletonRows, StatusTabs, tableSx, visuallyHidden } from './ui'
+import { Badge, IconTile, Note, Pager, Pane, SearchBox, SidePanel, SkeletonRows, StatusTabs, clickRow, tableSx, visuallyHidden } from './ui'
 
 type Props = { me: Me; context: string; section: Section; screens: Screen[]; screen: Screen }
 
@@ -84,11 +84,11 @@ export function Cards(props: Props) {
     <Typography sx={{ fontWeight: 600 }}>{query ? 'Ninguna tarjeta coincide con la búsqueda' : filter.slug === 'todas' ? 'Todavía no hay tarjetas' : `No hay tarjetas ${filter.label.toLowerCase()}`}</Typography>
     {!query && filter.slug === 'todas' && <Typography sx={{ fontSize: 13, color: color.muted, maxWidth: 440 }}>Regístralas en el inventario o prepáralas en una terminal; después se asignan a cada persona.</Typography>}
   </Stack>
-  const name = (card: Card) => <Box component={Link} to={`?${withCard(params, card.id)}`} aria-current={card.id === selected ? 'true' : undefined}
+  const name = (card: Card) => <Box component={Link} data-row-link to={`?${withCard(params, card.id)}`} aria-current={card.id === selected ? 'true' : undefined}
     onClick={(event: React.MouseEvent<HTMLAnchorElement>) => { event.preventDefault(); open(card.id, event.currentTarget) }}
     sx={{ fontWeight: 600, textDecoration: 'none', color: `${color.ink} !important`, '&:hover': { textDecoration: 'underline' } }}>{card.label}</Box>
   const holder = (card: Card) => {
-    const who = cardHolder(card, timeZone)
+    const who = cardHolder(card)
     return who ? <Box component="span" sx={{ color: who.past ? color.muted : undefined }}>{who.text}</Box> : <Box component="span" sx={{ color: color.subtle }}>—</Box>
   }
   const since = (card: Card) => { const value = cardSince(card); return value ? sinceDay(value, timeZone, today) : '—' }
@@ -116,7 +116,7 @@ export function Cards(props: Props) {
           : <Box component="table" sx={tableSx}>
             <thead><tr><th scope="col">Tarjeta</th><th scope="col">Estado</th><th scope="col">Asignada a</th><th scope="col">Desde</th></tr></thead>
             <tbody>
-              {list.isPending ? <SkeletonRows columns={4} rows={8} /> : rows.map(card => <tr key={card.id} data-selected={card.id === selected}>
+              {list.isPending ? <SkeletonRows columns={4} rows={8} /> : rows.map(card => <tr key={card.id} data-selected={card.id === selected} onClick={clickRow}>
                 <td>{name(card)}</td>
                 <td><Badge tone={cardStatus(card.status).tone}>{cardStatus(card.status).label}</Badge></td>
                 <td>{holder(card)}</td>

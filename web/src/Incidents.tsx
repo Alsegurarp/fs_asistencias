@@ -12,7 +12,7 @@ import { type Filters, incidentQuery, incidentTitle, incidentTitles, knownTotal,
 import { allPages } from './lists'
 import { PageHeader, initials as initialsOf } from './Shell'
 import type { Screen, Section } from './sections'
-import { Badge, FilterChip, Note, Pager, visuallyHidden, Pane, SearchBox, SelectBox, SkeletonRows, StatusTabs, ViewSwitch, tableSx } from './ui'
+import { Badge, FilterChip, Note, Pager, visuallyHidden, Pane, SearchBox, SelectBox, SkeletonRows, StatusTabs, ViewSwitch, clickRow, tableSx } from './ui'
 
 export type IncidentSummary = {
   weekStart: string
@@ -174,7 +174,7 @@ function IncidentList({ phone, status, filters, filtered, total, timeZone, today
     <Typography sx={{ fontWeight: 600 }}>{filtered ? 'Nada coincide con estos filtros' : status === 'open' ? 'No hay incidencias abiertas' : 'Todavía no hay incidencias resueltas'}</Typography>
     {filtered && <Button variant="outlined" onClick={onClear}>Quitar filtros</Button>}
   </Stack>
-  const action = (row: Incident) => <Box component="a" href={`?incidencia=${row.id}`} onClick={event => { event.preventDefault(); onOpen(row.id, event.currentTarget) }}
+  const action = (row: Incident) => <Box component="a" data-row-link href={`?incidencia=${row.id}`} onClick={event => { event.preventDefault(); onOpen(row.id, event.currentTarget) }}
     aria-current={row.id === selected ? 'true' : undefined} sx={{ fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
     {status === 'open' && canResolve ? 'Resolver' : 'Ver'}<Box component="span" sx={visuallyHidden}> {incidentTitle(row.type)} de {row.employeeName}</Box>
   </Box>
@@ -211,7 +211,7 @@ function IncidentList({ phone, status, filters, filtered, total, timeZone, today
             <thead><tr><th scope="col">Tipo</th><th scope="col">Persona</th><th scope="col">Sede</th><th scope="col">Cuándo</th><th scope="col">Severidad</th><th scope="col">Asignada a</th><th scope="col">Bloquea cierre</th><th scope="col"><Box component="span" sx={visuallyHidden}>Acción</Box></th></tr></thead>
             <tbody>{list.isPending ? <SkeletonRows columns={8} rows={8} /> : rows.map(row => {
               const severity = severityOf(row.severity)
-              return <tr key={row.id} data-selected={row.id === selected}>
+              return <tr key={row.id} data-selected={row.id === selected} onClick={clickRow}>
                 <td>{incidentTitle(row.type)}</td>
                 <td>{row.employeeName} <Box component="span" sx={{ color: color.subtle }}>{row.employeeExternalId}</Box></td>
                 <td>{siteName(row.siteId) || <Muted>Sin sede</Muted>}</td>
@@ -224,7 +224,7 @@ function IncidentList({ phone, status, filters, filtered, total, timeZone, today
             })}</tbody>
           </> : <>
             <thead><tr><th scope="col">Tipo</th><th scope="col">Persona</th><th scope="col">Del día</th><th scope="col">Resolución</th><th scope="col">Resolvió</th><th scope="col">Cuándo</th><th scope="col"><Box component="span" sx={visuallyHidden}>Acción</Box></th></tr></thead>
-            <tbody>{list.isPending ? <SkeletonRows columns={7} rows={8} /> : rows.map(row => <tr key={row.id} data-selected={row.id === selected}>
+            <tbody>{list.isPending ? <SkeletonRows columns={7} rows={8} /> : rows.map(row => <tr key={row.id} data-selected={row.id === selected} onClick={clickRow}>
               <td>{incidentTitle(row.type)}</td>
               <td>{row.employeeName} <Box component="span" sx={{ color: color.subtle }}>{row.employeeExternalId}</Box></td>
               <td>{whenText(row.occurredAt || row.openedAt, timeZone, today)}</td>

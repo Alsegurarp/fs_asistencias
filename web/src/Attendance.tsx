@@ -13,7 +13,7 @@ import { PersonSheet } from './PersonSheet'
 import { PageHeader } from './Shell'
 import type { Section, Screen } from './sections'
 import { Icon } from './Icons'
-import { Badge, FilterChip, IconButton, visuallyHidden, Note, OutlineButton, Pager, Pane, SearchBox, SelectBox, SkeletonRows, WeekNav, tableSx, toneText } from './ui'
+import { Badge, FilterChip, IconButton, visuallyHidden, Note, OutlineButton, Pager, Pane, SearchBox, SelectBox, SkeletonRows, WeekNav, clickRow, tableSx, toneText } from './ui'
 
 const pageSize = 25
 const filters: { slug: string; attention: Attention; label: string; short: string; today?: boolean }[] = [
@@ -218,9 +218,9 @@ export function Attendance({ me, context, section, screens, screen }: Props) {
                   {loading ? <SkeletonRows columns={2 + columns.filter(visible).length + 1} /> : rows.map(row => {
                     const todayLabel = visible('today') ? todayText(row, timeZone, scheduleOf(row.scheduleId), today) : null
                     const flags = attentionFlags(row, overtimeMaxDays)
-                    return <tr key={row.employeeId} data-selected={row.employeeId === person}>
+                    return <tr key={row.employeeId} data-selected={row.employeeId === person} onClick={clickRow}>
                       <td>
-                        <Box component={Link} to={`?${withPerson(params, row.employeeId)}`} aria-current={row.employeeId === person ? 'true' : undefined}
+                        <Box component={Link} data-row-link to={`?${withPerson(params, row.employeeId)}`} aria-current={row.employeeId === person ? 'true' : undefined}
                           onClick={event => { event.preventDefault(); open(row.employeeId, event.currentTarget) }}
                           sx={{ fontWeight: 600, textDecoration: 'none', color: `${color.ink} !important`, '&:hover': { textDecoration: 'underline' } }}>{row.displayName}</Box>
                         {' '}<Box component="span" sx={{ color: color.subtle }}>{row.externalId}</Box>

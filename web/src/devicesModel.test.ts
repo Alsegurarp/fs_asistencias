@@ -34,10 +34,10 @@ it('las cifras de lectores y tarjetas salen del resumen del servidor', () => {
 
 it('dice quién tiene la tarjeta o quién la tuvo y hasta cuándo', () => {
   const active = { assignment: { employeeId: 'e1', employeeName: 'Paola Ruiz', employeeExternalId: '0211', since: '2026-09-02T15:00:00Z' }, latestAssignment: null }
-  expect(cardHolder(active, zone)).toEqual({ text: 'Paola Ruiz · 0211', past: false })
+  expect(cardHolder(active)).toEqual({ text: 'Paola Ruiz · 0211', past: false })
   const lost = { assignment: null, latestAssignment: { employeeId: 'e2', employeeName: 'Luis Hernández', employeeExternalId: '0114', since: '2026-09-01T15:00:00Z', until: '2026-10-22T17:00:00Z' } }
-  expect(cardHolder(lost, zone)).toEqual({ text: 'Luis Hernández, hasta el 22 oct', past: true })
-  expect(cardHolder({ assignment: null, latestAssignment: null }, zone)).toBeNull()
+  expect(cardHolder(lost)).toEqual({ text: 'Antes: Luis Hernández', past: true })
+  expect(cardHolder({ assignment: null, latestAssignment: null })).toBeNull()
   expect(cardSince({ ...lost, createdAt: '2026-09-01T00:00:00Z' })).toBe('2026-10-22T17:00:00Z')
   expect(cardSince({ assignment: null, latestAssignment: null, createdAt: '2026-09-01T00:00:00Z' })).toBe('2026-09-01T00:00:00Z')
 })

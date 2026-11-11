@@ -61,7 +61,7 @@ export function GlobalSearch({ me }: { me: Me }) {
     ...(people.data?.items || []).map(person => ({ key: `p-${person.id}`, group: 'Personas', title: person.displayName,
       detail: [person.externalId, person.activeCardLabel ? `tarjeta ${person.activeCardLabel}` : 'sin tarjeta'].join(' · '), to: `/personal?persona=${person.id}` })),
     ...(cards.data?.items || []).map(card => {
-      const holder = cardHolder(card, timeZone)
+      const holder = cardHolder(card)
       return { key: `t-${card.id}`, group: 'Tarjetas', title: card.label,
         detail: `${cardStatus(card.status).label}${holder && !holder.past ? ` · asignada a ${holder.text}` : ''}`, to: `/dispositivos/tarjetas?tarjeta=${card.id}` }
     }),

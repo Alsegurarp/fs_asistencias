@@ -97,10 +97,14 @@ const cardStatuses: Record<string, { label: string; tone: Tone }> = {
 export function cardStatus(status: string) { return cardStatuses[status] || { label: status, tone: 'neutral' as Tone } }
 
 /** Quién la tiene hoy, o quién la tuvo por última vez y hasta cuándo. */
-export function cardHolder(card: Pick<Card, 'assignment' | 'latestAssignment'>, timeZone: string) {
+/**
+ * «Asignada a»: la persona que la tiene o, si ya no la tiene nadie, quién la
+ * tuvo. La fecha en que la dejó va en «Desde», para no repetirla.
+ */
+export function cardHolder(card: Pick<Card, 'assignment' | 'latestAssignment'>) {
   if (card.assignment) return { text: `${card.assignment.employeeName || 'Persona'} · ${card.assignment.employeeExternalId || ''}`.replace(/ · $/, ''), past: false }
   const last = card.latestAssignment
-  if (last?.until) return { text: `${last.employeeName}, hasta el ${shortDate(dateInZone(last.until, timeZone)).replace(/ \d{4}$/, '')}`, past: true }
+  if (last?.until) return { text: `Antes: ${last.employeeName || 'Persona'}`, past: true }
   return null
 }
 
