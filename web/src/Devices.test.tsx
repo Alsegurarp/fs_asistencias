@@ -192,7 +192,7 @@ it('Tarjetas tiene pestañas por estado con sus cifras y dice quién tiene cada 
     .toEqual(['Todas · 62', 'Activas · 40', 'En inventario · 12', 'Perdidas o dañadas · 4', 'Revocadas · 4', 'Reemplazadas · 2'])
   expect(rows()).toEqual([
     ['T-0058', 'Activa', 'Paola Ruiz · 0211', '2 sep'],
-    ['T-0019', 'Perdida', 'Luis Hernández, hasta el 22 oct', '22 oct'],
+    ['T-0019', 'Perdida', 'Antes: Luis Hernández', '22 oct'],
     ['T-0061', 'En inventario', '—', '1 sep'],
   ])
   await act(async () => [...container.querySelectorAll<HTMLAnchorElement>('nav[aria-label="Estado de las tarjetas"] a')].find(item => item.textContent?.startsWith('Perdidas'))!.click())
@@ -208,6 +208,14 @@ it('el detalle de una tarjeta dice quién la registró, su última lectura y su 
   expect([...sheet('T-0058').querySelectorAll('ol li')].map(item => item.textContent)).toEqual(['Asignada a Paola Ruiz2 sep 2026', 'Registrada en inventario1 sep 2026 · Rocío Navarro'])
   expect([...sheet('T-0058').querySelectorAll('button')].map(item => item.textContent)).toEqual(expect.arrayContaining(['Reponer con otra del inventario', 'Revocar']))
   expect([...sheet('T-0058').querySelectorAll('button')].some(item => item.textContent === 'Asignar')).toBe(false)
+})
+
+it('un clic en cualquier parte de la fila abre el detalle de la tarjeta', async () => {
+  await render('/dispositivos/tarjetas')
+  const row = [...container.querySelectorAll('main table tbody tr')].find(item => item.textContent?.includes('T-0058'))!
+  await act(async () => (row.querySelectorAll('td')[1] as HTMLElement).click())
+  await settle()
+  expect(facts('T-0058')[0]).toBe('Asignada a: Paola Ruiz · 0211')
 })
 
 it('revocar una tarjeta pide el motivo; reponerla pasa otra del inventario a la misma persona', async () => {

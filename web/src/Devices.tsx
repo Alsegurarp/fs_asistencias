@@ -11,7 +11,7 @@ import {
 import { problemText, useSites } from './personnelData'
 import { PageHeader } from './Shell'
 import type { Screen, Section } from './sections'
-import { Badge, FilterChip, Note, Pager, Pane, SearchBox, SkeletonRows, tableSx, visuallyHidden } from './ui'
+import { Badge, FilterChip, Note, Pager, Pane, SearchBox, SkeletonRows, clickRow, tableSx, visuallyHidden } from './ui'
 
 type Props = { me: Me; context: string; section: Section; screens: Screen[]; screen: Screen }
 
@@ -179,7 +179,7 @@ export function PhoneList<T extends { id: string }>({ rows, loading, failure, em
   if (!rows.length) return <Box sx={card}>{empty}</Box>
   return <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      {rows.map(row => <Box component="li" key={row.id} sx={{ ...card, p: '12px 14px', display: 'flex', flexDirection: 'column', gap: 0.75 }}>{render(row)}</Box>)}
+      {rows.map(row => <Box component="li" key={row.id} onClick={clickRow} sx={{ ...card, p: '12px 14px', display: 'flex', flexDirection: 'column', gap: 0.75, '&:has([data-row-link])': { cursor: 'pointer' } }}>{render(row)}</Box>)}
     </Box>
     <Box sx={card}>{pager}</Box>
   </Box>

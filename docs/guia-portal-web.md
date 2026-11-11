@@ -1,5 +1,9 @@
 # Guía del portal web
 
+**Actualización del 10 de noviembre, buscador y menú Crear:**
+- **Buscador (CTA-05):** en la barra superior busca personas, tarjetas y lectores, con pocos resultados de cada tipo y sólo en lo que el rol ve. Enter abre el primero, las flechas recorren la lista, Esc cierra y la tecla «/» enfoca la búsqueda.
+- **Menú Crear (CTA-04), tecla «C»:** dar de alta a una persona, crear un horario, activar un lector y registrar una tarjeta, cada uno en su ventana sobre la página actual. «Cerrar la semana» lleva a Cierres con la confirmación abierta (`/cierres?cerrar=1`). Sólo aparece lo que el rol puede hacer; «Invitar» llega con el bloque 3 y «Generar un reporte» con el bloque 4.
+
 **Actualización del 10 de noviembre, Dispositivos y tarjetas (contrato 0.31.0):**
 - **Lectores (PAD-02):** con sus cifras (activos, sin señal más de 24 h, revocados o reemplazados), búsqueda y revocar con motivo. «Activar lector» abre un panel para una terminal de sede o un teléfono personal, con el código de un solo uso y su vencimiento.
 - **Tarjetas (PAD-11):** pestañas por estado con sus cifras, quién tiene cada tarjeta y desde cuándo. El detalle trae quién la registró (persona o terminal), la última lectura, el historial, y las acciones asignar, reponer con otra del inventario y revocar como revocada, perdida o dañada.

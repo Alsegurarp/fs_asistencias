@@ -16,7 +16,7 @@ import { incidentTitle } from './incidentsView'
 import { allPages } from './lists'
 import { PageHeader } from './Shell'
 import type { Screen, Section } from './sections'
-import { Badge, Note, Pager, SelectBox, SkeletonRows, WeekNav, tableSx, visuallyHidden } from './ui'
+import { Badge, Note, Pager, SelectBox, SkeletonRows, WeekNav, clickRow, tableSx, visuallyHidden } from './ui'
 
 const pageSize = 25
 const tabs = [
@@ -72,6 +72,13 @@ export function Closures({ me, context, section, screens, screen }: Props) {
   const summary = useQuery({ queryKey: ['closure-summary', scope.toString()], queryFn: () => api<ClosureSummary>(`/week-closures/summary?${scope}`), retry: false })
   const weekStart = summary.data?.weekStart
   const finished = !!weekStart && addDays(weekStart, 7) <= today
+  // `?cerrar=1` (menú Crear) abre la confirmación en cuanto la semana se puede cerrar.
+  const asked = params.get('cerrar') === '1'
+  useEffect(() => {
+    if (!asked || !weekStart) return
+    if (allowed.closeWeeks && finished) setConfirming(true)
+    change({ cerrar: null }, true)
+  }, [asked, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps
   const sites = useQuery({ queryKey: ['sites', 'all'], queryFn: () => allPages<Site>('/sites'), retry: false, staleTime: 60_000 })
   const siteName = (id: string | null) => (id ? sites.data?.find(site => site.id === id)?.name : undefined)
   const tenant = useQuery({ queryKey: ['tenant'], queryFn: () => api<Tenant>('/tenant'), retry: false, staleTime: 60_000 })
@@ -280,7 +287,7 @@ function PeopleList({ phone, tab, counts, blocked, blockedPending, weekStart, si
     </Box>)}
     {blocked.length > (phone ? 3 : 5) && <Box component={Link} to={link({ pestana: 'bloqueadas' })} sx={{ fontWeight: 600 }}>y {blocked.length - (phone ? 3 : 5)} más</Box>}
   </Box>
-  const name = (row: Closure) => <Box component="a" href={`?cierre=${row.id}`} aria-current={row.id === selected ? 'true' : undefined} onClick={(event: React.MouseEvent<HTMLAnchorElement>) => { event.preventDefault(); onOpen(row.id, event.currentTarget) }}
+  const name = (row: Closure) => <Box component="a" data-row-link href={`?cierre=${row.id}`} aria-current={row.id === selected ? 'true' : undefined} onClick={(event: React.MouseEvent<HTMLAnchorElement>) => { event.preventDefault(); onOpen(row.id, event.currentTarget) }}
     sx={{ fontWeight: 600, textDecoration: 'none', color: `${color.ink} !important`, '&:hover': { textDecoration: 'underline' } }}>{row.employeeName || 'Persona'}</Box>
   const who = (row: Closure) => row.closedBy === null ? 'Cierre programado' : row.closedByName || 'Sin nombre'
 
@@ -291,8 +298,8 @@ function PeopleList({ phone, tab, counts, blocked, blockedPending, weekStart, si
         : phone ? <Cards>{blocked.map(person => <Card key={person.employeeId} to={incidentLink(person)} title={person.name} detail={`${siteName(person.siteId) || 'Sin sede'} · desde ${dayMonth(dateInZone(person.since, timeZone))}`} badge={<Badge tone="warn">{cause(person)}</Badge>} />)}</Cards>
           : <Box component="table" sx={tableSx}>
             <thead><tr><th scope="col">Persona</th><th scope="col">Sede</th><th scope="col">Causa</th><th scope="col">Desde</th><th scope="col">Qué falta</th></tr></thead>
-            <tbody>{blocked.map(person => <tr key={person.employeeId}>
-              <td><Box component={Link} to={incidentLink(person)} sx={{ fontWeight: 600, textDecoration: 'none', color: `${color.ink} !important`, '&:hover': { textDecoration: 'underline' } }}>{person.name}</Box></td>
+            <tbody>{blocked.map(person => <tr key={person.employeeId} onClick={clickRow}>
+              <td><Box component={Link} data-row-link to={incidentLink(person)} sx={{ fontWeight: 600, textDecoration: 'none', color: `${color.ink} !important`, '&:hover': { textDecoration: 'underline' } }}>{person.name}</Box></td>
               <td>{siteName(person.siteId) || 'Sin sede'}</td>
               <td><Badge tone="warn">{cause(person)}</Badge></td>
               <td>{dayMonth(dateInZone(person.since, timeZone))}</td>
@@ -319,7 +326,7 @@ function PeopleList({ phone, tab, counts, blocked, blockedPending, weekStart, si
       <thead><tr><th scope="col">Persona</th><th scope="col">Ordinarias</th><th scope="col">Extra</th><th scope="col">Cerró</th><th scope="col">Huella</th><th scope="col">{tab.key === 'reabiertas' ? 'Estado' : 'Acuse'}</th></tr></thead>
       <tbody>{rows.map(row => {
         const badge = acknowledgementBadge(row)
-        return <tr key={row.id} data-selected={row.id === selected}>
+        return <tr key={row.id} data-selected={row.id === selected} onClick={clickRow}>
           <td>{name(row)}{row.employeeExternalId && <Box component="span" sx={{ color: color.subtle }}> {row.employeeExternalId}</Box>}{row.version > 1 && <Box component="span" sx={{ color: color.subtle }}> · versión {row.version}</Box>}</td>
           <td>{hours(row.totals.ordinaryMinutes)}</td>
           <td>{hours(row.totals.overtimeMinutes)}</td>
