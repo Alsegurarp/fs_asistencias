@@ -71,6 +71,6 @@ it('los primeros pasos marcan lo que la empresa ya tiene', () => {
   expect(none.map(step => step.done)).toEqual([true, false, false, false, false, false, false])
   const some = firstSteps({ sites: [{ name: 'Matriz Centro', radiusMeters: 120 }], schedules: 2, employees: 0, cards: 0, devices: 1, users: 3 })
   expect(some.filter(step => step.done).map(step => step.key)).toEqual(['empresa', 'sedes', 'horarios', 'lectores', 'equipo'])
-  expect(some[1]).toMatchObject({ detail: '1 sede: Matriz Centro, círculo de 120 m', action: 'Agregar otra', to: '/configuracion/sedes' })
-  expect(some.map(step => step.to)).toEqual(['/configuracion', '/configuracion/sedes', '/personal/horarios', '/personal/importaciones', '/dispositivos/tarjetas', '/dispositivos', '/usuarios'])
+  expect(some[1]).toMatchObject({ detail: '1 sede: Matriz Centro, círculo de 120 m', action: 'Agregar otra', to: '/configuracion?sede=nueva' })
+  expect(some.map(step => step.to)).toEqual(['/configuracion', '/configuracion?sede=nueva', '/personal/horarios', '/personal/importaciones', '/dispositivos/tarjetas', '/dispositivos', '/usuarios'])
 })

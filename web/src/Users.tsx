@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, FormGroup, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, permissions, type Me, type Page, type TenantUser } from './api'
-import { EntitySelect, ErrorNotice } from './Directory'
+import { EntitySelect, ErrorNotice } from './legacy'
 import { RecordName } from './legacy'
 import { showTime } from './incidentModel'
 

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.32.0
+  version: 0.33.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -1633,6 +1633,8 @@ paths:
                     radiusMeters: 80
                     status: active
                     createdAt: "2026-10-05T15:10:00Z"
+                    people: 29
+                    terminals: 2
                 nextCursor: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1671,6 +1673,8 @@ paths:
                 radiusMeters: 80
                 status: active
                 createdAt: "2026-10-05T15:10:00Z"
+                people: 0
+                terminals: 0
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1702,6 +1706,8 @@ paths:
                 radiusMeters: 80
                 status: active
                 createdAt: "2026-10-05T15:10:00Z"
+                people: 29
+                terminals: 2
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1735,6 +1741,8 @@ paths:
                 radiusMeters: 120
                 status: active
                 createdAt: "2026-10-05T15:10:00Z"
+                people: 29
+                terminals: 2
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6118,7 +6126,7 @@ components:
 
     Site:
       type: object
-      required: [id, name, timeZone, latitude, longitude, radiusMeters, status, createdAt]
+      required: [id, name, timeZone, latitude, longitude, radiusMeters, status, createdAt, people, terminals]
       properties:
         id:
           type: string
@@ -6145,6 +6153,14 @@ components:
         createdAt:
           type: string
           format: date-time
+        people:
+          type: integer
+          minimum: 0
+          description: Personas activas de la sede.
+        terminals:
+          type: integer
+          minimum: 0
+          description: Terminales activas de la sede.
     SiteCreate:
       type: object
       additionalProperties: false

@@ -18,8 +18,8 @@ ambiente nunca pierde una función.
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
 | 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana integrado (PR #42) |
-| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas (PR #46, sobre la #45) y el buscador con el menú Crear (`feat/portal-buscador-crear`, sobre la #46) en revisión |
-| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente ([qué falta](#lo-que-sigue-dispositivos-y-tarjetas-y-empresa)) |
+| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas (PR #46) y el buscador con el menú Crear (PR #47) integrados en la rama de la #45; llegan a `main` con la PR #48 |
+| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración en revisión (`feat/portal-configuracion`); siguen Usuarios y roles con Mi perfil |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
 | 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pendiente |
@@ -103,6 +103,21 @@ activa lectores, manda marcajes con tarjetas simuladas y deja un lector sin
 señal; no hace falta un teléfono.
 
 ### Bloque 3: Empresa
+
+**Estado del 10 de noviembre:** Configuración (EMP-01, 02, 03, 07 y 08) está
+hecha en `feat/portal-configuracion`, con las cifras de cada sede en
+`GET /sites` (contrato 0.33.0, índices V021). Retira `TenantSettings` y
+`Directory`; `ErrorNotice` y `EntitySelect`, que todavía usan Usuarios,
+Reportes y Mi asistencia, pasan a `legacy.tsx`. `BreakPolicyChange` se queda
+para la Consola. `/configuracion/sedes` lleva a `/configuracion`. El mapa es
+OpenStreetMap con Leaflet 1.9.4, en un archivo aparte que sólo baja al abrir
+Configuración; la política de seguridad del portal admite
+`https://tile.openstreetmap.org` en `img-src`. Diferencias con el lienzo:
+
+- **«Programó Mariana Ortiz»:** el API no guarda quién programó el cambio de comida; se muestra sólo la fecha.
+- **«Sede activa»:** en lugar del interruptor, el pie del panel tiene «Desactivar sede» o «Reactivar sede», que se guardan en el acto.
+- **Columna «Acciones»:** no hay botón «Editar»; un clic en la fila abre la sede, como en las demás tablas.
+- **Fecha de entrada del cambio de comida:** el portal la calcula con la misma regla del servidor para mostrarla antes de programar; la que vale es la que devuelve el servidor.
 
 Dos PR: Configuración con sedes, comida y reglas (EMP-01, 02, 03, 07, 08) y
 Usuarios y roles con Mi perfil (EMP-04, 05, 06, CTA-01, TEL-11). Retira

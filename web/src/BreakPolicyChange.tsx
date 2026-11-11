@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, type BreakPolicy, type BreakPolicyChange, type UpcomingBreakPolicy } from './api'
-import { ErrorNotice } from './Directory'
+import { ErrorNotice } from './legacy'
 
 export const breaks: Record<BreakPolicy, string> = { not_considered: 'No se marca', marked: 'Se marca' }
 

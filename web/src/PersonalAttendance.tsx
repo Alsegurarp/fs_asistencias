@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Alert, Button, Stack, TextField, Typography } from '@mui/material'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, type Me } from './api'
-import { ErrorNotice } from './Directory'
+import { ErrorNotice } from './legacy'
 import { WeekSummary } from './legacy'
 import { dateInZone, showTime, type Week } from './incidentModel'
 

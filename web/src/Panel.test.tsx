@@ -189,7 +189,7 @@ it('una empresa sin personal ve sus primeros pasos en orden', async () => {
     'Registra y asigna las tarjetas, pendiente', 'Activa un lector en cada sede, pendiente', 'Invita a tu equipo, pendiente',
   ])
   expect(steps.textContent).toContain('2 sedes: Matriz Centro, Bodega Norte')
-  expect(hrefs(steps)).toEqual(['/configuracion', '/configuracion/sedes', '/personal/horarios', '/personal/importaciones', '/dispositivos/tarjetas', '/dispositivos', '/usuarios'])
+  expect(hrefs(steps)).toEqual(['/configuracion', '/configuracion?sede=nueva', '/personal/horarios', '/personal/importaciones', '/dispositivos/tarjetas', '/dispositivos', '/usuarios'])
   expect(text()).toContain('Así funciona Zenit')
   // Quien no administra no ve los primeros pasos: su panel dice lo que hay.
   await render(['rh'])

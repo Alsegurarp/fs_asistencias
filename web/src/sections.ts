@@ -3,7 +3,7 @@ import type { IconName } from './Icons'
 
 /** Lo que cada rol puede ver, más el permiso explícito del expediente. */
 export type Allowed = ReturnType<typeof permissions> & { dossier: boolean }
-export type ScreenKey = 'panel' | 'sources' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'sites' | 'users' | 'exports' | 'dossier' | 'personal' | 'tenants'
+export type ScreenKey = 'panel' | 'sources' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'users' | 'exports' | 'dossier' | 'personal' | 'tenants'
 
 export type Screen = {
   key: ScreenKey
@@ -61,7 +61,6 @@ export const companyGroups: Group[] = [
   { key: 'empresa', label: 'Empresa', sections: [
     { key: 'configuracion', label: 'Configuración', short: 'Configuración', icon: 'settings', screens: [
       { key: 'settings', path: '/configuracion', tab: 'Empresa', allowed: can('settings') },
-      { key: 'sites', path: '/configuracion/sedes', tab: 'Sedes', allowed: can('sites') },
     ] },
     { key: 'usuarios', label: 'Usuarios y roles', short: 'Usuarios', icon: 'users', screens: [
       { key: 'users', path: '/usuarios', tab: 'Usuarios', allowed: can('users') },

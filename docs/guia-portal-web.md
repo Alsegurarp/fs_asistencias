@@ -1,5 +1,12 @@
 # Guía del portal web
 
+**Actualización del 10 de noviembre, Configuración (contrato 0.33.0):**
+- **Configuración (EMP-01):** una sola pantalla con la empresa (nombre, zona horaria, inicio de semana y cierre automático, con sus cifras), las políticas y reglas, y las sedes con su zona de marcaje en un mapa de OpenStreetMap. Sólo Administración cambia; los demás roles la consultan. `/configuracion/sedes` lleva aquí.
+- **Sede (EMP-07):** `?sede=<id>` abre una sede y `?sede=nueva` agrega una. El punto se arrastra en el mapa o se escribe con latitud y longitud, junto con el radio. Desactivar y reactivar están en el pie.
+- **Comida (EMP-02 y 08):** `?comida=1` muestra la política de hoy y el cambio programado, que se puede cancelar; `?comida=programar` programa uno con motivo y muestra desde cuándo entraría.
+- **Reglas (EMP-03):** `?reglas=1` muestra los topes por año, las reglas por día y la fuente.
+- **API:** cada sede trae `people` (personas activas) y `terminals` (terminales activas).
+
 **Actualización del 10 de noviembre, tras el recorrido en local (contrato 0.32.0):**
 - **Filas:** un clic en cualquier parte de la fila abre su detalle en Tarjetas, Asistencia, Personal, Cierres e Incidencias.
 - **Tarjetas:** nueva columna «Tecnología» («Huella manual» o «MIFARE Classic firmada»). Una tarjeta sin titular dice «Antes: <persona>», con la fecha en «Desde». El detalle trae la tecnología y «Lecturas», con cuántos marcajes tiene la tarjeta y cuándo y dónde fue el último. El historial del detalle sigue siendo de asignaciones.
