@@ -70,7 +70,7 @@ class PilotCardsIT : CaptureTestBase() {
         val c = company()
         val siteId = newSite(c)
         val employeeId = newEmployee(c, siteId)
-        val t = terminal(c, siteId)
+        val t = terminal(c, siteId, elsewhere())
         val card = written(c, t)
         assertTrue(card.label.startsWith("ZC-"), card.label)
 
@@ -100,7 +100,7 @@ class PilotCardsIT : CaptureTestBase() {
     fun `the session hands the sector key and the key that checks signatures without network`() {
         val c = company()
         val siteId = newSite(c)
-        val t = terminal(c, siteId)
+        val t = terminal(c, siteId, elsewhere())
         val session = call("POST", "/api/v1/device-sessions", assertion(t), """{"appVersion":"0.1.0"}""")
         assertEquals(201, session.status, session.toString())
         assertEquals("mifare_classic_signed", session.at("pilotCards.scheme"))
@@ -110,7 +110,7 @@ class PilotCardsIT : CaptureTestBase() {
 
         // Cada empresa tiene su propia clave de sectores.
         val other = company()
-        val otherTerminal = terminal(other, newSite(other))
+        val otherTerminal = terminal(other, newSite(other), elsewhere())
         val otherSession = call("POST", "/api/v1/device-sessions", assertion(otherTerminal), """{"appVersion":"0.1.0"}""")
         assertNotEquals(sectorKey, otherSession.at<String>("pilotCards.sectorKey"))
 
@@ -130,7 +130,7 @@ class PilotCardsIT : CaptureTestBase() {
         val c = company()
         val siteId = newSite(c)
         val employeeId = newEmployee(c, siteId)
-        val t = terminal(c, siteId)
+        val t = terminal(c, siteId, elsewhere())
         val card = written(c, t)
         assign(c, card.cardId, employeeId)
 
@@ -158,7 +158,7 @@ class PilotCardsIT : CaptureTestBase() {
         val c = company()
         val siteId = newSite(c)
         val employeeId = newEmployee(c, siteId)
-        val t = terminal(c, siteId)
+        val t = terminal(c, siteId, elsewhere())
         val uid = uid()
         val credential = issue(t, uid)
         val proof = "$uid.${credential.at<String>("token")}.${credential.at<String>("signature")}"
@@ -179,7 +179,7 @@ class PilotCardsIT : CaptureTestBase() {
         val p = phone(c, employeeId)
         assertEquals(403, issue(p, uid()).status)
         assertEquals(403, register(p, uid(), "ab".repeat(16), "A".repeat(86)).status)
-        val badUid = issue(terminal(c, siteId), "123")
+        val badUid = issue(terminal(c, siteId, elsewhere()), "123")
         assertProblem(422, "validation", badUid)
         assertEquals("invalid_uid", badUid.at("errors[0].code"))
         // Una persona del portal no usa estas rutas.
@@ -196,7 +196,7 @@ class PilotCardsOffIT : CaptureTestBase() {
     fun `pilot cards are refused unless the environment turns them on`() {
         val c = company()
         val siteId = newSite(c)
-        val t = terminal(c, siteId)
+        val t = terminal(c, siteId, elsewhere())
         assertProblem(409, "pilot_cards_disabled", call("POST", "/api/v1/device-cards/credentials", assertion(t), """{"uid":"a9c6cc10"}"""))
         val session = call("POST", "/api/v1/device-sessions", assertion(t), """{"appVersion":"0.1.0"}""")
         assertNull(session.at<Any?>("pilotCards"))
