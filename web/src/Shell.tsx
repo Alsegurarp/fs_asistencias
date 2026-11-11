@@ -38,6 +38,10 @@ type ShellProps = {
   counts?: Partial<Record<string, { value: number; label: string }>>
   /** La campana de avisos (CTA-03), junto al menú de la cuenta. */
   bell?: ReactNode
+  /** El buscador (CTA-05), después de la empresa. */
+  search?: ReactNode
+  /** El menú Crear (CTA-04), antes de la campana. */
+  create?: ReactNode
 }
 
 /**
@@ -45,7 +49,7 @@ type ShellProps = {
  * plegables y contenido con desplazamiento propio. En teléfono el menú pasa a
  * la barra inferior (TEL-06) y la página se desplaza completa.
  */
-export function Shell({ me, email, groups, firstPath, context, onSignOut, notice, counts = {}, bell }: ShellProps) {
+export function Shell({ me, email, groups, firstPath, context, onSignOut, notice, counts = {}, bell, search, create }: ShellProps) {
   const phone = useMediaQuery(phoneQuery)
   const [hidden, setHidden] = useState(readHidden)
   const { pathname } = useLocation()
@@ -69,7 +73,8 @@ export function Shell({ me, email, groups, firstPath, context, onSignOut, notice
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: 40, pl: 1.75, borderLeft: '1px solid rgba(255,255,255,0.3)', fontSize: 14, fontWeight: 600, [`@media ${phoneQuery}`]: { display: 'none' } }}>
         <Icon name="building" size={18} /><span>{context}</span>
       </Stack>
-      <Box sx={{ flex: 1 }} />
+      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center', [`@media ${phoneQuery}`]: { display: 'contents' } }}>{search}</Box>
+      {create}
       {bell}
       <AccountMenu me={me} email={email} context={context} onSignOut={onSignOut} />
     </Box>

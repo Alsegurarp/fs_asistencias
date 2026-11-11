@@ -127,7 +127,7 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.POST, "/api/v1/imports/csv").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/imports", "/api/v1/imports/{importId}").hasAnyRole(admin, rh)
                 // Tarjetas.
-                it.requestMatchers(HttpMethod.GET, "/api/v1/cards", "/api/v1/cards/summary").hasAnyRole(admin, rh, auditor)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/cards", "/api/v1/cards/summary", "/api/v1/cards/{cardId}").hasAnyRole(admin, rh, auditor)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/cards").hasAnyRole(admin, rh)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/cards/{cardId}/assignments", "/api/v1/cards/{cardId}/revocation")
                     .hasAnyRole(admin, rh)

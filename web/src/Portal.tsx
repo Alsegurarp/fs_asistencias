@@ -5,6 +5,7 @@ import { Alert, Button, CircularProgress, Stack } from '@mui/material'
 import { api, type Me, permissions } from './api'
 import { Attendance } from './Attendance'
 import { color } from './design'
+import { Cards } from './Cards'
 import { Closures } from './Closures'
 import { Devices } from './Devices'
 import { Directory } from './Directory'
@@ -26,6 +27,7 @@ import { StateCard } from './States'
 import { More } from './More'
 import { NoticesButton, useNotices } from './Notices'
 import { Panel } from './Panel'
+import { CreateMenu, GlobalSearch } from './TopBar'
 import {
   type Allowed, type Screen, type Section, companyGroups, consoleGroups, dossierCallbackPath, homePath, joinNames,
   personalScreen, personalSection, roleLabel, rolesFor, sessionEndedPath, visibleGroups, visibleScreens,
@@ -65,6 +67,7 @@ export function Portal({ me, email, onSignOut, notice }: PortalProps) {
   return <Routes>
     <Route element={<Shell me={me} email={email} groups={groups} firstPath={firstPath} context={context} onSignOut={onSignOut} counts={counts}
       bell={me.tenant && allowed.attendance ? <NoticesButton notices={notices} /> : undefined}
+      search={me.tenant ? <GlobalSearch me={me} /> : undefined} create={me.tenant ? <CreateMenu me={me} /> : undefined}
       notice={<>{notice}{breakNotice && <Alert severity="info" role="status" aria-live="polite">Aviso sobre la comida: {upcomingText(upcoming)}</Alert>}</>} />}>
       <Route index element={home ? <Navigate to={home} replace /> : <NoScreens me={me} />} />
       {all.flatMap(section => section.screens.map(screen => <Route key={screen.path} path={screen.path} element={page(section, screen)} />))}
@@ -97,6 +100,8 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   if (screen.key === 'schedules') return <Schedules me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'sources') return <Sources me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'imports') return <Imports me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'devices') return <Devices me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'cards') return <Cards me={me} context={context} section={section} screens={screens} screen={screen} />
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
@@ -106,15 +111,14 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
 /** Las pantallas anteriores del portal, cada una en su dirección. */
 function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
   switch (screen) {
-    case 'sites': case 'cards': return <Directory key={screen} kind={screen} me={me} />
-    case 'devices': return <Devices me={me} />
+    case 'sites': return <Directory kind={screen} me={me} />
     case 'settings': return <TenantSettings me={me} />
     case 'users': return <Users me={me} />
     case 'exports': return <Exports me={me} />
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
-    case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': return null
+    case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': case 'devices': case 'cards': return null
   }
 }
 

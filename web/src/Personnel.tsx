@@ -12,7 +12,7 @@ import { type EmployeeSummary, personStatus, sources } from './personnelModel'
 import { NewPersonModal } from './PersonnelForms'
 import { PageHeader } from './Shell'
 import type { Screen, Section } from './sections'
-import { Badge, FilterChip, Note, Pager, Pane, SearchBox, SelectBox, SkeletonRows, tableSx, visuallyHidden } from './ui'
+import { Badge, FilterChip, Note, Pager, Pane, SearchBox, SelectBox, SkeletonRows, clickRow, tableSx, visuallyHidden } from './ui'
 
 type Props = { me: Me; context: string; section: Section; screens: Screen[]; screen: Screen }
 
@@ -180,9 +180,9 @@ export function Personnel(props: Props) {
                 <tbody>
                   {list.isPending ? <SkeletonRows columns={6} /> : rows.map(row => {
                     const status = personStatus(row, today)
-                    return <tr key={row.id} data-selected={row.id === person}>
+                    return <tr key={row.id} data-selected={row.id === person} onClick={clickRow}>
                       <td>
-                        <Box component={Link} to={`?${withPerson(params, row.id)}`} aria-current={row.id === person ? 'true' : undefined}
+                        <Box component={Link} data-row-link to={`?${withPerson(params, row.id)}`} aria-current={row.id === person ? 'true' : undefined}
                           onClick={event => { event.preventDefault(); open(row.id, event.currentTarget) }}
                           sx={{ fontWeight: 600, textDecoration: 'none', color: `${color.ink} !important`, '&:hover': { textDecoration: 'underline' } }}>{row.displayName}</Box>
                         {' '}<Box component="span" sx={{ color: color.subtle }}>{row.externalId}</Box>

@@ -48,14 +48,20 @@ export type Site = { id: string; name: string; timeZone: string; latitude: numbe
 export type Employee = { id: string; externalId: string; displayName: string; siteId: string | null; employmentStart: string; employmentEnd: string | null; status: string; activeCardId: string | null; currentScheduleId?: string | null
   /** Desde el contrato 0.21.0. */
   source: 'manual' | 'csv' | 'api' | 'connector'; activeCardLabel?: string | null; createdAt?: string }
-export type Card = { id: string; label: string; status: string; assignment: { employeeId: string; employeeName?: string; employeeExternalId?: string; since?: string } | null }
+export type Card = {
+  id: string; label: string; status: string; keyVersion?: number | null; technology?: string
+  assignment: { employeeId: string; employeeName?: string; employeeExternalId?: string; since?: string } | null
+  /** Quien la tuvo por última vez; `until` nulo si sigue asignada. */
+  latestAssignment?: { employeeId: string; employeeName: string; employeeExternalId: string; since: string; until: string | null } | null
+  createdAt?: string; updatedAt?: string
+}
 export type TenantUsage = { tenantId: string; month: string; timeZone: string; from: string; to: string; complete: boolean; employeesWithAttendance: number; employeesInPeriod: number; cardsAssigned: number; devicesActive: number; attendanceEvents: number }
 export type Tenant = { id: string; name: string; slug: string; timeZone: string; weekStartsOn: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'; breakPolicy: BreakPolicy; status: string; createdAt: string; autoCloseAfterHours: number | null; breakPolicyChange: BreakPolicyChange | null }
 export type BreakPolicy = 'not_considered' | 'marked'
 /** Cambio programado de la política de comida; entra en `effectiveOn`, un inicio de semana de la empresa. */
 export type BreakPolicyChange = { id: string; breakPolicy: BreakPolicy; effectiveOn: string; effectiveAt: string; reason: string; scheduledAt: string }
 export type UpcomingBreakPolicy = { breakPolicy: BreakPolicy; effectiveOn: string; effectiveAt: string }
-export type Device ={ id: string; mode: 'personal' | 'terminal'; status: 'active' | 'revoked' | 'replaced'; employeeId: string | null; siteId: string | null; label: string | null; model: string; appVersion: string; enrolledAt: string; lastSeenAt: string | null; revokedAt: string | null }
+export type Device ={ id: string; mode: 'personal' | 'terminal'; status: 'active' | 'revoked' | 'replaced'; employeeId: string | null; employeeName?: string | null; siteId: string | null; label: string | null; model: string; appVersion: string; enrolledAt: string; lastSeenAt: string | null; revokedAt: string | null }
 export type DeviceEnrollment = { id: string; mode: 'personal' | 'terminal'; employeeId: string | null; siteId: string | null; label: string | null; code: string; status: string; expiresAt: string; createdAt: string }
 export type TenantUser ={ id: string; email: string; displayName: string; roles: string[]; status: 'invited' | 'active' | 'disabled'; createdAt: string; linkedAt: string | null; employeeId: string | null; siteIds?: string[] }
 

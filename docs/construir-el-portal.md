@@ -18,7 +18,7 @@ ambiente nunca pierde una función.
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
 | 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana integrado (PR #42) |
-| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; sigue Dispositivos y tarjetas ([qué falta](#lo-que-sigue-dispositivos-y-tarjetas-y-empresa)) |
+| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas (PR #46, sobre la #45) y el buscador con el menú Crear (`feat/portal-buscador-crear`, sobre la #46) en revisión |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Pendiente ([qué falta](#lo-que-sigue-dispositivos-y-tarjetas-y-empresa)) |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
@@ -47,6 +47,19 @@ Alexis está al final, en [Qué se necesita para probar y
 avanzar](#qué-se-necesita-para-probar-y-avanzar).
 
 ### Bloque 2, última PR: Dispositivos y tarjetas
+
+**Estado del 10 de noviembre:** Lectores, Tarjetas y Registrar tarjeta
+están hechos en `feat/portal-dispositivos`, con `GET /cards/{cardId}`
+(contrato 0.31.0). Para no hacer una PR enorme, el buscador (CTA-05) y el
+menú Crear (CTA-04), que tocan la barra superior, van en la PR siguiente.
+Las diferencias con el lienzo quedaron así:
+
+- **«Asignar a otra persona»:** no existe; se respeta la regla vigente. El detalle ofrece «Reponer con otra del inventario» y revocar.
+- **«Tecnología»:** se muestra desde el contrato 0.32.0, a pedido del responsable del producto (10 nov): «Huella manual» para la que se registró escribiendo la huella y «MIFARE Classic firmada» para la del piloto. Las tarjetas ya registradas se clasifican por su versión de clave (V020).
+- **«Cerrar la semana»** lleva a Cierres con la confirmación abierta; aceptado el 10 nov. «Invitar» y «Generar un reporte» llegan con los bloques 3 y 4.
+- **Huella:** se escribe a mano, sólo para la tarjeta simulada. Las del piloto las prepara una terminal.
+
+Detalle original del plan:
 
 Rama `feat/portal-dispositivos`. Retira `Devices.tsx`, las tarjetas de
 `Directory.tsx` (con lo que `Directory` queda sólo con sedes hasta el
@@ -132,9 +145,9 @@ lleva al ambiente publicado.
 | --- | --- | --- |
 | Decidir «Asignar a otra persona» (propuesta: respetar la regla vigente) | El detalle de una tarjeta | Dispositivos y tarjetas |
 | Decidir cómo se registra una tarjeta real: escribiendo la huella, leyéndola con la app o con un lector de escritorio | PAD-12 con tarjeta real | Sólo la tarjeta real; con la simulada se avanza |
-| Elegir el proveedor de mapas (propuesta: OpenStreetMap, sin llave ni costo, con su atribución) y aceptar abrir la política de seguridad a sus mosaicos | El mapa de sedes | Configuración; sin mapa se edita con latitud, longitud y radio |
-| Datos de SMTP para Keycloak: servidor, puerto, usuario, contraseña y remitente, entregados fuera del repositorio | Que la invitación llegue por correo y se recupere una contraseña olvidada | Invitar de punta a punta; la pantalla se puede construir antes |
-| Decidir el canal de «Ayuda y soporte» (correo, WhatsApp o página) | El menú de la cuenta | Nada más |
+| ~~Proveedor de mapas~~ **Resuelto el 10 nov:** OpenStreetMap, con su atribución; la política de seguridad se abre a sus mosaicos | El mapa de sedes | — |
+| ~~Datos de SMTP~~ **Resuelto el 10 nov:** Brevo, con la credencial en `secrets/smtp.env` y configurado en el Keycloak local. Para producción falta un remitente del dominio propio | Que la invitación llegue por correo y se recupere una contraseña olvidada | Producción, por el remitente |
+| ~~Canal de «Ayuda y soporte»~~ **Resuelto el 10 nov:** correo rene.alexis.segura@gmail.com y número 56 3300 1126 | El menú de la cuenta | — |
 
 **Para probar en el ambiente publicado**
 

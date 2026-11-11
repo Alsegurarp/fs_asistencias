@@ -82,12 +82,16 @@ abstract class CaptureTestBase : ApiTestBase() {
         forwardedFor?.let { mapOf("X-Forwarded-For" to it) } ?: emptyMap(),
     )
 
-    /** Dispositivo ya activado, con su primera sesión abierta. */
-    protected fun activated(c: Company, enrollmentBody: String): Phone {
+    /**
+     * Dispositivo ya activado, con su primera sesión abierta. `from` es la
+     * dirección desde la que se activa: CaptureIT agota a propósito el límite
+     * de activaciones de 127.0.0.1 y otras clases comparten su contexto.
+     */
+    protected fun activated(c: Company, enrollmentBody: String, from: String? = null): Phone {
         val enrollment = enroll(c, enrollmentBody)
         assertEquals(201, enrollment.status, enrollment.toString())
         val phone = Phone(newKey())
-        val reply = activation(enrollment.at("code"), phone.key)
+        val reply = activation(enrollment.at("code"), phone.key, forwardedFor = from)
         assertEquals(201, reply.status, reply.toString())
         phone.id = reply.at("deviceId")
         phone.session = reply.at("session.sessionId")
@@ -96,7 +100,11 @@ abstract class CaptureTestBase : ApiTestBase() {
 
     protected fun phone(c: Company, employeeId: String): Phone = activated(c, """{"mode":"personal","employeeId":"$employeeId"}""")
 
-    protected fun terminal(c: Company, siteId: String): Phone = activated(c, """{"mode":"terminal","siteId":"$siteId","label":"Recepción"}""")
+    protected fun terminal(c: Company, siteId: String, from: String? = null): Phone =
+        activated(c, """{"mode":"terminal","siteId":"$siteId","label":"Recepción"}""", from)
+
+    /** Una dirección de documentación distinta en cada llamada, para no compartir el límite de activaciones. */
+    protected fun elsewhere(): String = "198.51.100.${(1..254).random()}"
 
     /** Aserción con la que el dispositivo se identifica en cada petición. */
     protected fun assertion(
