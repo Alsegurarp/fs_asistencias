@@ -387,6 +387,14 @@ class CaptureProcessor(
         if (device.mode == "personal" && device.employeeId != employee.id) {
             return reject("card_not_owner", "Este teléfono sólo acepta la tarjeta de su titular.")
         }
+        // Una persona marca de una sola forma, y el plan y la sede tienen que admitirla.
+        if (device.mode == "terminal") {
+            if (employee.captureMethod != "card") return reject("method_not_allowed", "Esta persona marca con su teléfono, no con tarjeta.")
+            val terminalSite = device.siteId?.let { sites.find(tenantId, it) }
+            if (CaptureMethods.CARD_TERMINAL !in CaptureMethods.effective(tenant.captureMethods, terminalSite?.captureMethods)) {
+                return reject("method_not_allowed", "Esta sede no admite marcar con tarjeta.")
+            }
+        }
 
         // La política es la que valía el día de la marca, aunque llegue después sin red.
         val decision = MarkRules.decide(
@@ -395,7 +403,7 @@ class CaptureProcessor(
         )
         // Una terminal se evalúa contra su sede; un teléfono personal, contra la sede de su titular.
         val site = (device.siteId ?: employee.siteId)?.let { sites.find(tenantId, it) }
-        val (verdict, locationIncident) = Geo.verdict(site, payload.location)
+        val (verdict, locationIncident) = Geo.verdict(site, payload.location, fixedDevice = device.mode == "terminal" && device.siteId != null)
         val incidents = linkedSetOf<String>()
         incidents += decision.incidents
         locationIncident?.let { incidents += it }

@@ -6,6 +6,34 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 12 de noviembre de 2026 — Despliegue de `main`: clave del piloto, Tomcat y build de Android
+
+Rama `fix/despliegue-clave-piloto-y-tomcat` desde `main` (`71ee1f9`). Tres
+arreglos para poder desplegar lo integrado desde el 9 de noviembre:
+
+- **Clave de las tarjetas del piloto en el servidor.** El despliegue de
+  `71ee1f9` falló en «Actualizando los servicios»: la composición del
+  servidor (`deploy/servidor/zenit/compose.yaml`) no redefinía el secreto
+  `pilot_card_key`, así que el backend buscaba `./secrets/pilot_card_key`
+  dentro del árbol desplegado, que no existe. Ahora sale de
+  `${ZENIT_SECRETOS}/pilot_card_key`, como los demás. En el servidor el
+  archivo se creó vacío: las tarjetas del piloto siguen rechazadas hasta
+  escribir la clave. El ambiente se regresó a `6faf0d7` y responde.
+- **Tomcat embebido 11.0.27.** El análisis de imágenes de `main` fallaba
+  desde el 12 de noviembre por dos avisos críticos y dos altos nuevos en
+  `tomcat-embed-core` 11.0.26. Con 11.0.27 la imagen del backend pasa el
+  análisis en local (`infra/check-images.ps1 -Targets backend`).
+- **Build de Android.** Si Gradle falla por la red al descargar, la
+  verificación se repite una vez; una prueba o el lint que fallan no se
+  repiten.
+
+La dirección pública no respondía por otra causa: los registros DNS de
+`fastsolution.com.mx`, `www` y `zenit` apuntan a una dirección que ya no es
+la del servidor. Los servicios responden bien por su dirección actual. Falta
+corregir los tres registros en el panel del dominio.
+
+Sin despliegue de `main`: espera la PR.
+
 ## 9 de noviembre de 2026 — Lo que sigue: Dispositivos y tarjetas, y Empresa
 
 Sin código. Con Importar integrado (PR #44, `main` en `8a52b0c`), se revisó

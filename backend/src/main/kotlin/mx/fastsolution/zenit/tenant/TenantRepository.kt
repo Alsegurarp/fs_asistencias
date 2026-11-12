@@ -2,6 +2,7 @@ package mx.fastsolution.zenit.tenant
 
 import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.TextSearch
+import mx.fastsolution.zenit.capture.CaptureMethods
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.springframework.stereotype.Repository
@@ -22,6 +23,8 @@ data class TenantRow(
     val createdAt: OffsetDateTime,
     /** Horas tras el fin de la semana a las que el sistema la cierra; nulo si sólo la cierra una persona. */
     val autoCloseAfterHours: Int? = null,
+    /** Las formas de marcar del plan: `card_terminal` y/o `phone_tag`. */
+    val captureMethods: List<String> = CaptureMethods.ALL,
 )
 
 data class TenantUsageCounts(
@@ -189,6 +192,20 @@ class TenantRepository(private val dsl: DSLContext) {
             name, timeZone, weekStartsOn, changeAutoClose, autoCloseAfterHours, id,
         )?.let(::row)
 
+    /** Fija las formas de marcar del plan. */
+    fun setCaptureMethods(id: UUID, methods: List<String>): TenantRow? =
+        dsl.fetchOne("update tenant set capture_methods = cast(? as text[]) where id = ? returning $COLUMNS", methods.toTypedArray(), id)?.let(::row)
+
+    /** Personas activas de la empresa que marcan de una forma que ya no estaría en el plan. */
+    fun peopleOutside(id: UUID, methods: List<String>): Int {
+        val person = CaptureMethods.PERSON.filter { CaptureMethods.of(it) !in methods }
+        if (person.isEmpty()) return 0
+        return dsl.fetchOne(
+            "select count(*) from employee where tenant_id = ? and status = 'active' and capture_method = any(cast(? as text[]))",
+            id, person.toTypedArray(),
+        )!!.get(0, Number::class.java).toInt()
+    }
+
     /** Cambia el estado sólo si estaba en el que se espera; devuelve nulo si no. */
     fun setStatus(id: UUID, from: String, to: String): TenantRow? =
         dsl.fetchOne("update tenant set status = ? where id = ? and status = ? returning $COLUMNS", to, id, from)?.let(::row)
@@ -338,15 +355,16 @@ class TenantRepository(private val dsl: DSLContext) {
         baseBreakPolicy = r.get("break_policy", String::class.java),
         createdAt = r.get("created_at", OffsetDateTime::class.java),
         autoCloseAfterHours = r.get("auto_close_after_hours", Number::class.java)?.toInt(),
+        captureMethods = r.get("capture_methods", Array<String>::class.java).toList(),
     )
 
     companion object {
         /** Ya entró: alguien con Administración entró con su cuenta y conserva el acceso. Pendiente: sólo invitaciones. Nadie: ninguna de las dos. */
         val ADMINISTRATION_STATES = listOf("linked", "pending", "none")
 
-        private const val COLUMNS = "id, slug, name, status, time_zone, week_starts_on, break_policy, created_at, auto_close_after_hours"
+        private const val COLUMNS = "id, slug, name, status, time_zone, week_starts_on, break_policy, created_at, auto_close_after_hours, capture_methods"
         private const val T_COLUMNS =
-            "t.id, t.slug, t.name, t.status, t.time_zone, t.week_starts_on, t.break_policy, t.created_at, t.auto_close_after_hours"
+            "t.id, t.slug, t.name, t.status, t.time_zone, t.week_starts_on, t.break_policy, t.created_at, t.auto_close_after_hours, t.capture_methods"
 
         /** Alguien de la empresa `t` con el rol de Administración y la condición que sigue. */
         private const val ADMIN_OF_T =

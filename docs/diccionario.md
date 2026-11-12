@@ -94,7 +94,7 @@ datos, tabla por tabla.
 | Política de descanso | `not_considered`, `marked` |
 | Tipo de marcaje | `clock_in`, `clock_out`, `break_start`, `break_end` |
 | Modalidad | `personal`, `terminal` |
-| Veredicto de ubicación | `inside`, `outside`, `inconclusive`, `not_evaluated` |
+| Veredicto de ubicación | `inside`, `outside`, `inconclusive`, `not_evaluated`, `device_site` (lector fijo de la sede) |
 | Ubicación no disponible | `permission_denied`, `disabled`, `timeout` |
 | Esquema de tarjeta | `desfire_ev3_aes`, `uid_sha256` |
 | Tipo de incidencia | `duplicate`, `missing_pair`, `outside_window`, `location_inconclusive`, `clock_anomaly`, `foreign_site`, `late_sync` |

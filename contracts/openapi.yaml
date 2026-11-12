@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.33.0
+  version: 0.35.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -513,6 +513,7 @@ paths:
                     status: active
                     createdAt: "2026-10-05T15:00:00Z"
                     autoCloseAfterHours: null
+                    captureMethods: [card_terminal, phone_tag]
                     breakPolicyChange: null
                     administration:
                       state: pending
@@ -568,6 +569,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                captureMethods: [card_terminal, phone_tag]
                 breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -761,6 +763,7 @@ paths:
                 status: suspended
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                captureMethods: [card_terminal, phone_tag]
                 breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -780,6 +783,74 @@ paths:
                 status: 409
                 code: tenant_not_active
                 detail: Esa empresa ya está suspendida.
+                correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /tenants/{tenantId}/capture-methods:
+    parameters:
+      - $ref: "#/components/parameters/TenantId"
+    put:
+      tags: [empresa]
+      operationId: setTenantCaptureMethods
+      summary: Fija las formas de marcar del plan
+      description: |
+        Desde 0.35.0. Las dos formas de marcar se venden por separado: la
+        tarjeta en el lector fijo (`card_terminal`) y el teléfono en la
+        etiqueta de la sede (`phone_tag`). Quien opera el servicio fija las
+        del plan; una sede puede admitir menos.
+
+        No quita una forma con la que todavía marca alguien activo: responde
+        409 con `code` `capture_method_in_use` y la empresa tiene que cambiar
+        primero a esas personas. Queda en la bitácora de la empresa
+        (`tenant.capture_methods_changed`), con el motivo.
+      x-roles: [operador_saas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantCaptureMethodsChange"
+            example:
+              captureMethods: [card_terminal]
+              reason: Contrató sólo el lector fijo con tarjetas.
+      responses:
+        "200":
+          description: Plan de la empresa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+              example:
+                id: 7d0c2b7e-51f4-4a0e-9d5b-2f6a1c3e8b10
+                name: Panificadora Ejemplo
+                slug: panificadora-ejemplo
+                timeZone: America/Mexico_City
+                weekStartsOn: monday
+                breakPolicy: not_considered
+                status: active
+                createdAt: "2026-10-05T15:00:00Z"
+                autoCloseAfterHours: null
+                breakPolicyChange: null
+                captureMethods: [card_terminal]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Alguien activo todavía marca de la forma que se quita
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://zenit.invalid/problems/conflict
+                title: Conflicto con el estado actual
+                status: 409
+                code: capture_method_in_use
+                detail: 3 personas activas marcan de la forma que se quita; la empresa tiene que cambiarlas primero.
                 correlationId: 0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e
         "422":
           $ref: "#/components/responses/Unprocessable"
@@ -822,6 +893,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                captureMethods: [card_terminal, phone_tag]
                 breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1049,6 +1121,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                captureMethods: [card_terminal, phone_tag]
                 breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1097,6 +1170,7 @@ paths:
                 status: active
                 createdAt: "2026-10-05T15:00:00Z"
                 autoCloseAfterHours: null
+                captureMethods: [card_terminal, phone_tag]
                 breakPolicyChange: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1635,6 +1709,7 @@ paths:
                     createdAt: "2026-10-05T15:10:00Z"
                     people: 29
                     terminals: 2
+                    captureMethods: [card_terminal, phone_tag]
                 nextCursor: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1675,6 +1750,7 @@ paths:
                 createdAt: "2026-10-05T15:10:00Z"
                 people: 0
                 terminals: 0
+                captureMethods: [card_terminal, phone_tag]
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1708,6 +1784,7 @@ paths:
                 createdAt: "2026-10-05T15:10:00Z"
                 people: 29
                 terminals: 2
+                captureMethods: [card_terminal, phone_tag]
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1743,6 +1820,7 @@ paths:
                 createdAt: "2026-10-05T15:10:00Z"
                 people: 29
                 terminals: 2
+                captureMethods: [card_terminal, phone_tag]
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1919,6 +1997,7 @@ paths:
                     currentScheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
                     activeCardId: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
                     activeCardLabel: ZN-000123
+                    captureMethod: card
                     createdAt: "2026-10-05T15:30:00Z"
                     updatedAt: "2026-10-05T15:30:00Z"
                 nextCursor: null
@@ -1964,6 +2043,7 @@ paths:
                 currentScheduleId: null
                 activeCardId: null
                 activeCardLabel: null
+                captureMethod: card
                 createdAt: "2026-10-05T15:30:00Z"
                 updatedAt: "2026-10-05T15:30:00Z"
         "401":
@@ -2049,6 +2129,7 @@ paths:
                 currentScheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
                 activeCardId: 9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b
                 activeCardLabel: ZN-000123
+                captureMethod: card
                 createdAt: "2026-10-05T15:30:00Z"
                 updatedAt: "2026-10-05T15:30:00Z"
         "401":
@@ -2097,6 +2178,7 @@ paths:
                 currentScheduleId: c2e4a6b8-1d3f-4a5c-9e7b-0f2d4c6e8a10
                 activeCardId: null
                 activeCardLabel: null
+                captureMethod: card
                 createdAt: "2026-10-05T15:30:00Z"
                 updatedAt: "2026-12-31T23:00:00Z"
         "401":
@@ -2854,8 +2936,9 @@ paths:
         Sólo se asigna una tarjeta en `inventory`: una que ya tuvo titular no
         pasa a otra persona. La tarjeta queda `active`; el estado `assigned`
         no se usa todavía. Responde 409 con `code` `card_not_assignable` si la
-        tarjeta no está en inventario, o `employee_inactive` si la persona
-        está dada de baja.
+        tarjeta no está en inventario, `employee_inactive` si la persona
+        está dada de baja, o `employee_marks_with_phone` (desde 0.35.0) si la
+        persona marca con su teléfono y no lleva tarjeta.
       x-roles: [admin_empresa, rh]
       requestBody:
         required: true
@@ -5624,7 +5707,7 @@ components:
 
     Tenant:
       type: object
-      required: [id, name, slug, timeZone, weekStartsOn, breakPolicy, status, createdAt, autoCloseAfterHours, breakPolicyChange]
+      required: [id, name, slug, timeZone, weekStartsOn, breakPolicy, status, createdAt, autoCloseAfterHours, breakPolicyChange, captureMethods]
       properties:
         id:
           type: string
@@ -5659,6 +5742,40 @@ components:
             - $ref: "#/components/schemas/BreakPolicyChange"
             - type: "null"
           description: El cambio de la política de comida que todavía no entra; nulo si no hay.
+        captureMethods:
+          $ref: "#/components/schemas/CaptureMethods"
+          description: >-
+            Las formas de marcar del plan de la empresa (desde 0.35.0). Las
+            fija quien opera el servicio; la empresa no las cambia.
+    CaptureMethods:
+      type: array
+      minItems: 1
+      uniqueItems: true
+      items:
+        type: string
+        enum: [card_terminal, phone_tag]
+      description: >-
+        `card_terminal`: la tarjeta de la persona en el lector fijo de la sede.
+        `phone_tag`: el teléfono de la persona en la etiqueta de la sede. Se
+        venden por separado.
+    PersonCaptureMethod:
+      type: string
+      enum: [card, phone]
+      description: >-
+        Cómo marca una persona: con su tarjeta en el lector fijo (`card`) o
+        con su teléfono en la etiqueta de la sede (`phone`). Una sola forma.
+    TenantCaptureMethodsChange:
+      type: object
+      additionalProperties: false
+      required: [captureMethods, reason]
+      properties:
+        captureMethods:
+          $ref: "#/components/schemas/CaptureMethods"
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+          description: Por qué cambia el plan; queda en la bitácora de la empresa.
     TenantCreate:
       type: object
       additionalProperties: false
@@ -6126,7 +6243,7 @@ components:
 
     Site:
       type: object
-      required: [id, name, timeZone, latitude, longitude, radiusMeters, status, createdAt, people, terminals]
+      required: [id, name, timeZone, latitude, longitude, radiusMeters, status, createdAt, people, terminals, captureMethods]
       properties:
         id:
           type: string
@@ -6161,6 +6278,11 @@ components:
           type: integer
           minimum: 0
           description: Terminales activas de la sede.
+        captureMethods:
+          $ref: "#/components/schemas/CaptureMethods"
+          description: >-
+            Las formas de marcar que admite la sede, siempre dentro del plan
+            (desde 0.35.0). Si la sede no eligió, todas las del plan.
     SiteCreate:
       type: object
       additionalProperties: false
@@ -6210,6 +6332,12 @@ components:
         status:
           type: string
           enum: [active, inactive]
+        captureMethods:
+          $ref: "#/components/schemas/CaptureMethods"
+          description: >-
+            Sólo formas del plan; otra responde 422 con `not_in_plan`. Mandar
+            todas las del plan deja a la sede sin elección propia: si el plan
+            crece, la sede también las admite.
     SiteList:
       type: object
       required: [items, nextCursor]
@@ -6348,6 +6476,7 @@ components:
         - activeCardLabel
         - createdAt
         - updatedAt
+        - captureMethod
       properties:
         id:
           type: string
@@ -6386,6 +6515,8 @@ components:
         updatedAt:
           type: string
           format: date-time
+        captureMethod:
+          $ref: "#/components/schemas/PersonCaptureMethod"
     EmployeeCreate:
       type: object
       additionalProperties: false
@@ -6405,6 +6536,12 @@ components:
         employmentStart:
           type: string
           format: date
+        captureMethod:
+          $ref: "#/components/schemas/PersonCaptureMethod"
+          description: >-
+            Opcional. Si no viene, la tarjeta cuando la sede la admite y si no
+            el teléfono. Una forma que el plan o la sede no admiten responde
+            422 con `capture_method_not_allowed`.
     EmployeeUpdate:
       type: object
       additionalProperties: false
@@ -6422,6 +6559,15 @@ components:
         employmentEnd:
           type: [string, "null"]
           format: date
+        captureMethod:
+          $ref: "#/components/schemas/PersonCaptureMethod"
+          description: >-
+            Cambiarla revoca lo de la otra forma: al pasar al teléfono, su
+            tarjeta vigente; al pasar a la tarjeta, sus teléfonos personales.
+            Queda en la bitácora (`employee.capture_method_changed`). Una
+            forma que el plan o la sede no admiten responde 422 con
+            `capture_method_not_allowed`; cambiar a una sede que no admite la
+            forma de la persona, también.
     EmployeeSummary:
       type: object
       additionalProperties: false
@@ -7138,10 +7284,15 @@ components:
         descanso. En las demás el servidor fija siempre entrada o salida.
     LocationVerdict:
       type: string
-      enum: [inside, outside, inconclusive, not_evaluated]
+      enum: [inside, outside, inconclusive, not_evaluated, device_site]
       description: |
         `inconclusive` cuando la precisión declarada es mayor que el radio de
         la sede. No se interpreta como fuera: abre una incidencia.
+
+        `device_site` (desde 0.34.0): marcó en el lector fijo de una sede sin
+        ubicación, o con una menos precisa que el radio. Cuenta en esa sede y
+        no abre incidencia. Un cliente que no lo conozca lo trata como
+        `not_evaluated`.
     AttendanceEventSubmission:
       type: object
       additionalProperties: false
@@ -7338,6 +7489,7 @@ components:
                     - session_invalid
                     - payload_invalid
                     - too_old
+                    - method_not_allowed
                 message:
                   type: string
             - type: "null"

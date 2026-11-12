@@ -343,6 +343,9 @@ class CaptureIT : CaptureTestBase() {
         // Reenviar el lote devuelve los mismos recibos y no duplica nada.
         assertEquals(batch.body, call("POST", "/api/v1/attendance-events/batch", assertion(t), body).body)
         assertEquals(2, events(a).at<Int>("items.length()"))
+        // El lector fijo que no manda ubicación cuenta en su sede, sin incidencia.
+        val noFix = mark(t, localCard, ago(30), location = null)
+        assertEquals(listOf("accepted", "device_site"), listOf(noFix.at<String>("outcome"), noFix.at<String>("locationVerdict")))
         assertProblem(422, "validation", call("POST", "/api/v1/attendance-events/batch", assertion(t), """{"envelopes":[]}"""))
         assertProblem(422, "validation", call("POST", "/api/v1/attendance-events/batch", assertion(t), json(mapOf("envelopes" to List(101) { "a.b.c" }))))
         assertProblem(401, "unauthorized", call("POST", "/api/v1/attendance-events/batch", a.adminToken, """{"envelopes":["a.b.c"]}"""))
