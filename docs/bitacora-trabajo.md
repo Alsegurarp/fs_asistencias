@@ -6,6 +6,35 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 12 de noviembre de 2026 — Empresa suspendida en `/me` y en el portal (EST-02)
+
+Rama `feat/me-empresa-suspendida` desde `main` (`3b61b79`). Con la empresa
+suspendida, `/me` respondía igual que una cuenta sin acceso y el portal
+mostraba «Tu cuenta no tiene acceso a una empresa». Contrato 0.36.0:
+`CurrentUser` trae `access` (`active`, `suspended`, `none`) y
+`suspendedTenantName`, que sólo viene cuando la empresa está suspendida y la
+persona conservaba su acceso; a una cuenta deshabilitada o sin invitar no se
+le dice nada de la empresa. La suspensión no devuelve permisos: la persona
+sigue sin empresa ni roles y las demás rutas responden 403
+(`IdentityResolver.resolve`, `MeController`).
+
+El portal muestra «Tu empresa está suspendida» con el nombre de la empresa,
+que los lectores y teléfonos ya activados siguen registrando las marcas, a
+quién acudir y «Cerrar sesión» (`CompanySuspended` en `States.tsx`, decidido
+en `App.tsx`). La app lee `/me` campo por campo y no cambia.
+
+Pruebas: `AdministrationIT` (suspendida dice `suspended` y el nombre; la otra
+empresa y quien opera, `active`), `ApiIT` (sin invitación, `none` y sin
+nombre) y `States.test.tsx`.
+
+Verificado: contrato y ejemplos válidos (`contract-lint`), suite de
+integración del backend sin fallas (`backend-it`) y 309 pruebas del portal
+en 31 archivos. Con sesión real en el entorno local `zenit-validacion`,
+con la empresa suspendida: Administración a 1440 px y RH a 390 px ven «Tu
+empresa está suspendida» con el nombre de la empresa, sin errores de consola
+ni desborde; quien opera sigue entrando a Empresas. La empresa se reactivó
+al terminar. Sin despliegue: espera la PR.
+
 ## 12 de noviembre de 2026 — Recorrido del portal por rol y desborde en teléfono
 
 Rama `fix/portal-desborde-telefono` desde `main` (`a5ca133`, ya desplegado

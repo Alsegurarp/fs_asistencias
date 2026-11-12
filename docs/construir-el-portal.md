@@ -338,7 +338,7 @@ lleva al ambiente publicado.
 | Buscador (CTA-05) | Dispositivos y tarjetas |
 | Menú Crear (CTA-04) | Dispositivos y tarjetas, con las ventanas de alta de persona, horario, tarjeta y lector; «Invitar» llegó con el bloque 3 y «Generar un reporte» llega con el 4 |
 | «En línea · datos de las…», «Instalar Zenit» y sin conexión | Bloque 6 |
-| Empresa suspendida (EST-02) | Falta que `/me` distinga la suspensión: hoy responde igual que una cuenta sin acceso (sin empresa ni roles) y el portal muestra EST-01 |
+| ~~Empresa suspendida (EST-02)~~ | **Hecho (contrato 0.36.0):** `/me` trae `access` (`active`, `suspended`, `none`) y, sólo con la empresa suspendida y el acceso vigente, `suspendedTenantName`; `App.tsx` muestra `CompanySuspended` de `States.tsx` |
 | Pantallas de acceso con la marca (ACC-01 a 06) | Bloque 6 |
 
 Diferencias deliberadas con el lienzo:

@@ -44,7 +44,9 @@ export async function apiDownload(path: string, method = 'GET', body?: unknown):
 
 export type Me = { userId: string; displayName: string; roles: string[]; tenant: { name: string; timeZone: string; upcomingBreakPolicy?: UpcomingBreakPolicy | null } | null
   /** Su fila del padrón, cuando también es trabajadora. */
-  employeeId?: string | null }
+  employeeId?: string | null
+  /** Desde el contrato 0.36.0: por qué no hay empresa. */
+  access?: 'active' | 'suspended' | 'none'; suspendedTenantName?: string | null }
 export type Page<T> = { items: T[]; nextCursor: string | null }
 export type Site = { id: string; name: string; timeZone: string; latitude: number; longitude: number; radiusMeters: number; status: string }
 export type Employee = { id: string; externalId: string; displayName: string; siteId: string | null; employmentStart: string; employmentEnd: string | null; status: string; activeCardId: string | null; currentScheduleId?: string | null

@@ -41,9 +41,13 @@ class IdentityResolver(
             return CurrentPerson(token.subject, null, token.name, null, setOf(Role.OPERADOR_SAAS))
         }
         val user = users.findBySubject(token.subject) ?: email?.let { link(it, token) }
-        if (user == null || user.status != "active" || tenants.find(user.tenantId)?.status != "active") {
+        val tenant = user?.let { tenants.find(it.tenantId) }
+        if (user == null || user.status != "active" || tenant?.status != "active") {
             // Identidad válida sin acceso vigente: no entra a ninguna empresa.
-            return CurrentPerson(token.subject, null, token.name, null, emptySet())
+            // La suspensión sólo se le dice a quien conservaba su acceso; a
+            // una cuenta deshabilitada o sin invitar no se le revela nada.
+            val suspended = tenant?.takeIf { user.status == "active" && it.status == "suspended" }?.name
+            return CurrentPerson(token.subject, null, token.name, null, emptySet(), suspendedTenantName = suspended)
         }
         return CurrentPerson(
             subject = token.subject,

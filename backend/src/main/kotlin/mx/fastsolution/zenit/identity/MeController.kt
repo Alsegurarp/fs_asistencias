@@ -24,6 +24,10 @@ data class CurrentUser(
     val roles: List<String>,
     val tenant: TenantSummary?,
     val employeeId: String?,
+    /** `active`, `suspended` (su empresa está suspendida) o `none` (nadie le ha dado acceso). */
+    val access: String,
+    /** Nombre de la empresa suspendida, sólo para quien conservaba su acceso. */
+    val suspendedTenantName: String?,
 )
 
 @RestController
@@ -32,7 +36,9 @@ class MeController(private val tenants: TenantRepository, private val policies: 
     /**
      * Quién llama, con su empresa y sus roles. Una identidad válida a la que
      * nadie ha invitado, o cuyo acceso se deshabilitó, aparece sin empresa y
-     * sin roles: así el portal puede decírselo en lugar de fallar.
+     * sin roles: así el portal puede decírselo en lugar de fallar. Si su
+     * empresa está suspendida tampoco trae empresa ni roles, pero `access`
+     * lo distingue y dice de qué empresa se trata.
      */
     @GetMapping("/me")
     fun me(@AuthenticationPrincipal person: CurrentPerson): CurrentUser {
@@ -45,6 +51,12 @@ class MeController(private val tenants: TenantRepository, private val policies: 
                 TenantSummary(it.id.toString(), it.name, it.timeZone, it.weekStartsOn, policies.current(it), policies.upcoming(it))
             },
             employeeId = person.employeeId?.toString(),
+            access = when {
+                person.suspendedTenantName != null -> "suspended"
+                tenant != null || Role.OPERADOR_SAAS in person.roles -> "active"
+                else -> "none"
+            },
+            suspendedTenantName = person.suspendedTenantName,
         )
     }
 }
