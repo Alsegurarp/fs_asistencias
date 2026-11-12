@@ -122,8 +122,8 @@ export function shortDay(date: string) {
 export function dayOfWeek(date: string): DayOfWeek { return dayKeys[parts(date).weekday] }
 
 /** Hora local de un instante en la zona de la empresa, «07:58». */
-export function timeIn(instant: string, timeZone: string) {
-  return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(instant))
+export function timeIn(instant: string, timeZone: string, seconds = false) {
+  return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', ...(seconds ? { second: '2-digit' } : {}), hourCycle: 'h23' }).format(new Date(instant))
 }
 
 export function todayIn(timeZone: string, now = new Date()) { return dateInZone(now.toISOString(), timeZone) }
@@ -226,6 +226,22 @@ export function attentionFlags(row: WeekRow, overtimeMaxDays?: number): Flag[] {
   }
   const rank: Record<Tone, number> = { error: 0, warn: 1, neutral: 2, info: 3, ok: 4 }
   return flags.sort((a, b) => rank[a.tone] - rank[b.tone])
+}
+
+/**
+ * Las etiquetas de una marca en «Marcajes»: qué incidencia abierta tiene
+ * («Lectura duplicada», «Ubicación no concluyente»), cada una a su incidencia.
+ * Si la incidencia ya no está abierta, queda «Con incidencia».
+ */
+export function markFlags(mark: Pick<Mark, 'incidentIds'>, openIncidents: { id: string; type: string }[] = []): Flag[] {
+  const flags: Flag[] = []
+  for (const id of mark.incidentIds) {
+    const type = openIncidents.find(incident => incident.id === id)?.type
+    const known = type ? incidentLabels[type] || { label: 'Incidencia abierta', tone: 'neutral' as Tone } : { label: 'Con incidencia', tone: 'warn' as Tone }
+    if (!flags.some(flag => flag.label === known.label)) flags.push({ ...known, to: `/incidencias?incidencia=${id}` })
+  }
+  const rank: Record<Tone, number> = { error: 0, warn: 1, neutral: 2, info: 3, ok: 4 }
+  return flags.length ? flags.sort((a, b) => rank[a.tone] - rank[b.tone]) : [{ label: 'Con incidencia', tone: 'warn' }]
 }
 
 export type DayLine = {
