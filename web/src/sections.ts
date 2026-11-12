@@ -1,9 +1,10 @@
 import { permissions } from './api'
 import type { IconName } from './Icons'
+import { roleLabel } from './roles'
 
 /** Lo que cada rol puede ver, más el permiso explícito del expediente. */
 export type Allowed = ReturnType<typeof permissions> & { dossier: boolean }
-export type ScreenKey = 'panel' | 'sources' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'users' | 'exports' | 'payroll' | 'dossier' | 'personal' | 'tenants'
+export type ScreenKey = 'panel' | 'sources' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'users' | 'exports' | 'payroll' | 'audit' | 'dossier' | 'personal' | 'tenants'
 
 export type Screen = {
   key: ScreenKey
@@ -23,7 +24,7 @@ export type Section = {
 }
 export type Group = { key: string; label: string; sections: Section[] }
 
-const can = (key: Exclude<ScreenKey, 'panel' | 'sources' | 'dossier' | 'tenants' | 'payroll'>) => (allowed: Allowed) => allowed[key]
+const can = (key: Exclude<ScreenKey, 'panel' | 'sources' | 'dossier' | 'tenants' | 'payroll' | 'audit'>) => (allowed: Allowed) => allowed[key]
 
 /**
  * Menú del lienzo (OPE, PAD, EMP). Mientras cada sección no se construya,
@@ -68,6 +69,7 @@ export const companyGroups: Group[] = [
     { key: 'reportes', label: 'Reportes y expediente', short: 'Reportes', icon: 'reports', screens: [
       { key: 'exports', path: '/reportes', tab: 'Reportes', allowed: allowed => allowed.exports || allowed.dossier },
       { key: 'payroll', path: '/reportes/nomina', tab: 'Nómina', allowed: can('exports') },
+      { key: 'audit', path: '/reportes/bitacora', tab: 'Bitácora', allowed: (_, roles) => roles.some(role => role === 'admin_empresa' || role === 'auditor') },
       { key: 'dossier', path: '/reportes/expediente', tab: 'Expediente', allowed: allowed => allowed.dossier },
     ] },
   ] },
@@ -107,13 +109,9 @@ export function homePath(groups: Group[], allowed: Allowed, roles: string[]) {
   return allowed.personal ? personalScreen.path : null
 }
 
-const roleNames: Record<string, string> = {
-  admin_empresa: 'Administración', rh: 'RH', supervisor: 'Supervisión', auditor: 'Auditoría',
-  trabajador: 'Trabajador', operador_saas: 'Operación del servicio',
-}
 const companyRoles = ['admin_empresa', 'rh', 'supervisor', 'auditor', 'trabajador']
 
-export function roleLabel(role: string) { return roleNames[role] || role }
+export { roleLabel }
 
 export function joinNames(names: string[]) {
   return names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`

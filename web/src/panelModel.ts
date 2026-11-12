@@ -1,3 +1,4 @@
+import { type AuditEntry, actionText } from './auditModel'
 import type { UpcomingBreakPolicy } from './api'
 import { type AttendanceSummary, dayMonth, longDate, shortWeekLabel } from './attendanceModel'
 import type { ClosureSummary } from './closureModel'
@@ -87,50 +88,18 @@ export function bellNotices({ upcoming, incidents = [], summary, closures, timeZ
 /** Las claves vistas que siguen vigentes: lo que ya no está deja de guardarse. */
 export function unseen(notices: Notice[], seen: string[]) { return notices.filter(notice => !seen.includes(notice.key)) }
 
-export type AuditEntry = {
-  id: string; at: string; action: string
-  actor: { type: 'user' | 'device' | 'system'; id: string | null; displayName: string | null }
-  target: { type: string; id: string | null; displayName: string | null }
-  metadata: Record<string, string>
-}
+export type { AuditEntry }
 
-type Phrase = (target: string) => string
-const of = (base: string): Phrase => target => (target ? `${base} de ${target}` : base)
-const to = (base: string): Phrase => target => (target ? `${base} a ${target}` : base)
-const named = (base: string): Phrase => target => (target ? `${base} ${target}` : base)
-const plain = (base: string): Phrase => () => base
-
-const phrases: Record<string, Phrase> = {
-  'card.registered': named('registró la tarjeta'), 'card.assigned': named('asignó la tarjeta'), 'card.revoked': named('dio de baja la tarjeta'),
-  'device.activated': named('activó el lector'), 'device.enrollment_created': plain('generó un código para activar un lector'), 'device.revoked': named('dio de baja el lector'),
-  'dossier.requested': plain('pidió una copia del expediente'), 'dossier.ready': plain('dejó lista una copia del expediente'), 'dossier.failed': plain('no pudo preparar una copia del expediente'),
-  'dossier.expired': plain('dejó vencer una copia del expediente'), 'dossier.downloaded': plain('descargó una copia del expediente'),
-  'dossier.challenge_created': plain('pidió confirmar su identidad para el expediente'), 'dossier.authorized': plain('confirmó su identidad para el expediente'),
-  'dossier.verification_failed': plain('no pudo confirmar su identidad para el expediente'),
-  'dossier.permission_granted': to('dio el permiso del expediente'), 'dossier.permission_revoked': to('quitó el permiso del expediente'),
-  'employee.created': to('dio de alta'), 'employee.updated': of('actualizó los datos'), 'employee.deactivated': to('dio de baja'),
-  'employee.reactivated': to('reactivó'), 'employee.schedule_assigned': to('asignó un horario'),
-  'export.requested': plain('pidió un exporte para nómina'), 'export.ready': plain('dejó listo un exporte para nómina'),
-  'export.failed': plain('no pudo preparar un exporte para nómina'), 'export.downloaded': plain('descargó un exporte para nómina'),
-  'incident.opened': of('abrió una incidencia'), 'incident.assigned': of('tomó la incidencia'), 'incident.resolved': of('resolvió la incidencia'),
-  'schedule.created': named('creó el horario'), 'site.created': named('agregó la sede'), 'site.updated': named('actualizó la sede'),
-  'tenant.updated': plain('actualizó la configuración de la empresa'), 'tenant.break_policy_change_scheduled': plain('programó un cambio de la comida'),
-  'tenant.break_policy_change_cancelled': plain('canceló el cambio programado de la comida'), 'tenant.created': plain('creó la empresa'),
-  'tenant.suspended': plain('suspendió la empresa'), 'tenant.reactivated': plain('reactivó la empresa'),
-  'user.invited': to('invitó'), 'user.updated': of('actualizó la cuenta'), 'user.enabled': of('reactivó la cuenta'), 'user.disabled': of('desactivó la cuenta'),
-  'user.roles_changed': of('cambió los roles'), 'user.sites_changed': of('cambió las sedes'), 'user.linked': of('ligó la cuenta'),
-  'user.unlinked': of('desligó la cuenta'), 'user.password_change_required': to('pidió una contraseña nueva'),
-  'week.closed': of('cerró la semana'), 'week.reopened': of('reabrió la semana'), 'week.acknowledged': plain('dio su acuse de la semana'),
-  'week.closure_run_requested': plain('pidió cerrar las pendientes'), 'week.closure_run_finished': plain('terminó una corrida de cierre'),
-  'week.closure_run_failed': plain('no pudo terminar una corrida de cierre'),
-}
-
-/** Quién hizo qué, en una línea de «Actividad reciente»: «Rocío Navarro asignó la tarjeta T-0042». */
+/**
+ * Quién hizo qué, en una línea de «Actividad reciente»: «Rocío Navarro
+ * asignó la tarjeta T-0042». La acción se dice igual que en la bitácora.
+ */
 export function activityText(entry: AuditEntry): { who: string; what: string } {
   const target = entry.target.displayName || ''
   // Una cuenta se liga sola la primera vez que entra: quien actúa es la misma persona.
   if (entry.action === 'user.linked' && entry.actor.displayName && entry.actor.displayName === target) return { who: target, what: 'entró por primera vez' }
-  const what = (phrases[entry.action] || plain('hizo un cambio'))(target)
+  const sentence = actionText(entry)
+  const what = sentence.startsWith(entry.action) ? 'hizo un cambio' : sentence.charAt(0).toLowerCase() + sentence.slice(1)
   if (entry.actor.type === 'system') return entry.action === 'incident.opened' ? { who: 'Se abrió', what: what.replace(/^abrió /, '') } : { who: 'Zenit', what }
   return { who: entry.actor.displayName || (entry.actor.type === 'device' ? 'Un lector' : 'Operación del servicio'), what }
 }

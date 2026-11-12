@@ -20,7 +20,7 @@ ambiente nunca pierde una función.
 | 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana integrado (PR #42) |
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas (PR #46) y el buscador con el menú Crear (PR #47) integrados en la rama de la #45; llegan a `main` con la PR #48 |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración, y Usuarios y roles con Mi perfil, integrados (PR #50) |
-| 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Inicio y nómina en revisión (`feat/portal-reportes`); siguen la bitácora y el expediente, una PR cada uno ([detalle](#bloque-4-reportes)) |
+| 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Inicio y nómina en revisión (`feat/portal-reportes`), y la bitácora encima (`feat/portal-bitacora`); sigue el expediente ([detalle](#bloque-4-reportes)) |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
 | 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pendiente |
 
@@ -184,7 +184,17 @@ para imprimir, y la usará también la bitácora. Diferencias con el lienzo:
 - **Columnas:** los cierres no traen días trabajados, horario ni incidencias resueltas, así que esas columnas no están. Se agrega «Tiempo trabajado», y «Comida» es el descanso registrado de la semana.
 - **Semanas:** se ofrecen las cinco últimas que ya terminaron, cada una con sus cerradas y bloqueadas en el alcance elegido; «39 de 42» queda como «39 cerradas · 3 bloqueadas», porque el resumen no trae cuántas personas tenía la semana.
 - **Línea de firma:** dos líneas, «Elaboró» y «Autoriza la nómina».
-- **Generados recientemente:** por ahora sólo los exportes de nómina; el expediente se suma con su PR. La tarjeta de Bitácora llega con la suya.
+- **Generados recientemente:** por ahora sólo los exportes de nómina; el expediente se suma con su PR. La bitácora no aparece ahí porque su hoja y su CSV los arma el portal y no quedan registrados.
+
+**Bitácora (REP-07 y 08)**, en `feat/portal-bitacora`, sin cambios al API:
+`/reportes/bitacora` con los filtros del servidor en la dirección y la vista
+previa en `?vista=previa`. Cada acción se dice en una frase
+(`auditModel.ts`), la misma que usa ahora «Actividad reciente» del Panel.
+Los nombres de los roles pasan a `roles.ts`. Diferencias con el lienzo:
+
+- **«Persona u objeto»** es «Persona»: busca en el padrón y filtra lo que se le hizo a esa persona (`targetType=employee`). Las incidencias y los cierres de la persona no entran, porque su objeto es la incidencia o el cierre.
+- **El CSV y el PDF los arma el portal** con la lista completa, hasta 4,000 acciones; con más, pide acotar el periodo o filtrar por acción. No quedan registrados como descarga.
+- **Periodo inicial:** los últimos 30 días, hasta hoy.
 
 ### Qué se necesita para probar y avanzar
 
