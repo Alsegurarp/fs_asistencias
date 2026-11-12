@@ -6,6 +6,26 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 12 de noviembre de 2026 — Recorrido del portal por rol y desborde en teléfono
+
+Rama `fix/portal-desborde-telefono` desde `main` (`a5ca133`, ya desplegado
+en el ambiente publicado). Se recorrió en local todo el portal con sesiones
+reales, en un entorno aislado (`zenit-validacion`) con contraseña y segundo
+factor configurado en el primer ingreso: 55 personas del simulador en cuatro
+sedes y 8 incidencias. Fueron 190 vistas de Administración, RH, Supervisión,
+Auditoría y la operación, las 18 direcciones del portal a 1440 y 390 px.
+Sin errores de consola ni respuestas fallidas, un solo h1 por página y cada
+rol ve o no ve lo que le toca.
+
+Dos defectos, sólo en teléfono: Lectores (`/dispositivos`) y Usuarios
+(`/usuarios`) se desbordaban 142 y 144 px a la derecha, porque el buscador y
+la fila de filtros tomaban el ancho de todos los filtros. Ahora la fila se
+desplaza dentro de la pantalla. Tras el arreglo, 0 px de desborde en ambas a
+390 y 1440 px, y 306 pruebas del portal en 30 archivos sin fallas.
+
+No se recorrieron las acciones de cada pantalla (altas, importaciones,
+invitar, reportes), sólo que cargan y lo que muestran por rol.
+
 ## 12 de noviembre de 2026 — Despliegue de `main`: clave del piloto, Tomcat y build de Android
 
 Rama `fix/despliegue-clave-piloto-y-tomcat` desde `main` (`71ee1f9`). Tres
@@ -32,7 +52,8 @@ La dirección pública no respondía por otra causa: los registros DNS de
 la del servidor. Los servicios responden bien por su dirección actual. Falta
 corregir los tres registros en el panel del dominio.
 
-Sin despliegue de `main`: espera la PR.
+Integrado con la PR #58 (`a5ca133`) y desplegado ese día; la comprobación
+por la dirección pública sigue sin pasar hasta corregir los registros DNS.
 
 ## 9 de noviembre de 2026 — Lo que sigue: Dispositivos y tarjetas, y Empresa
 

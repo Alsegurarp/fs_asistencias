@@ -114,9 +114,9 @@ export function Devices(props: Props) {
   </Stack>
 
   const filters = <Box component="form" aria-label="Filtros" onSubmit={event => { event.preventDefault(); change({ q: text.trim() || null }, true) }}
-    sx={{ flex: 'none', display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', [`@media ${phoneQuery}`]: { flexDirection: 'column', alignItems: 'stretch' } }}>
+    sx={{ flex: 'none', minWidth: 0, maxWidth: '100%', display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', [`@media ${phoneQuery}`]: { flexDirection: 'column', alignItems: 'stretch', flexWrap: 'nowrap' } }}>
     <SearchBox name="q" label="Buscar lector" placeholder="Nombre, modelo o persona" value={text} onChange={setText} grow={phone} />
-    <Box role="group" aria-label="Estado" sx={{ display: 'flex', gap: 0.75, overflowX: 'auto', pb: phone ? 0.5 : 0 }}>
+    <Box role="group" aria-label="Estado" sx={{ display: 'flex', gap: 0.75, minWidth: 0, maxWidth: '100%', overflowX: 'auto', pb: phone ? 0.5 : 0 }}>
       {deviceFilters.map(item => <FilterChip key={item.slug} small={phone} pressed={item.slug === filter.slug} onClick={() => change({ estado: item.slug === 'activos' ? null : item.slug })}>
         {item.label}{typeof deviceCount(item, summary.data) === 'number' && ` · ${deviceCount(item, summary.data)}`}
       </FilterChip>)}
