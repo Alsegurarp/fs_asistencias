@@ -19,8 +19,8 @@ ambiente nunca pierde una función.
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
 | 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana integrado (PR #42) |
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas (PR #46) y el buscador con el menú Crear (PR #47) integrados en la rama de la #45; llegan a `main` con la PR #48 |
-| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración en revisión (`feat/portal-configuracion`); Usuarios y roles con Mi perfil en revisión (`feat/portal-usuarios`, sobre la anterior) |
-| 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
+| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración, y Usuarios y roles con Mi perfil, integrados (PR #50) |
+| 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Inicio y nómina en revisión (`feat/portal-reportes`); siguen la bitácora y el expediente, una PR cada uno ([detalle](#bloque-4-reportes)) |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
 | 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pendiente |
 
@@ -164,6 +164,27 @@ Lo que le falta al API o al ambiente:
 - **El mapa.** Hace falta un proveedor de mapas. La política de seguridad
   del portal sólo permite contenido propio; el mapa necesita permitir sus
   mosaicos.
+
+### Bloque 4: Reportes
+
+Tres PR, decididas el 11 de noviembre: inicio con nómina, bitácora y
+expediente. **El PDF lo imprime el portal**: la vista previa se arma con
+los datos del API y «Descargar PDF» abre la impresión del navegador, donde
+se elige «Guardar como PDF». El archivo oficial para nómina sigue siendo el
+CSV del servidor, con su huella, su plazo y su registro en la bitácora; la
+hoja impresa no queda registrada ni lleva huella propia.
+
+**Estado del 11 de noviembre:** el inicio (REP-01) y el reporte para nómina
+(REP-02 a 04) están hechos en `feat/portal-reportes`, sin cambios al API.
+Retira `Exports`; `saveFile` pasa a `files.ts` y `EntitySelect` sale de
+`legacy.tsx`. `ReportSheet.tsx` es la hoja de vista previa con su copia
+para imprimir, y la usará también la bitácora. Diferencias con el lienzo:
+
+- **PDF:** sale de la impresión del navegador. La vista previa es una hoja continua; los saltos de página los pone la impresión, así que no hay «Página 1 de 2» ni «Anterior» y «Siguiente» de páginas.
+- **Columnas:** los cierres no traen días trabajados, horario ni incidencias resueltas, así que esas columnas no están. Se agrega «Tiempo trabajado», y «Comida» es el descanso registrado de la semana.
+- **Semanas:** se ofrecen las cinco últimas que ya terminaron, cada una con sus cerradas y bloqueadas en el alcance elegido; «39 de 42» queda como «39 cerradas · 3 bloqueadas», porque el resumen no trae cuántas personas tenía la semana.
+- **Línea de firma:** dos líneas, «Elaboró» y «Autoriza la nómina».
+- **Generados recientemente:** por ahora sólo los exportes de nómina; el expediente se suma con su PR. La tarjeta de Bitácora llega con la suya.
 
 ### Qué se necesita para probar y avanzar
 

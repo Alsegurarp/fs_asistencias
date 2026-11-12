@@ -1,5 +1,10 @@
 # Guía del portal web
 
+**Actualización del 11 de noviembre, Reportes y nómina (sin cambios al contrato):**
+- **Reportes (REP-01):** `/reportes` ofrece el reporte para nómina (Administración, RH y Auditoría) y el expediente (quien tenga el permiso explícito), y lista los exportes recientes con su estado: listo (vista previa y descargar una vez), en cola, vencido (pedir de nuevo) o falló (reintentar).
+- **Reporte para nómina (REP-02 a 04):** `/reportes/nomina` en tres pasos, con `?paso=`, `?semana=` y `?sede=` en la dirección. 1) alcance y semana (sólo cierres vigentes), con quién entra, las cifras por sede y quién está bloqueado; 2) columnas y presentación; 3) la hoja para imprimir o guardar como PDF desde el navegador, o el CSV oficial, que se pide a `POST /exports`, se espera en cola y se descarga una vez con su huella y manifiesto.
+- **La hoja impresa no es el archivo oficial:** no queda registrada como descarga. Los datos salen de `GET /week-closures` (toda la empresa y cada sede, para agrupar) y `GET /incidents?blocksClosure=true`.
+
 **Actualización del 11 de noviembre, Usuarios y Mi perfil (sin cambios al contrato):**
 - **Usuarios y roles (EMP-04):** cifras de acceso (con acceso, invitaciones sin aceptar, Supervisión con sedes y quién puede descargar el expediente), pestañas por rol con su cuenta, búsqueda por nombre o correo, y por persona su rol, alcance, estado, fecha de invitación, cuenta y expediente. Todo sale del servidor (`GET /users` con `q`, `role`, `status` y `dossierPermission`; `GET /users/summary`). Las cifras filtran: `?estado=invitadas` y `?expediente=1`.
 - **Editar acceso:** `?persona=<id>` abre el panel con nombre, roles, sedes de Supervisión, la fila del padrón para Trabajador y el permiso del expediente; «Guardar cambios» manda sólo lo que cambió (`PATCH /users/{id}` y, aparte, `PUT /users/{id}/dossier-permission`). La seguridad de la cuenta (contraseña nueva, soltar la liga, deshabilitar o habilitar) pide confirmación y se aplica en el acto.
