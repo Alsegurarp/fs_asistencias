@@ -3,7 +3,7 @@ import type { IconName } from './Icons'
 
 /** Lo que cada rol puede ver, más el permiso explícito del expediente. */
 export type Allowed = ReturnType<typeof permissions> & { dossier: boolean }
-export type ScreenKey = 'panel' | 'sources' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'users' | 'exports' | 'dossier' | 'personal' | 'tenants'
+export type ScreenKey = 'panel' | 'sources' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'users' | 'exports' | 'payroll' | 'dossier' | 'personal' | 'tenants'
 
 export type Screen = {
   key: ScreenKey
@@ -23,7 +23,7 @@ export type Section = {
 }
 export type Group = { key: string; label: string; sections: Section[] }
 
-const can = (key: Exclude<ScreenKey, 'panel' | 'sources' | 'dossier' | 'tenants'>) => (allowed: Allowed) => allowed[key]
+const can = (key: Exclude<ScreenKey, 'panel' | 'sources' | 'dossier' | 'tenants' | 'payroll'>) => (allowed: Allowed) => allowed[key]
 
 /**
  * Menú del lienzo (OPE, PAD, EMP). Mientras cada sección no se construya,
@@ -66,7 +66,8 @@ export const companyGroups: Group[] = [
       { key: 'users', path: '/usuarios', tab: 'Usuarios', allowed: can('users') },
     ] },
     { key: 'reportes', label: 'Reportes y expediente', short: 'Reportes', icon: 'reports', screens: [
-      { key: 'exports', path: '/reportes', tab: 'Exportes', allowed: can('exports') },
+      { key: 'exports', path: '/reportes', tab: 'Reportes', allowed: allowed => allowed.exports || allowed.dossier },
+      { key: 'payroll', path: '/reportes/nomina', tab: 'Nómina', allowed: can('exports') },
       { key: 'dossier', path: '/reportes/expediente', tab: 'Expediente', allowed: allowed => allowed.dossier },
     ] },
   ] },
