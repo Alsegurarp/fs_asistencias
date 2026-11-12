@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { type PersonWeek, type ScheduleDay, type WeekRow, attentionFlags, csv, dayLines, delay, hours, scheduleSummary, shortHash, weekLabel, weekProgress } from './attendanceModel'
+import { type PersonWeek, type ScheduleDay, type WeekRow, attentionFlags, csv, dayLines, delay, markEvidence, type Mark, hours, scheduleSummary, shortHash, weekLabel, weekProgress } from './attendanceModel'
 
 it('escribe minutos como horas y minutos', () => {
   expect([hours(1920), hours(190), hours(0), hours(5), hours(-65)]).toEqual(['32:00', '3:10', '0:00', '0:05', '-1:05'])
@@ -70,4 +70,10 @@ it('el CSV escapa comillas y neutraliza fórmulas', () => {
 
 it('dice cuánto tardó en llegar una marca en la unidad que se lee', () => {
   expect([delay(360), delay(3600), delay(56_700), delay(3 * 86_400)]).toEqual(['6 min', '1 h', '15 h 45 min', '3 días'])
+})
+
+it('la evidencia del lector fijo dice que cuenta en su sede, sin la precisión', () => {
+  const base = { locationVerdict: 'device_site', accuracyMeters: 80, delaySeconds: 0 } as Mark
+  expect(markEvidence(base)).toBe('En el lector fijo de la sede')
+  expect(markEvidence({ ...base, locationVerdict: 'inside', accuracyMeters: 12 })).toBe('Dentro de la sede · precisión 12 m')
 })

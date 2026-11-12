@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.33.0
+  version: 0.34.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -7138,10 +7138,15 @@ components:
         descanso. En las demás el servidor fija siempre entrada o salida.
     LocationVerdict:
       type: string
-      enum: [inside, outside, inconclusive, not_evaluated]
+      enum: [inside, outside, inconclusive, not_evaluated, device_site]
       description: |
         `inconclusive` cuando la precisión declarada es mayor que el radio de
         la sede. No se interpreta como fuera: abre una incidencia.
+
+        `device_site` (desde 0.34.0): marcó en el lector fijo de una sede sin
+        ubicación, o con una menos precisa que el radio. Cuenta en esa sede y
+        no abre incidencia. Un cliente que no lo conozca lo trata como
+        `not_evaluated`.
     AttendanceEventSubmission:
       type: object
       additionalProperties: false

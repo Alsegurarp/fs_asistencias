@@ -395,7 +395,7 @@ class CaptureProcessor(
         )
         // Una terminal se evalúa contra su sede; un teléfono personal, contra la sede de su titular.
         val site = (device.siteId ?: employee.siteId)?.let { sites.find(tenantId, it) }
-        val (verdict, locationIncident) = Geo.verdict(site, payload.location)
+        val (verdict, locationIncident) = Geo.verdict(site, payload.location, fixedDevice = device.mode == "terminal" && device.siteId != null)
         val incidents = linkedSetOf<String>()
         incidents += decision.incidents
         locationIncident?.let { incidents += it }

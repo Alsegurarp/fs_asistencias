@@ -44,7 +44,7 @@ export type PersonWeek = {
 export type Mark = {
   id: string; employeeId: string; siteId: string | null; deviceMode: 'personal' | 'terminal'
   type: 'clock_in' | 'clock_out' | 'break_start' | 'break_end'; outcome: 'accepted' | 'accepted_with_incident'
-  observedAt: string; receivedAt: string; delaySeconds: number; locationVerdict: 'inside' | 'outside' | 'inconclusive' | 'not_evaluated'
+  observedAt: string; receivedAt: string; delaySeconds: number; locationVerdict: 'inside' | 'outside' | 'inconclusive' | 'not_evaluated' | 'device_site'
   accuracyMeters: number | null; incidentIds: string[]
 }
 export type Acknowledgement = { id: string; closureId: string; type: 'agreed' | 'objected'; note: string | null; at: string }
@@ -285,7 +285,7 @@ export function dayLines(week: PersonWeek, schedule: Schedule | undefined, today
 }
 
 export const markTypes: Record<Mark['type'], string> = { clock_in: 'Entrada', clock_out: 'Salida', break_start: 'Inicio de descanso', break_end: 'Fin de descanso' }
-const verdicts: Record<Mark['locationVerdict'], string> = { inside: 'Dentro de la sede', outside: 'Fuera de la sede', inconclusive: 'Ubicación no concluyente', not_evaluated: 'Sin ubicación' }
+const verdicts: Record<Mark['locationVerdict'], string> = { inside: 'Dentro de la sede', outside: 'Fuera de la sede', inconclusive: 'Ubicación no concluyente', not_evaluated: 'Sin ubicación', device_site: 'En el lector fijo de la sede' }
 
 export function deviceText(mark: Mark, siteName: (id: string | null) => string | undefined) {
   if (mark.deviceMode === 'personal') return 'Teléfono personal'
@@ -295,8 +295,9 @@ export function deviceText(mark: Mark, siteName: (id: string | null) => string |
 
 /** «Dentro de la sede · precisión 12 m · llegó 6 min después». */
 export function markEvidence(mark: Mark) {
-  const items = [verdicts[mark.locationVerdict]]
-  if (mark.accuracyMeters !== null && mark.locationVerdict !== 'not_evaluated') items.push(`precisión ${Math.round(mark.accuracyMeters)} m`)
+  const items = [verdicts[mark.locationVerdict] || 'Sin ubicación']
+  // En el lector fijo la precisión no dice nada: cuenta en su sede.
+  if (mark.accuracyMeters !== null && mark.locationVerdict !== 'not_evaluated' && mark.locationVerdict !== 'device_site') items.push(`precisión ${Math.round(mark.accuracyMeters)} m`)
   if (mark.delaySeconds >= 120) items.push(`llegó ${delay(mark.delaySeconds)} después`)
   return items.join(' · ')
 }

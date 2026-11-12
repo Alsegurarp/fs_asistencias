@@ -229,12 +229,20 @@ abriría incidencias que nadie causó.
 Una terminal se evalúa contra su sede; un teléfono personal, contra la sede de
 su titular.
 
+El lector fijo (una terminal con sede) no sale de ella. Si no manda ubicación,
+o manda una menos precisa que el radio, la marca cuenta en su sede
+(`device_site`) y no abre incidencia. Una ubicación simulada, o una precisa
+fuera de la sede, sí la abren, como en un teléfono personal. Decisión del
+2026-11-11; antes de la 0.34.0 esas marcas quedaban `not_evaluated` con
+`location_inconclusive`, y así siguen guardadas.
+
 | Situación | Veredicto | Incidencia |
 | --- | --- | --- |
 | Dentro del radio | `inside` | Ninguna |
 | Fuera del radio, con precisión mejor que el radio | `outside` | `foreign_site` |
 | Precisión peor que el radio, o ubicación simulada | `inconclusive` | `location_inconclusive` |
 | Sin ubicación | `not_evaluated` | `location_inconclusive` |
+| Lector fijo sin ubicación, o con una menos precisa que el radio | `device_site` | Ninguna |
 | La persona no tiene sede | `not_evaluated` | Ninguna |
 
 Quien marca en la terminal de una sede que no es la suya también abre
