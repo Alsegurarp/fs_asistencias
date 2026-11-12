@@ -194,7 +194,8 @@ const alertLabels: Record<string, string> = {
   break_computability_unverified: 'Descanso por confirmar',
 }
 
-export type Flag = { label: string; tone: Tone; incidentId?: string }
+/** `to`: la incidencia, o la lista de Incidencias de esa persona y ese tipo cuando son varias. */
+export type Flag = { label: string; tone: Tone; to?: string }
 
 /**
  * La columna «Atención»: incidencias abiertas, un tramo sin salida que ya no
@@ -204,9 +205,13 @@ export function attentionFlags(row: WeekRow, overtimeMaxDays?: number): Flag[] {
   const flags: Flag[] = []
   const onShift = row.today?.state === 'on_shift' || row.today?.state === 'on_break'
   if (row.alerts.some(alert => alert.code === 'open_segment') && !onShift) flags.push({ label: 'Tramo sin salida', tone: 'error' })
-  for (const incident of row.openIncidents) {
-    const known = incidentLabels[incident.type] || { label: 'Incidencia abierta', tone: 'neutral' as Tone }
-    flags.push({ ...known, incidentId: incident.id })
+  // Una etiqueta por tipo: «Ubicación no concluyente (5)», no cinco iguales.
+  const byType = new Map<string, string[]>()
+  for (const incident of row.openIncidents) byType.set(incident.type, [...byType.get(incident.type) || [], incident.id])
+  for (const [type, ids] of byType) {
+    const known = incidentLabels[type] || { label: 'Incidencia abierta', tone: 'neutral' as Tone }
+    const to = ids.length === 1 ? `/incidencias?incidencia=${ids[0]}` : `/incidencias?${new URLSearchParams({ q: row.externalId, tipo: type })}`
+    flags.push({ ...known, label: ids.length === 1 ? known.label : `${known.label} (${ids.length})`, to })
   }
   const seen = new Set<string>()
   for (const alert of row.alerts) {

@@ -63,6 +63,17 @@ it('lo que pide atención va primero; el turno en curso no es un tramo sin salid
   expect(attentionFlags({ ...base, alerts: [{ code: 'codigo_nuevo', severity: 'critical', message: '' }], totals: { ...base.totals, overtimeMinutes: 0 } })).toEqual([])
 })
 
+it('las incidencias del mismo tipo salen juntas, con su número y la lista de esa persona', () => {
+  const row: WeekRow = { employeeId: 'e', externalId: 'PIL-001', displayName: 'P', siteId: null, scheduleId: null, ruleSet: { id: 'r', version: 1 }, closure: null, today: null,
+    totals: { workedMinutes: 1, breakMinutes: 0, ordinaryMinutes: 1, overtimeMinutes: 0 }, alerts: [],
+    openIncidents: [{ id: 'a', type: 'location_inconclusive' }, { id: 'b', type: 'duplicate' }, { id: 'c', type: 'location_inconclusive' }, { id: 'd', type: 'missing_pair' }] }
+  expect(attentionFlags(row).map(flag => [flag.label, flag.to])).toEqual([
+    ['Falta un marcaje', '/incidencias?incidencia=d'],
+    ['Ubicación no concluyente (2)', '/incidencias?q=PIL-001&tipo=location_inconclusive'],
+    ['Lectura duplicada', '/incidencias?incidencia=b'],
+  ])
+})
+
 it('el CSV escapa comillas y neutraliza fórmulas', () => {
   expect(csv([['=1+1', 'a,b', 'dijo "hola"', '-5', null]])).toBe('﻿\'=1+1,"a,b","dijo ""hola""",\'-5,\r\n')
   expect(shortHash(`9f3a${'0'.repeat(56)}c21e`)).toBe('9f3a…c21e')
