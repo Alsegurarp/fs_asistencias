@@ -104,6 +104,7 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   if (screen.key === 'devices') return <Devices me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'cards') return <Cards me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'settings') return <Settings me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'users') return <Users me={me} context={context} section={section} screens={screens} screen={screen} />
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
@@ -113,12 +114,11 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
 /** Las pantallas anteriores del portal, cada una en su dirección. */
 function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
   switch (screen) {
-    case 'users': return <Users me={me} />
     case 'exports': return <Exports me={me} />
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
-    case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': case 'devices': case 'cards': case 'settings': return null
+    case 'users': case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': case 'devices': case 'cards': case 'settings': return null
   }
 }
 

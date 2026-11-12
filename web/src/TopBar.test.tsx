@@ -141,7 +141,7 @@ it('sólo busca en lo que el rol ve, y la tecla / enfoca la búsqueda', async ()
 })
 
 it('el menú Crear ofrece sólo lo que cada rol puede hacer', () => {
-  expect(createOptions(me(['admin_empresa'])).map(item => item.label)).toEqual(['Dar de alta a una persona', 'Crear un horario', 'Activar un lector', 'Registrar una tarjeta', 'Cerrar la semana'])
+  expect(createOptions(me(['admin_empresa'])).map(item => item.label)).toEqual(['Dar de alta a una persona', 'Crear un horario', 'Activar un lector', 'Registrar una tarjeta', 'Cerrar la semana', 'Invitar a alguien del equipo'])
   expect(createOptions(me(['rh'])).map(item => item.key)).toEqual(['P', 'H', 'L', 'T', 'S'])
   expect(createOptions(me(['supervisor']))).toEqual([])
   expect(createOptions(me(['auditor']))).toEqual([])
@@ -153,7 +153,7 @@ it('la tecla C abre el menú Crear y cada opción abre su ventana sobre la pági
   await waitFor(() => !!document.querySelector('[role="menu"][aria-label="Crear"]'))
   const menu = document.querySelector('[role="menu"][aria-label="Crear"]')!
   expect([...menu.querySelectorAll('[role="menuitem"]')].map(item => item.textContent)).toEqual([
-    'Dar de alta a una personaPersonal y horariosP', 'Crear un horarioTurnos con su vigenciaH', 'Activar un lectorCódigo de un solo usoL', 'Registrar una tarjetaInventario de tarjetasT', 'Cerrar la semanaToda la empresa o una sedeS',
+    'Dar de alta a una personaPersonal y horariosP', 'Crear un horarioTurnos con su vigenciaH', 'Activar un lectorCódigo de un solo usoL', 'Registrar una tarjetaInventario de tarjetasT', 'Cerrar la semanaToda la empresa o una sedeS', 'Invitar a alguien del equipoUsuarios y rolesI',
   ])
   await key(menu as HTMLElement, 't')
   await waitFor(() => !!document.querySelector('[role="dialog"]'))

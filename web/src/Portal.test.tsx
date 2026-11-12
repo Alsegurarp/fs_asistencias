@@ -209,7 +209,7 @@ it('el menú de la cuenta muestra quién entró y cierra la sesión', async () =
   await waitFor(() => !!document.querySelector('[role="menu"]'))
   const menu = document.querySelector('[role="menu"]')!
   expect(document.body.textContent).toContain('mariana@demo.example')
-  expect([...menu.querySelectorAll('[role="menuitem"]')].map(item => item.textContent)).toEqual(['Mi asistencia', 'Cerrar sesión'])
+  expect([...menu.querySelectorAll('[role="menuitem"]')].map(item => item.textContent)).toEqual(['Mi perfil', 'Mi asistencia', 'Seguridad de la cuentaContraseña y segundo factor', 'Ayuda y soporte', 'Cerrar sesión'])
   await act(async () => [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')].at(-1)!.click())
   expect(signOut).toHaveBeenCalledOnce()
 })

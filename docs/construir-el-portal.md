@@ -19,7 +19,7 @@ ambiente nunca pierde una función.
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
 | 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana integrado (PR #42) |
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas (PR #46) y el buscador con el menú Crear (PR #47) integrados en la rama de la #45; llegan a `main` con la PR #48 |
-| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración en revisión (`feat/portal-configuracion`); siguen Usuarios y roles con Mi perfil |
+| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración en revisión (`feat/portal-configuracion`); Usuarios y roles con Mi perfil en revisión (`feat/portal-usuarios`, sobre la anterior) |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Pendiente |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
 | 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pendiente |
@@ -118,6 +118,23 @@ Configuración; la política de seguridad del portal admite
 - **«Sede activa»:** en lugar del interruptor, el pie del panel tiene «Desactivar sede» o «Reactivar sede», que se guardan en el acto.
 - **Columna «Acciones»:** no hay botón «Editar»; un clic en la fila abre la sede, como en las demás tablas.
 - **Fecha de entrada del cambio de comida:** el portal la calcula con la misma regla del servidor para mostrarla antes de programar; la que vale es la que devuelve el servidor.
+
+**Estado del 11 de noviembre:** Usuarios y roles (EMP-04, 05 y 06) y Mi
+perfil (CTA-01 y TEL-11) están hechos en `feat/portal-usuarios`, sin cambios
+al API: la lista, sus pestañas por rol, la búsqueda y las cifras salen de
+`GET /users` y `GET /users/summary`. Retira la pantalla anterior de `Users`.
+Mi perfil y Ayuda y soporte se abren desde el menú de la cuenta sobre
+cualquier pantalla (`?perfil=1`, `?ayuda=1`) y, en teléfono, desde «Más».
+El menú Crear suma «Invitar a alguien del equipo». Diferencias con el lienzo:
+
+- **Invitar no manda correo** (el API no lo hace): el subtítulo dice «Entra con su correo, una contraseña y su segundo factor», el botón es «Invitar» y no «Enviar invitación», y la ventana pide compartir la dirección del portal.
+- **Expediente al invitar:** no está en la ventana. El servidor sólo concede el permiso a una cuenta activa y ya ligada; se concede después en «Editar acceso».
+- **Rol Trabajador:** se agrega a los roles, con su fila del padrón, porque es lo que deja a una persona ver su asistencia en el portal. La pestaña «Trabajador» sólo aparece si alguien lo tiene.
+- **Nombre:** «Editar acceso» deja cambiar el nombre, que el lienzo no muestra.
+- **Habilitar:** a quien está deshabilitado, el panel le ofrece «Habilitar su acceso» en lugar de «Deshabilitar su acceso».
+- **Permisos por rol:** «Personal, horarios, tarjetas y lectores» se parte en «Personal y horarios» (Supervisión consulta los de sus sedes) y «Tarjetas y lectores» (Supervisión no los ve), y se agrega «Importar el padrón», como los aplica el servidor.
+- **Mi perfil:** el alcance de Supervisión dice «Las sedes que te asignaron», sin nombrarlas, porque `/me` no trae sus sedes. El segundo factor dice «App de autenticación» sin «Activo»: el portal no sabe si ya lo configuró. «Cambiar» y «Reconfigurar» abren la consola de cuenta de Keycloak en otra pestaña. «Zenit en este equipo» e «Instalar» llegan con el bloque 6.
+- **Cifra «Supervisión con sedes»:** cuenta a Supervisión de cualquier estado contra quienes, con acceso vigente, no tienen sedes.
 
 Dos PR: Configuración con sedes, comida y reglas (EMP-01, 02, 03, 07, 08) y
 Usuarios y roles con Mi perfil (EMP-04, 05, 06, CTA-01, TEL-11). Retira
@@ -276,10 +293,8 @@ lleva al ambiente publicado.
 | Cierres de una persona más allá de seis semanas: `GET /week-closures` pide la semana, y la ficha consulta las seis últimas en seis llamadas fijas | Una ruta de cierres por persona, si se necesita más historia |
 | Historial completo de una incidencia: la incidencia trae su apertura, su asignación actual y su resolución; lo demás está en la bitácora, que sólo ven Administración y Auditoría | Bitácora en Reportes (bloque 4) |
 | Buscador (CTA-05) | Dispositivos y tarjetas |
-| Menú Crear (CTA-04) | Dispositivos y tarjetas, con las ventanas de alta de persona, horario, tarjeta y lector; «Invitar» con el bloque 3 y «Generar un reporte» con el 4 |
-| Mi perfil y seguridad de la cuenta en el menú (CTA-01) | Bloque 3 |
+| Menú Crear (CTA-04) | Dispositivos y tarjetas, con las ventanas de alta de persona, horario, tarjeta y lector; «Invitar» llegó con el bloque 3 y «Generar un reporte» llega con el 4 |
 | «En línea · datos de las…», «Instalar Zenit» y sin conexión | Bloque 6 |
-| «Ayuda y soporte» en el menú de la cuenta | Sin destino definido: falta decidir el canal de soporte ([qué se necesita](#qué-se-necesita-para-probar-y-avanzar)) |
 | Empresa suspendida (EST-02) | Falta que `/me` distinga la suspensión: hoy responde igual que una cuenta sin acceso (sin empresa ni roles) y el portal muestra EST-01 |
 | Pantallas de acceso con la marca (ACC-01 a 06) | Bloque 6 |
 

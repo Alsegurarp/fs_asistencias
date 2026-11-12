@@ -1,9 +1,10 @@
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
-import { Link, Outlet, useLocation, useNavigate } from 'react-router'
+import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { Box, ButtonBase, Divider, MenuItem, MenuList, Popover, Stack, ThemeProvider, Typography, createTheme, useMediaQuery } from '@mui/material'
 import type { Me } from './api'
 import { color, font, gradient, phoneQuery, shadow } from './design'
 import { Icon, ZenitMark } from './Icons'
+import { HelpModal, ProfilePanel, helpParam, profileParam, securityUrl } from './Profile'
 import { visuallyHidden } from './ui'
 import { type Group, type Screen, type Section, dossierCallbackPath, joinNames, personalScreen, roleLabel } from './sections'
 
@@ -57,6 +58,15 @@ export function Shell({ me, email, groups, firstPath, context, onSignOut, notice
   const hasMenu = groups.length > 0
   const sideId = useId()
   const toggle = () => { setHidden(value => { saveHidden(!value); return !value }) }
+  // Mi perfil y Ayuda y soporte se abren sobre cualquier pantalla, con su dirección.
+  const [params, setParams] = useSearchParams()
+  const opener = useRef<HTMLElement | null>(null)
+  const openParam = (key: string) => { opener.current = document.activeElement as HTMLElement | null; setParams(current => { const next = new URLSearchParams(current); next.set(key, '1'); return next }) }
+  const closeParam = (key: string) => {
+    setParams(current => { const next = new URLSearchParams(current); next.delete(key); return next }, { replace: true })
+    // Si se abrió desde el menú de la cuenta, que ya no existe, el foco vuelve a su botón.
+    setTimeout(() => (opener.current?.isConnected ? opener.current : document.querySelector<HTMLElement>('header [aria-label^="Cuenta de"]'))?.focus(), 0)
+  }
 
   return <Box sx={{ height: '100dvh', minHeight: 560, display: 'flex', flexDirection: 'column', fontFamily: font, color: color.ink, background: gradient.page,
     [`@media ${phoneQuery}`]: { height: 'auto', minHeight: '100dvh' } }}>
@@ -76,7 +86,7 @@ export function Shell({ me, email, groups, firstPath, context, onSignOut, notice
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center', [`@media ${phoneQuery}`]: { display: 'contents' } }}>{search}</Box>
       {create}
       {bell}
-      <AccountMenu me={me} email={email} context={context} onSignOut={onSignOut} />
+      <AccountMenu me={me} email={email} context={context} onSignOut={onSignOut} onOpen={openParam} />
     </Box>
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', [`@media ${phoneQuery}`]: { display: 'block' } }}>
       {hasMenu && !phone && !hidden && <Box component="aside" id={sideId} sx={{ flex: '0 0 232px', height: '100%', overflow: 'auto', background: color.white, borderRight: `1px solid ${color.line}`, p: '14px 10px' }}>
@@ -89,6 +99,8 @@ export function Shell({ me, email, groups, firstPath, context, onSignOut, notice
       </Box>
     </Box>
     {hasMenu && phone && <BottomNav groups={groups} active={active} firstPath={firstPath} pathname={pathname} counts={counts} />}
+    {params.get(profileParam) && <ProfilePanel me={me} email={email} context={context} onClose={() => closeParam(profileParam)} onSignOut={onSignOut} />}
+    {params.get(helpParam) && <HelpModal onClose={() => closeParam(helpParam)} />}
   </Box>
 }
 
@@ -144,8 +156,8 @@ function BottomNav({ groups, active, firstPath, pathname, counts }: { groups: Gr
   </Box>
 }
 
-/** CTA-02. Perfil, seguridad, instalar y ayuda llegan con sus pantallas. */
-function AccountMenu({ me, email, context, onSignOut }: { me: Me; email?: string; context: string; onSignOut: () => void }) {
+/** CTA-02: Mi perfil, la seguridad de la cuenta, ayuda y salir. «Instalar Zenit» llega con el portal instalable (bloque 6). */
+function AccountMenu({ me, email, context, onSignOut, onOpen }: { me: Me; email?: string; context: string; onSignOut: () => void; onOpen: (key: string) => void }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const navigate = useNavigate()
   const menuId = useId()
@@ -170,7 +182,13 @@ function AccountMenu({ me, email, context, onSignOut }: { me: Me; email?: string
       </Stack>
       <Divider />
       <MenuList id={menuId} aria-label="Cuenta" autoFocusItem={!!anchor} sx={{ py: 1 }}>
+        <MenuItem onClick={() => { close(); onOpen(profileParam) }} sx={itemSx}><Icon name="person" />Mi perfil</MenuItem>
         {personal && <MenuItem onClick={() => { close(); void navigate(personalScreen.path) }} sx={itemSx}><Icon name="attendance" />Mi asistencia</MenuItem>}
+        <MenuItem component="a" href={securityUrl} target="_blank" rel="noopener" onClick={close} sx={{ ...itemSx, alignItems: 'flex-start' }}>
+          <Icon name="closures" /><Box>Seguridad de la cuenta<Box component="span" sx={{ display: 'block', fontSize: 12, fontWeight: 400, color: color.muted }}>Contraseña y segundo factor</Box></Box>
+        </MenuItem>
+        <MenuItem onClick={() => { close(); onOpen(helpParam) }} sx={itemSx}><Icon name="info" />Ayuda y soporte</MenuItem>
+        <Divider />
         <MenuItem onClick={() => { close(); onSignOut() }} sx={itemSx}><Icon name="logout" />Cerrar sesión</MenuItem>
       </MenuList>
     </Popover>
