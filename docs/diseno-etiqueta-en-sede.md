@@ -162,7 +162,7 @@ Los esquemas de `siteTag`:
 7. **Lo demás:** tipo de marca, duplicados, `late_sync`, `clock_anomaly` y la
    semana cerrada siguen igual.
 
-### API (contrato 0.35.0)
+### API (0.35.0 el plan y la forma; 0.36.0 las etiquetas)
 
 | Ruta | Quién | Qué hace |
 | --- | --- | --- |
@@ -173,7 +173,7 @@ Los esquemas de `siteTag`:
 | `PUT /users/{id}/site-tag-permission` | Administración | Da o quita el permiso |
 | `PATCH /employees/{id}` | Administración y RH | Agrega `captureMethod` |
 | `PATCH /sites/{id}` | Administración | Agrega `captureMethods` |
-| `PUT /operator/tenants/{id}/capture-methods` | Operación de FastSolution | Fija el plan |
+| `PUT /tenants/{tenantId}/capture-methods` | Operación de FastSolution | Fija el plan |
 
 Todo queda en la bitácora: `site_tag.registered`, `site_tag.updated`,
 `site_tag.revoked`, `employee.capture_method_changed` y
@@ -228,17 +228,18 @@ Todo queda en la bitácora: `site_tag.registered`, `site_tag.updated`,
   de QA; en un ambiente con clientes habría que pasar a esas personas a una de
   las dos formas.
 
-## Pregunta abierta
+## Decidido
 
-1. **Quién prepara las etiquetas:** ¿FastSolution antes de entregarlas
-   (recomendado) o el cliente desde la app de su administrador?
+- **Quién prepara las etiquetas:** FastSolution, antes de entregarlas
+  (2026-11-12). El cliente sólo las registra por su código corto.
 
 ## Orden propuesto
 
-1. **Plan y forma:** `captureMethods` de la empresa y la sede, `captureMethod`
-   de cada persona, y las reglas que rechazan la forma equivocada.
+1. **Plan y forma (hecho, contrato 0.35.0):** `captureMethods` de la empresa
+   y la sede, `captureMethod` de cada persona, y las reglas que rechazan la
+   forma equivocada.
 2. **Etiquetas en el servidor:** tabla, registro, sobre `siteTag`, reglas, API
-   0.35.0 y el expediente.
+   0.36.0 y el expediente.
 3. **Preparar etiquetas Classic:** la herramienta interna de FastSolution.
 4. **Android:** el teléfono personal lee etiquetas y deja de leer la propia
    tarjeta.
