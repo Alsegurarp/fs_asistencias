@@ -162,7 +162,7 @@ Los esquemas de `siteTag`:
 7. **Lo demás:** tipo de marca, duplicados, `late_sync`, `clock_anomaly` y la
    semana cerrada siguen igual.
 
-### API (0.35.0 el plan y la forma; 0.36.0 las etiquetas)
+### API (0.35.0 el plan y la forma; 0.37.0 las etiquetas)
 
 | Ruta | Quién | Qué hace |
 | --- | --- | --- |
@@ -239,7 +239,7 @@ Todo queda en la bitácora: `site_tag.registered`, `site_tag.updated`,
    y la sede, `captureMethod` de cada persona, y las reglas que rechazan la
    forma equivocada.
 2. **Etiquetas en el servidor:** tabla, registro, sobre `siteTag`, reglas, API
-   0.36.0 y el expediente.
+   0.37.0 y el expediente.
 3. **Preparar etiquetas Classic:** la herramienta interna de FastSolution.
 4. **Android:** el teléfono personal lee etiquetas y deja de leer la propia
    tarjeta.
