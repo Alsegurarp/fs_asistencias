@@ -36,6 +36,10 @@ data class SiteRow(
     val radiusMeters: Int,
     val status: String,
     val createdAt: OffsetDateTime,
+    /** Personas activas de la sede. */
+    val people: Int = 0,
+    /** Terminales activas de la sede. */
+    val terminals: Int = 0,
 )
 
 /** Sirve para crear y para cambiar: al cambiar, lo que no viene se queda igual. */
@@ -57,11 +61,13 @@ data class SiteView(
     val radiusMeters: Int,
     val status: String,
     val createdAt: String,
+    val people: Int,
+    val terminals: Int,
 ) {
     companion object {
         fun of(row: SiteRow) = SiteView(
             row.id.toString(), row.name, row.timeZone, row.latitude, row.longitude, row.radiusMeters, row.status,
-            row.createdAt.toInstant().toString(),
+            row.createdAt.toInstant().toString(), row.people, row.terminals,
         )
     }
 }
@@ -97,6 +103,26 @@ class SiteRepository(private val dsl: DSLContext) {
         dsl.fetch(
             "select id from site where tenant_id = ? and status = 'active' and lower(name) = lower(?)", tenantId, name,
         ).map { it.get("id", UUID::class.java) }
+
+    /**
+     * Las cifras de esas sedes para el API: personas activas y terminales
+     * activas, de índices parciales (V021). Van aparte de `find` y `page`, que
+     * también usan la captura y el expediente y no deben leer más tablas.
+     */
+    fun withCounts(tenantId: UUID, rows: List<SiteRow>): List<SiteRow> {
+        if (rows.isEmpty()) return rows
+        val ids = rows.map { it.id }.toTypedArray()
+        fun counted(sql: String): Map<UUID, Int> =
+            dsl.fetch(sql, tenantId, ids).associate { it.get("site_id", UUID::class.java) to it.get("n", Number::class.java).toInt() }
+        val people = counted(
+            "select site_id, count(*) as n from employee where tenant_id = ? and site_id = any(?) and status = 'active' group by site_id",
+        )
+        val terminals = counted(
+            "select site_id, count(*) as n from device where tenant_id = ? and site_id = any(?) " +
+                "and mode = 'terminal' and status = 'active' group by site_id",
+        )
+        return rows.map { it.copy(people = people[it.id] ?: 0, terminals = terminals[it.id] ?: 0) }
+    }
 
     fun update(tenantId: UUID, id: UUID, r: SiteRow) {
         dsl.execute(
@@ -140,15 +166,21 @@ class SiteService(private val sites: SiteRepository, private val audit: AuditLog
         val id = UUID.randomUUID()
         sites.insert(tenantId, id, name!!, timeZone!!, latitude!!, longitude!!, radius!!)
         audit.record(tenantId, person, "site.created", "site", id)
+        // Recién creada no tiene personas ni terminales: no hace falta contarlas.
         return sites.find(tenantId, id)!!
     }
 
     @Transactional(readOnly = true)
-    fun page(person: CurrentPerson, after: PageKey?, limit: Int): List<SiteRow> =
-        sites.page(person.requireTenant(), after, limit + 1)
+    fun page(person: CurrentPerson, after: PageKey?, limit: Int): List<SiteRow> {
+        val tenantId = person.requireTenant()
+        return sites.withCounts(tenantId, sites.page(tenantId, after, limit + 1))
+    }
 
     @Transactional(readOnly = true)
-    fun get(person: CurrentPerson, id: UUID): SiteRow = sites.find(person.requireTenant(), id) ?: throw Problems.notFound()
+    fun get(person: CurrentPerson, id: UUID): SiteRow {
+        val tenantId = person.requireTenant()
+        return sites.withCounts(tenantId, listOf(sites.find(tenantId, id) ?: throw Problems.notFound())).single()
+    }
 
     @Transactional
     fun update(person: CurrentPerson, id: UUID, request: SiteRequest): SiteRow {
@@ -180,7 +212,7 @@ class SiteService(private val sites: SiteRepository, private val audit: AuditLog
             ),
         )
         audit.record(tenantId, person, "site.updated", "site", id, mapOf("fields" to changed.joinToString(",")))
-        return sites.find(tenantId, id)!!
+        return sites.withCounts(tenantId, listOf(sites.find(tenantId, id)!!)).single()
     }
 
     private companion object {

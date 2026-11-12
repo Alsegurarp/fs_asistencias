@@ -116,7 +116,7 @@ export function GlobalSearch({ me }: { me: Me }) {
 }
 
 export type CreateKind = 'persona' | 'horario' | 'lector' | 'tarjeta'
-type Option = { kind: CreateKind | 'cierre'; key: string; label: string; detail: string }
+type Option = { kind: CreateKind | 'cierre' | 'invitar'; key: string; label: string; detail: string }
 
 /** Lo que el menú Crear ofrece a un rol: sólo lo que puede hacer. */
 export function createOptions(me: Me): Option[] {
@@ -127,13 +127,15 @@ export function createOptions(me: Me): Option[] {
     allowed.manageDevices && { kind: 'lector', key: 'L', label: 'Activar un lector', detail: 'Código de un solo uso' },
     allowed.editDirectory && { kind: 'tarjeta', key: 'T', label: 'Registrar una tarjeta', detail: 'Inventario de tarjetas' },
     allowed.closeWeeks && { kind: 'cierre', key: 'S', label: 'Cerrar la semana', detail: 'Toda la empresa o una sede' },
+    allowed.users && { kind: 'invitar', key: 'I', label: 'Invitar a alguien del equipo', detail: 'Usuarios y roles' },
   ]
   return options.filter((item): item is Option => !!item)
 }
 
 /**
  * CTA-04: el menú Crear. Cada opción abre su ventana sobre la página
- * actual; «Cerrar la semana» lleva a Cierres, donde se elige el alcance.
+ * actual; «Cerrar la semana» lleva a Cierres, donde se elige el alcance, e
+ * «Invitar» a Usuarios y roles, con su ventana abierta.
  * La tecla «C» lo abre y la letra de cada opción la elige.
  */
 export function CreateMenu({ me }: { me: Me }) {
@@ -153,6 +155,7 @@ export function CreateMenu({ me }: { me: Me }) {
   const choose = (option: Option) => {
     setAnchor(null)
     if (option.kind === 'cierre') void navigate('/cierres?cerrar=1')
+    else if (option.kind === 'invitar') void navigate('/usuarios?invitar=1')
     else setOpened(option.kind)
   }
   const done = () => { setOpened(null); setTimeout(() => button.current?.focus(), 0) }

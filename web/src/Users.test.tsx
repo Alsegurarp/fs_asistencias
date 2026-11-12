@@ -1,165 +1,292 @@
 // @vitest-environment jsdom
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { MemoryRouter, useLocation } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { ThemeProvider } from '@mui/material'
+
+type Call = { path: string; method: string; body?: unknown }
+const server = vi.hoisted(() => ({ calls: [] as Call[], pending: 0, handler: (call: Call): Promise<unknown> => new Promise(() => call) }))
+vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn(), tokenParsed: { sub: 'kc-self' } }, identityBase: 'http://localhost:8082' }))
+vi.mock('./api', async original => ({
+  ...await original<typeof import('./api')>(),
+  api: vi.fn((path: string, method = 'GET', body?: unknown) => {
+    const call = { path, method, body }
+    server.calls.push(call); server.pending++
+    const answer = server.handler(call)
+    const done = () => { server.pending-- }
+    answer.then(done, done)
+    return answer
+  }),
+}))
+import { ApiError, type Me } from './api'
+import { Portal } from './Portal'
+import { theme } from './theme'
 import { accessibilityViolations } from './accessibility'
-import { loaded } from './testUi'
-vi.mock('./auth', () => ({ accessToken: vi.fn(), auth: { clearToken: vi.fn() } }))
-vi.mock('./api', async original => ({ ...await original<typeof import('./api')>(), api: vi.fn() }))
-import { api, ApiError, type TenantUser } from './api'
-import { Users } from './Users'
-import { button, choose, click, setInput, waitFor } from './testUi'
+import { button, click, setInput, waitFor } from './testUi'
+import type { UserRow, UserSummary } from './usersModel'
+import { scopeText } from './usersModel'
 
-const id = '11111111-1111-4111-8111-111111111111'
-const employeeId = '22222222-2222-4222-8222-222222222222'
-let user: TenantUser
-let root: Root
-let container: HTMLDivElement
-let cache: QueryClient
-let failure: ApiError | null
-const mocked = vi.mocked(api)
-beforeEach(() => {
-  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 100, height: 30, x: 0, y: 0, top: 0, bottom: 30, left: 0, right: 100, toJSON: () => ({}) })
-  user = { id, email: 'demo@example.invalid', displayName: 'Persona demo', roles: ['rh'], status: 'active', createdAt: '2026-10-01T12:00:00Z', linkedAt: '2026-10-02T12:00:00Z', employeeId: null }
-  failure = null
-  mocked.mockReset().mockImplementation(async (path, method = 'GET', body) => {
-    if (method !== 'GET') { if (failure) throw failure; return { ...user, ...(body as object || {}) } }
-    if (path === '/users') return { items: [{ ...user }], nextCursor: 'next-page' }
-    if (path.startsWith('/users?cursor=')) return { items: [{ ...user, id: employeeId, email: 'second@example.invalid' }], nextCursor: null }
-    if (path === '/employees') return { items: [{ id: employeeId, displayName: 'Empleado demo', externalId: 'DEMO-001', status: 'active' }], nextCursor: null }
-    if (path === `/employees/${employeeId}`) return { id: employeeId, displayName: 'Empleado demo' }
-    if (path === '/sites') return { items: [{ id: employeeId, name: 'Sede centro', status: 'active' }], nextCursor: null }
-    if (path === `/sites/${employeeId}`) return { id: employeeId, name: 'Sede centro' }
-    throw new Error(`Ruta inesperada: ${path}`)
-  })
-  container = document.createElement('div'); document.body.append(container); root = createRoot(container)
-  cache = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-})
-afterEach(async () => { await act(async () => root.unmount()); cache.clear(); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
-async function mount(role = 'admin_empresa', self = 'self') {
-  await act(async () => root.render(<QueryClientProvider client={cache}><Users me={{ userId: self, displayName: 'Demo', roles: [role], tenant: { name: 'Demo', timeZone: 'America/Mexico_City' } }} /></QueryClientProvider>))
-  if (role === 'admin_empresa') await waitFor(() => !!button(`Editar ${user.email}`))
+const base = { dossierPermission: false, dossierPermissionSince: null, employeeId: null, siteIds: [] as string[] }
+const people: UserRow[] = [
+  { ...base, id: 'self', email: 'mariana@demo.example', displayName: 'Mariana Ortiz', roles: ['admin_empresa'], status: 'active', createdAt: '2026-10-19T16:00:00Z', linkedAt: '2026-10-19T17:00:00Z', dossierPermission: true },
+  { ...base, id: 'u2', email: 'hugo@demo.example', displayName: 'Hugo Peña', roles: ['supervisor'], status: 'active', createdAt: '2026-10-20T16:00:00Z', linkedAt: '2026-10-20T17:00:00Z', siteIds: ['s2'] },
+  { ...base, id: 'u3', email: 'laura@demo.example', displayName: 'Laura Gil', roles: ['supervisor'], status: 'invited', createdAt: '2026-11-05T16:00:00Z', linkedAt: null },
+  { ...base, id: 'u4', email: 'ernesto@demo.example', displayName: 'Ernesto Salas', roles: ['auditor'], status: 'active', createdAt: '2026-10-22T16:00:00Z', linkedAt: '2026-10-22T17:00:00Z' },
+  { ...base, id: 'u5', email: 'andres@demo.example', displayName: 'Andrés Mora', roles: ['rh'], status: 'disabled', createdAt: '2026-10-19T16:00:00Z', linkedAt: null },
+]
+const summary: UserSummary = { total: 5, active: 3, invited: 1, disabled: 1, byRole: { admin_empresa: 1, rh: 1, supervisor: 2, auditor: 1, trabajador: 0 }, supervisorsWithoutSites: 1, dossierPermission: 1 }
+const sites = [
+  { id: 's1', name: 'Matriz Centro', timeZone: 'America/Mexico_City', latitude: 19.4, longitude: -99.1, radiusMeters: 120, status: 'active' },
+  { id: 's2', name: 'Bodega Norte', timeZone: 'America/Mexico_City', latitude: 19.5, longitude: -99.2, radiusMeters: 200, status: 'active' },
+]
+
+function defaultServer({ path, method, body }: Call): Promise<unknown> {
+  const url = new URL(path, 'http://zenit.test')
+  const answer = (value: unknown) => Promise.resolve(value)
+  const person = (id: string) => people.find(item => item.id === id)!
+  if (method === 'POST' && url.pathname === '/users') return answer({ ...base, id: 'u9', status: 'invited', createdAt: '2026-11-10T16:42:00Z', linkedAt: null, displayName: '', ...(body as object) })
+  if (method === 'PATCH') return answer({ ...person(url.pathname.split('/')[2]), ...(body as object) })
+  if (method === 'POST' && url.pathname.endsWith('/unlink')) return answer({ ...person(url.pathname.split('/')[2]), linkedAt: null, status: 'invited' })
+  if (method === 'POST' || method === 'PUT') return answer(undefined)
+  if (url.pathname.startsWith('/users/') && url.pathname !== '/users/summary') return answer(person(url.pathname.split('/')[2]) || { ...base, id: 'u9', email: 'nueva@demo.example', displayName: 'Nueva', roles: ['rh'], status: 'invited', createdAt: '2026-11-10T16:42:00Z', linkedAt: null })
+  switch (url.pathname) {
+    case '/me/dossier-permission': return answer({ enabled: true })
+    case '/users': {
+      const role = url.searchParams.get('role'); const status = url.searchParams.get('status')
+      return answer({ items: people.filter(item => (!role || item.roles.includes(role)) && (!status || item.status === status)), nextCursor: null })
+    }
+    case '/users/summary': return answer(summary)
+    case '/sites': return answer({ items: sites, nextCursor: null })
+    case '/incidents/summary': return answer({ open: { total: 0 } })
+  }
+  return Promise.reject(new ApiError(404, 'not_found', `Sin respuesta simulada para ${path}`))
 }
-async function check(selector: string) { await act(async () => (document.querySelector(selector) as HTMLInputElement).click()) }
-function writes() { return mocked.mock.calls.filter(([, method]) => method && method !== 'GET') }
 
-it.each([true, false])('administra el permiso explícito %s sólo después de confirmar', async enabled => {
-  await mount(); await click(`Permiso de expediente de ${user.email}`)
-  const action = enabled ? 'Conceder permiso' : 'Revocar permiso'
-  expect(button(action)?.disabled).toBe(true); expect(writes()).toHaveLength(0)
-  await check('[name="confirmDossierPermission"]'); await click(action)
-  await waitFor(() => writes().length === 1)
-  expect(writes()[0]).toEqual([`/users/${id}/dossier-permission`, 'PUT', { enabled }])
-})
+let container: HTMLDivElement
+let root: Root
+let mounted = false
+let cache: QueryClient
+let phone = false
+let location = ''
+function Where() { const here = useLocation(); location = here.pathname + here.search; return null }
 
-it('una cuenta sin vínculo no admite concesión pero conserva la revocación', async () => {
-  user.linkedAt = null; user.status = 'invited'
-  await mount(); await click(`Permiso de expediente de ${user.email}`); await check('[name="confirmDossierPermission"]')
-  expect(button('Conceder permiso')?.disabled).toBe(true)
-  expect(button('Revocar permiso')?.disabled).toBe(false)
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-10T16:42:00Z') })
+  container = document.createElement('div'); document.body.appendChild(container)
+  root = createRoot(container)
+  cache = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  window.localStorage.clear()
+  server.calls = []; server.pending = 0; server.handler = defaultServer; phone = false
+  vi.stubGlobal('matchMedia', (query: string) => ({ matches: phone && query.includes('max-width:860px'), media: query, onchange: null,
+    addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }))
 })
+afterEach(async () => { if (mounted) await act(async () => root.unmount()); mounted = false; cache.clear(); container.remove(); document.body.innerHTML = ''; vi.useRealTimers(); vi.unstubAllGlobals() })
 
-it.each(['rh', 'supervisor', 'auditor', 'trabajador'])('no consulta ni modifica usuarios con el rol %s', async role => {
-  await mount(role); expect(mocked).not.toHaveBeenCalled(); expect(button('Invitar usuario')).toBeUndefined()
-})
-it('pagina los usuarios con el cursor del servidor', async () => {
-  await mount(); await click('Cargar más usuarios'); await waitFor(() => !!button('Editar second@example.invalid'))
-  expect(mocked).toHaveBeenCalledWith('/users?cursor=next-page'); expect(button('Cargar más usuarios')).toBeUndefined()
-})
-it('invita con correo normalizado, varios roles y empleado opcional', async () => {
-  await mount(); await click('Invitar usuario')
-  await setInput('email', 'Nueva@Example.invalid'); await setInput('displayName', 'Nueva demo')
-  await check('[name="roles"][value="rh"]'); await check('[name="roles"][value="trabajador"]')
-  await choose('userEmployeeId', 'Empleado demo'); await click('Guardar usuario')
-  await waitFor(() => writes().length === 1)
-  expect(writes()[0]).toEqual(['/users', 'POST', { email: 'nueva@example.invalid', displayName: 'Nueva demo', roles: ['rh', 'trabajador'], employeeId }])
-})
-it('exige al menos un rol antes de invitar', async () => {
-  await mount(); await click('Invitar usuario'); await setInput('email', 'new@example.invalid'); await click('Guardar usuario')
-  expect(document.body.textContent).toContain('Selecciona al menos un rol'); expect(writes()).toHaveLength(0)
-})
+async function settle() {
+  for (let quiet = 0, round = 0; quiet < 3; round++) {
+    if (round > 300) throw new Error(`Quedaron ${server.pending} respuestas pendientes: ${server.calls.slice(-8).map(c => c.method + ' ' + c.path).join(', ')} (${server.calls.length})`)
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)) })
+    quiet = server.pending === 0 ? quiet + 1 : 0
+  }
+}
+async function render(path = '/usuarios', roles = ['admin_empresa'], extra: Partial<Me> = {}) {
+  const me: Me = { userId: 'self', displayName: 'Mariana Ortiz', roles, tenant: { name: 'Empresa Demo', timeZone: 'America/Mexico_City' }, employeeId: null, ...extra }
+  if (mounted) { await act(async () => root.unmount()); root = createRoot(container) }
+  mounted = true
+  await act(async () => root.render(<QueryClientProvider client={cache}><ThemeProvider theme={theme}>
+    <MemoryRouter initialEntries={[path]}><Portal me={me} email="mariana@demo.example" onSignOut={vi.fn()} /><Where /></MemoryRouter>
+  </ThemeProvider></QueryClientProvider>))
+  await settle()
+}
+const text = () => document.body.textContent || ''
+const rows = () => [...container.querySelectorAll('main table tbody tr')].map(row => [...row.querySelectorAll('td')].map(cell => cell.textContent))
+const writes = () => server.calls.filter(call => call.method !== 'GET')
+const lists = () => server.calls.filter(call => call.method === 'GET' && call.path.startsWith('/users?')).map(call => call.path)
+const chip = (label: string) => [...document.querySelectorAll<HTMLButtonElement>('button[aria-pressed]')].findLast(item => item.textContent?.trim() === label)!
+async function press(label: string) { await act(async () => chip(label).click()); await settle() }
+async function confirmAndSettle(label: string) { await click(label); await settle() }
+async function menu(label: string) {
+  await act(async () => document.querySelector<HTMLButtonElement>('[aria-label^="Cuenta de Mariana Ortiz"]')!.click())
+  await act(async () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item => item.textContent?.startsWith(label))!.click())
+  await settle()
+}
 
-it('asigna y retira sedes del supervisor mediante la edición existente', async () => {
-  user.roles = ['supervisor']
-  await mount(); await click(`Editar ${user.email}`)
-  expect(document.body.textContent).toContain('Sin sedes no obtiene registros')
-  await choose('supervisorSiteId', 'Sede centro'); await click('Agregar sede de supervisión')
-  await click('Guardar usuario'); await waitFor(() => writes().length === 1)
-  expect(writes()[0]).toEqual([`/users/${id}`, 'PATCH', { siteIds: [employeeId] }])
-})
-
-it('envía una lista vacía al retirar la última sede del supervisor', async () => {
-  user.roles = ['supervisor']; user.siteIds = [employeeId]
-  await mount(); await click(`Editar ${user.email}`)
-  await click(`Quitar sede ${employeeId}`); await click('Guardar usuario')
-  await waitFor(() => writes().length === 1)
-  expect(writes()[0]).toEqual([`/users/${id}`, 'PATCH', { siteIds: [] }])
-})
-it('edita sólo campos cambiados y permite soltar el vínculo de empleado', async () => {
-  user.employeeId = employeeId
-  await mount(); await click(`Editar ${user.email}`)
-  expect((document.querySelector('[name="email"]') as HTMLInputElement).disabled).toBe(true)
-  await choose('userEmployeeId', 'Sin empleado vinculado'); await click('Guardar usuario')
-  await waitFor(() => writes().length === 1)
-  expect(writes()[0]).toEqual([`/users/${id}`, 'PATCH', { employeeId: null }])
-})
-it('conserva roles y formulario cuando el servidor protege al último administrador', async () => {
-  user.roles = ['admin_empresa']; failure = new ApiError(409, 'last_admin', 'La empresa no puede quedarse sin administrador.', 'ref-admin')
-  await mount(); await click(`Editar ${user.email}`); await check('[name="disabled"]'); await click('Guardar usuario')
-  await waitFor(() => document.body.textContent?.includes('ref-admin') === true)
-  expect((document.querySelector('[name="disabled"]') as HTMLInputElement).checked).toBe(true)
-  expect((document.querySelector('[name="roles"][value="admin_empresa"]') as HTMLInputElement).checked).toBe(true)
-  expect(writes()[0][2]).toEqual({ disabled: true })
-})
-it('rehabilita una cuenta enviando sólo disabled false', async () => {
-  user.status = 'disabled'; await mount(); await click(`Editar ${user.email}`); await check('[name="disabled"]'); await click('Guardar usuario')
-  await waitFor(() => writes().length === 1); expect(writes()[0][2]).toEqual({ disabled: false })
+it('el alcance resume roles y sedes', () => {
+  const name = (id: string) => ({ s1: 'Matriz Centro', s2: 'Bodega Norte', s3: 'Andén' } as Record<string, string>)[id]
+  expect(scopeText({ roles: ['supervisor', 'auditor'], status: 'active', siteIds: [] }, name)).toBe('Toda la empresa, consulta')
+  expect(scopeText({ roles: ['supervisor'], status: 'active', siteIds: ['s2', 's1'] }, name)).toBe('Bodega Norte y Matriz Centro')
+  expect(scopeText({ roles: ['supervisor'], status: 'active', siteIds: ['s2', 's1', 's3'] }, name)).toBe('Andén, Bodega Norte y 1 más')
+  expect(scopeText({ roles: ['supervisor'], status: 'active', siteIds: [] }, name)).toBe('Sin sedes')
+  expect(scopeText({ roles: ['rh'], status: 'disabled', siteIds: [] }, name)).toBe('—')
 })
 
-it('no aparenta borrar un nombre que el backend no permite vaciar', async () => {
-  await mount(); await click(`Editar ${user.email}`); await setInput('displayName', ''); await click('Guardar usuario')
-  expect(document.body.textContent).toContain('El nombre existente no puede quedar vacío'); expect(writes()).toHaveLength(0)
-})
-it('exige confirmación al desvincular y no manda datos de roles ni contraseñas', async () => {
-  await mount(); await click(`Desvincular ${user.email}`)
-  expect(button('Confirmar desvinculación')?.disabled).toBe(true)
-  expect(document.body.textContent).toContain('puede vincularse otra vez')
-  await check('[name="confirmUnlink"]'); await click('Confirmar desvinculación')
-  await waitFor(() => writes().length === 1); expect(writes()[0]).toEqual([`/users/${id}/unlink`, 'POST', undefined])
-})
-it('actualiza me después de modificar el propio acceso', async () => {
-  cache.setQueryData(['me'], { userId: id })
-  await mount('admin_empresa', id); await click(`Editar ${user.email}`); await setInput('displayName', 'Mi nuevo nombre'); await click('Guardar usuario')
-  await waitFor(() => cache.getQueryState(['me'])?.isInvalidated === true)
-  expect(writes()[0][2]).toEqual({ displayName: 'Mi nuevo nombre' })
+it('muestra las cifras, las pestañas por rol y cada persona con su alcance y su cuenta', async () => {
+  await render()
+  expect(text()).toContain('4Con acceso · 3 activas')
+  expect(text()).toContain('1Invitación sin aceptar')
+  expect(text()).toContain('1 de 2Supervisión con sedes')
+  expect(text()).toContain('1Pueden descargar el expediente')
+  expect([...document.querySelectorAll('[role="group"][aria-label="Rol"] button')].map(item => item.textContent)).toEqual(['Todos · 5', 'Administración · 1', 'RH · 1', 'Supervisión · 2', 'Auditoría · 1'])
+  expect(rows()).toEqual([
+    ['MOMariana Ortiz (tú)mariana@demo.example', 'Administración', 'Toda la empresa', 'Activa', '19 oct', 'Vinculada', 'Sí', 'Editar acceso'],
+    ['HPHugo Peñahugo@demo.example', 'Supervisión', 'Bodega Norte', 'Activa', '20 oct', 'Vinculada', '—', 'Editar acceso'],
+    ['LGLaura Gillaura@demo.example', 'Supervisión', 'Sin sedes', 'Invitada', '5 nov', 'Sin entrar aún', '—', 'Editar acceso'],
+    ['ESErnesto Salasernesto@demo.example', 'Auditoría', 'Toda la empresa, consulta', 'Activa', '22 oct', 'Vinculada', '—', 'Editar acceso'],
+    ['AMAndrés Moraandres@demo.example', 'RH', '—', 'Deshabilitada', '19 oct', 'Sin cuenta ligada', '—', 'Editar acceso'],
+  ])
 })
 
-it('exige confirmación para el cambio obligatorio y no solicita contraseñas', async () => {
-  await mount(); await click(`Exigir cambio de contraseña a ${user.email}`)
-  expect(button('Confirmar cambio obligatorio')?.disabled).toBe(true)
-  expect(document.querySelector('input[type="password"]')).toBeNull()
-  await check('[name="confirmPasswordChange"]'); await click('Confirmar cambio obligatorio')
-  await waitFor(() => !!document.body.textContent?.includes('Cambio obligatorio confirmado'))
-  expect(writes()).toEqual([[`/users/${id}/password-change`, 'POST']])
-})
-it('no ofrece cambio obligatorio a cuentas sin vínculo o deshabilitadas', async () => {
-  user.linkedAt = null; await mount()
-  expect(button(`Exigir cambio de contraseña a ${user.email}`)).toBeUndefined()
-  user.linkedAt = '2026-10-02T12:00:00Z'; user.status = 'disabled'
-  await act(async () => { await cache.invalidateQueries({ queryKey: ['users'] }) })
-  expect(button(`Exigir cambio de contraseña a ${user.email}`)).toBeUndefined()
-})
-it('no anuncia éxito cuando la identidad no confirma el cambio obligatorio', async () => {
-  failure = new ApiError(503, 'identity_unavailable', 'No se pudo confirmar el cambio obligatorio.')
-  await mount(); await click(`Exigir cambio de contraseña a ${user.email}`); await check('[name="confirmPasswordChange"]'); await click('Confirmar cambio obligatorio')
-  await waitFor(() => !!document.body.textContent?.includes('No se pudo confirmar el cambio obligatorio.'))
-  expect(document.body.textContent).not.toContain('Cambio obligatorio confirmado.')
-  expect(writes()).toHaveLength(1)
+it('filtra por rol y por las cifras en el servidor', async () => {
+  await render()
+  await press('Supervisión · 2')
+  expect(location).toBe('/usuarios?rol=supervision')
+  expect(lists().at(-1)).toBe('/users?limit=25&role=supervisor')
+  expect(rows()).toHaveLength(2)
+  const invited = [...document.querySelectorAll<HTMLAnchorElement>('[aria-label="Accesos en cifras"] a')][1]
+  await act(async () => invited.click()); await settle()
+  expect(lists().at(-1)).toBe('/users?limit=25&status=invited')
+  expect(text()).toContain('Invitaciones sin aceptar')
 })
 
-it('cumple las reglas automáticas de accesibilidad', async () => {
-  await mount(); await loaded()
+it('editar acceso guarda sólo lo que cambió y concede el expediente aparte', async () => {
+  await render('/usuarios')
+  await act(async () => (container.querySelectorAll('main table tbody tr')[1].querySelectorAll('td')[2] as HTMLElement).click())
+  await settle()
+  expect(location).toBe('/usuarios?persona=u2')
+  expect(text()).toContain('Acceso de Hugo Peña')
+  expect(text()).toContain('hugo@demo.example · activa desde el 20 oct')
+  await press('Matriz Centro')
+  await press('Auditoría')
+  await act(async () => document.querySelector<HTMLInputElement>('[name="dossierPermission"]')!.click())
+  await confirmAndSettle('Guardar cambios')
+  expect(writes()).toEqual([
+    { path: '/users/u2', method: 'PATCH', body: { roles: ['supervisor', 'auditor'], siteIds: ['s2', 's1'] } },
+    { path: '/users/u2/dossier-permission', method: 'PUT', body: { enabled: true } },
+  ])
+  expect(location).toBe('/usuarios')
+})
+
+it('sin roles no se guarda; a quien no ha entrado no se le concede el expediente ni se le pide contraseña', async () => {
+  await render('/usuarios?persona=u3')
+  expect(document.querySelector<HTMLInputElement>('[name="dossierPermission"]')!.disabled).toBe(true)
+  expect(text()).toContain('Se concede cuando ya entró con su cuenta y su acceso está activo.')
+  expect(button('Pedir contraseña nueva en su próximo ingresoCuando ya entró y su acceso está activo.')?.disabled).toBe(true)
+  await press('Supervisión')
+  await click('Guardar cambios')
+  expect(text()).toContain('Elige al menos un rol.')
+  expect(writes()).toEqual([])
+})
+
+it('la seguridad de la cuenta pide confirmación: contraseña, soltar la liga y deshabilitar', async () => {
+  await render('/usuarios?persona=u4')
+  await click('Pedir contraseña nueva en su próximo ingreso')
+  expect(writes()).toEqual([])
+  await confirmAndSettle('Pedir contraseña nueva')
+  expect(text()).toContain('Listo: Ernesto Salas elegirá una contraseña nueva en su próximo ingreso.')
+  await click('Listo')
+  await click('Soltar la liga con su cuenta')
+  expect(text()).toContain('No le quita el acceso')
+  await confirmAndSettle('Soltar la liga')
+  await click('Deshabilitar su acceso')
+  await confirmAndSettle('Deshabilitar')
+  expect(writes()).toEqual([
+    { path: '/users/u4/password-change', method: 'POST', body: undefined },
+    { path: '/users/u4/unlink', method: 'POST', body: undefined },
+    { path: '/users/u4', method: 'PATCH', body: { disabled: true } },
+  ])
+})
+
+it('un acceso deshabilitado se habilita otra vez', async () => {
+  await render('/usuarios?persona=u5')
+  expect(text()).toContain('Su acceso está deshabilitado')
+  await click('Habilitar su acceso')
+  await confirmAndSettle('Habilitar')
+  expect(writes()).toEqual([{ path: '/users/u5', method: 'PATCH', body: { disabled: false } }])
+})
+
+it('invitar revisa el correo y el rol, manda sólo lo elegido y abre a la persona nueva', async () => {
+  await render('/usuarios')
+  await click('Invitar')
+  expect(text()).toContain('No le llega un correo')
+  await setInput('email', 'laura')
+  await act(async () => document.querySelector<HTMLFormElement>('[role="dialog"] form')!.requestSubmit())
+  expect(text()).toContain('Escribe un correo válido.')
+  await setInput('email', ' Nueva@Demo.example ')
+  await setInput('displayName', 'Nueva Persona')
+  await act(async () => document.querySelector<HTMLFormElement>('[role="dialog"] form')!.requestSubmit())
+  expect(text()).toContain('Elige al menos un rol.')
+  await act(async () => document.querySelector<HTMLInputElement>('[role="dialog"] input[value="supervisor"]')!.click())
+  await press('Bodega Norte')
+  await act(async () => document.querySelector<HTMLFormElement>('[role="dialog"] form')!.requestSubmit())
+  await settle()
+  expect(writes()).toEqual([{ path: '/users', method: 'POST', body: { email: 'nueva@demo.example', roles: ['supervisor'], displayName: 'Nueva Persona', siteIds: ['s2'] } }])
+  expect(location).toBe('/usuarios?persona=u9')
+})
+
+it('un correo que ya tiene acceso se marca en su campo', async () => {
+  server.handler = call => call.method === 'POST' && call.path === '/users' ? Promise.reject(new ApiError(409, 'email_unavailable', 'El correo no está disponible.')) : defaultServer(call)
+  await render('/usuarios?invitar=1')
+  await setInput('email', 'hugo@demo.example')
+  await act(async () => document.querySelector<HTMLInputElement>('[role="dialog"] input[value="rh"]')!.click())
+  await act(async () => document.querySelector<HTMLFormElement>('[role="dialog"] form')!.requestSubmit())
+  await settle()
+  expect(text()).toContain('Este correo ya tiene acceso a una empresa.')
+})
+
+it('los permisos por rol se consultan en una tabla', async () => {
+  await render('/usuarios')
+  await click('Permisos por rol')
+  const table = [...document.querySelectorAll('[role="dialog"] tbody tr')].map(row => [...row.children].map(cell => cell.textContent))
+  expect(table[0]).toEqual(['Ver asistencia, incidencias y cierres', 'Sí', 'Sí', 'Sus sedes', 'Sí'])
+  expect(table.at(-1)).toEqual(['Usuarios y configuración', 'Sí', '—', '—', '—'])
+  await click('Entendido')
+  expect(location).toBe('/usuarios')
+})
+
+it('Mi perfil sale del menú de la cuenta con el acceso y la seguridad; Ayuda y soporte da el correo y el teléfono', async () => {
+  await render('/usuarios', ['supervisor'])
+  await menu('Mi perfil')
+  expect(location).toBe('/usuarios?perfil=1')
+  expect(text()).toContain('RolSupervisión')
+  expect(text()).toContain('AlcanceLas sedes que te asignaron')
+  expect(text()).toContain('Expediente de la empresaPuede descargarlo')
+  expect(text()).toContain('En el padrónNo')
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('section a[href*="/realms/zenit/account"]')]
+  expect(links.map(link => link.textContent)).toEqual(['Cambiar', 'Reconfigurar'])
+  await menu('Ayuda y soporte')
+  expect(document.querySelector('a[href^="mailto:rene.alexis.segura@gmail.com"]')).not.toBeNull()
+  expect(document.querySelector('a[href="tel:+525633001126"]')?.textContent).toContain('56 3300 1126')
+})
+
+it('quien no administra no abre Usuarios', async () => {
+  await render('/usuarios', ['rh'])
+  expect(text()).toContain('Esta sección no está disponible para tu rol')
+  expect(lists()).toEqual([])
+})
+
+it('en el teléfono cada persona es una tarjeta', async () => {
+  phone = true
+  await render()
+  const cards = [...container.querySelectorAll('main li')].map(item => item.textContent)
+  expect(cards[1]).toBe('Hugo Peñahugo@demo.exampleActivaSupervisión · Bodega Norte · Vinculada')
+  expect(cards[0]).toContain('· expediente')
+})
+
+it('cumple las reglas automáticas de accesibilidad en la pantalla, el panel y las ventanas', { timeout: 30_000 }, async () => {
+  await render()
   expect(await accessibilityViolations()).toEqual([])
+  await render('/usuarios?persona=u2')
+  expect(await accessibilityViolations(document.body)).toEqual([])
+  await render('/usuarios?invitar=1')
+  await act(async () => document.querySelector<HTMLInputElement>('[role="dialog"] input[value="trabajador"]')!.click())
+  expect(await accessibilityViolations(document.body)).toEqual([])
+  await render('/usuarios?permisos=1')
+  expect(await accessibilityViolations(document.body)).toEqual([])
+  await render('/usuarios?perfil=1')
+  expect(await accessibilityViolations(document.body)).toEqual([])
+  await render('/usuarios?ayuda=1')
+  expect(await accessibilityViolations(document.body)).toEqual([])
 })

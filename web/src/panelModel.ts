@@ -147,7 +147,7 @@ export function firstSteps(facts: StepFacts): Step[] {
     { key: 'empresa', title: 'Revisa los datos de tu empresa', detail: 'Nombre, zona horaria e inicio de semana', done: true, action: 'Ver', to: '/configuracion' },
     { key: 'sedes', title: 'Agrega tus sedes y su zona de marcaje',
       detail: sites.length === 1 ? `1 sede: ${sites[0].name}, círculo de ${sites[0].radiusMeters} m` : sites.length ? `${sites.length} sedes: ${sites.map(site => site.name).join(', ')}` : 'Dónde marca tu personal y qué tan lejos puede estar',
-      done: sites.length > 0, action: sites.length ? 'Agregar otra' : 'Agregar sede', to: '/configuracion/sedes' },
+      done: sites.length > 0, action: sites.length ? 'Agregar otra' : 'Agregar sede', to: '/configuracion?sede=nueva' },
     { key: 'horarios', title: 'Crea los horarios', detail: facts.schedules ? plural(facts.schedules, 'horario creado', 'horarios creados') : 'Días, entrada, salida y comida de cada turno',
       done: facts.schedules > 0, action: 'Crear horario', to: '/personal/horarios' },
     { key: 'personal', title: 'Da de alta a tu personal', detail: facts.employees ? plural(facts.employees, 'persona activa', 'personas activas') : 'Uno por uno o con el CSV de tu sistema de nómina',

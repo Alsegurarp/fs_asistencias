@@ -8,7 +8,6 @@ import { color } from './design'
 import { Cards } from './Cards'
 import { Closures } from './Closures'
 import { Devices } from './Devices'
-import { Directory } from './Directory'
 import { Dossiers, dossierOwner, dossierPermissionKey } from './Dossiers'
 import { clearDossierVerification } from './dossierFlow'
 import { Exports } from './Exports'
@@ -19,7 +18,7 @@ import { Schedules } from './Schedules'
 import { Personnel } from './Personnel'
 import { Sources } from './Sources'
 import { Tenants } from './Tenants'
-import { TenantSettings } from './TenantSettings'
+import { Settings } from './Settings'
 import { Users } from './Users'
 import { upcomingText } from './BreakPolicyChange'
 import { LegacyScreen, PageHeader, Shell, rolesText } from './Shell'
@@ -75,6 +74,8 @@ export function Portal({ me, email, onSignOut, notice }: PortalProps) {
       <Route path={dossierCallbackPath} element={page(all.find(section => section.key === 'reportes')!, all.flatMap(section => section.screens).find(screen => screen.key === 'dossier')!, true)} />
       <Route path="/mas" element={<More me={me} groups={groups} firstPath={firstPath} context={context} personal={allowed.personal} onSignOut={onSignOut} />} />
       <Route path={sessionEndedPath} element={<Navigate to="/" replace />} />
+      {/* Las sedes ahora viven dentro de Configuración (EMP-01). */}
+      <Route path="/configuracion/sedes" element={<Navigate to="/configuracion" replace />} />
       <Route path="*" element={<NotFound home={home} />} />
     </Route>
   </Routes>
@@ -102,6 +103,8 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   if (screen.key === 'imports') return <Imports me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'devices') return <Devices me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'cards') return <Cards me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'settings') return <Settings me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'users') return <Users me={me} context={context} section={section} screens={screens} screen={screen} />
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
@@ -111,14 +114,11 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
 /** Las pantallas anteriores del portal, cada una en su dirección. */
 function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
   switch (screen) {
-    case 'sites': return <Directory kind={screen} me={me} />
-    case 'settings': return <TenantSettings me={me} />
-    case 'users': return <Users me={me} />
     case 'exports': return <Exports me={me} />
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
-    case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': case 'devices': case 'cards': return null
+    case 'users': case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': case 'devices': case 'cards': case 'settings': return null
   }
 }
 

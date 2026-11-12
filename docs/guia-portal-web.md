@@ -1,5 +1,19 @@
 # Guía del portal web
 
+**Actualización del 11 de noviembre, Usuarios y Mi perfil (sin cambios al contrato):**
+- **Usuarios y roles (EMP-04):** cifras de acceso (con acceso, invitaciones sin aceptar, Supervisión con sedes y quién puede descargar el expediente), pestañas por rol con su cuenta, búsqueda por nombre o correo, y por persona su rol, alcance, estado, fecha de invitación, cuenta y expediente. Todo sale del servidor (`GET /users` con `q`, `role`, `status` y `dossierPermission`; `GET /users/summary`). Las cifras filtran: `?estado=invitadas` y `?expediente=1`.
+- **Editar acceso:** `?persona=<id>` abre el panel con nombre, roles, sedes de Supervisión, la fila del padrón para Trabajador y el permiso del expediente; «Guardar cambios» manda sólo lo que cambió (`PATCH /users/{id}` y, aparte, `PUT /users/{id}/dossier-permission`). La seguridad de la cuenta (contraseña nueva, soltar la liga, deshabilitar o habilitar) pide confirmación y se aplica en el acto.
+- **Invitar (EMP-05):** `?invitar=1`, también desde el menú Crear. No manda correo: la persona entra con ese correo verificado. Un correo que ya tiene acceso se marca en su campo (`email_unavailable`).
+- **Permisos por rol (EMP-06):** `?permisos=1`, una tabla de consulta.
+- **Mi perfil (CTA-01, TEL-11):** desde el menú de la cuenta o «Más» en teléfono (`?perfil=1`): empresa, rol, alcance, expediente y si está en el padrón; «Cambiar» y «Reconfigurar» abren la consola de cuenta de Keycloak. **Ayuda y soporte** (`?ayuda=1`) da el correo y el teléfono de soporte.
+
+**Actualización del 10 de noviembre, Configuración (contrato 0.33.0):**
+- **Configuración (EMP-01):** una sola pantalla con la empresa (nombre, zona horaria, inicio de semana y cierre automático, con sus cifras), las políticas y reglas, y las sedes con su zona de marcaje en un mapa de OpenStreetMap. Sólo Administración cambia; los demás roles la consultan. `/configuracion/sedes` lleva aquí.
+- **Sede (EMP-07):** `?sede=<id>` abre una sede y `?sede=nueva` agrega una. El punto se arrastra en el mapa o se escribe con latitud y longitud, junto con el radio. Desactivar y reactivar están en el pie.
+- **Comida (EMP-02 y 08):** `?comida=1` muestra la política de hoy y el cambio programado, que se puede cancelar; `?comida=programar` programa uno con motivo y muestra desde cuándo entraría.
+- **Reglas (EMP-03):** `?reglas=1` muestra los topes por año, las reglas por día y la fuente.
+- **API:** cada sede trae `people` (personas activas) y `terminals` (terminales activas).
+
 **Actualización del 10 de noviembre, tras el recorrido en local (contrato 0.32.0):**
 - **Filas:** un clic en cualquier parte de la fila abre su detalle en Tarjetas, Asistencia, Personal, Cierres e Incidencias.
 - **Tarjetas:** nueva columna «Tecnología» («Huella manual» o «MIFARE Classic firmada»). Una tarjeta sin titular dice «Antes: <persona>», con la fecha en «Desde». El detalle trae la tecnología y «Lecturas», con cuántos marcajes tiene la tarjeta y cuándo y dónde fue el último. El historial del detalle sigue siendo de asignaciones.
@@ -635,12 +649,11 @@ Editar el propio acceso actualiza `/me` para ajustar la navegación.
 **Desvincular cuenta** exige confirmar que la identidad anterior fue desactivada
 en Keycloak: esta operación conserva los roles y no bloquea el acceso.
 
-Desde el contrato 0.22.0 el backend ya resuelve, y el portal todavía no usa:
-la búsqueda `q` y los filtros por rol, estado y permiso de expediente de
-`GET /users`, sus conteos en `GET /users/summary`, y en cada persona
-`dossierPermission` con `dossierPermissionSince`. También `GET /exports` y
-`GET /dossiers` para el historial de Reportes, y los filtros de la bitácora
-con su cuenta acotada en `GET /audit-log/summary`.
+Desde el 11 de noviembre la pantalla usa la búsqueda `q` y los filtros por
+rol, estado y permiso de expediente de `GET /users`, y sus conteos en
+`GET /users/summary` (ver la actualización al inicio). Reportes todavía no
+usa `GET /exports` ni `GET /dossiers` para su historial, ni los filtros de la
+bitácora con su cuenta acotada en `GET /audit-log/summary`.
 Si la cuenta anterior sigue activa con el mismo correo verificado, vuelve
 a vincularse al entrar. Para quitar el acceso a la empresa, deshabilitarlo.
 Ni habilitación ni desvinculación cambian contraseñas o segundo factor.

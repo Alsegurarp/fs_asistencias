@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Alert, Button, Stack, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, apiDownload, ApiError, permissions, type Me } from './api'
-import { EntitySelect, ErrorNotice } from './Directory'
+import { EntitySelect, ErrorNotice } from './legacy'
 import { dateInZone, showTime } from './incidentModel'
 
 export type ExportRecord = { id: string; status: 'queued' | 'ready' | 'expired' | 'failed'; weekStart: string; rowCount: number | null; expiresAt: string | null; fileHash: string | null }
