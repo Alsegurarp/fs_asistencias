@@ -1,9 +1,10 @@
 import { type ReactNode, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Box, ButtonBase, GlobalStyles, Stack, Typography } from '@mui/material'
-import { color, font, shadow } from './design'
+import { color, font, gradient, shadow } from './design'
+import { Icon } from './Icons'
 import { type PaperKey, paperSizes } from './reportsModel'
-import { FilterChip, SelectBox } from './ui'
+import { FilterChip, SelectBox, visuallyHidden } from './ui'
 
 /**
  * Hoja de vista previa de un reporte (REP-03, REP-08): el papel a escala con
@@ -82,3 +83,28 @@ export function FormatSwitch({ value, onChange, options }: { value: string; onCh
 
 /** Abre el diálogo de impresión; ahí se elige «Guardar como PDF». */
 export function printSheet() { window.print() }
+
+/** Los pasos de un asistente de reporte. Sin `onStep`, sólo muestran en cuál va. */
+export function Stepper({ steps, step, enabled = false, onStep, phone }: { steps: string[]; step: number; enabled?: boolean; onStep?: (step: number) => void; phone: boolean }) {
+  return <Box component="nav" aria-label="Pasos del reporte" sx={{ flex: 'none' }}>
+    <Box component="ol" sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+      {steps.map((label, index) => {
+        const n = index + 1
+        const done = n < step
+        const current = n === step
+        return <Box component="li" key={label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ButtonBase component={onStep ? 'button' : 'span'} aria-current={current ? 'step' : undefined} disabled={!onStep || (!current && !done && !enabled)} onClick={() => onStep?.(n)}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1, borderRadius: 999, p: '4px 10px 4px 4px', fontFamily: font, '&.Mui-focusVisible': { outline: `2px solid ${color.accent}` } }}>
+            <Box aria-hidden="true" sx={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700,
+              color: current || done ? color.white : color.muted, background: current ? gradient.badge : done ? color.ok : color.white, border: current || done ? 0 : `2px solid ${color.field}` }}>{done ? <Icon name="check" size={16} strokeWidth={2.4} /> : n}</Box>
+            <Box component="span" sx={{ fontSize: 14, fontWeight: current ? 700 : 600, color: current ? color.ink : done ? color.ok : color.muted, display: phone && !current ? 'none' : undefined }}>
+              {label}{done && <Box component="span" sx={visuallyHidden}> (hecho)</Box>}
+            </Box>
+          </ButtonBase>
+          {n < steps.length && <Box aria-hidden="true" sx={{ width: phone ? 16 : 80, height: 2, borderRadius: 2, background: done ? color.ok : color.field }} />}
+        </Box>
+      })}
+    </Box>
+  </Box>
+}
+

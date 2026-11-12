@@ -94,8 +94,10 @@ it.each(['admin_empresa', 'rh', 'supervisor', 'auditor', 'trabajador'])('el expe
   expect(text()).toContain('sólo lo descarga quien tiene el permiso explícito')
   state.dossier = true; cache.clear()
   await render([role], '/reportes/expediente')
-  if (['admin_empresa', 'rh', 'auditor'].includes(role)) expect(container.querySelector('nav[aria-label="Reportes y expediente"] a[href="/reportes/expediente"]')).not.toBeNull()
-  expect(heading()).toBe('Reportes y expediente')
+  expect(heading()).toMatch(/^Expediente de la empresa · /)
+  // Con el permiso, el inicio de Reportes ofrece el expediente a cualquier rol.
+  await render([role], '/reportes')
+  expect(container.querySelector('a[aria-label="Empezar: Expediente de la empresa"]')?.getAttribute('href')).toBe('/reportes/expediente')
 })
 
 it('sin empresa no hay expediente aunque haya permiso', async () => {
@@ -110,8 +112,8 @@ it('al volver de verificar sin permiso descarta la verificación y lo dice', asy
   expect(heading()).toBe('La verificación fue descartada')
   state.dossier = true; cache.clear()
   await render(['admin_empresa'], '/dossier/callback')
-  expect(heading()).toBe('Reportes y expediente')
-  expect(container.querySelector('a[href="/reportes/expediente"]')?.getAttribute('aria-current')).toBe('page')
+  expect(heading()).toMatch(/^Expediente de la empresa · /)
+  expect(container.querySelector('nav[aria-label="Secciones del portal"] a[href="/reportes"]')?.getAttribute('aria-current')).toBe('page')
 })
 
 it.each(['admin_empresa', 'supervisor', 'trabajador'])('avisa a %s del cambio de comida que viene y sólo si hay uno', async role => {

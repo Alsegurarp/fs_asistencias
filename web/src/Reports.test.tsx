@@ -146,11 +146,22 @@ it('el inicio ofrece lo que el rol puede generar y lo generado hace poco', async
   expect(text()).toContain('Requiere permiso explícito')
   expect([...container.querySelectorAll('section[aria-label="Expediente de la empresa"] a')]).toHaveLength(0)
   expect(rows()).toEqual([
-    ['Reporte para nómina', '26 oct – 1 nov · toda la empresa', 'Rocío Navarro', 'hoy 09:40', 'Listo', 'Vista previaDescargar'],
     ['Reporte para nómina', '26 oct – 1 nov · Bodega Norte', 'Hugo Peña', 'hace 2 min', 'En cola', ''],
+    ['Reporte para nómina', '26 oct – 1 nov · toda la empresa', 'Rocío Navarro', 'hoy 09:40', 'Listo', 'Vista previaDescargar'],
     ['Reporte para nómina', '19 – 25 oct · toda la empresa', 'Rocío Navarro', '27 oct', 'Vencido', 'Vista previaPedir de nuevo'],
     ['Reporte para nómina', '12 – 18 oct · toda la empresa', 'Rocío Navarro', '20 oct', 'Falló', 'Vista previaReintentar'],
   ])
+})
+
+it('con el permiso, las copias del expediente propias se suman a lo reciente', async () => {
+  server.handler = call => {
+    if (call.path === '/me/dossier-permission') return Promise.resolve({ enabled: true })
+    if (call.path.startsWith('/dossiers?')) return Promise.resolve({ items: [{ id: 'd1', status: 'ready', createdAt: '2026-11-10T16:20:00Z', snapshotAt: '2026-11-10T16:20:00Z', expiresAt: '2026-11-11T16:20:00Z', manifestSha256: 'a', fileSha256: 'b' }], nextCursor: null })
+    return defaultServer(call)
+  }
+  await render()
+  expect(text()).toContain('Tienes el permiso explícito')
+  expect(rows()[1]).toEqual(['Expediente de la empresa', 'Corte al 10 nov, 10:20', 'Rocío Navarro', 'hace 22 min', 'Falta confirmar identidad', 'Continuar'])
 })
 
 it('descargar uno listo lo guarda una vez; uno vencido se pide de nuevo', async () => {

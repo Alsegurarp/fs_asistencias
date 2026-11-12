@@ -3,7 +3,11 @@ import { Link } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Box, Button, Stack, Typography, useMediaQuery } from '@mui/material'
 import { api, apiDownload, ApiError, type Me, type Page, permissions } from './api'
+import { timeIn } from './attendanceModel'
 import { color, phoneQuery, shadow } from './design'
+import { dateInZone } from './incidentModel'
+import { shortDay } from './settingsModel'
+import { type Dossier, dossierStatus } from './dossierModel'
 import { saveFile } from './files'
 import { Icon, type IconName } from './Icons'
 import { problemText, useSites } from './personnelData'
@@ -11,6 +15,8 @@ import { type ExportRecord, exportStatusOf, scopeLabel, whenText } from './repor
 import { PageHeader } from './Shell'
 import type { Screen, Section } from './sections'
 import { Badge, Note, Pane, SkeletonRows, tableSx, visuallyHidden } from './ui'
+
+type Row = { kind: 'export'; at: string; record: ExportRecord } | { kind: 'dossier'; at: string; record: Dossier }
 
 type Props = { me: Me; context: string; section: Section; screens: Screen[]; screen: Screen; dossier: boolean }
 
@@ -27,8 +33,16 @@ export function Reports({ me, context, section, screen, dossier }: Props) {
     queryFn: () => api<Page<ExportRecord>>('/exports?limit=8'), refetchInterval: query => query.state.data?.items.some(item => item.status === 'queued') ? 5000 : false })
   const sites = useSites()
   const siteName = (id: string | null) => (id ? sites.data?.find(site => site.id === id)?.name : undefined)
+  // Las copias del expediente que pidió esta cuenta, si tiene el permiso.
+  const dossiers = useQuery({ queryKey: ['dossiers', 'recientes', me.userId], enabled: dossier, retry: false, queryFn: () => api<Page<Dossier>>('/dossiers?limit=5') })
   const latest = exports.data?.items[0]
-  const rows = exports.data?.items || []
+  const rows: Row[] = [
+    ...(exports.data?.items || []).map(record => ({ kind: 'export' as const, at: record.createdAt || '', record })),
+    ...(dossiers.data?.items || []).map(record => ({ kind: 'dossier' as const, at: record.createdAt || '', record })),
+  ].sort((a, b) => b.at.localeCompare(a.at))
+  const pending = (allowed.exports && exports.isPending) || (dossier && dossiers.isPending)
+  const failure = exports.error || dossiers.error
+  const shown = allowed.exports || dossier
   return <>
     <PageHeader context={context} section={section} screens={[screen]} current={screen} title="¿Qué quieres generar?"
       description="elige uno; un asistente te guía y te muestra cómo queda antes de descargar o imprimir" />
@@ -43,21 +57,30 @@ export function Reports({ me, context, section, screen, dossier }: Props) {
         detail="Quién hizo qué y cuándo: personas, lectores y el sistema. Filtra por periodo, por quién actuó, por la acción o por la persona, y sácala en PDF o CSV."
         note="Administración y Auditoría" />}
     </Box>
-    {allowed.exports && <Pane titleId="recientes" title="Generados recientemente" detail="cada descarga queda en la bitácora">
-      {exports.isError ? <Box sx={{ p: 2 }}><Note tone="error">{exports.error instanceof ApiError && exports.error.status === 403 ? 'Tu rol ya no puede consultar los reportes.' : problemText(exports.error, 'No pudimos cargar los reportes.')}</Note></Box>
-        : !exports.isPending && !rows.length ? <Stack spacing={1} sx={{ p: 4, alignItems: 'center', textAlign: 'center' }}>
+    {shown && <Pane titleId="recientes" title="Generados recientemente" detail="cada descarga queda en la bitácora">
+      {failure ? <Box sx={{ p: 2 }}><Note tone="error">{failure instanceof ApiError && failure.status === 403 ? 'Tu rol ya no puede consultar los reportes.' : problemText(failure, 'No pudimos cargar los reportes.')}</Note></Box>
+        : !pending && !rows.length ? <Stack spacing={1} sx={{ p: 4, alignItems: 'center', textAlign: 'center' }}>
           <Typography sx={{ fontWeight: 600 }}>Todavía no se ha generado ningún reporte</Typography>
           <Typography sx={{ fontSize: 13, color: color.muted }}>El primero aparece aquí en cuanto lo pidas.</Typography>
         </Stack> : <Box sx={{ overflowX: 'auto' }}><Box component="table" sx={tableSx}>
           <thead><tr><th scope="col">Tipo</th><th scope="col">Periodo o alcance</th><th scope="col">Pidió</th><th scope="col">Cuándo</th><th scope="col">Estado</th><th scope="col"><Box component="span" sx={visuallyHidden}>Acciones</Box></th></tr></thead>
           <tbody>
-            {exports.isPending ? <SkeletonRows columns={6} rows={3} /> : rows.map(record => <tr key={record.id}>
+            {pending ? <SkeletonRows columns={6} rows={3} /> : rows.map(row => row.kind === 'export' ? <tr key={row.record.id}>
               <td><strong>Reporte para nómina</strong></td>
-              <td>{scopeLabel(record.weekStart, siteName(record.siteId))}</td>
-              <Box component="td" sx={{ color: color.muted }}>{record.requestedByName || '—'}</Box>
-              <Box component="td" sx={{ color: color.muted }}>{record.createdAt ? whenText(record.createdAt, timeZone) : '—'}</Box>
-              <td><Badge tone={exportStatusOf(record).tone}>{exportStatusOf(record).label}</Badge></td>
-              <Box component="td" sx={{ textAlign: 'right' }}><ExportActions record={record} /></Box>
+              <td>{scopeLabel(row.record.weekStart, siteName(row.record.siteId))}</td>
+              <Box component="td" sx={{ color: color.muted }}>{row.record.requestedByName || '—'}</Box>
+              <Box component="td" sx={{ color: color.muted }}>{row.at ? whenText(row.at, timeZone) : '—'}</Box>
+              <td><Badge tone={exportStatusOf(row.record).tone}>{exportStatusOf(row.record).label}</Badge></td>
+              <Box component="td" sx={{ textAlign: 'right' }}><ExportActions record={row.record} /></Box>
+            </tr> : <tr key={row.record.id}>
+              <td><strong>Expediente de la empresa</strong></td>
+              <td>{row.record.snapshotAt ? `Corte al ${shortDay(dateInZone(row.record.snapshotAt, timeZone)).replace(/^\S+ /, '')}, ${timeIn(row.record.snapshotAt, timeZone)}` : 'Toda la información'}</td>
+              <Box component="td" sx={{ color: color.muted }}>{me.displayName}</Box>
+              <Box component="td" sx={{ color: color.muted }}>{row.at ? whenText(row.at, timeZone) : '—'}</Box>
+              <td><Badge tone={row.record.status === 'ready' ? 'warn' : dossierStatus[row.record.status].tone}>{row.record.status === 'ready' ? 'Falta confirmar identidad' : dossierStatus[row.record.status].label}</Badge></td>
+              <Box component="td" sx={{ textAlign: 'right' }}>{['ready', 'queued', 'preparing'].includes(row.record.status)
+                ? <Button size="small" variant="outlined" component={Link} to="/reportes/expediente">Continuar</Button>
+                : <Button size="small" component={Link} to="/reportes/expediente">Preparar otra</Button>}</Box>
             </tr>)}
           </tbody>
         </Box></Box>}
