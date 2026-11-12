@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material'
 import { api, ApiError, type Employee } from './api'
 import {
   type Closure, type Mark, type PersonWeek, type RuleSet, type Schedule, type WeekRow,
-  addDays, dayLabel, dayLines, deviceText, hours, limitHours, markEvidence, markTypes, scheduleSummary, shortDay, shortHash, shortWeekLabel, timeIn, weekContains,
+  addDays, dayLabel, dayLines, deviceText, hours, limitHours, markEvidence, markFlags, markTypes, scheduleSummary, shortDay, shortHash, shortWeekLabel, timeIn, weekContains,
 } from './attendanceModel'
 import { color } from './design'
 import { DoneMark } from './Icons'
@@ -46,7 +46,7 @@ export function PersonSheet({ employeeId, weekStart, today, timeZone, row, siteN
 
   return <SidePanel title={name} subtitle={subtitle} initials={initials(name)} tabs={tabs} tab={tabs.some(item => item.key === tab) ? tab : 'semana'} onTab={onTab} onClose={onClose}>
     {failure ? <Note tone="error">{failure.status === 403 ? 'Esta persona no está en tus sedes o ya no puedes consultarla.' : failure.status === 404 ? 'No encontramos a esta persona en tu empresa.' : `No pudimos cargar su semana. ${failure.message}`}</Note>
-      : tab === 'marcajes' ? <Marks marks={marks.data?.items} loading={marks.isPending} error={marks.error} timeZone={timeZone} siteName={siteName} />
+      : tab === 'marcajes' ? <Marks marks={marks.data?.items} incidents={row?.openIncidents} loading={marks.isPending} error={marks.error} timeZone={timeZone} siteName={siteName} />
         : tab === 'cierres' ? <Closures name={name} results={closures.map(item => item.data?.items)} loading={closures.some(item => item.isPending)} error={closures.find(item => item.error)?.error || null} />
           : <WeekTab week={week.data} loading={week.isPending} row={row} rule={rule} schedule={schedule} today={today} marks={marks.data?.items} siteName={siteName} />}
   </SidePanel>
@@ -116,21 +116,26 @@ function Tile({ value, label, divided }: { value: string; label: string; divided
   </Box>
 }
 
-function Marks({ marks, loading, error, timeZone, siteName }: { marks?: Mark[]; loading: boolean; error: Error | null; timeZone: string; siteName: (id: string | null) => string | undefined }) {
+function Marks({ marks, incidents, loading, error, timeZone, siteName }: { marks?: Mark[]; incidents?: WeekRow['openIncidents']; loading: boolean; error: Error | null; timeZone: string; siteName: (id: string | null) => string | undefined }) {
   if (error) return <Note tone="error">No pudimos cargar los marcajes. {error.message}</Note>
   if (loading || !marks) return <Loading>Cargando los marcajes…</Loading>
   const sorted = [...marks].sort((a, b) => b.observedAt.localeCompare(a.observedAt))
+  // Dos marcas en el mismo minuto se distinguen por los segundos: «16:51:12» y «16:51:17».
+  const minutes = sorted.map(mark => `${dayOf(mark.observedAt, timeZone)} ${timeIn(mark.observedAt, timeZone)}`)
+  const shared = (index: number) => minutes.filter(minute => minute === minutes[index]).length > 1
   return <>
     <Typography sx={{ fontSize: 13, color: color.muted }}>{sorted.length === 1 ? '1 marca' : `${sorted.length} marcas`} de la semana con su evidencia.</Typography>
     {sorted.length > 0 && <Box component="ul" aria-label="Marcajes de la semana" sx={{ listStyle: 'none', m: 0, p: 0 }}>
       {sorted.map((mark, index) => <Box component="li" key={mark.id} sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', py: 1.25, fontSize: 13, borderBottom: index < sorted.length - 1 ? `1px solid ${color.lineSoft}` : 0 }}>
-        <Box sx={{ width: 56, flex: 'none', color: color.muted }}>{shortDay(dayOf(mark.observedAt, timeZone))}<Box sx={{ fontSize: 15, fontWeight: 600, color: color.ink }}>{timeIn(mark.observedAt, timeZone)}</Box></Box>
+        <Box sx={{ width: 56, flex: 'none', color: color.muted }}>{shortDay(dayOf(mark.observedAt, timeZone))}<Box sx={{ fontSize: 15, fontWeight: 600, color: color.ink }}>{timeIn(mark.observedAt, timeZone, shared(index))}</Box></Box>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Box>{markTypes[mark.type]} · {deviceText(mark, siteName)}</Box>
           <Box sx={{ color: color.muted }}>{markEvidence(mark)}</Box>
         </Box>
         {mark.outcome === 'accepted' ? <Badge tone="ok">Aceptada</Badge>
-          : <Badge tone="warn" to={`/incidencias?incidencia=${mark.incidentIds[0]}`}>Con incidencia</Badge>}
+          : <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+            {markFlags(mark, incidents).map(flag => <Badge key={flag.label} tone={flag.tone} to={flag.to}>{flag.label}</Badge>)}
+          </Box>}
       </Box>)}
     </Box>}
     <Note>Una marca no se edita; si falta o sobra, se corrige con una incidencia y queda el ajuste aparte.</Note>

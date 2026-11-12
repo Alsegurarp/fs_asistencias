@@ -122,8 +122,8 @@ export function shortDay(date: string) {
 export function dayOfWeek(date: string): DayOfWeek { return dayKeys[parts(date).weekday] }
 
 /** Hora local de un instante en la zona de la empresa, «07:58». */
-export function timeIn(instant: string, timeZone: string) {
-  return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(instant))
+export function timeIn(instant: string, timeZone: string, seconds = false) {
+  return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', ...(seconds ? { second: '2-digit' } : {}), hourCycle: 'h23' }).format(new Date(instant))
 }
 
 export function todayIn(timeZone: string, now = new Date()) { return dateInZone(now.toISOString(), timeZone) }
@@ -194,7 +194,8 @@ const alertLabels: Record<string, string> = {
   break_computability_unverified: 'Descanso por confirmar',
 }
 
-export type Flag = { label: string; tone: Tone; incidentId?: string }
+/** `to`: la incidencia, o la lista de Incidencias de esa persona y ese tipo cuando son varias. */
+export type Flag = { label: string; tone: Tone; to?: string }
 
 /**
  * La columna «Atención»: incidencias abiertas, un tramo sin salida que ya no
@@ -204,9 +205,13 @@ export function attentionFlags(row: WeekRow, overtimeMaxDays?: number): Flag[] {
   const flags: Flag[] = []
   const onShift = row.today?.state === 'on_shift' || row.today?.state === 'on_break'
   if (row.alerts.some(alert => alert.code === 'open_segment') && !onShift) flags.push({ label: 'Tramo sin salida', tone: 'error' })
-  for (const incident of row.openIncidents) {
-    const known = incidentLabels[incident.type] || { label: 'Incidencia abierta', tone: 'neutral' as Tone }
-    flags.push({ ...known, incidentId: incident.id })
+  // Una etiqueta por tipo: «Ubicación no concluyente (5)», no cinco iguales.
+  const byType = new Map<string, string[]>()
+  for (const incident of row.openIncidents) byType.set(incident.type, [...byType.get(incident.type) || [], incident.id])
+  for (const [type, ids] of byType) {
+    const known = incidentLabels[type] || { label: 'Incidencia abierta', tone: 'neutral' as Tone }
+    const to = ids.length === 1 ? `/incidencias?incidencia=${ids[0]}` : `/incidencias?${new URLSearchParams({ q: row.externalId, tipo: type })}`
+    flags.push({ ...known, label: ids.length === 1 ? known.label : `${known.label} (${ids.length})`, to })
   }
   const seen = new Set<string>()
   for (const alert of row.alerts) {
@@ -221,6 +226,22 @@ export function attentionFlags(row: WeekRow, overtimeMaxDays?: number): Flag[] {
   }
   const rank: Record<Tone, number> = { error: 0, warn: 1, neutral: 2, info: 3, ok: 4 }
   return flags.sort((a, b) => rank[a.tone] - rank[b.tone])
+}
+
+/**
+ * Las etiquetas de una marca en «Marcajes»: qué incidencia abierta tiene
+ * («Lectura duplicada», «Ubicación no concluyente»), cada una a su incidencia.
+ * Si la incidencia ya no está abierta, queda «Con incidencia».
+ */
+export function markFlags(mark: Pick<Mark, 'incidentIds'>, openIncidents: { id: string; type: string }[] = []): Flag[] {
+  const flags: Flag[] = []
+  for (const id of mark.incidentIds) {
+    const type = openIncidents.find(incident => incident.id === id)?.type
+    const known = type ? incidentLabels[type] || { label: 'Incidencia abierta', tone: 'neutral' as Tone } : { label: 'Con incidencia', tone: 'warn' as Tone }
+    if (!flags.some(flag => flag.label === known.label)) flags.push({ ...known, to: `/incidencias?incidencia=${id}` })
+  }
+  const rank: Record<Tone, number> = { error: 0, warn: 1, neutral: 2, info: 3, ok: 4 }
+  return flags.length ? flags.sort((a, b) => rank[a.tone] - rank[b.tone]) : [{ label: 'Con incidencia', tone: 'warn' }]
 }
 
 export type DayLine = {
