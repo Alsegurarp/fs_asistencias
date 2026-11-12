@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.35.0
+  version: 0.36.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -440,6 +440,13 @@ paths:
       tags: [identidad]
       operationId: getCurrentUser
       summary: Devuelve la persona autenticada, su empresa y sus roles
+      description: |
+        Una cuenta válida sin acceso vigente responde sin empresa ni roles.
+        Desde 0.36.0, `access` dice por qué: `none` si nadie la ha invitado
+        o su acceso se deshabilitó, y `suspended` si su empresa está
+        suspendida y la persona conservaba su acceso; sólo entonces
+        `suspendedTenantName` trae el nombre de la empresa. La suspensión
+        no devuelve ningún permiso: las demás rutas siguen respondiendo 403.
       x-roles: [operador_saas, admin_empresa, rh, supervisor, trabajador, auditor]
       responses:
         "200":
@@ -460,6 +467,8 @@ paths:
                   breakPolicy: not_considered
                   upcomingBreakPolicy: null
                 employeeId: null
+                access: active
+                suspendedTenantName: null
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -5650,7 +5659,7 @@ components:
 
     CurrentUser:
       type: object
-      required: [userId, displayName, roles, tenant, employeeId]
+      required: [userId, displayName, roles, tenant, employeeId, access, suspendedTenantName]
       properties:
         userId:
           type: string
@@ -5676,6 +5685,18 @@ components:
           type: [string, "null"]
           format: uuid
           description: Presente cuando la persona también está en el padrón.
+        access:
+          type: string
+          enum: [active, suspended, none]
+          description: >-
+            Desde 0.36.0. `active` con acceso vigente; `suspended` cuando su
+            empresa está suspendida; `none` sin invitación o con el acceso
+            deshabilitado. En los dos últimos, `tenant` es nulo y `roles`, vacío.
+        suspendedTenantName:
+          type: [string, "null"]
+          description: >-
+            Desde 0.36.0. Nombre de la empresa suspendida, sólo con `access`
+            en `suspended`.
     BreakPolicy:
       type: string
       enum: [not_considered, marked]

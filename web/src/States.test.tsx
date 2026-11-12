@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { ThemeProvider } from '@mui/material'
 import { theme } from './theme'
-import { NoCompany, SessionEnded } from './States'
+import { CompanySuspended, NoCompany, SessionEnded } from './States'
 import { accessibilityViolations } from './accessibility'
 
 let container: HTMLDivElement
@@ -32,5 +32,18 @@ it('la cuenta sin empresa dice con qué correo entró y permite salir', async ()
   expect(signOut).toHaveBeenCalledOnce()
   await render(<NoCompany onSignOut={signOut} />)
   expect(container.textContent).toContain('Entraste, pero ninguna empresa')
+  expect(await accessibilityViolations(container)).toEqual([])
+})
+
+it('la empresa suspendida dice cuál es, qué sigue funcionando y permite salir', async () => {
+  const signOut = vi.fn()
+  await render(<CompanySuspended company="Panificadora Ejemplo" onSignOut={signOut} />)
+  expect(container.querySelector('h1')?.textContent).toBe('Tu empresa está suspendida')
+  expect(container.textContent).toContain('Panificadora Ejemplo tiene el servicio de Zenit suspendido')
+  expect(container.textContent).toContain('siguen registrando las marcas')
+  await act(async () => button('Cerrar sesión').click())
+  expect(signOut).toHaveBeenCalledOnce()
+  await render(<CompanySuspended onSignOut={signOut} />)
+  expect(container.textContent).toContain('Tu empresa tiene el servicio de Zenit suspendido')
   expect(await accessibilityViolations(container)).toEqual([])
 })

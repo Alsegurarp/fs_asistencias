@@ -1,13 +1,15 @@
 # Estado y pendientes
 
-**Despliegue y recorrido, 12 de noviembre:** el ambiente publicado corre
-`a5ca133` (PR #58), con todo lo integrado desde el 9 de noviembre, el
-contrato 0.33.0 y las migraciones hasta V021. La dirección pública no
-responde: los registros DNS de `fastsolution.com.mx`, `www` y `zenit`
-apuntan a una dirección que ya no es la del servidor y hay que corregirlos
-en el panel del dominio. El portal se recorrió en local por rol, 190 vistas
-sin errores; el único defecto, un desborde en teléfono de Lectores y
-Usuarios, está corregido en la rama `fix/portal-desborde-telefono`
+**Despliegue, recorrido y empresa suspendida, 12 de noviembre:** el ambiente
+publicado corre `3b61b79` (PR #60), con todo lo integrado hasta ese día, el
+contrato 0.35.0 y las migraciones hasta V023. Los registros DNS ya apuntan
+a la dirección actual del servidor; el cambio tarda hasta un día en llegar a
+todos los resolutores. El portal se recorrió en local por rol, 190 vistas
+sin errores, y se probaron sus acciones principales como Administración
+(horario, alta, sede, invitar, tarjeta, lector, buscador, bitácora, permiso
+del expediente y avisos); faltan importar CSV y el reporte para nómina con
+una semana cerrada. La rama `feat/me-empresa-suspendida` (contrato 0.36.0)
+hace que `/me` distinga la empresa suspendida y que el portal lo diga
 ([bitácora](bitacora-trabajo.md)).
 
 **Tarjetas del piloto, 10 de noviembre (contrato 0.30.0):** decidido usar las

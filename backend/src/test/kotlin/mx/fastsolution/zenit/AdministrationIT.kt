@@ -53,7 +53,14 @@ class AdministrationIT : WorkdayTestBase() {
         // Cerrada para su gente...
         assertProblem(403, "forbidden", call("GET", "/api/v1/tenant", c.adminToken))
         assertProblem(403, "forbidden", call("GET", "/api/v1/employees", rh.token))
-        assertEquals(emptyList(), call("GET", "/api/v1/me", c.adminToken).list("roles"))
+        val suspendedMe = call("GET", "/api/v1/me", c.adminToken)
+        assertEquals(emptyList(), suspendedMe.list("roles"))
+        // ...pero sabe por qué: su empresa está suspendida, y cuál es.
+        assertEquals("suspended", suspendedMe.at<String>("access"))
+        assertEquals(1, count("select count(*) from tenant where id = ? and name = ?", UUID.fromString(c.id), suspendedMe.at<String>("suspendedTenantName")))
+        // La otra empresa y quien opera siguen con acceso vigente y sin ese nombre.
+        assertEquals("active", call("GET", "/api/v1/me", other.adminToken).at<String>("access"))
+        assertEquals("active", call("GET", "/api/v1/me", operator).at<String>("access"))
         // Los dispositivos ya vinculados conservan captura y sincronización.
         assertEquals(201, mark(phone, card, Instant.now().minusSeconds(300)).status)
         val renewed = call("POST", "/api/v1/device-sessions", assertion(phone), """{"appVersion":"0.1.0"}""")

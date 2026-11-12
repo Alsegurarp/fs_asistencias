@@ -21,6 +21,11 @@ data class CurrentPerson(
     /** Su fila del padrón, cuando la persona también es trabajadora. */
     val employeeId: UUID? = null,
     val siteIds: Set<UUID> = emptySet(),
+    /**
+     * Nombre de su empresa cuando está suspendida y la persona conservaba su
+     * acceso. No da empresa ni roles: sólo permite decírselo.
+     */
+    val suspendedTenantName: String? = null,
 ) : AuthenticatedPrincipal {
     override fun getName(): String = subject
 

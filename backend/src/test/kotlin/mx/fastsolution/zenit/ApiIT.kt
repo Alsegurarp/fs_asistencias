@@ -239,6 +239,8 @@ class ApiIT : ApiTestBase() {
         assertProblem(403, "forbidden", call("GET", "/api/v1/tenant", rh.token))
         val me = call("GET", "/api/v1/me", rh.token)
         assertEquals(emptyList(), me.list("roles"))
+        // Sin invitación no hay suspensión que contar: ni estado ni nombre de empresa.
+        assertEquals(listOf("none", null), listOf<String?>(me.at("access"), me.at("suspendedTenantName")))
         assertNull(me.at<Any?>("tenant"))
 
         assertEquals("active", call("PATCH", "/api/v1/users/${rh.id}", c.adminToken, """{"disabled":false}""").at("status"))
@@ -267,6 +269,7 @@ class ApiIT : ApiTestBase() {
         assertProblem(403, "forbidden", call("GET", "/api/v1/tenant", c.adminToken))
         assertProblem(403, "forbidden", call("GET", "/api/v1/users", c.adminToken))
         assertEquals(emptyList(), call("GET", "/api/v1/me", c.adminToken).list("roles"))
+        assertEquals("suspended", call("GET", "/api/v1/me", c.adminToken).at<String>("access"))
     }
 
     @Test

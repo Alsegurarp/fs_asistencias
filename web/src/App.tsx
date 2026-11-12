@@ -6,7 +6,7 @@ import { ApiError, api, type Me } from './api'
 import { Portal } from './Portal'
 import { clearDossierVerification } from './dossierFlow'
 import { gradient } from './design'
-import { FullPageLoading, IdentityUnavailable, NoCompany, SessionEnded, StateCard } from './States'
+import { CompanySuspended, FullPageLoading, IdentityUnavailable, NoCompany, SessionEnded, StateCard } from './States'
 import { sessionEndedPath } from './sections'
 
 type Session = 'starting' | 'signedIn' | 'signedOut' | 'ended' | 'unavailable'
@@ -66,6 +66,7 @@ export function App() {
     </StateCard>
   </Box>
   const email = typeof auth.tokenParsed?.email === 'string' ? auth.tokenParsed.email : undefined
+  if (me.data.access === 'suspended') return <CompanySuspended company={me.data.suspendedTenantName} onSignOut={signOut} />
   if (!me.data.tenant && !me.data.roles.includes('operador_saas')) return <NoCompany email={email} onSignOut={signOut} />
   return <Portal me={me.data} email={email} onSignOut={signOut} notice={notice && <Alert severity="error">{notice}</Alert>} />
 }

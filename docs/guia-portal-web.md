@@ -344,7 +344,8 @@ Lo primero es `GET /api/v1/me`:
 
 | Respuesta | Qué mostrar |
 | --- | --- |
-| `tenant` nulo y sin roles | La cuenta existe pero nadie la ha invitado: una pantalla que lo explique |
+| `tenant` nulo y sin roles, `access` en `none` | La cuenta existe pero nadie la ha invitado: una pantalla que lo explique |
+| `access` en `suspended` (contrato 0.36.0) | «Tu empresa está suspendida», con `suspendedTenantName`, lo que sigue funcionando y cerrar sesión |
 | Rol `operador_saas` | Alta, lista, reactivación y uso mensual de empresas; sin datos internos |
 | Roles de empresa | El menú que corresponde a sus roles, con el nombre de la empresa |
 

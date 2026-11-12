@@ -60,6 +60,16 @@ export function NoCompany({ email, onSignOut }: { email?: string; onSignOut: () 
   </BrandLayout>
 }
 
+/** EST-02: la empresa de la persona está suspendida; el portal no abre hasta reactivarla. */
+export function CompanySuspended({ company, onSignOut }: { company?: string | null; onSignOut: () => void }) {
+  return <BrandLayout icon="pause" title="Tu empresa está suspendida"
+    lead={`${company || 'Tu empresa'} tiene el servicio de Zenit suspendido. El portal no está disponible hasta que se reactive.`}>
+    <Note>Los lectores y teléfonos que ya estaban activados siguen registrando las marcas: nada se pierde y todo estará aquí al reactivar.</Note>
+    <Note>Para reactivar el servicio, quien administra tu empresa debe ponerse en contacto con Zenit.</Note>
+    <Button variant="outlined" sx={{ minHeight: 46 }} onClick={onSignOut}>Cerrar sesión</Button>
+  </BrandLayout>
+}
+
 /** No se pudo hablar con el servicio de identidad: no hay sesión que mostrar. */
 export function IdentityUnavailable() {
   return <BrandLayout icon="alert" title="No pudimos conectar con el inicio de sesión" lead="El servicio que verifica tu cuenta no respondió. Intenta de nuevo en un momento.">
