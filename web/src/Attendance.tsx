@@ -254,8 +254,7 @@ function Muted({ children }: { children: React.ReactNode }) { return <Box compon
 function Flags({ flags }: { flags: ReturnType<typeof attentionFlags> }) {
   if (!flags.length) return <Muted>—</Muted>
   return <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-    {flags.slice(0, 2).map(flag => <Badge key={`${flag.label}-${flag.incidentId || ''}`} tone={flag.tone}
-      to={flag.incidentId ? `/incidencias?incidencia=${flag.incidentId}` : undefined}>{flag.label}</Badge>)}
+    {flags.slice(0, 2).map(flag => <Badge key={flag.label} tone={flag.tone} to={flag.to}>{flag.label}</Badge>)}
     {flags.length > 2 && <Box component="span" sx={{ fontSize: 12, color: color.muted }} title={flags.slice(2).map(flag => flag.label).join(', ')}>+{flags.length - 2}</Box>}
   </Stack>
 }

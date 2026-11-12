@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { type PersonWeek, type ScheduleDay, type WeekRow, attentionFlags, csv, dayLines, delay, hours, scheduleSummary, shortHash, weekLabel, weekProgress } from './attendanceModel'
+import { type PersonWeek, type ScheduleDay, type WeekRow, attentionFlags, csv, dayLines, markFlags, delay, hours, scheduleSummary, shortHash, weekLabel, weekProgress } from './attendanceModel'
 
 it('escribe minutos como horas y minutos', () => {
   expect([hours(1920), hours(190), hours(0), hours(5), hours(-65)]).toEqual(['32:00', '3:10', '0:00', '0:05', '-1:05'])
@@ -63,6 +63,17 @@ it('lo que pide atención va primero; el turno en curso no es un tramo sin salid
   expect(attentionFlags({ ...base, alerts: [{ code: 'codigo_nuevo', severity: 'critical', message: '' }], totals: { ...base.totals, overtimeMinutes: 0 } })).toEqual([])
 })
 
+it('las incidencias del mismo tipo salen juntas, con su número y la lista de esa persona', () => {
+  const row: WeekRow = { employeeId: 'e', externalId: 'PIL-001', displayName: 'P', siteId: null, scheduleId: null, ruleSet: { id: 'r', version: 1 }, closure: null, today: null,
+    totals: { workedMinutes: 1, breakMinutes: 0, ordinaryMinutes: 1, overtimeMinutes: 0 }, alerts: [],
+    openIncidents: [{ id: 'a', type: 'location_inconclusive' }, { id: 'b', type: 'duplicate' }, { id: 'c', type: 'location_inconclusive' }, { id: 'd', type: 'missing_pair' }] }
+  expect(attentionFlags(row).map(flag => [flag.label, flag.to])).toEqual([
+    ['Falta un marcaje', '/incidencias?incidencia=d'],
+    ['Ubicación no concluyente (2)', '/incidencias?q=PIL-001&tipo=location_inconclusive'],
+    ['Lectura duplicada', '/incidencias?incidencia=b'],
+  ])
+})
+
 it('el CSV escapa comillas y neutraliza fórmulas', () => {
   expect(csv([['=1+1', 'a,b', 'dijo "hola"', '-5', null]])).toBe('﻿\'=1+1,"a,b","dijo ""hola""",\'-5,\r\n')
   expect(shortHash(`9f3a${'0'.repeat(56)}c21e`)).toBe('9f3a…c21e')
@@ -70,4 +81,14 @@ it('el CSV escapa comillas y neutraliza fórmulas', () => {
 
 it('dice cuánto tardó en llegar una marca en la unidad que se lee', () => {
   expect([delay(360), delay(3600), delay(56_700), delay(3 * 86_400)]).toEqual(['6 min', '1 h', '15 h 45 min', '3 días'])
+})
+
+it('cada marca dice qué incidencia tiene, una vez por tipo', () => {
+  const open = [{ id: 'a', type: 'duplicate' }, { id: 'b', type: 'location_inconclusive' }, { id: 'c', type: 'missing_pair' }]
+  expect(markFlags({ incidentIds: ['b', 'a'] }, open).map(flag => [flag.label, flag.to])).toEqual([
+    ['Ubicación no concluyente', '/incidencias?incidencia=b'], ['Lectura duplicada', '/incidencias?incidencia=a']])
+  expect(markFlags({ incidentIds: ['b', 'c'] }, open).map(flag => flag.label)).toEqual(['Falta un marcaje', 'Ubicación no concluyente'])
+  // Resuelta o sin incidencia conocida: la etiqueta de siempre.
+  expect(markFlags({ incidentIds: ['z'] }, open).map(flag => flag.label)).toEqual(['Con incidencia'])
+  expect(markFlags({ incidentIds: [] }).map(flag => [flag.label, flag.to])).toEqual([['Con incidencia', undefined]])
 })
