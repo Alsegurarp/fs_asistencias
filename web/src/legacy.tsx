@@ -3,8 +3,8 @@ import { ApiError } from './api'
 import { showTime, type Week } from './incidentModel'
 
 /**
- * Piezas de las pantallas anteriores que todavía usan el expediente, la Consola
- * y Mi asistencia. Se retiran con la última de ellas.
+ * Piezas de las pantallas anteriores que todavía usan la Consola y Mi
+ * asistencia. Se retiran con la última de ellas.
  */
 
 export function WeekSummary({ week }: { week: Week }) {

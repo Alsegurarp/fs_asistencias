@@ -1,5 +1,8 @@
 # Guía del portal web
 
+**Actualización del 11 de noviembre, Expediente (sin cambios al contrato):**
+- **Expediente (REP-05 y 06):** `/reportes/expediente`, para quien tenga el permiso explícito, en tres pasos: preparar la copia (`POST /dossiers`, se actualiza sola mientras se prepara), confirmar la identidad (el desafío y la vuelta por `/dossier/callback`, sin cambios) y descargar el ZIP una vez. «Qué incluye esta copia» y la carátula para imprimir salen del manifiesto (`GET /dossiers/{id}/manifest`), con sus 23 tablas agrupadas en 13 secciones y sus limitaciones. Muestra las copias propias anteriores y, a Administración, quién puede descargarlo (`GET /users?dossierPermission=true`).
+
 **Actualización del 11 de noviembre, Bitácora (sin cambios al contrato):**
 - **Bitácora (REP-07 y 08):** `/reportes/bitacora`, para Administración y Auditoría. Filtros en la dirección: `?desde=` y `?hasta=` (días de la empresa; por omisión los últimos 30), `?quien=` (`user`, `device` o `system`), `?accion=` (el grupo del servidor) y `?persona=`. Muestra cuántas acciones hay (o «más de N») y las lista de 12 en 12. `?vista=previa` arma la hoja para imprimir o guardar como PDF, o el CSV, con la lista completa (hasta 4,000).
 - **Frases de la bitácora:** `auditModel.ts` dice cada acción en palabras con su `metadata`; una acción nueva aparece con su código. El Panel usa las mismas frases.
