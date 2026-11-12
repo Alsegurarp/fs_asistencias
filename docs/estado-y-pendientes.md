@@ -1,5 +1,16 @@
 # Estado y pendientes
 
+**Despliegue, 12 de noviembre:** el ambiente publicado sigue en `6faf0d7`;
+nada de lo integrado desde el 9 de noviembre (PR #42 a #55) está desplegado.
+El primer intento con `71ee1f9` falló porque el servidor no conocía el
+secreto `pilot_card_key`; la rama `fix/despliegue-clave-piloto-y-tomcat` lo
+corrige, sube Tomcat a 11.0.27 para que el análisis de imágenes vuelva a
+pasar y repite una vez el build de Android si falla la red. Además, la
+dirección pública no responde: los registros DNS de `fastsolution.com.mx`,
+`www` y `zenit` apuntan a una dirección que ya no es la del servidor y hay
+que corregirlos en el panel del dominio
+([bitácora](bitacora-trabajo.md)).
+
 **Tarjetas del piloto, 10 de noviembre (contrato 0.30.0):** decidido usar las
 MIFARE Classic 1K disponibles hasta comprar DESFire EV3. La tarjeta guarda
 sólo un código aleatorio con la firma del servidor ligada a su identificador,

@@ -137,3 +137,5 @@ secrets:
     file: ${ZENIT_SECRETOS}/keycloak.conf
   operator_emails:
     file: ${ZENIT_SECRETOS}/operator_emails
+  pilot_card_key:
+    file: ${ZENIT_SECRETOS}/pilot_card_key
