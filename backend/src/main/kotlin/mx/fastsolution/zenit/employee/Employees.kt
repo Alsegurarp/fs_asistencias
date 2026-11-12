@@ -1,6 +1,9 @@
 package mx.fastsolution.zenit.employee
 
 import mx.fastsolution.zenit.api.Checks
+import mx.fastsolution.zenit.site.SiteRow
+import mx.fastsolution.zenit.device.DeviceRepository
+import mx.fastsolution.zenit.capture.CaptureMethods
 import mx.fastsolution.zenit.api.Conflicts
 import mx.fastsolution.zenit.api.Page
 import mx.fastsolution.zenit.api.PageKey
@@ -49,6 +52,8 @@ data class EmployeeRow(
     val activeCardLabel: String?,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+    /** Cómo marca: con su tarjeta (`card`) o con su teléfono (`phone`). */
+    val captureMethod: String = "card",
 )
 
 data class ScheduleAssignmentRow(val id: UUID, val employeeId: UUID, val scheduleId: UUID, val validFrom: LocalDate, val validTo: LocalDate?)
@@ -58,6 +63,8 @@ class EmployeeCreateRequest {
     var displayName: String? = null
     var siteId: String? = null
     var employmentStart: String? = null
+    /** Opcional: si no viene, la tarjeta cuando la sede la admite y si no el teléfono. */
+    var captureMethod: String? = null
 }
 
 class ScheduleAssignmentRequest {
@@ -79,6 +86,7 @@ data class EmployeeView(
     val activeCardLabel: String?,
     val createdAt: String,
     val updatedAt: String,
+    val captureMethod: String,
 ) {
     companion object {
         fun of(row: EmployeeRow) = EmployeeView(
@@ -95,6 +103,7 @@ data class EmployeeView(
             activeCardLabel = row.activeCardLabel,
             createdAt = row.createdAt.toInstant().toString(),
             updatedAt = row.updatedAt.toInstant().toString(),
+            captureMethod = row.captureMethod,
         )
     }
 }
@@ -125,12 +134,23 @@ data class EmployeeSummaryView(
 
 @Repository
 class EmployeeRepository(private val dsl: DSLContext) {
-    fun insert(tenantId: UUID, id: UUID, externalId: String, displayName: String, siteId: UUID?, start: LocalDate, source: String) {
+    /** Sin forma de marcar, la tarjeta cuando la sede (y el plan) la admiten; si no, el teléfono. */
+    fun insert(
+        tenantId: UUID, id: UUID, externalId: String, displayName: String, siteId: UUID?, start: LocalDate, source: String,
+        captureMethod: String? = null,
+    ) {
         dsl.execute(
-            "insert into employee (tenant_id, id, external_id, display_name, status, site_id, employment_start, source) " +
-                "values (?, ?, ?, ?, 'active', cast(? as uuid), cast(? as date), ?)",
-            tenantId, id, externalId, displayName, siteId, start.toString(), source,
+            "insert into employee (tenant_id, id, external_id, display_name, status, site_id, employment_start, source, capture_method) " +
+                "values (?, ?, ?, ?, 'active', cast(? as uuid), cast(? as date), ?, coalesce(cast(? as text), " +
+                "(select case when 'card_terminal' = any(t.capture_methods) and " +
+                "(s.capture_methods is null or 'card_terminal' = any(s.capture_methods)) then 'card' else 'phone' end " +
+                "from tenant t left join site s on s.tenant_id = t.id and s.id = cast(? as uuid) where t.id = ?)))",
+            tenantId, id, externalId, displayName, siteId, start.toString(), source, captureMethod, siteId, tenantId,
         )
+    }
+
+    fun setCaptureMethod(tenantId: UUID, id: UUID, method: String) {
+        dsl.execute("update employee set capture_method = ?, updated_at = now() where tenant_id = ? and id = ?", method, tenantId, id)
     }
 
     fun find(tenantId: UUID, id: UUID): EmployeeRow? =
@@ -278,6 +298,7 @@ class EmployeeRepository(private val dsl: DSLContext) {
         activeCardLabel = r.get("active_card_label", String::class.java),
         createdAt = r.get("created_at", OffsetDateTime::class.java),
         updatedAt = r.get("updated_at", OffsetDateTime::class.java),
+        captureMethod = r.get("capture_method", String::class.java),
     )
 
     private companion object {
@@ -294,7 +315,7 @@ class EmployeeRepository(private val dsl: DSLContext) {
         const val SELECT =
             "select e.id, e.external_id, e.display_name, e.status, e.site_id, " +
                 "cast(e.employment_start as text) as employment_start, cast(e.employment_end as text) as employment_end, " +
-                "e.source, e.created_at, e.updated_at, cs.schedule_id as current_schedule_id, ca.card_id as active_card_id, " +
+                "e.source, e.created_at, e.updated_at, e.capture_method, cs.schedule_id as current_schedule_id, ca.card_id as active_card_id, " +
                 "cd.label as active_card_label $FROM"
         const val ASSIGNMENT =
             "select id, employee_id, schedule_id, cast(valid_from as text) as valid_from, " +
@@ -308,6 +329,7 @@ class EmployeeService(
     private val sites: SiteRepository,
     private val schedules: ScheduleRepository,
     private val cards: CardRepository,
+    private val devices: DeviceRepository,
     private val tenants: TenantRepository,
     private val audit: AuditLog,
 ) {
@@ -319,13 +341,18 @@ class EmployeeService(
         val displayName = checks.text("displayName", request.displayName, MAX_NAME, required = true)
         val siteId = checks.uuid("siteId", request.siteId, required = false)
         val start = checks.date("employmentStart", request.employmentStart, required = true)
+        val method = checks.oneOf("captureMethod", request.captureMethod, CaptureMethods.PERSON, required = false)
         // Una sede de otra empresa no existe para quien pregunta.
-        if (siteId != null && sites.find(tenantId, siteId) == null) checks.fail("siteId", "site_not_found", "La sede no existe.")
+        val site = siteId?.let { sites.find(tenantId, it) }
+        if (siteId != null && site == null) checks.fail("siteId", "site_not_found", "La sede no existe.")
+        if (method != null && !admits(tenantId, site, method)) {
+            checks.fail("captureMethod", "capture_method_not_allowed", notAllowed(method))
+        }
         checks.done()
 
         val id = UUID.randomUUID()
         try {
-            employees.insert(tenantId, id, externalId!!, displayName!!, siteId, start!!, "manual")
+            employees.insert(tenantId, id, externalId!!, displayName!!, siteId, start!!, "manual", method)
         } catch (e: RuntimeException) {
             throw if (Conflicts.uniqueConstraint(e) == Conflicts.EMPLOYEE_EXTERNAL_ID) Conflicts.externalIdTaken() else e
         }
@@ -394,8 +421,21 @@ class EmployeeService(
         val status = if ("status" in body) checks.oneOf("status", body["status"] as String?, STATUSES, required = true) else before.status
         val siteId = if ("siteId" in body) checks.uuid("siteId", body["siteId"] as String?, required = false) else before.siteId
         val end = if ("employmentEnd" in body) checks.date("employmentEnd", body["employmentEnd"] as String?, required = false) else before.employmentEnd
-        if ("siteId" in body && siteId != null && sites.find(tenantId, siteId) == null) {
+        val method = if ("captureMethod" in body) {
+            checks.oneOf("captureMethod", body["captureMethod"] as String?, CaptureMethods.PERSON, required = true)
+        } else {
+            before.captureMethod
+        }
+        val site = siteId?.let { sites.find(tenantId, it) }
+        if ("siteId" in body && siteId != null && site == null) {
             checks.fail("siteId", "site_not_found", "La sede no existe.")
+        } else if (method != null && ("captureMethod" in body || "siteId" in body) && !admits(tenantId, site, method)) {
+            // Cambiar de sede no deja a la persona sin poder marcar.
+            if ("captureMethod" in body) {
+                checks.fail("captureMethod", "capture_method_not_allowed", notAllowed(method))
+            } else {
+                checks.fail("siteId", "capture_method_not_allowed", "Esa sede no admite la forma con la que marca esta persona.")
+            }
         }
         if (end != null && end < before.employmentStart) {
             checks.fail("employmentEnd", "before_start", "No puede ser anterior al inicio de la relación.")
@@ -420,6 +460,7 @@ class EmployeeService(
             }
             employees.endAssignments(tenantId, id, end!!)
         }
+        if (method != before.captureMethod) changeCaptureMethod(person, tenantId, id, before.captureMethod, method!!)
         val action = when {
             status == before.status -> "employee.updated"
             status == "inactive" -> "employee.deactivated"
@@ -427,6 +468,33 @@ class EmployeeService(
         }
         audit.record(tenantId, person, action, "employee", id, mapOf("fields" to body.keys.sorted().joinToString(",")))
         return employees.find(tenantId, id)!!
+    }
+
+    /** El plan de la empresa y la sede (o, sin sede, todo el plan) admiten esa forma de marcar. */
+    private fun admits(tenantId: UUID, site: SiteRow?, method: String): Boolean =
+        CaptureMethods.of(method) in CaptureMethods.effective(tenants.find(tenantId)!!.captureMethods, site?.captureMethods)
+
+    private fun notAllowed(method: String) =
+        if (method == "phone") "El plan o la sede no admiten marcar con el teléfono." else "El plan o la sede no admiten marcar con tarjeta."
+
+    /**
+     * Una persona marca de una sola forma. Al pasar al teléfono se revoca su
+     * tarjeta; al pasar a la tarjeta, su teléfono. Todo queda en la bitácora.
+     */
+    private fun changeCaptureMethod(person: CurrentPerson, tenantId: UUID, id: UUID, from: String, to: String) {
+        employees.setCaptureMethod(tenantId, id, to)
+        if (to == "phone") {
+            cards.openAssignmentOfEmployee(tenantId, id)?.let { assignment ->
+                cards.setStatus(tenantId, assignment.cardId, "revoked")
+                cards.closeAssignmentOfCard(tenantId, assignment.cardId)
+                audit.record(tenantId, person, "card.revoked", "card", assignment.cardId, mapOf("reason" to "capture_method_changed"))
+            }
+        } else {
+            devices.revokeActivePersonal(tenantId, id).forEach {
+                audit.record(tenantId, person, "device.revoked", "device", it, mapOf("reason" to "capture_method_changed"))
+            }
+        }
+        audit.record(tenantId, person, "employee.capture_method_changed", "employee", id, mapOf("from" to from, "to" to to))
     }
 
     /** Asigna un horario desde una fecha y cierra el anterior el día previo. */
@@ -469,7 +537,7 @@ class EmployeeService(
         const val MAX_EXTERNAL_ID = 64
         const val MAX_NAME = 160
         val STATUSES = setOf("active", "inactive")
-        val UPDATABLE = setOf("displayName", "siteId", "status", "employmentEnd")
+        val UPDATABLE = setOf("displayName", "siteId", "status", "employmentEnd", "captureMethod")
     }
 }
 

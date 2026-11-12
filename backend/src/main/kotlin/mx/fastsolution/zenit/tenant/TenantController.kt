@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -30,6 +31,8 @@ data class TenantView(
     val autoCloseAfterHours: Int?,
     /** El cambio de la política de comida que todavía no entra, si hay uno. */
     val breakPolicyChange: BreakPolicyChangeView?,
+    /** Las formas de marcar del plan; las fija la operación del servicio. */
+    val captureMethods: List<String>,
 ) {
     companion object {
         /** `breakPolicy` es la que vale hoy en la empresa, no la de su alta: la da `BreakPolicies`. */
@@ -44,6 +47,7 @@ data class TenantView(
             createdAt = row.createdAt.toInstant().toString(),
             autoCloseAfterHours = row.autoCloseAfterHours,
             breakPolicyChange = change,
+            captureMethods = row.captureMethods,
         )
     }
 }
@@ -245,6 +249,13 @@ class TenantController(private val service: TenantService, private val policies:
     ) {
         service.unlinkAdministrator(operator, tenantId, request)
     }
+
+    @PutMapping("/tenants/{tenantId}/capture-methods")
+    fun setCaptureMethods(
+        @AuthenticationPrincipal operator: CurrentPerson,
+        @PathVariable tenantId: UUID,
+        @RequestBody request: Map<String, Any?>,
+    ): TenantView = policies.view(service.setCaptureMethods(operator, tenantId, request))
 
     @GetMapping("/tenants/{tenantId}/usage")
     fun usage(@PathVariable tenantId: UUID, @RequestParam month: String?): TenantUsageView =

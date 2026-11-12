@@ -224,6 +224,34 @@ abriría incidencias que nadie causó.
 - Programar y cancelar quedan en la bitácora de la empresa, y el historial de
   cambios viaja en el expediente de la empresa (`break_policy_change`).
 
+### Formas de marcar
+
+Hay dos formas de marcar y se venden por separado (decisión del 2026-11-12,
+contrato 0.35.0).
+
+| Forma | Del plan | De la persona | Qué se queda en la sede |
+| --- | --- | --- | --- |
+| La tarjeta de la persona en el lector fijo | `card_terminal` | `card` | Un teléfono en modo terminal |
+| El teléfono de la persona en la etiqueta | `phone_tag` | `phone` | Una etiqueta NFC |
+
+- **Plan:** lo fija quien opera el servicio (`PUT /tenants/{id}/capture-methods`).
+  No quita una forma con la que todavía marca alguien activo
+  (`capture_method_in_use`).
+- **Sede:** puede admitir menos de lo que trae el plan. Si no eligió, admite
+  todo el plan.
+- **Persona:** marca de una sola forma.
+  - Al darla de alta sin forma, queda con tarjeta si su sede lo admite y, si
+    no, con teléfono.
+  - Cambiarla al teléfono revoca su tarjeta, y ya no se le asigna otra
+    (`employee_marks_with_phone`).
+  - Cambiarla a la tarjeta revoca sus teléfonos personales.
+  - No se mueve a una sede que no admite su forma.
+- **Lector fijo:** rechaza con `method_not_allowed` la marca de quien marca con
+  teléfono o de una sede que no admite la tarjeta.
+- **Pendiente:** la etiqueta en la sede y retirar la lectura de la propia
+  tarjeta en el teléfono personal (ver `diseno-etiqueta-en-sede.md`). Hasta
+  entonces el teléfono personal sigue como está.
+
 ### Ubicación
 
 Una terminal se evalúa contra su sede; un teléfono personal, contra la sede de

@@ -406,6 +406,8 @@ class CardService(
         val employee = employees.find(tenantId, employeeId!!)
             ?: throw Problems.validation("employeeId", "employee_not_found", "La persona no existe.")
         if (employee.status != "active") throw Problems.conflict("employee_inactive", "La persona está dada de baja.")
+        // Quien marca con su teléfono no lleva tarjeta.
+        if (employee.captureMethod == "phone") throw Problems.conflict("employee_marks_with_phone", "Esta persona marca con su teléfono; no lleva tarjeta.")
         if (card.status != "inventory") {
             throw Problems.conflict("card_not_assignable", "Sólo se asigna una tarjeta que está en inventario.")
         }

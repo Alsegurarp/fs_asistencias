@@ -6,6 +6,8 @@ import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Paging
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
+import mx.fastsolution.zenit.capture.CaptureMethods
+import mx.fastsolution.zenit.tenant.TenantRepository
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.SiteScope
 import org.jooq.DSLContext
@@ -40,6 +42,8 @@ data class SiteRow(
     val people: Int = 0,
     /** Terminales activas de la sede. */
     val terminals: Int = 0,
+    /** Las formas de marcar que admite la sede; nulo es todo lo del plan. */
+    val captureMethods: List<String>? = null,
 )
 
 /** Sirve para crear y para cambiar: al cambiar, lo que no viene se queda igual. */
@@ -50,6 +54,8 @@ class SiteRequest {
     var longitude: Double? = null
     var radiusMeters: Int? = null
     var status: String? = null
+    /** Sólo al cambiar: dentro de lo que trae el plan. */
+    var captureMethods: List<Any?>? = null
 }
 
 data class SiteView(
@@ -63,11 +69,13 @@ data class SiteView(
     val createdAt: String,
     val people: Int,
     val terminals: Int,
+    /** Lo que la sede admite, dentro del plan. Sin elección de la sede, todo el plan. */
+    val captureMethods: List<String>,
 ) {
     companion object {
-        fun of(row: SiteRow) = SiteView(
+        fun of(row: SiteRow, plan: List<String>) = SiteView(
             row.id.toString(), row.name, row.timeZone, row.latitude, row.longitude, row.radiusMeters, row.status,
-            row.createdAt.toInstant().toString(), row.people, row.terminals,
+            row.createdAt.toInstant().toString(), row.people, row.terminals, CaptureMethods.effective(plan, row.captureMethods),
         )
     }
 }
@@ -127,8 +135,8 @@ class SiteRepository(private val dsl: DSLContext) {
     fun update(tenantId: UUID, id: UUID, r: SiteRow) {
         dsl.execute(
             "update site set name = ?, time_zone = ?, latitude = cast(? as numeric), longitude = cast(? as numeric), " +
-                "radius_m = ?, status = ? where tenant_id = ? and id = ?",
-            r.name, r.timeZone, r.latitude, r.longitude, r.radiusMeters, r.status, tenantId, id,
+                "radius_m = ?, status = ?, capture_methods = cast(? as text[]) where tenant_id = ? and id = ?",
+            r.name, r.timeZone, r.latitude, r.longitude, r.radiusMeters, r.status, r.captureMethods?.toTypedArray(), tenantId, id,
         )
     }
 
@@ -141,15 +149,19 @@ class SiteRepository(private val dsl: DSLContext) {
         radiusMeters = r.get("radius_m", Number::class.java).toInt(),
         status = r.get("status", String::class.java),
         createdAt = r.get("created_at", OffsetDateTime::class.java),
+        captureMethods = r.get("capture_methods", Array<String>::class.java)?.toList(),
     )
 
     private companion object {
-        const val COLUMNS = "id, name, time_zone, latitude, longitude, radius_m, status, created_at"
+        const val COLUMNS = "id, name, time_zone, latitude, longitude, radius_m, status, created_at, capture_methods"
     }
 }
 
 @Service
-class SiteService(private val sites: SiteRepository, private val audit: AuditLog) {
+class SiteService(private val sites: SiteRepository, private val tenants: TenantRepository, private val audit: AuditLog) {
+    /** Las formas de marcar del plan de la empresa. */
+    fun plan(person: CurrentPerson): List<String> = tenants.find(person.requireTenant())!!.captureMethods
+
     @Transactional
     fun create(person: CurrentPerson, request: SiteRequest): SiteRow {
         val tenantId = person.requireTenant()
@@ -159,8 +171,9 @@ class SiteService(private val sites: SiteRepository, private val audit: AuditLog
         val latitude = checks.decimal("latitude", request.latitude, -90.0, 90.0, required = true)
         val longitude = checks.decimal("longitude", request.longitude, -180.0, 180.0, required = true)
         val radius = checks.whole("radiusMeters", request.radiusMeters, MIN_RADIUS, MAX_RADIUS, required = true)
-        // Una sede nace activa; el estado sólo se cambia después.
+        // Una sede nace activa y con todo el plan; el estado y las formas sólo se cambian después.
         if (request.status != null) checks.fail("status", "not_allowed", "No se da al crear la sede.")
+        if (request.captureMethods != null) checks.fail("captureMethods", "not_allowed", "No se da al crear la sede.")
         checks.done()
 
         val id = UUID.randomUUID()
@@ -192,9 +205,15 @@ class SiteService(private val sites: SiteRepository, private val audit: AuditLog
         val longitude = checks.decimal("longitude", request.longitude, -180.0, 180.0, required = false)
         val radius = checks.whole("radiusMeters", request.radiusMeters, MIN_RADIUS, MAX_RADIUS, required = false)
         val status = checks.oneOf("status", request.status, STATUSES, required = false)
+        val methods = CaptureMethods.parse(checks, "captureMethods", request.captureMethods, required = false)
+        val plan = tenants.find(tenantId)!!.captureMethods
+        if (methods != null && methods.any { it !in plan }) {
+            checks.fail("captureMethods", "not_in_plan", "El plan de la empresa no trae esa forma de marcar.")
+        }
         val changed = listOfNotNull(
             name?.let { "name" }, timeZone?.let { "timeZone" }, latitude?.let { "latitude" },
             longitude?.let { "longitude" }, radius?.let { "radiusMeters" }, status?.let { "status" },
+            methods?.let { "captureMethods" },
         )
         if (changed.isEmpty()) checks.fail("", "empty_update", "Hay que cambiar al menos un campo.")
         checks.done()
@@ -209,6 +228,8 @@ class SiteService(private val sites: SiteRepository, private val audit: AuditLog
                 longitude = longitude ?: before.longitude,
                 radiusMeters = radius ?: before.radiusMeters,
                 status = status ?: before.status,
+                // Todo lo del plan se guarda como nulo: si el plan crece, la sede lo admite también.
+                captureMethods = if (methods == null) before.captureMethods else methods.takeIf { it != plan },
             ),
         )
         audit.record(tenantId, person, "site.updated", "site", id, mapOf("fields" to changed.joinToString(",")))
@@ -233,22 +254,23 @@ class SiteController(private val service: SiteService) {
         @RequestParam limit: String?,
     ): Page<SiteView> {
         val size = Paging.limit(limit)
-        return Paging.page(service.page(person, Paging.decode(cursor), size), size, { PageKey(it.createdAt, it.id) }) { SiteView.of(it) }
+        val plan = service.plan(person)
+        return Paging.page(service.page(person, Paging.decode(cursor), size), size, { PageKey(it.createdAt, it.id) }) { SiteView.of(it, plan) }
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@AuthenticationPrincipal person: CurrentPerson, @RequestBody request: SiteRequest): SiteView =
-        SiteView.of(service.create(person, request))
+        SiteView.of(service.create(person, request), service.plan(person))
 
     @GetMapping("/{siteId}")
     fun get(@AuthenticationPrincipal person: CurrentPerson, @PathVariable siteId: UUID): SiteView =
-        SiteView.of(service.get(person, siteId))
+        SiteView.of(service.get(person, siteId), service.plan(person))
 
     @PatchMapping("/{siteId}")
     fun update(
         @AuthenticationPrincipal person: CurrentPerson,
         @PathVariable siteId: UUID,
         @RequestBody request: SiteRequest,
-    ): SiteView = SiteView.of(service.update(person, siteId, request))
+    ): SiteView = SiteView.of(service.update(person, siteId, request), service.plan(person))
 }

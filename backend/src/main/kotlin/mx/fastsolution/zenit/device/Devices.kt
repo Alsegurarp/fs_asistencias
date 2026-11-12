@@ -295,6 +295,14 @@ class DeviceRepository(private val dsl: DSLContext) {
             tenantId, employeeId,
         ).map { it.get("id", UUID::class.java) }
 
+    /** Revoca los teléfonos personales activos de esa persona; devuelve cuáles. */
+    fun revokeActivePersonal(tenantId: UUID, employeeId: UUID): List<UUID> =
+        dsl.fetch(
+            "update device set status = 'revoked', revoked_at = now() " +
+                "where tenant_id = ? and employee_id = ? and mode = 'personal' and status = 'active' returning id",
+            tenantId, employeeId,
+        ).map { it.get("id", UUID::class.java) }
+
     fun revoke(tenantId: UUID, id: UUID) {
         dsl.execute("update device set status = 'revoked', revoked_at = now() where tenant_id = ? and id = ?", tenantId, id)
     }

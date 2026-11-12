@@ -98,6 +98,7 @@ class SecurityConfig {
                     "/api/v1/tenants/{tenantId}/break-policy-changes/{changeId}/cancellation",
                 )
                     .hasRole(operator)
+                it.requestMatchers(HttpMethod.PUT, "/api/v1/tenants/{tenantId}/capture-methods").hasRole(operator)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/tenant").hasAnyRole(admin, rh, supervisor, auditor)
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/tenant").hasRole(admin)
                 it.requestMatchers(
