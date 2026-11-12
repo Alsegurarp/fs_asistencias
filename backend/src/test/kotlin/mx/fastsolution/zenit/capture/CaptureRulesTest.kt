@@ -98,6 +98,15 @@ class GeoTest {
         assertEquals("not_evaluated" to "location_inconclusive", Geo.verdict(site, null))
         assertEquals("not_evaluated" to null, Geo.verdict(null, sample()))
     }
+
+    @Test
+    fun `a fixed reader counts at its site unless it says it is elsewhere`() {
+        assertEquals("device_site" to null, Geo.verdict(site, null, fixedDevice = true))
+        assertEquals("device_site" to null, Geo.verdict(site, sample(latitude = 19.440000, accuracy = 200.0), fixedDevice = true))
+        assertEquals("inside" to null, Geo.verdict(site, sample(), fixedDevice = true))
+        assertEquals("outside" to "foreign_site", Geo.verdict(site, sample(latitude = 19.440000), fixedDevice = true))
+        assertEquals("inconclusive" to "location_inconclusive", Geo.verdict(site, sample(mock = true), fixedDevice = true))
+    }
 }
 
 class EnvelopesTest {

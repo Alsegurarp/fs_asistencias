@@ -44,13 +44,18 @@ const fieldNames: Record<string, string> = {
   name: 'el nombre', displayName: 'el nombre', timeZone: 'la zona horaria', weekStartsOn: 'el inicio de semana', autoCloseAfterHours: 'el cierre automático',
   latitude: 'la ubicación', longitude: 'la ubicación', radiusMeters: 'el radio', status: 'el estado', siteId: 'la sede', externalId: 'el número',
   employmentStart: 'la fecha de alta', employmentEnd: 'la fecha de baja', employeeId: 'la fila del padrón',
+  captureMethod: 'la forma de marcar', captureMethods: 'las formas de marcar',
 }
-const cardReasons: Record<string, string> = { lost: 'pérdida', damaged: 'daño', revoked: 'decisión de la empresa', employee_deactivated: 'baja de la persona' }
+const cardReasons: Record<string, string> = { lost: 'pérdida', damaged: 'daño', revoked: 'decisión de la empresa', employee_deactivated: 'baja de la persona', capture_method_changed: 'cambio a marcar con el teléfono' }
 
 function fields(value: string | undefined) {
   const names = [...new Set((value || '').split(',').filter(Boolean).map(field => fieldNames[field] || field))]
   if (!names.length) return ''
   return names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} y ${names.at(-1)}`
+}
+function methods(value: string | undefined) {
+  const names = (value || '').split(',').filter(Boolean).map(method => method === 'phone_tag' ? 'teléfono en la etiqueta' : 'tarjeta en el lector fijo')
+  return names.length ? names.join(' y ') : 'otras formas de marcar'
 }
 function roles(value: string | undefined) { return (value || '').split(',').filter(Boolean).map(roleLabel).join(', ') }
 function week(value: string | undefined) { return value ? shortWeekLabel(value) : 'la semana' }
@@ -88,7 +93,9 @@ export function actionText(entry: Pick<AuditEntry, 'action' | 'target' | 'metada
     case 'card.revoked': return `Revocó la tarjeta ${named('')}${m.reason ? ` por ${cardReasons[m.reason] || m.reason}` : ''}`.replace('tarjeta  por', 'tarjeta por')
     case 'device.enrollment_created': return `Generó un código para activar ${m.mode === 'personal' ? 'un teléfono personal' : 'una terminal de sede'}`
     case 'device.activated': return `Se activó ${m.mode === 'personal' ? 'el teléfono' : 'la terminal'} ${named('')}`.trim()
-    case 'device.revoked': return `Revocó el lector ${named('')}${m.reason ? `: «${m.reason}»` : ''}`.replace('lector :', 'lector:')
+    case 'device.revoked': return m.reason === 'capture_method_changed' ? `Revocó el teléfono ${named('')} por el cambio a marcar con tarjeta`.replace('teléfono  por', 'teléfono por')
+      : `Revocó el lector ${named('')}${m.reason ? `: «${m.reason}»` : ''}`.replace('lector :', 'lector:')
+    case 'employee.capture_method_changed': return `Cambió a ${named('una persona')} a marcar ${m.to === 'phone' ? 'con su teléfono' : 'con tarjeta'}`
     case 'user.invited': return `Invitó a ${named('una persona')}${m.roles ? ` con rol ${roles(m.roles)}` : ''}`
     case 'user.linked': return 'Entró por primera vez'
     case 'user.updated': return `Cambió ${fields(m.fields) || 'el acceso'}${of}`
@@ -104,6 +111,7 @@ export function actionText(entry: Pick<AuditEntry, 'action' | 'target' | 'metada
     case 'tenant.updated': return `Cambió ${fields(m.fields) || 'los datos'} de la empresa`
     case 'tenant.suspended': return `Suspendió la empresa${m.reason ? `: «${m.reason}»` : ''}`
     case 'tenant.reactivated': return 'Reactivó la empresa'
+    case 'tenant.capture_methods_changed': return `Cambió el plan a ${methods(m.to)}${m.reason ? `: «${m.reason}»` : ''}`
     case 'tenant.break_policy_change_scheduled': return `Programó que la comida ${m.breakPolicy === 'marked' ? 'se marque' : 'no se considere'} desde el ${day(m.effectiveOn)}`
     case 'tenant.break_policy_change_cancelled': return `Canceló el cambio de comida a «${breakNames[m.breakPolicy as 'marked'] || m.breakPolicy}» del ${day(m.effectiveOn)}`
     case 'site.created': return `Agregó la sede ${named('nueva')}`

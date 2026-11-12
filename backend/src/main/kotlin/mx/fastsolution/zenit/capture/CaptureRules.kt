@@ -217,9 +217,15 @@ object Geo {
      * Devuelve el veredicto y, si hace falta que alguien lo revise, la
      * incidencia. Una muestra menos precisa que el radio no se interpreta
      * como fuera: no es concluyente.
+     *
+     * El lector fijo de una sede no sale de ella: sin ubicación, o con una
+     * poco precisa, cuenta en su sede (`device_site`). Una ubicación simulada
+     * o una precisa fuera de la sede sí abren incidencia.
      */
-    fun verdict(site: SiteRow?, sample: LocationSample?): Pair<String, String?> = when {
+    fun verdict(site: SiteRow?, sample: LocationSample?, fixedDevice: Boolean = false): Pair<String, String?> = when {
         site == null -> "not_evaluated" to null
+        fixedDevice && sample == null -> "device_site" to null
+        fixedDevice && sample != null && sample.mock != true && sample.accuracyMeters > site.radiusMeters -> "device_site" to null
         sample == null -> "not_evaluated" to "location_inconclusive"
         sample.mock == true || sample.accuracyMeters > site.radiusMeters -> "inconclusive" to "location_inconclusive"
         distanceMeters(site.latitude, site.longitude, sample.latitude, sample.longitude) <= site.radiusMeters -> "inside" to null

@@ -6,6 +6,7 @@ import mx.fastsolution.zenit.api.PageKey
 import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.api.TextSearch
 import mx.fastsolution.zenit.audit.AuditLog
+import mx.fastsolution.zenit.capture.CaptureMethods
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.OperatorProperties
 import mx.fastsolution.zenit.identity.Role
@@ -334,6 +335,36 @@ class TenantService(
         val reason = checks.text("reason", raw, MAX_REASON, required = true)
         if (reason != null && reason.length in 1 until MIN_REASON) checks.fail("reason", "too_short", "Lleva al menos $MIN_REASON caracteres.")
         return reason
+    }
+
+    /**
+     * Fija las formas de marcar del plan, con un motivo. No quita una forma
+     * con la que todavía marca alguien activo: la empresa tiene que cambiar
+     * primero a esas personas.
+     */
+    @Transactional
+    fun setCaptureMethods(operator: CurrentPerson, id: UUID, request: Map<String, Any?>): TenantRow {
+        val checks = Checks()
+        (request.keys - setOf("captureMethods", "reason")).forEach { checks.fail(it, "unknown_field", "Ese campo no se puede cambiar.") }
+        val methods = CaptureMethods.parse(checks, "captureMethods", request["captureMethods"], required = true)
+        val reason = reason(checks, request["reason"] as? String)
+        checks.done()
+
+        tenants.lock(id)
+        val before = tenants.find(id) ?: throw Problems.notFound()
+        if (before.captureMethods == methods) return before
+        val outside = tenants.peopleOutside(id, methods!!)
+        if (outside > 0) {
+            throw Problems.conflict(
+                "capture_method_in_use",
+                if (outside == 1) "Una persona activa marca de la forma que se quita; la empresa tiene que cambiarla primero."
+                else "$outside personas activas marcan de la forma que se quita; la empresa tiene que cambiarlas primero.",
+            )
+        }
+        val tenant = tenants.setCaptureMethods(id, methods)!!
+        audit.record(id, operator, "tenant.capture_methods_changed", "tenant", id,
+            mapOf("from" to before.captureMethods.joinToString(","), "to" to methods.joinToString(","), "reason" to reason!!))
+        return tenant
     }
 
     private fun changeStatus(
