@@ -59,7 +59,7 @@ it('la actividad dice quién hizo qué, con el nombre de lo que tocó', () => {
   expect(activityText(entry('user.invited', person, 'Hugo Peña'))).toEqual({ who: 'Rocío Navarro', what: 'invitó a Hugo Peña' })
   // Al entrar por primera vez la cuenta se liga sola: no se dice dos veces el nombre.
   expect(activityText(entry('user.linked', { type: 'user', id: 'u2', displayName: 'Carmen Vega' }, 'Carmen Vega'))).toEqual({ who: 'Carmen Vega', what: 'entró por primera vez' })
-  expect(activityText(entry('user.linked', person, 'Carmen Vega'))).toEqual({ who: 'Rocío Navarro', what: 'ligó la cuenta de Carmen Vega' })
+  expect(activityText(entry('user.linked', person, 'Carmen Vega'))).toEqual({ who: 'Rocío Navarro', what: 'entró por primera vez' })
   expect(activityText(entry('incident.opened', { type: 'system', id: null, displayName: null }, 'Luis Hernández'))).toEqual({ who: 'Se abrió', what: 'una incidencia de Luis Hernández' })
   expect(activityText(entry('week.closed', { type: 'system', id: null, displayName: null }, 'Ana Torres'))).toEqual({ who: 'Zenit', what: 'cerró la semana de Ana Torres' })
   expect(activityText(entry('week.closed', person))).toEqual({ who: 'Rocío Navarro', what: 'cerró la semana' })

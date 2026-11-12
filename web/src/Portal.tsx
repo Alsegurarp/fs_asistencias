@@ -10,6 +10,7 @@ import { Closures } from './Closures'
 import { Devices } from './Devices'
 import { Dossiers, dossierOwner, dossierPermissionKey } from './Dossiers'
 import { clearDossierVerification } from './dossierFlow'
+import { AuditReport } from './AuditReport'
 import { Payroll } from './Payroll'
 import { Reports } from './Reports'
 import { Imports } from './Imports'
@@ -108,6 +109,7 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
   if (screen.key === 'users') return <Users me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'exports') return <Reports me={me} context={context} section={section} screens={screens} screen={screen} dossier={allowed.dossier} />
   if (screen.key === 'payroll') return <Payroll me={me} context={context} section={section} screens={screens} screen={screen} />
+  if (screen.key === 'audit') return <AuditReport me={me} context={context} section={section} screens={screens} screen={screen} />
   return <>
     <PageHeader context={context} section={section} screens={screens} current={screen} />
     <LegacyScreen><Legacy screen={screen.key} me={me} /></LegacyScreen>
@@ -120,7 +122,7 @@ function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
     case 'dossier': return <Dossiers key={dossierOwner(me)} me={me} />
     case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': return <Tenants me={me} />
-    case 'users': case 'exports': case 'payroll': case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': case 'devices': case 'cards': case 'settings': return null
+    case 'users': case 'exports': case 'payroll': case 'audit': case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': case 'devices': case 'cards': case 'settings': return null
   }
 }
 

@@ -1,5 +1,9 @@
 # Guía del portal web
 
+**Actualización del 11 de noviembre, Bitácora (sin cambios al contrato):**
+- **Bitácora (REP-07 y 08):** `/reportes/bitacora`, para Administración y Auditoría. Filtros en la dirección: `?desde=` y `?hasta=` (días de la empresa; por omisión los últimos 30), `?quien=` (`user`, `device` o `system`), `?accion=` (el grupo del servidor) y `?persona=`. Muestra cuántas acciones hay (o «más de N») y las lista de 12 en 12. `?vista=previa` arma la hoja para imprimir o guardar como PDF, o el CSV, con la lista completa (hasta 4,000).
+- **Frases de la bitácora:** `auditModel.ts` dice cada acción en palabras con su `metadata`; una acción nueva aparece con su código. El Panel usa las mismas frases.
+
 **Actualización del 11 de noviembre, Reportes y nómina (sin cambios al contrato):**
 - **Reportes (REP-01):** `/reportes` ofrece el reporte para nómina (Administración, RH y Auditoría) y el expediente (quien tenga el permiso explícito), y lista los exportes recientes con su estado: listo (vista previa y descargar una vez), en cola, vencido (pedir de nuevo) o falló (reintentar).
 - **Reporte para nómina (REP-02 a 04):** `/reportes/nomina` en tres pasos, con `?paso=`, `?semana=` y `?sede=` en la dirección. 1) alcance y semana (sólo cierres vigentes), con quién entra, las cifras por sede y quién está bloqueado; 2) columnas y presentación; 3) la hoja para imprimir o guardar como PDF desde el navegador, o el CSV oficial, que se pide a `POST /exports`, se espera en cola y se descarga una vez con su huella y manifiesto.

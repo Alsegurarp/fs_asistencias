@@ -20,6 +20,7 @@ type Props = { me: Me; context: string; section: Section; screens: Screen[]; scr
  */
 export function Reports({ me, context, section, screen, dossier }: Props) {
   const allowed = permissions(me.roles)
+  const audit = me.roles.some(role => role === 'admin_empresa' || role === 'auditor')
   const timeZone = me.tenant!.timeZone
   const phone = useMediaQuery(phoneQuery)
   const exports = useQuery({ queryKey: ['exports', 'recientes'], enabled: allowed.exports, retry: false,
@@ -38,6 +39,9 @@ export function Reports({ me, context, section, screen, dossier }: Props) {
       <ReportCard icon="closures" title="Expediente de la empresa" to={dossier ? '/reportes/expediente' : undefined}
         detail="Copia íntegra de toda tu información, con manifiesto y huellas, para auditorías o inspecciones. Se descarga una sola vez y pide confirmar tu identidad."
         note={dossier ? 'Tienes el permiso explícito' : 'Requiere permiso explícito; lo concede Administración'} />
+      {audit && <ReportCard icon="list" title="Bitácora" to="/reportes/bitacora"
+        detail="Quién hizo qué y cuándo: personas, lectores y el sistema. Filtra por periodo, por quién actuó, por la acción o por la persona, y sácala en PDF o CSV."
+        note="Administración y Auditoría" />}
     </Box>
     {allowed.exports && <Pane titleId="recientes" title="Generados recientemente" detail="cada descarga queda en la bitácora">
       {exports.isError ? <Box sx={{ p: 2 }}><Note tone="error">{exports.error instanceof ApiError && exports.error.status === 403 ? 'Tu rol ya no puede consultar los reportes.' : problemText(exports.error, 'No pudimos cargar los reportes.')}</Note></Box>
