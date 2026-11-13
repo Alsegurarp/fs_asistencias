@@ -106,7 +106,7 @@ export function Payroll({ me, context, section, screen }: Props) {
         <Typography component="h2" id="alcance" sx={heading}>¿De quién?</Typography>
         <Box role="group" aria-label="Alcance" sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
           <FilterChip pressed={!siteId} onClick={() => change({ sede: null })}>Toda la empresa</FilterChip>
-          {(sites.data || []).filter(site => site.status === 'active' || site.id === siteId).map(site => <FilterChip key={site.id} pressed={site.id === siteId} onClick={() => change({ sede: site.id })}>{site.name}</FilterChip>)}
+          {(sites.data || []).filter(site => site.status === 'active' || site.id === siteId).map(site => <FilterChip key={site.id} pressed={site.id === siteId} onClick={() => change({ sede: site.id })}><Box component="span" title={site.name} sx={{ maxWidth: 'min(240px, 60vw)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{site.name}</Box></FilterChip>)}
         </Box>
         <Typography component="h2" id="semana" sx={{ ...heading, mt: 1 }}>¿Qué semana? <Box component="span" sx={{ fontSize: 13, fontWeight: 500, color: color.muted }}>· sólo semanas cerradas</Box></Typography>
         <Box component="ul" aria-labelledby="semana" sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', flexDirection: 'column', gap: 0.75 }}>

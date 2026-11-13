@@ -1,15 +1,17 @@
 # Estado y pendientes
 
-**Despliegue, recorrido y empresa suspendida, 12 de noviembre:** el ambiente
-publicado corre `3b61b79` (PR #60), con todo lo integrado hasta ese día, el
-contrato 0.35.0 y las migraciones hasta V023. Los registros DNS ya apuntan
-a la dirección actual del servidor; el cambio tarda hasta un día en llegar a
-todos los resolutores. El portal se recorrió en local por rol, 190 vistas
-sin errores, y se probaron sus acciones principales como Administración
-(horario, alta, sede, invitar, tarjeta, lector, buscador, bitácora, permiso
-del expediente y avisos); faltan importar CSV y el reporte para nómina con
-una semana cerrada. La rama `feat/me-empresa-suspendida` (contrato 0.36.0)
-hace que `/me` distinga la empresa suspendida y que el portal lo diga
+**Despliegue y recorridos, 12 de noviembre:** el ambiente publicado corre
+`f1637ac` (PR #61), con el contrato 0.36.0 y las migraciones hasta V023;
+`/me` ya distingue la empresa suspendida y el portal lo dice. Los registros
+DNS apuntan a la dirección actual del servidor; el resolutor de Google tardó
+en soltar la anterior porque la zona tiene un TTL de un día. El portal se
+recorrió por rol en local (190 vistas) y en el ambiente publicado (152
+vistas, con cuentas temporales ya borradas), y se probaron sus acciones en
+local, con importar CSV, el cierre y el reporte para nómina. El único
+defecto del ambiente publicado, la tabla de Incidencias desbordada por
+textos muy largos, está corregido en la rama
+`fix/incidencias-desborde-textos-largos`. Falta recorrer lo que trajo la
+PR #59 (lector fijo en su sede y las dos formas de marcar)
 ([bitácora](bitacora-trabajo.md)).
 
 **Tarjetas del piloto, 10 de noviembre (contrato 0.30.0):** decidido usar las

@@ -6,6 +6,34 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 12 de noviembre de 2026 — Recorrido del ambiente publicado y textos largos
+
+Rama `fix/incidencias-desborde-textos-largos` desde `main` (`f1637ac`, ya
+desplegado). Se recorrió el ambiente publicado con sesiones reales: cuatro
+cuentas temporales `temporal.validacion.<rol>@zenit.example` en la empresa de
+pruebas, con el segundo factor configurado en el primer ingreso, sólo para
+consultar. Fueron 152 vistas de Administración, RH, Supervisión y Auditoría a
+1440 y 390 px: cada rol ve lo que le toca, sin errores de consola ni
+respuestas fallidas. Al terminar se borraron las cuatro cuentas del servicio
+de identidad y de la base, y los archivos con sus contraseñas.
+
+Un defecto: en Incidencias a 1440 px la tabla se salía 272 px de la pantalla,
+porque los datos de ensayo tienen un número de empleado y una sede de más de
+40 caracteres sin espacios. Ahora Persona y Sede se cortan con puntos
+suspensivos y el texto completo queda en el título de la celda. Al repetirlo
+en local con esos textos apareció el mismo problema en teléfono en el paso 1
+del reporte para nómina (33 px), por el nombre de la sede en los filtros;
+también se corta. Con los dos arreglos, 152 vistas en local con textos largos
+sin desborde, y 309 pruebas del portal en 31 archivos sin fallas.
+
+También se probaron en local importar un CSV (dos altas y una fila fuera por
+su fecha), cerrar la semana (54 de 66 cerradas) y el reporte para nómina de
+esa semana, con su vista previa.
+
+Un primer recorrido del ambiente publicado no sirvió y se repitió: el guion
+dio la sesión por iniciada cuando seguía en la pantalla del segundo factor,
+porque ahí el servicio de identidad vive en el mismo dominio que el portal.
+
 ## 12 de noviembre de 2026 — Empresa suspendida en `/me` y en el portal (EST-02)
 
 Rama `feat/me-empresa-suspendida` desde `main` (`3b61b79`). Con la empresa
@@ -33,7 +61,7 @@ en 31 archivos. Con sesión real en el entorno local `zenit-validacion`,
 con la empresa suspendida: Administración a 1440 px y RH a 390 px ven «Tu
 empresa está suspendida» con el nombre de la empresa, sin errores de consola
 ni desborde; quien opera sigue entrando a Empresas. La empresa se reactivó
-al terminar. Sin despliegue: espera la PR.
+al terminar. Integrado con la PR #61 (`f1637ac`) y desplegado ese día.
 
 ## 12 de noviembre de 2026 — Recorrido del portal por rol y desborde en teléfono
 
