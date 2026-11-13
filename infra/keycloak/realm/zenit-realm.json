@@ -2,6 +2,7 @@
   "id": "af03ad8a-3f0f-4f55-8628-33fb663a67df",
   "realm": "zenit",
   "displayName": "Zenit",
+  "loginTheme": "zenit",
   "notBefore": 0,
   "defaultSignatureAlgorithm": "RS256",
   "revokeRefreshToken": true,

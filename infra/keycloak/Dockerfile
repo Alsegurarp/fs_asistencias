@@ -43,4 +43,6 @@ FROM runtime
 COPY --from=build --chown=1000:0 /opt/keycloak/ /opt/keycloak/
 # Definición del realm. No lleva claves, secretos ni usuarios.
 COPY --chown=1000:0 realm/ /opt/keycloak/data/import/
+# Pantallas de acceso con la marca: estilos y textos sobre el tema de Keycloak.
+COPY --chown=1000:0 themes/ /opt/keycloak/themes/
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]

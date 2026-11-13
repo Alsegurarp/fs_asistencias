@@ -21,8 +21,8 @@ ambiente nunca pierde una función.
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas (PR #46) y el buscador con el menú Crear (PR #47) integrados en la rama de la #45; llegan a `main` con la PR #48 |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración, y Usuarios y roles con Mi perfil, integrados (PR #50) |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Inicio y nómina (`feat/portal-reportes`), la bitácora (`feat/portal-bitacora`) y el expediente (`feat/portal-expediente`) en revisión, cada una sobre la anterior ([detalle](#bloque-4-reportes)) |
-| 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Hecho en `feat/portal-consola-operacion`, sin cambios al API ([detalle](#bloque-5-consola-de-operación)) |
-| 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pendiente |
+| 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Hecho, sin cambios al API ([detalle](#bloque-5-consola-de-operación)) |
+| 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pantallas de acceso hechas en `feat/acceso-con-marca` ([detalle](#bloque-6-acceso-con-marca)); falta el portal instalable |
 
 El bloque 1 entra en cuatro PR, una por pantalla y en ese orden: Asistencia
 (OPE-02, OPE-07, OPE-08, EST-09, TEL-07, TEL-08), Incidencias (OPE-03,
@@ -245,6 +245,59 @@ Lo que cambia respecto al lienzo:
 - La búsqueda de empresas y el alta están en la pantalla, no en la barra
   superior.
 
+### Bloque 6: acceso con marca
+
+Hecho el 12 de noviembre en `feat/acceso-con-marca`. Las pantallas de acceso
+las sirve Keycloak, no el portal: el tema `zenit` vive en
+`infra/keycloak/themes/zenit/login/` y viaja en la imagen de identidad.
+
+| Archivo | Qué lleva |
+| --- | --- |
+| `theme.properties` | Hereda del tema `keycloak.v2` y agrega la hoja `css/zenit.css`; sin modo oscuro |
+| `resources/css/zenit.css` | Las dos mitades (marca y formulario), campos, botones y avisos con los valores de `web/src/design.ts` |
+| `resources/img/` | El logotipo y la palomita del panel de marca |
+| `messages/messages_es.properties` | Los textos, de tú y en llano; lo que no está ahí sale de la traducción de Keycloak |
+
+El tema no copia ninguna plantilla de Keycloak: sólo estilos y textos. Así
+una actualización de Keycloak no deja atrás una plantilla vieja, y los
+`id` y `name` de los formularios, que usan las pruebas, no cambian. El panel
+de marca viaja en el texto `loginTitleHtml`, que Keycloak sanea: sólo admite
+etiquetas de texto con su clase, y `realm.test.mjs` lo comprueba.
+
+El realm versionado lleva `loginTheme: zenit`. Un realm que ya existe no lo
+toma solo: `deploy/servidor/zenit/identidad.mjs` lo pone en cada despliegue
+y comprueba que la página de inicio de sesión cargue la hoja del tema. Si
+alguien eligió otro tema en la consola, se detiene sin pisarlo.
+
+| Pantalla del lienzo | Página de Keycloak | Qué quedó |
+| --- | --- | --- |
+| ACC-01 Ingreso, TEL-04 | `login` | Marca, correo, contraseña y «Entrar» |
+| ACC-02 Código, TEL-05 | `login-otp` | Un solo campo para los 6 dígitos |
+| ACC-03 Configurar el segundo factor | `login-config-totp` | Los tres pasos con el código para escanear |
+| ACC-04 Crear contraseña | `login-update-password` | Contraseña nueva y su confirmación |
+| ACC-05 ¿No puedes entrar? | `select-authenticator` | «Perdí acceso a mi app» lleva a elegir entre la app y un código de recuperación |
+| Códigos de recuperación | `login-recovery-authn-code-config` | Los doce códigos, con imprimir, descargar y copiar |
+
+Lo que cambia respecto al lienzo, porque no se copian plantillas:
+
+- **Sin subtítulos** bajo el título («Usa el correo con el que te
+  invitaron») ni la nota de los 5 intentos.
+- **El código** es un campo, no seis casillas.
+- **El título de la página del código** es «Entrar», el mismo texto del
+  botón: Keycloak usa una sola clave para los dos.
+- **Crear contraseña** no muestra la lista de requisitos que se van
+  cumpliendo; si la contraseña no cumple, lo dice al guardar.
+- **«¿No puedes entrar?»** no existe como página: recuperar la contraseña
+  por correo sigue apagado hasta tener correo saliente verificado.
+- **La tarjeta «Asistencia de hoy»** del panel de marca no está: era un
+  dato de ejemplo.
+- **Sin ícono propio de pestaña:** se queda el de Keycloak hasta tener los
+  íconos de la marca, que llegan con el portal instalable.
+
+Para verlo en local sin reconstruir la imagen, montar
+`infra/keycloak/themes` en `/opt/keycloak/themes` y arrancar Keycloak con
+`KC_SPI_THEME_CACHE_THEMES=false` y `KC_SPI_THEME_CACHE_TEMPLATES=false`.
+
 ### Qué se necesita para probar y avanzar
 
 Para empezar Dispositivos y tarjetas no hace falta nada más: se prueba con
@@ -376,7 +429,7 @@ lleva al ambiente publicado.
 | Menú Crear (CTA-04) | Dispositivos y tarjetas, con las ventanas de alta de persona, horario, tarjeta y lector; «Invitar» llegó con el bloque 3 y «Generar un reporte» llega con el 4 |
 | «En línea · datos de las…», «Instalar Zenit» y sin conexión | Bloque 6 |
 | ~~Empresa suspendida (EST-02)~~ | **Hecho (contrato 0.36.0):** `/me` trae `access` (`active`, `suspended`, `none`) y, sólo con la empresa suspendida y el acceso vigente, `suspendedTenantName`; `App.tsx` muestra `CompanySuspended` de `States.tsx` |
-| Pantallas de acceso con la marca (ACC-01 a 06) | Bloque 6 |
+| ~~Pantallas de acceso con la marca (ACC-01 a 06)~~ | **Hecho:** tema `zenit` de Keycloak ([detalle](#bloque-6-acceso-con-marca)) |
 
 Diferencias deliberadas con el lienzo:
 

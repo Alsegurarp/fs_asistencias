@@ -148,7 +148,9 @@ configuraciones tal como están en el JSON, más el cliente técnico
 `secretos/identity-admin/` para el backend. Lo que ya existe sólo lo
 comprueba: si difiere del JSON, se detiene sin sobrescribir y hay que
 resolverlo en la consola. Por omisión aplica `zenit-dossier`; un cliente
-nuevo del realm se agrega a su lista. Cambiar lo que ya existe sigue siendo
+nuevo del realm se agrega a su lista. También pone en el realm el tema de
+acceso del JSON (`loginTheme`) cuando el realm no tiene ninguno, y comprueba
+que la página de inicio de sesión lo cargue. Cambiar lo que ya existe sigue siendo
 trabajo de consola. El backend lee el secreto del cliente técnico al
 arrancar: si el paso lo cambió, el guion recrea el backend y vuelve a
 esperar a que responda. El paso entra con la cuenta de arranque; cuando se

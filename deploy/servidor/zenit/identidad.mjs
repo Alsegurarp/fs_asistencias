@@ -3,7 +3,8 @@
 // los clientes indicados con sus flujos y el cliente técnico del cambio
 // obligatorio de contraseña; lo que ya existe sólo se comprueba. Nunca
 // borra usuarios ni credenciales. Q03 habilita de forma explícita los códigos
-// en el flujo normal; los demás cambios inesperados detienen el despliegue.
+// en el flujo normal y el realm toma el tema de acceso versionado; los demás
+// cambios inesperados detienen el despliegue.
 //
 //   node identidad.mjs [clientId ...]      # por omisión, zenit-dossier
 //
@@ -271,6 +272,30 @@ async function asegurarRecuperacion() {
   console.log('recuperación Q03: códigos habilitados en login; SMTP y aceptación operativa siguen siendo requisitos separados')
 }
 
+// El tema de acceso viaja en la imagen de identidad. Un realm que ya existe
+// no lo toma solo; si alguien eligió otro tema en la consola, no se pisa.
+async function asegurarTema() {
+  const tema = realm.loginTheme
+  if (!tema) return
+  const activo = (await leer(prefijo)).loginTheme
+  if (activo !== tema) {
+    assert.ok(!activo, `El realm del servidor usa otro tema de acceso (${activo}); resolverlo en la consola`)
+    await escribir('PUT', prefijo, { loginTheme: tema }, [204])
+  }
+  assert.equal((await leer(prefijo)).loginTheme, tema)
+  // Si la imagen no trae el tema, Keycloak sirve el suyo sin avisar.
+  const portal = realm.clients.find(cliente => cliente.clientId === 'zenit-portal')
+  const [retorno] = (portal?.redirectUris || []).map(uri => sustituir(uri).replace(/\*$/, ''))
+  assert.ok(retorno, 'El realm versionado no define el retorno del portal')
+  const pagina = await (await pedir('GET', `/realms/${encodeURIComponent(realm.realm)}/protocol/openid-connect/auth?${new URLSearchParams({
+    client_id: portal.clientId, redirect_uri: retorno, response_type: 'code', scope: 'openid',
+    state: randomBytes(16).toString('hex'), nonce: randomBytes(16).toString('hex'),
+    code_challenge: createHash('sha256').update(randomBytes(32)).digest('base64url'), code_challenge_method: 'S256',
+  })}`, null, null, [200])).text()
+  assert.match(pagina, new RegExp(`/login/${tema}/css/`), `La imagen de identidad no sirve el tema ${tema}`)
+  console.log(`tema de acceso: ${tema}`)
+}
+
 for (const clientId of clientes) {
   const cliente = await asegurarCliente(clientId)
   if (cliente.standardFlowEnabled && cliente.redirectUris?.length) await probarInicio(cliente)
@@ -278,4 +303,5 @@ for (const clientId of clientes) {
 }
 await asegurarTecnico()
 await asegurarRecuperacion()
+await asegurarTema()
 console.log('identidad lista: el realm del servidor tiene lo que agrega el versionado')

@@ -1,0 +1,359 @@
+/* Pantallas de acceso de Zenit sobre el tema de Keycloak (PatternFly 5).
+   Los valores son los del portal: web/src/design.ts. */
+:root {
+  --zenit-tinta: #12233F;
+  --zenit-tenue: #4A5A75;
+  --zenit-linea: #C9D3E3;
+  --zenit-azul: #1F4FA8;
+  --zenit-foco: #2F6BE0;
+  --pf-v5-global--FontFamily--text: Inter, system-ui, sans-serif;
+  --pf-v5-global--FontFamily--heading: Inter, system-ui, sans-serif;
+  --pf-v5-global--primary-color--100: #1F4FA8;
+  --pf-v5-global--primary-color--200: #173E86;
+  --pf-v5-global--link--Color: #1F4FA8;
+  --pf-v5-global--link--Color--hover: #173E86;
+}
+
+html.login-pf,
+html.login-pf body {
+  margin: 0;
+  background: #FFFFFF;
+  color: var(--zenit-tinta);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* Dos mitades: la marca y el formulario. En pantallas angostas la marca se
+   queda en una franja con el nombre. */
+.pf-v5-c-login {
+  display: block;
+  min-height: 100vh;
+  padding: 0;
+  background: #FFFFFF;
+}
+
+.pf-v5-c-login__container {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: 100vh;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  /* La ayuda flotante de Keycloak no debe ensanchar la página. */
+  overflow-x: clip;
+}
+
+.pf-v5-c-login__header {
+  flex: 1 1 560px;
+  box-sizing: border-box;
+  display: flex;
+  margin: 0;
+  padding: 48px 56px;
+  color: #FFFFFF;
+  background:
+    radial-gradient(circle at 88% 10%, rgba(255, 255, 255, 0.16) 0, rgba(255, 255, 255, 0.05) 180px, rgba(255, 255, 255, 0) 320px),
+    radial-gradient(circle at 0% 100%, rgba(255, 255, 255, 0.10) 0, rgba(255, 255, 255, 0) 260px),
+    linear-gradient(160deg, #2C66D0 0%, #2257BB 55%, #1B4596 100%);
+}
+
+#kc-header-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  max-width: 520px;
+  margin: 0;
+  padding: 0;
+  color: #FFFFFF;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  white-space: normal;
+}
+
+.zenit-marca {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding-left: 50px;
+  background: url(../img/zenit.svg) left center / 40px 40px no-repeat;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.zenit-lema {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: auto;
+}
+
+.zenit-lema strong {
+  font-size: 40px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.zenit-lema span {
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.zenit-puntos {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 auto;
+  padding: 0;
+  font-size: 15px;
+}
+
+.zenit-puntos li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.zenit-puntos li::before {
+  content: "";
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2) url(../img/palomita.svg) center / 14px 14px no-repeat;
+}
+
+.pf-v5-c-login__main {
+  flex: 1 1 460px;
+  align-self: stretch;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0;
+  padding: 40px 24px;
+  background: #FFFFFF;
+  box-shadow: none;
+  border: 0;
+}
+
+.pf-v5-c-login__main > * {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 400px;
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+.pf-v5-c-login__main-header {
+  padding-block: 0 18px;
+  border-top: 0;
+}
+
+.pf-v5-c-login__main-body,
+.pf-v5-c-login__main-footer {
+  padding-block: 0;
+}
+
+#kc-page-title {
+  margin: 0;
+  color: var(--zenit-tinta);
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Campos */
+.pf-v5-c-form__label-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2B3B57;
+}
+
+.pf-v5-c-form-control {
+  --pf-v5-c-form-control--BorderRadius: 12px;
+  min-height: 46px;
+  border: 1px solid var(--zenit-linea);
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: var(--zenit-tinta);
+  font-size: 15px;
+}
+
+.pf-v5-c-form-control::before,
+.pf-v5-c-form-control::after {
+  border: 0;
+}
+
+.pf-v5-c-form-control > :is(input, select, textarea) {
+  min-height: 44px;
+  padding-inline: 14px;
+  border-radius: 12px;
+  color: var(--zenit-tinta);
+  font-size: 15px;
+}
+
+.pf-v5-c-form-control:focus-within {
+  outline: 2px solid var(--zenit-foco);
+  outline-offset: 1px;
+  border-color: var(--zenit-foco);
+}
+
+.pf-v5-c-form-control > :is(input, select, textarea):focus {
+  outline: 0;
+}
+
+.pf-v5-c-form-control.pf-m-error {
+  border-color: #C2362B;
+}
+
+.pf-v5-c-input-group {
+  gap: 6px;
+}
+
+.pf-v5-c-button.pf-m-control {
+  min-width: 46px;
+  min-height: 46px;
+  border: 1px solid var(--zenit-linea);
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: var(--zenit-tenue);
+}
+
+.pf-v5-c-button.pf-m-control::after {
+  border: 0;
+}
+
+/* El código del segundo factor se lee de un vistazo. */
+#otp,
+#totp {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Botones */
+.pf-v5-c-button.pf-m-primary {
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #2C64CC 0%, #1D4A9F 100%);
+  box-shadow: 0 8px 18px rgba(29, 74, 159, 0.25);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.pf-v5-c-button.pf-m-primary::after {
+  border: 0;
+}
+
+.pf-v5-c-button.pf-m-primary:is(:hover, :focus) {
+  background: linear-gradient(180deg, #2459BD 0%, #173E86 100%);
+}
+
+.pf-v5-c-button.pf-m-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  border: 1px solid var(--zenit-linea);
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: var(--zenit-azul);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pf-v5-c-button.pf-m-secondary::after {
+  border: 0;
+}
+
+.pf-v5-c-button:focus-visible {
+  outline: 2px solid var(--zenit-foco);
+  outline-offset: 2px;
+}
+
+.pf-v5-c-button.pf-m-link {
+  color: var(--zenit-azul);
+  font-weight: 600;
+}
+
+a {
+  color: var(--zenit-azul);
+}
+
+a:hover {
+  color: #173E86;
+}
+
+/* Avisos */
+.pf-v5-c-alert.pf-m-inline {
+  border: 0;
+  border-radius: 14px;
+  box-shadow: none;
+  font-size: 13.5px;
+}
+
+.pf-v5-c-alert.pf-m-inline::before {
+  border: 0;
+}
+
+/* Códigos de recuperación: legibles y sin encimarse en pantallas angostas. */
+#kc-recovery-codes-list {
+  font-variant-numeric: tabular-nums;
+}
+
+#kc-recovery-codes-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+@media (max-width: 480px) {
+  #kc-recovery-codes-list {
+    columns: 1;
+  }
+}
+
+/* Keycloak deja a la vista un texto pensado sólo para lectores de pantalla. */
+.pf-screen-reader {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  .pf-v5-c-login__container {
+    align-content: flex-start;
+  }
+
+  .pf-v5-c-login__header {
+    flex: 0 0 100%;
+    padding: 20px 24px;
+  }
+
+  .zenit-lema,
+  .zenit-puntos {
+    display: none;
+  }
+
+  .pf-v5-c-login__main {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    padding: 28px 20px 40px;
+  }
+}
