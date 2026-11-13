@@ -1,11 +1,19 @@
 # Estado y pendientes
 
-**Consola de operación, 12 de noviembre:** el bloque 5 del portal está hecho
-en la rama `feat/portal-consola-operacion`, sin cambios al API: Empresas con
+**Acceso con marca, 12 de noviembre:** las pantallas de acceso (ingreso,
+código, primer ingreso, contraseña y códigos de recuperación) llevan la
+marca de Zenit con un tema de Keycloak que sólo agrega estilos y textos, en
+la rama `feat/acceso-con-marca`. El despliegue pone el tema en el realm que
+ya existe. Probado en local a 1440 y 390 px con cuentas ficticias; falta
+verlo en el ambiente publicado. Del bloque 6 queda el portal instalable
+([detalle](construir-el-portal.md#bloque-6-acceso-con-marca)).
+
+**Consola de operación, 12 de noviembre:** el bloque 5 del portal está
+integrado (PR #63) y desplegado, sin cambios al API: Empresas con
 quién las administra, la ficha con sus acciones (comida, soltar la liga,
 invitar otra administración, suspender y reactivar) y Uso del mes con su CSV.
-Probado en local con sesión de operación; falta verlo en el ambiente
-publicado. Del portal queda el bloque 6, acceso con marca e instalable
+Probado en local con sesión de operación; falta verlo con sesión en el
+ambiente publicado
 ([detalle](construir-el-portal.md#bloque-5-consola-de-operación)).
 
 **Despliegue y recorridos, 12 de noviembre:** el ambiente publicado corre

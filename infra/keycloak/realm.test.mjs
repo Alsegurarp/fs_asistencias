@@ -35,6 +35,18 @@ test('las cuentas nuevas configuran OTP y el portal usa PKCE sin acceso por cont
   assert.equal(portal?.attributes['pkce.code.challenge.method'], 'S256')
 })
 
+test('el realm usa el tema de acceso que viaja en la imagen', () => {
+  assert.equal(realm.loginTheme, 'zenit')
+  const tema = new URL('./themes/zenit/login/', import.meta.url)
+  assert.match(readFileSync(new URL('theme.properties', tema), 'utf8'), /^parent=keycloak\.v2$/m)
+  assert.match(readFileSync(new URL('theme.properties', tema), 'utf8'), /^styles=.*css\/zenit\.css/m)
+  readFileSync(new URL('resources/css/zenit.css', tema))
+  // El panel de marca pasa por el saneador de Keycloak: sólo etiquetas de texto.
+  const marca = readFileSync(new URL('messages/messages_es.properties', tema), 'utf8').match(/^loginTitleHtml=(.*)$/m)[1]
+  assert.deepEqual([...new Set(marca.match(/<[a-z]+/g))].sort(), ['<li', '<span', '<strong', '<ul'])
+  assert.ok(!/style=|on[a-z]+=|href=|src=/.test(marca))
+})
+
 test('verificación y recuperación por correo requieren SMTP configurado', () => {
   if (realm.verifyEmail || realm.resetPasswordAllowed) {
     assert.ok(realm.smtpServer.host && realm.smtpServer.from)
@@ -159,6 +171,9 @@ test('despliegue Q03 actualiza un realm existente y repetirlo conserva clientes 
   assert.ok([202, 204].includes((await fetch(route, {
     method: 'PUT', headers, body: JSON.stringify({ ...recovery, requirement: 'DISABLED' }),
   })).status))
+  // Un realm anterior al tema de acceso no lo tiene: el despliegue lo pone.
+  assert.equal((await fetch(prefix, { method: 'PUT', headers, body: JSON.stringify({ loginTheme: '' }) })).status, 204)
+  assert.ok(!(await (await fetch(prefix, { headers })).json()).loginTheme)
   mkdirSync(join(secretos, 'identity-admin'), { recursive: true })
   const env = { ...process.env, KEYCLOAK_URL: base, SECRETOS: secretos,
     PORTAL_URL: process.env.IDENTITY_TEST_PORTAL_URL || 'http://localhost:8081',
@@ -168,8 +183,10 @@ test('despliegue Q03 actualiza un realm existente y repetirlo conserva clientes 
       env, encoding: 'utf8', timeout: 50000,
     })
     assert.match(output, /recuperación Q03: códigos habilitados/)
+    assert.match(output, /tema de acceso: zenit/)
   }
   const after = await (await fetch(route, { headers })).json()
   assert.equal(after.find(item => item.id === recovery.id)?.requirement, 'ALTERNATIVE')
   assert.equal(after.find(item => item.providerId === 'auth-otp-form')?.requirement, 'ALTERNATIVE')
+  assert.equal((await (await fetch(prefix, { headers })).json()).loginTheme, 'zenit')
 })

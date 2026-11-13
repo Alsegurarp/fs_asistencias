@@ -6,6 +6,33 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 12 de noviembre de 2026 — Pantallas de acceso con la marca
+
+Rama `feat/acceso-con-marca` desde `main` (`9527694`, ya desplegado, con la
+consola de operación de la PR #63). Primera mitad del bloque 6: el tema
+`zenit` de Keycloak
+([detalle](construir-el-portal.md#bloque-6-acceso-con-marca)).
+
+Qué entra: `infra/keycloak/themes/zenit/login/` con estilos, textos y la
+marca sobre el tema `keycloak.v2`, sin copiar plantillas; la imagen de
+identidad lo incluye; el realm versionado lleva `loginTheme: zenit`; y
+`identidad.mjs` pone el tema en el realm que ya existe y comprueba que la
+página de inicio lo cargue. No cambian el API, el contrato ni el portal.
+
+Probado en local con el tema montado en el Keycloak del entorno de
+validación, a 1440 y 390 px: ingreso, error de ingreso, código, elegir otra
+forma de entrar y, con una cuenta ficticia de primer ingreso creada y
+borrada por el guion, configurar el segundo factor, crear contraseña y
+guardar los códigos de recuperación, hasta llegar al portal. Sin errores de
+consola, respuestas fallidas ni desborde. Las pruebas de identidad pasaron
+contra una identidad aislada construida con la imagen nueva: 12 de 12 de
+`realm`, `password-change`, `dossier-mfa` y `recovery-codes`; `health` no
+se corrió en local.
+
+La prueba del despliegue le quita el tema al realm y comprueba que el paso
+de identidad lo vuelve a poner. Sin probar: nada en el ambiente publicado.
+Falta el portal instalable.
+
 ## 12 de noviembre de 2026 — Consola de operación según el lienzo
 
 Rama `feat/portal-consola-operacion` desde `main` (`32ca441`, ya desplegado).
