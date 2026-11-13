@@ -433,8 +433,9 @@ Cuando aparece un hallazgo alto o crítico:
    `Dockerfile` de esa imagen, o actualizar la imagen base.
 3. Si no tiene corrección, o no aplica, una persona decide aceptarlo y lo
    anota en `.grype.yaml` con el motivo y la fecha de revisión. Aceptar no es
-   corregir. Hoy hay seis aceptados, todos de la imagen del proveedor de
-   identidad: el archivo dice por qué y cuándo se revisan.
+   corregir. Hoy hay uno: CVE-2026-76844 de zlib en la imagen del proveedor
+   de identidad, aceptado el 13 de noviembre de 2026 mientras Red Hat no
+   publique la corrección; el archivo dice por qué y cuándo se revisa.
 
 Conviene correrlo antes de publicar una versión y cada cierto tiempo aunque
 nada cambie: la lista de vulnerabilidades conocidas crece sola.

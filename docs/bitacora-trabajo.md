@@ -6,6 +6,33 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 13 de noviembre de 2026 — Aviso de zlib en la imagen de identidad
+
+El trabajo «contrato-y-seguridad» de la PR del acceso falló en «Inventario y
+vulnerabilidades». Reproducido en local: la imagen de identidad trae zlib
+`1.2.11-40.el9` con CVE-2026-76844 (alta), un desbordamiento en `gz_write()`
+tras una escritura fallida. No lo trajo la PR: esa zlib ya estaba en `main` y
+en el ambiente publicado, y el aviso apareció en la base de vulnerabilidades.
+
+Qué se revisó: Red Hat no ha publicado la corrección (`1.2.11-40.el9` es lo
+más nuevo en sus repositorios). zlib no se puede quitar, porque Java la carga
+(`libzip`, `libjli`, `libsplashscreen`), pero sólo usa `deflate`, `inflate`,
+`crc32` y `adler32`, nunca las funciones `gz*`, y ningún otro binario de la
+imagen la carga.
+
+Decisión de Gabriel: aceptarlo en `.grype.yaml`, limitado a ese aviso, esa
+versión y mientras siga sin corrección. Cuando Red Hat la publique la regla
+deja de aplicar y el análisis vuelve a fallar hasta reconstruir la imagen; a
+más tardar se revisa el 13 de febrero de 2027. Con la regla, el análisis local
+de la imagen de identidad sale en 0; sin ella, en 2, como en el CI. Las otras
+cuatro imágenes ya pasaban.
+
+La PR #65 se integró sin la regla (`53be771`), y su CI en `main` falló en el
+mismo paso; la regla llega en `fix/seguridad-zlib-sin-correccion`. De paso,
+`construir-el-portal.md` pone al día los bloques 1 a 4, ya integrados y
+desplegados, anota que falta ACC-06 y retira la diferencia de la cifra del
+panel de marca, que la PR #65 ya muestra como el lienzo.
+
 ## 13 de noviembre de 2026 — Acceso igual a la maqueta
 
 Rama `feat/acceso-igual-a-la-maqueta` desde `main` (`dbcf296`, ya
