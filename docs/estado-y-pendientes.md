@@ -7,9 +7,10 @@ que dibuja, igual a él y funcionando en el ambiente publicado con datos
 ficticios. Lo que el lienzo no dibuja queda para después.
 
 El mismo día el equipo dio el MVP por terminado. Está integrado y desplegado
-en el ambiente publicado (`e5928f3`, contrato 0.37.0, migración V024) y lo
-que sigue es presentarlo con la [guía de demostración](guia-de-demostracion.md),
-que siembra y reinicia una empresa ficticia y genera su PDF.
+en el ambiente publicado (`6609ebd`, contrato 0.37.0, migración V024), con
+las tarjetas del piloto encendidas, y lo que sigue es presentarlo con la
+[guía de demostración](guia-de-demostracion.md), que siembra y reinicia una
+empresa ficticia y genera su PDF.
 
 Lo que trajo la última entrega (`feat/mvp-segun-el-lienzo`):
 
@@ -35,10 +36,10 @@ Lo que trajo la última entrega (`feat/mvp-segun-el-lienzo`):
 
 Lo que falta:
 
-1. **Tarjetas del piloto en el ambiente publicado.** La clave ya está en el
-   servidor; `CAPTURE_PILOT_CARDS=true` llega con el despliegue de
-   `feat/guia-de-demostracion`. Sin eso, la parte 7 de la demostración no
-   marca con tarjetas reales.
+1. **Ensayar con teléfonos y tarjetas físicas** las partes 7 y 8 de la
+   guía: preparar una tarjeta en una terminal, asignarla y marcar; activar un
+   teléfono personal y responder al cierre. El lado del servidor ya se
+   ensayó en el ambiente publicado (ver la bitácora del 13 de noviembre).
 2. **Correo de identidad**, a cargo de quien administra la cuenta de Brevo:
    autenticar el dominio y definir el remitente. Con eso la invitación llega
    por correo y «Olvidé mi contraseña» manda el enlace. Mientras, las cuentas

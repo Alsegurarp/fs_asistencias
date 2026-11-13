@@ -49,9 +49,18 @@ Visto de paso: el reporte para nómina abierto con `?semana=` en un día que
 no es inicio de semana rotula la semana desde ese día; eligiendo la semana
 en el paso 1, como en el recorrido, sale bien.
 
-Sin probar: la parte 7 (terminal, tarjetas y marcaje en vivo) y la 8
-(teléfono personal y acuse) en el ambiente publicado, porque necesitan los
-teléfonos, las tarjetas y el despliegue de esta rama.
+Integrada con la PR #68 y desplegada en `6609ebd`: el backend publicado
+corre con `CAPTURE_PILOT_CARDS=true` y la clave presente. Ensayado ahí, como
+lo hace la app pero sin teléfono: una terminal nueva recibe en su sesión la
+configuración del piloto; el servidor firma un código para un identificador
+y la firma se comprueba sin red con la clave pública de la sesión; el alta
+con la firma alterada responde 422; el alta buena queda en inventario como
+`ZC-…`; asignada a una persona, el marcaje se acepta, y con un código ajeno
+se rechaza con `card_unknown`. Después se reinició la demostración.
+
+Sin probar: la parte 7 con la tarjeta física (escribirla, releerla y
+marcar desde la app) y la 8 (teléfono personal y acuse) en el ambiente
+publicado, porque necesitan los teléfonos y las tarjetas.
 
 Acuerdos del equipo sobre tarjetas y terminales, en
 [estado y pendientes](estado-y-pendientes.md#pendientes-del-mvp) y en la
