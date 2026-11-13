@@ -22,7 +22,7 @@ ambiente nunca pierde una función.
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración, y Usuarios y roles con Mi perfil, integrados (PR #50) |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Inicio y nómina (`feat/portal-reportes`), la bitácora (`feat/portal-bitacora`) y el expediente (`feat/portal-expediente`) en revisión, cada una sobre la anterior ([detalle](#bloque-4-reportes)) |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Hecho, sin cambios al API ([detalle](#bloque-5-consola-de-operación)) |
-| 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pantallas de acceso hechas en `feat/acceso-con-marca` ([detalle](#bloque-6-acceso-con-marca)); falta el portal instalable |
+| 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pantallas de acceso hechas e iguales al lienzo en `feat/acceso-igual-a-la-maqueta` ([detalle](#bloque-6-acceso-con-marca)); falta el portal instalable |
 
 El bloque 1 entra en cuatro PR, una por pantalla y en ese orden: Asistencia
 (OPE-02, OPE-07, OPE-08, EST-09, TEL-07, TEL-08), Incidencias (OPE-03,
@@ -247,89 +247,73 @@ Lo que cambia respecto al lienzo:
 
 ### Bloque 6: acceso con marca
 
-Hecho el 12 de noviembre en `feat/acceso-con-marca`. Las pantallas de acceso
-las sirve Keycloak, no el portal: el tema `zenit` vive en
-`infra/keycloak/themes/zenit/login/` y viaja en la imagen de identidad.
+Las pantallas de acceso las sirve Keycloak, no el portal: el tema `zenit`
+vive en `infra/keycloak/themes/zenit/login/` y viaja en la imagen de
+identidad. La primera versión (PR #64) sólo traía estilos y textos; desde
+`feat/acceso-igual-a-la-maqueta` las pantallas que el lienzo dibuja tienen
+su propia plantilla, para quedar iguales a él.
 
 | Archivo | Qué lleva |
 | --- | --- |
-| `theme.properties` | Hereda del tema `keycloak.v2` y agrega la hoja `css/zenit.css`; sin modo oscuro |
-| `resources/css/zenit.css` | Las dos mitades (marca y formulario), campos, botones y avisos con los valores de `web/src/design.ts` |
-| `resources/img/` | El logotipo y la palomita del panel de marca |
-| `messages/messages_es.properties` | Los textos, de tú y en llano; lo que no está ahí sale de la traducción de Keycloak |
+| `theme.properties` | Hereda del tema `keycloak.v2`, agrega `css/zenit.css` y `js/zenit.js`; sin modo oscuro |
+| `login.ftl` | ACC-01 Ingreso y, en la misma página, ACC-05 «¿No puedes entrar?» |
+| `login-otp.ftl` | ACC-02 Código |
+| `login-config-totp.ftl` | ACC-03 Configurar el segundo factor |
+| `login-update-password.ftl` | ACC-04 Crear contraseña |
+| `select-authenticator.ftl` | Elegir entre la app y un código de recuperación |
+| `zenit.ftl`, `footer.ftl` | Piezas compartidas (contraseña con su botón, errores) y la nota bajo la tarjeta en teléfono |
+| `resources/css/zenit.css` | El marco de dos mitades, la tarjeta en teléfono y las clases `za-` de las plantillas |
+| `resources/js/zenit.js` | Ver la contraseña, elegir la app del código y marcar los requisitos al escribir |
+| `resources/img/` | El logotipo y las palomitas del panel de marca |
+| `messages/messages_es.properties` | Los textos; lo que no está ahí sale de la traducción de Keycloak |
 
-El tema no copia ninguna plantilla de Keycloak: sólo estilos y textos. Así
-una actualización de Keycloak no deja atrás una plantilla vieja, y los
-`id` y `name` de los formularios, que usan las pruebas, no cambian. El panel
-de marca viaja en el texto `loginTitleHtml`, que Keycloak sanea: sólo admite
-etiquetas de texto con su clase, y `realm.test.mjs` lo comprueba.
+El marco (`template.ftl`) y las demás páginas se heredan de Keycloak: códigos
+de recuperación, errores y avisos sólo reciben estilos. El panel de marca
+viaja en el texto `loginTitleHtml`, que Keycloak sanea: sólo admite etiquetas
+de texto con su clase.
+
+**Al subir la versión de Keycloak** hay que comparar las cinco plantillas
+propias con las suyas del tema `keycloak.v2` (están en
+`org.keycloak.keycloak-themes-<versión>.jar`, carpeta
+`theme/keycloak.v2/login/`) y traer los campos o pasos nuevos.
+`realm.test.mjs` comprueba que cada plantilla conserve los campos que
+Keycloak espera, y las pruebas de identidad recorren ingreso, código, cambio
+de contraseña y códigos de recuperación con la imagen construida.
 
 El realm versionado lleva `loginTheme: zenit`. Un realm que ya existe no lo
 toma solo: `deploy/servidor/zenit/identidad.mjs` lo pone en cada despliegue
 y comprueba que la página de inicio de sesión cargue la hoja del tema. Si
 alguien eligió otro tema en la consola, se detiene sin pisarlo.
 
-| Pantalla del lienzo | Página de Keycloak | Qué quedó |
-| --- | --- | --- |
-| ACC-01 Ingreso, TEL-04 | `login` | Marca, correo, contraseña y «Entrar» |
-| ACC-02 Código, TEL-05 | `login-otp` | Un solo campo para los 6 dígitos |
-| ACC-03 Configurar el segundo factor | `login-config-totp` | Los tres pasos con el código para escanear |
-| ACC-04 Crear contraseña | `login-update-password` | Contraseña nueva y su confirmación |
-| ACC-05 ¿No puedes entrar? | `select-authenticator` | «Perdí acceso a mi app» lleva a elegir entre la app y un código de recuperación |
-| Códigos de recuperación | `login-recovery-authn-code-config` | Los doce códigos, con imprimir, descargar y copiar |
+Lo que cambia respecto al lienzo, y por qué:
 
-Lo que cambia respecto al lienzo, porque no se copian plantillas:
-
-- **Sin subtítulos** bajo el título («Usa el correo con el que te
-  invitaron») ni la nota de los 5 intentos.
-- **El código** es un campo, no seis casillas.
-- **El título de la página del código** es «Entrar», el mismo texto del
-  botón: Keycloak usa una sola clave para los dos.
-- **Crear contraseña** no muestra la lista de requisitos que se van
-  cumpliendo; si la contraseña no cumple, lo dice al guardar.
-- **«¿No puedes entrar?»** no existe como página: recuperar la contraseña
-  por correo sigue apagado hasta tener correo saliente verificado.
-- **La tarjeta «Asistencia de hoy»** del panel de marca no está: era un
-  dato de ejemplo.
+- **El código** es un solo campo dibujado como seis casillas. Así se puede
+  pegar y el teléfono lo llena solo, que seis campos sueltos no permiten.
+- **«¿No puedes entrar?»** se abre dentro de la página de ingreso. «Perdí mi
+  teléfono» explica el camino (entrar y elegir «Perdí acceso a mi app»),
+  porque el código de recuperación se pide después de la contraseña.
+  «Olvidé mi contraseña» manda el enlace por correo sólo si el realm lo
+  permite; mientras siga apagado dice que lo pida a quien administra su
+  empresa.
+- **Crear contraseña** no lleva la etiqueta «Invitación de… · empresa» ni
+  saluda por nombre: Keycloak no conoce a quien invitó ni la empresa. Los
+  requisitos salen de la política del realm.
+- **Configurar el segundo factor** muestra la clave junto al código para
+  escanear, como el lienzo; si la política dejara de ser la habitual
+  (SHA1, 6 dígitos, 30 segundos) agrega los datos que la app pide. El nombre
+  del teléfono sólo se pide cuando la cuenta ya tiene otra app ligada.
+  «Primer ingreso» y «Después crearás tu contraseña» no salen al
+  reconfigurar desde el perfil.
+- **Códigos de recuperación** no está en el lienzo: conserva la página de
+  Keycloak con los estilos de Zenit.
+- **La tarjeta «Asistencia de hoy 38 / 42»** del panel de marca es un
+  adorno con el dato de ejemplo del lienzo, no una cifra real.
 - **Sin ícono propio de pestaña:** se queda el de Keycloak hasta tener los
   íconos de la marca, que llegan con el portal instalable.
 
 Para verlo en local sin reconstruir la imagen, montar
 `infra/keycloak/themes` en `/opt/keycloak/themes` y arrancar Keycloak con
 `KC_SPI_THEME_CACHE_THEMES=false` y `KC_SPI_THEME_CACHE_TEMPLATES=false`.
-
-### Qué se necesita para probar y avanzar
-
-Para empezar Dispositivos y tarjetas no hace falta nada más: se prueba con
-el entorno aislado y el simulador. Lo que sigue destraba el resto o lo
-lleva al ambiente publicado.
-
-**Para seguir con el desarrollo**
-
-| Qué | Para qué | Bloquea |
-| --- | --- | --- |
-| Decidir «Asignar a otra persona» (propuesta: respetar la regla vigente) | El detalle de una tarjeta | Dispositivos y tarjetas |
-| Decidir cómo se registra una tarjeta real: escribiendo la huella, leyéndola con la app o con un lector de escritorio | PAD-12 con tarjeta real | Sólo la tarjeta real; con la simulada se avanza |
-| ~~Proveedor de mapas~~ **Resuelto el 10 nov:** OpenStreetMap, con su atribución; la política de seguridad se abre a sus mosaicos | El mapa de sedes | — |
-| ~~Datos de SMTP~~ **Resuelto el 10 nov:** Brevo, con la credencial en `secrets/smtp.env` y configurado en el Keycloak local. Para producción falta un remitente del dominio propio | Que la invitación llegue por correo y se recupere una contraseña olvidada | Producción, por el remitente |
-| ~~Canal de «Ayuda y soporte»~~ **Resuelto el 10 nov:** correo rene.alexis.segura@gmail.com y número 56 3300 1126 | El menú de la cuenta | — |
-
-**Para probar en el ambiente publicado**
-
-| Qué | Para qué |
-| --- | --- |
-| Confirmar si ya se desplegó `main` en <https://zenit.fastsolution.com.mx> o autorizar el despliegue (`deploy/servidor/desplegar.sh`, que no se ha corrido) | Desde Cierres (PR #41) hasta Importar (PR #44) no hay despliegue registrado. Importar trae la migración V018 |
-| Acceso por SSH al servidor, o que lo corra Gabriel | Desplegar y ver los registros |
-| Cuentas de prueba por rol en el ambiente publicado (Administración, RH, Supervisión, Auditoría), con su segundo factor | El recorrido del portal público por rol |
-| Un teléfono Android con la app instalada y NFC | Activar un lector de verdad y marcar con la tarjeta simulada |
-| Tarjetas reales (DESFire EV3) y su clave | Verificar la tarjeta real; hoy sólo se acepta la simulada |
-
-**Para cerrar cada PR**
-
-1. Abrir la PR con el enlace que dejo al subir la rama e integrarla con CI
-   en verde.
-2. Confirmar las diferencias con el lienzo anotadas en la PR (regla 6).
-3. Decir si se despliega: no se despliega sin esa confirmación.
 
 ## Reglas para no duplicar
 

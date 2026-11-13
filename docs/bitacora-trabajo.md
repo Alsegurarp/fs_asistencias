@@ -6,6 +6,32 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 13 de noviembre de 2026 — Acceso igual a la maqueta
+
+Rama `feat/acceso-igual-a-la-maqueta` desde `main` (`dbcf296`, ya
+desplegado, con el tema de acceso de la PR #64). Se pidió que el acceso
+quedara igual al lienzo, y con sólo estilos no alcanzaba: ahora ingreso,
+código, configurar el segundo factor, crear contraseña y elegir cómo entrar
+tienen plantilla propia en el tema
+([detalle](construir-el-portal.md#bloque-6-acceso-con-marca)).
+
+Qué entra: subtítulos y notas de cada pantalla; «¿No puedes entrar?» dentro
+del ingreso; el código como seis casillas sobre un solo campo; los tres
+pasos numerados con el código para escanear y su clave; los requisitos de
+la contraseña que se marcan al escribir; el botón de ver la contraseña
+dentro del campo; la tarjeta de ejemplo del panel de marca; y en teléfono,
+la franja azul con el formulario en una tarjeta. El costo: al subir de
+versión Keycloak hay que comparar cinco plantillas con las suyas.
+
+Probado en local a 1440 y 390 px con el tema montado: las ocho pantallas,
+el primer ingreso completo con una cuenta ficticia creada y borrada por el
+guion, hasta llegar al portal; sin errores de consola, respuestas fallidas
+ni desborde. Con la imagen construida pasaron 13 de 13 pruebas de `realm`,
+`password-change`, `dossier-mfa` y `recovery-codes`, incluida la nueva que
+cuida los campos de las plantillas; `health` no se corrió en local. Sin
+probar: nada en el ambiente publicado; elegir entre varias apps de código;
+el enlace de contraseña por correo, que sigue apagado.
+
 ## 12 de noviembre de 2026 — Pantallas de acceso con la marca
 
 Rama `feat/acceso-con-marca` desde `main` (`9527694`, ya desplegado, con la

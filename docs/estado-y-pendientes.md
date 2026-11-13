@@ -1,11 +1,12 @@
 # Estado y pendientes
 
-**Acceso con marca, 12 de noviembre:** las pantallas de acceso (ingreso,
-código, primer ingreso, contraseña y códigos de recuperación) llevan la
-marca de Zenit con un tema de Keycloak que sólo agrega estilos y textos, en
-la rama `feat/acceso-con-marca`. El despliegue pone el tema en el realm que
-ya existe. Probado en local a 1440 y 390 px con cuentas ficticias; falta
-verlo en el ambiente publicado. Del bloque 6 queda el portal instalable
+**Acceso igual a la maqueta, 13 de noviembre:** el acceso con la marca está
+desplegado (PR #64). En la rama `feat/acceso-igual-a-la-maqueta` las
+pantallas que el lienzo dibuja (ingreso, «¿No puedes entrar?», código,
+configurar el segundo factor y crear contraseña) tienen plantilla propia y
+quedan iguales a él en escritorio y teléfono. Probado en local con cuentas
+ficticias; falta verlo en el ambiente publicado. Del bloque 6 queda el
+portal instalable
 ([detalle](construir-el-portal.md#bloque-6-acceso-con-marca)).
 
 **Consola de operación, 12 de noviembre:** el bloque 5 del portal está
