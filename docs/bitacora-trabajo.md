@@ -6,6 +6,53 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 13 de noviembre de 2026 — El MVP según el lienzo
+
+Rama `feat/mvp-segun-el-lienzo` desde `main` (`9f21144`, ya desplegado, con
+el acceso igual al lienzo y la regla de zlib). El MVP pasa a ser el lienzo
+completo; esta rama trae lo que faltaba de él, salvo el correo de identidad.
+Contrato 0.37.0 y migración V024
+([pendientes](estado-y-pendientes.md#pendientes-del-mvp),
+[detalle](construir-el-portal.md#portal-instalable)).
+
+Backend y contrato, todo opcional para los clientes que ya existen:
+
+- `cardLabel` en cada marcaje: la captura ya guardaba la tarjeta.
+- `scheduledByName` en el cambio de comida y `suspension` (cuándo, quién y
+  por qué) en la empresa, con V024; reactivar la borra.
+- `breakPolicyChange=scheduled` en `GET /tenants` y su conteo en el resumen.
+- `people` en el resumen de cierres, con la regla de la tabla de asistencia.
+- `daysWorked`, `scheduleName` y `resolvedIncidents` en cada cierre, en la
+  misma consulta de la página.
+- `sites` en `/me` para Supervisión.
+- `GET /dossier-history`, sólo Administración: quién pidió cada copia y si se
+  descargó, sin identificadores ni huellas; consultar o descargar sigue
+  siendo de quien la pidió, y `GET /dossiers` no cambia.
+
+El segundo factor de Mi perfil dice «Activo» sin consultar la cuenta: el
+acceso lo exige en cada ingreso, y el cliente técnico de identidad está
+acotado a pedir una contraseña nueva; ampliarlo sería debilitar ese control.
+
+Portal: ACC-06 en el tema (las dos pantallas del expediente), el portal
+instalable, «Mi asistencia» fuera, «Ver tarjeta» al detalle, los siete datos
+y las diferencias igualadas: «Hoy · Esta semana», «Sede activa» y «Editar»,
+el PDF por páginas, «Revisar y aplicar» directo en la misma visita y la
+búsqueda y el alta de empresas en la barra superior. También se arregló que
+el paso 3 del reporte para nómina, abierto directo, rompía la página.
+
+Probado: 138 pruebas del backend, con `CanvasDataIT` para cada dato nuevo y
+lo que no debe salir; 303 del portal; 13 de identidad con la imagen
+construida; y en local, con sesiones reales a 1440 y 390 px, el Panel con su
+conmutador, Configuración con el interruptor (se guardó y se restauró), el
+reporte para nómina por páginas, el historial del expediente, Mi perfil de
+Administración y de Supervisión, las dos pantallas de ACC-06, la consola con
+la barra, la vista nueva y una empresa suspendida y reactivada, y el portal
+sin red con la sesión abierta y al abrirlo sin red. Sin errores de consola
+ni desbordes.
+
+Sin probar: la invitación a instalar y «Instalar Zenit», porque el navegador
+automatizado no ofrece instalar; nada en el ambiente publicado.
+
 ## 13 de noviembre de 2026 — Aviso de zlib en la imagen de identidad
 
 El trabajo «contrato-y-seguridad» de la PR del acceso falló en «Inventario y

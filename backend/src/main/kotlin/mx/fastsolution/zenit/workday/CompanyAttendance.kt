@@ -284,6 +284,12 @@ class CompanyAttendanceRepository(private val dsl: DSLContext) {
     }
 
     /** Cierres vigentes de una semana y sus acuses, entre las personas que entran a ella. */
+    /** Las personas de la semana, con la misma regla de la tabla de asistencia. */
+    fun peopleCount(tenantId: UUID, week: Window, siteId: UUID?): Int {
+        val (where, binds) = peopleWhere(tenantId, week, siteId)
+        return dsl.fetchOne("select count(*) as people from employee e where $where", *binds.toTypedArray())!!.get("people", Int::class.java)
+    }
+
     fun closures(tenantId: UUID, weekStart: LocalDate, week: Window, siteId: UUID?): PreviousWeekCounts {
         val (where, whereBinds) = peopleWhere(tenantId, week, siteId)
         val binds = mutableListOf<Any>(weekStart.toString())

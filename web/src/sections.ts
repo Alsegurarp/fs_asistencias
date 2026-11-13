@@ -87,9 +87,8 @@ export const consoleGroups: Group[] = [
   ] },
 ]
 
-/** «Mi asistencia» no está en el menú del lienzo: se llega desde la cuenta. */
-export const personalScreen: Screen = { key: 'personal', path: '/mi-asistencia', tab: 'Mi asistencia', allowed: can('personal') }
-export const personalSection: Section = { key: 'mi-asistencia', label: 'Mi asistencia', short: 'Mi asistencia', icon: 'attendance', screens: [personalScreen] }
+/** «Mi asistencia» salió del portal porque el lienzo no la tiene: el trabajador usa la app. */
+export const retiredPersonalPath = '/mi-asistencia'
 
 /** Dirección registrada en el servicio de identidad para volver de verificar el expediente. */
 export const dossierCallbackPath = '/dossier/callback'
@@ -109,7 +108,7 @@ export function visibleGroups(groups: Group[], allowed: Allowed, roles: string[]
 export function homePath(groups: Group[], allowed: Allowed, roles: string[]) {
   for (const group of visibleGroups(groups, allowed, roles))
     for (const section of group.sections) return visibleScreens(section, allowed, roles)[0].path
-  return allowed.personal ? personalScreen.path : null
+  return null
 }
 
 const companyRoles = ['admin_empresa', 'rh', 'supervisor', 'auditor', 'trabajador']

@@ -40,6 +40,9 @@ const heading = { fontSize: 15, fontWeight: 700 } as const
  * y segundo factor, y se descarga una sola vez. La verificación vive en
  * `dossierFlow.ts`: se canjea una vez y se descarta si cambia la cuenta.
  */
+/** Una copia vista desde el historial de la empresa (contrato 0.37.0): sin identificador ni huellas. */
+type DossierHistoryItem = { requestedByName: string | null; own: boolean; status: Dossier['status']; createdAt: string; readyAt: string | null; downloadedAt: string | null }
+
 export function Dossiers({ me, context, section, screen }: Props) {
   const cache = useQueryClient()
   const timeZone = me.tenant!.timeZone
@@ -55,6 +58,9 @@ export function Dossiers({ me, context, section, screen }: Props) {
   const permission = useQuery({ queryKey: dossierPermissionKey(me), queryFn: () => api<{ enabled: boolean }>('/me/dossier-permission'), retry: false })
   const allowed = permission.data?.enabled === true
   const history = useQuery({ queryKey: ['dossiers', owner], enabled: allowed, retry: false, queryFn: () => api<Page<Dossier>>('/dossiers?limit=10') })
+  // Administración ve todas las copias de la empresa, con quién las pidió; descargar sigue siendo de quien la pidió.
+  const admin = me.roles.includes('admin_empresa')
+  const company = useQuery({ queryKey: ['dossier-history', owner], enabled: admin, retry: false, queryFn: () => api<Page<DossierHistoryItem>>('/dossier-history?limit=20') })
   // Sin una elegida, la más reciente que sigue en curso o lista.
   const id = chosen || history.data?.items.find(item => ['queued', 'preparing', 'ready'].includes(item.status))?.id || ''
   const record = useQuery({ queryKey: ['dossier', owner, id], queryFn: () => api<Dossier>(`/dossiers/${id}`), enabled: !!id && allowed, retry: false,
@@ -66,7 +72,7 @@ export function Dossiers({ me, context, section, screen }: Props) {
     queryFn: () => api<Page<UserRow>>('/users?dossierPermission=true&limit=50') })
 
   function checkAccount() { if (!mounted.current || current.current !== owner || dossierOwner(me) !== owner) throw new Error('La cuenta cambió. Inicia otra solicitud.') }
-  const refreshHistory = () => void cache.invalidateQueries({ queryKey: ['dossiers', owner] })
+  const refreshHistory = () => { void cache.invalidateQueries({ queryKey: ['dossiers', owner] }); void cache.invalidateQueries({ queryKey: ['dossier-history', owner] }) }
   const request = useMutation({ mutationFn: () => api<Dossier>('/dossiers', 'POST', { formatVersion: 1 }, key), onSuccess: value => {
     checkAccount(); clearDossierVerification(); setReturned(false); setMessage(''); setId(value.id); setKey(crypto.randomUUID()); cache.setQueryData(['dossier', owner, value.id], value); refreshHistory()
   } })
@@ -157,6 +163,19 @@ export function Dossiers({ me, context, section, screen }: Props) {
         </Box>
         <Box component="section" aria-labelledby="anteriores" sx={{ ...card, p: 0, overflow: 'hidden' }}>
           <Typography component="h2" id="anteriores" sx={{ ...heading, p: '14px 18px 0' }}>Copias anteriores</Typography>
+          {admin && company.data?.items ? <>
+            {!company.data.items.length ? <Typography sx={{ p: '4px 18px 16px', fontSize: 13, color: color.muted }}>Todavía no se ha pedido ninguna copia.</Typography>
+              : <Box sx={{ overflowX: 'auto' }}><Box component="table" sx={tableSx}>
+                <thead><tr><th scope="col">Pidió</th><th scope="col">Pedida</th><th scope="col">Estado</th><th scope="col">Descargada</th></tr></thead>
+                <tbody>{company.data.items.map(item => <tr key={`${item.createdAt}-${item.requestedByName}`}>
+                  <td><strong>{item.own ? 'Tú' : item.requestedByName || 'Persona sin nombre'}</strong></td>
+                  <Box component="td" sx={{ color: color.muted }}>{day(item.createdAt)}</Box>
+                  <td><Badge tone={dossierStatus[item.status].tone}>{dossierStatus[item.status].label}</Badge></td>
+                  <Box component="td" sx={{ color: color.muted }}>{item.downloadedAt ? day(item.downloadedAt) : '—'}</Box>
+                </tr>)}</tbody>
+              </Box></Box>}
+            <Typography sx={{ p: '8px 18px 14px', fontSize: 12.5, color: color.muted }}>Todas las copias de la empresa. Cada copia sólo la descarga quien la pidió.</Typography>
+          </> : <>
           {history.isError ? <Box sx={{ p: 2 }}><Note tone="error">{problemText(history.error, 'No pudimos cargar las copias.')}</Note></Box>
             : !previous.length ? <Typography sx={{ p: '4px 18px 16px', fontSize: 13, color: color.muted }}>{history.isPending ? 'Cargando…' : 'Todavía no hay otras copias tuyas.'}</Typography>
               : <Box sx={{ overflowX: 'auto' }}><Box component="table" sx={tableSx}>
@@ -169,6 +188,7 @@ export function Dossiers({ me, context, section, screen }: Props) {
                 </tr>)}</tbody>
               </Box></Box>}
           <Typography sx={{ p: '8px 18px 14px', fontSize: 12.5, color: color.muted }}>Aquí están sólo las copias que pediste tú; las de los demás quedan en la bitácora.</Typography>
+          </>}
         </Box>
         {holders.data && <Box component="section" aria-labelledby="quien" sx={{ ...card, p: 0, overflow: 'hidden' }}>
           <Typography component="h2" id="quien" sx={{ ...heading, p: '14px 18px 0' }}>Quién puede descargarlo</Typography>

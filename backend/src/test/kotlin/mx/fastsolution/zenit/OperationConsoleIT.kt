@@ -72,6 +72,8 @@ class OperationConsoleIT : WorkdayTestBase() {
             """{"breakPolicy":"marked","reason":"Cambio pedido por la empresa"}""",
         )
         assertEquals(201, scheduled.status, scheduled.toString())
+        // Desde 0.37.0 el cambio dice quién lo programó.
+        assertFalse(scheduled.at<String?>("scheduledByName").isNullOrBlank(), scheduled.toString())
 
         val all = call("GET", "/api/v1/tenants?limit=200&q=${q(tag)}", operator)
         assertEquals(200, all.status, all.toString())
@@ -81,6 +83,12 @@ class OperationConsoleIT : WorkdayTestBase() {
         val own = call("GET", "/api/v1/tenant", linked.adminToken)
         assertEquals(own.at<Map<String, Any?>>("breakPolicyChange"), item(all, linked.id)["breakPolicyChange"])
         assertEquals(listOf("not_considered", null), listOf(item(all, linked.id)["breakPolicy"], item(all, pending.id)["breakPolicyChange"]))
+        // La suspensión vigente dice cuándo, quién y por qué; una activa no trae suspensión.
+        @Suppress("UNCHECKED_CAST")
+        val suspension = item(all, pending.id)["suspension"] as Map<String, Any?>
+        assertEquals("Falta de pago del periodo.", suspension["reason"])
+        assertFalse((suspension["byName"] as String?).isNullOrBlank())
+        assertNull(item(all, linked.id)["suspension"])
 
         val first = administration(all, linked.id)
         assertEquals("linked", first["state"])
@@ -108,6 +116,7 @@ class OperationConsoleIT : WorkdayTestBase() {
         // Los filtros se aplican antes de paginar.
         assertEquals(listOf(pending.id), call("GET", "/api/v1/tenants?q=${q(tag)}&status=suspended", operator).list("items[*].id"))
         assertEquals(listOf(linked.id, nobody.id), call("GET", "/api/v1/tenants?q=${q(tag)}&status=active", operator).list("items[*].id"))
+        assertEquals(listOf(linked.id), call("GET", "/api/v1/tenants?q=${q(tag)}&breakPolicyChange=scheduled", operator).list("items[*].id"))
         for ((state, id) in listOf("linked" to linked.id, "pending" to pending.id, "none" to nobody.id)) {
             assertEquals(listOf(id), call("GET", "/api/v1/tenants?q=${q(tag)}&administration=$state", operator).list("items[*].id"))
         }
@@ -125,12 +134,13 @@ class OperationConsoleIT : WorkdayTestBase() {
         assertEquals(200, summary.status, summary.toString())
         assertEquals(listOf(3, 2, 1), listOf<Int>(summary.at("total"), summary.at("active"), summary.at("suspended")))
         assertEquals(mapOf("linked" to 1, "pending" to 1, "none" to 1), summary.at<Map<String, Int>>("administration"))
+        assertEquals(1, summary.at<Int>("breakPolicyChange"))
         assertTrue(call("GET", "/api/v1/tenants/summary", operator).at<Int>("total") >= 3)
 
         // La empresa no ve el estado de su administración desde su propia vista.
         assertFalse("administration" in call("GET", "/api/v1/tenant", linked.adminToken).body)
 
-        for (bad in listOf("status=borrada", "status=ACTIVE", "administration=quien", "q=${"x".repeat(101)}")) {
+        for (bad in listOf("status=borrada", "status=ACTIVE", "administration=quien", "breakPolicyChange=si", "q=${"x".repeat(101)}")) {
             assertProblem(422, "validation", call("GET", "/api/v1/tenants?$bad", operator))
         }
         assertEquals("too_long", call("GET", "/api/v1/tenants/summary?q=${"x".repeat(101)}", operator).at("errors[0].code"))
@@ -138,6 +148,10 @@ class OperationConsoleIT : WorkdayTestBase() {
             assertProblem(401, "unauthorized", call("GET", path, null))
             assertProblem(403, "forbidden", call("GET", path, linked.adminToken))
         }
+
+        // Al reactivarla, la suspensión se borra; la historia queda en la bitácora.
+        assertEquals(200, call("POST", "/api/v1/tenants/${pending.id}/reactivation", operator, """{"reason":"Pago recibido del periodo."}""").status)
+        assertNull(item(call("GET", "/api/v1/tenants?q=${q(tag)}&status=active", operator), pending.id)["suspension"])
     }
 
     @Test

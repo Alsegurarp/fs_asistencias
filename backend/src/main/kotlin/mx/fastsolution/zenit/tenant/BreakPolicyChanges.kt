@@ -58,6 +58,8 @@ data class BreakPolicyChangeRow(
     val effectiveOn: LocalDate,
     val reason: String,
     val scheduledAt: OffsetDateTime,
+    /** Nombre de quien lo programó; nulo en los programados antes del contrato 0.37.0. */
+    val scheduledByName: String? = null,
 )
 
 class BreakPolicyChangeRequest {
@@ -73,6 +75,7 @@ data class BreakPolicyChangeView(
     val effectiveAt: String,
     val reason: String,
     val scheduledAt: String,
+    val scheduledByName: String?,
 ) {
     companion object {
         fun of(row: BreakPolicyChangeRow, timeZone: String) = BreakPolicyChangeView(
@@ -82,6 +85,7 @@ data class BreakPolicyChangeView(
             effectiveAt = row.effectiveOn.atStartOfDay(ZoneId.of(timeZone)).toInstant().toString(),
             reason = row.reason,
             scheduledAt = row.scheduledAt.toInstant().toString(),
+            scheduledByName = row.scheduledByName,
         )
     }
 }
@@ -99,12 +103,12 @@ data class UpcomingBreakPolicyView(val breakPolicy: String, val effectiveOn: Str
 
 @Repository
 class BreakPolicyChangeRepository(private val dsl: DSLContext) {
-    fun insert(tenantId: UUID, id: UUID, breakPolicy: String, effectiveOn: LocalDate, reason: String): BreakPolicyChangeRow =
+    fun insert(tenantId: UUID, id: UUID, breakPolicy: String, effectiveOn: LocalDate, reason: String, scheduledByName: String): BreakPolicyChangeRow =
         row(
             dsl.fetchOne(
-                "insert into break_policy_change (tenant_id, id, break_policy, effective_on, reason) " +
-                    "values (?, ?, ?, cast(? as date), ?) returning $COLUMNS",
-                tenantId, id, breakPolicy, effectiveOn.toString(), reason,
+                "insert into break_policy_change (tenant_id, id, break_policy, effective_on, reason, scheduled_by_name) " +
+                    "values (?, ?, ?, cast(? as date), ?, ?) returning $COLUMNS",
+                tenantId, id, breakPolicy, effectiveOn.toString(), reason, scheduledByName,
             )!!,
         )
 
@@ -151,10 +155,11 @@ class BreakPolicyChangeRepository(private val dsl: DSLContext) {
         effectiveOn = LocalDate.parse(r.get("effective_on", String::class.java)),
         reason = r.get("reason", String::class.java),
         scheduledAt = r.get("scheduled_at", OffsetDateTime::class.java),
+        scheduledByName = r.get("scheduled_by_name", String::class.java),
     )
 
     private companion object {
-        const val COLUMNS = "tenant_id, id, break_policy, cast(effective_on as text) as effective_on, reason, scheduled_at"
+        const val COLUMNS = "tenant_id, id, break_policy, cast(effective_on as text) as effective_on, reason, scheduled_at, scheduled_by_name"
     }
 }
 
@@ -224,7 +229,7 @@ class BreakPolicyChangeService(
         }
         val effectiveOn = BreakPolicySchedule.effectiveOn(policies.today(tenant), tenant.weekStartsOn)
         val change = try {
-            changes.insert(tenantId, UUID.randomUUID(), breakPolicy!!, effectiveOn, reason!!)
+            changes.insert(tenantId, UUID.randomUUID(), breakPolicy!!, effectiveOn, reason!!, person.displayName)
         } catch (e: RuntimeException) {
             if (Conflicts.uniqueConstraint(e) == Conflicts.BREAK_POLICY_CHANGE_DAY) throw pendingConflict() else throw e
         }

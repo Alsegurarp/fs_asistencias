@@ -22,7 +22,7 @@ ambiente nunca pierde una función.
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Integrado (PR #50) y desplegado |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Integrado (PR #51 a #53) y desplegado ([detalle](#bloque-4-reportes)) |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Hecho, sin cambios al API ([detalle](#bloque-5-consola-de-operación)) |
-| 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pantallas de acceso integradas (PR #64 y #65) ([detalle](#bloque-6-acceso-con-marca)); faltan ACC-06, la confirmación para descargar el expediente, y el portal instalable |
+| 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Acceso integrado (PR #64 y #65); ACC-06 y el portal instalable hechos en `feat/mvp-segun-el-lienzo` ([acceso](#bloque-6-acceso-con-marca), [instalable](#portal-instalable)) |
 
 El bloque 1 entra en cuatro PR, una por pantalla y en ese orden: Asistencia
 (OPE-02, OPE-07, OPE-08, EST-09, TEL-07, TEL-08), Incidencias (OPE-03,
@@ -114,9 +114,9 @@ OpenStreetMap con Leaflet 1.9.4, en un archivo aparte que sólo baja al abrir
 Configuración; la política de seguridad del portal admite
 `https://tile.openstreetmap.org` en `img-src`. Diferencias con el lienzo:
 
-- **«Programó Mariana Ortiz»:** el API no guarda quién programó el cambio de comida; se muestra sólo la fecha.
-- **«Sede activa»:** en lugar del interruptor, el pie del panel tiene «Desactivar sede» o «Reactivar sede», que se guardan en el acto.
-- **Columna «Acciones»:** no hay botón «Editar»; un clic en la fila abre la sede, como en las demás tablas.
+- **«Programó Mariana Ortiz»:** Desde el MVP según el lienzo (contrato 0.37.0) el cambio guarda quién lo programó y Configuración lo muestra; los programados antes no tienen nombre.
+- **«Sede activa»:** Desde el MVP según el lienzo (contrato 0.37.0) es el interruptor del lienzo y se guarda en el acto.
+- **Columna «Acciones»:** Desde el MVP según el lienzo (contrato 0.37.0) lleva «Editar» (o «Ver» para quien sólo consulta); un clic en la fila sigue abriendo la sede.
 - **Fecha de entrada del cambio de comida:** el portal la calcula con la misma regla del servidor para mostrarla antes de programar; la que vale es la que devuelve el servidor.
 
 **Estado del 11 de noviembre:** Usuarios y roles (EMP-04, 05 y 06) y Mi
@@ -133,7 +133,7 @@ El menú Crear suma «Invitar a alguien del equipo». Diferencias con el lienzo:
 - **Nombre:** «Editar acceso» deja cambiar el nombre, que el lienzo no muestra.
 - **Habilitar:** a quien está deshabilitado, el panel le ofrece «Habilitar su acceso» en lugar de «Deshabilitar su acceso».
 - **Permisos por rol:** «Personal, horarios, tarjetas y lectores» se parte en «Personal y horarios» (Supervisión consulta los de sus sedes) y «Tarjetas y lectores» (Supervisión no los ve), y se agrega «Importar el padrón», como los aplica el servidor.
-- **Mi perfil:** el alcance de Supervisión dice «Las sedes que te asignaron», sin nombrarlas, porque `/me` no trae sus sedes. El segundo factor dice «App de autenticación» sin «Activo»: el portal no sabe si ya lo configuró. «Cambiar» y «Reconfigurar» abren la consola de cuenta de Keycloak en otra pestaña. «Zenit en este equipo» e «Instalar» llegan con el bloque 6.
+- **Mi perfil:** Desde el MVP según el lienzo (contrato 0.37.0) el alcance de Supervisión nombra sus sedes (`sites` en `/me`) y el segundo factor dice «Activo · app de autenticación», porque el acceso lo exige en cada ingreso; el portal no consulta la cuenta en el servicio de identidad, cuyo cliente técnico sólo puede pedir una contraseña nueva. «Cambiar» y «Reconfigurar» abren la consola de cuenta de Keycloak en otra pestaña. «Zenit en este equipo» ofrece instalar el portal.
 - **Cifra «Supervisión con sedes»:** cuenta a Supervisión de cualquier estado contra quienes, con acceso vigente, no tienen sedes.
 
 Dos PR: Configuración con sedes, comida y reglas (EMP-01, 02, 03, 07, 08) y
@@ -180,9 +180,9 @@ Retira `Exports`; `saveFile` pasa a `files.ts` y `EntitySelect` sale de
 `legacy.tsx`. `ReportSheet.tsx` es la hoja de vista previa con su copia
 para imprimir, y la usará también la bitácora. Diferencias con el lienzo:
 
-- **PDF:** sale de la impresión del navegador. La vista previa es una hoja continua; los saltos de página los pone la impresión, así que no hay «Página 1 de 2» ni «Anterior» y «Siguiente» de páginas.
-- **Columnas:** los cierres no traen días trabajados, horario ni incidencias resueltas, así que esas columnas no están. Se agrega «Tiempo trabajado», y «Comida» es el descanso registrado de la semana.
-- **Semanas:** se ofrecen las cinco últimas que ya terminaron, cada una con sus cerradas y bloqueadas en el alcance elegido; «39 de 42» queda como «39 cerradas · 3 bloqueadas», porque el resumen no trae cuántas personas tenía la semana.
+- **PDF:** sale de la impresión del navegador. Desde el MVP según el lienzo (contrato 0.37.0) la vista previa va por páginas, como el lienzo: «Página 1 de 2» con anterior y siguiente; cada página corta antes de una fila o un bloque.
+- **Columnas:** Desde el MVP según el lienzo (contrato 0.37.0) «Horario» siempre, y «Días trabajados» e «Incidencias resueltas» como en el lienzo (`daysWorked`, `scheduleName` y `resolvedIncidents` en cada cierre). Un cierre anterior a 0.26.0 no guardó sus días y dice «—». «Tiempo trabajado» sigue disponible, apagado como en el lienzo, y «Comida» es el descanso registrado de la semana.
+- **Semanas:** se ofrecen las cinco últimas que ya terminaron. Desde el MVP según el lienzo (contrato 0.37.0) dicen «39 de 42 cerradas», con `people` del resumen, y las bloqueadas aparte.
 - **Línea de firma:** dos líneas, «Elaboró» y «Autoriza la nómina».
 - **Generados recientemente:** por ahora sólo los exportes de nómina; el expediente se suma con su PR. La bitácora no aparece ahí porque su hoja y su CSV los arma el portal y no quedan registrados.
 
@@ -203,7 +203,7 @@ incluye esta copia» y la carátula salen del manifiesto. Las copias propias
 se suman a «Generados recientemente». Retira la pantalla anterior de
 `Dossiers`, que no usaba el marco. Diferencias con el lienzo:
 
-- **Copias anteriores y descargas:** son sólo las de quien consulta, porque `GET /dossiers` no devuelve las de otras personas; las demás están en la bitácora. Por eso no hay columna «Pidió» ni «Descargas anteriores» de otros.
+- **Copias anteriores y descargas:** Desde el MVP según el lienzo (contrato 0.37.0) Administración ve todas las copias de la empresa con quién las pidió y cuándo se descargaron (`GET /dossier-history`), sin identificadores ni huellas: consultar o descargar una copia sigue siendo sólo de quien la pidió. Los demás roles ven sólo las suyas.
 - **Quién puede descargarlo:** sólo lo ve Administración, porque sale de `GET /users`.
 - **La carátula** se ve en cuanto la copia está lista, no sólo después de confirmar la identidad, y se imprime desde el navegador.
 - **Huellas:** del manifiesto y del ZIP, completas en la carátula y abreviadas en pantalla.
@@ -230,20 +230,14 @@ Lo que cambia respecto al lienzo:
 
 - **Quién administra** es una columna de la tabla y una parte de la ficha,
   con el correo y si ya entró; el lienzo no lo dibuja.
-- **Vistas:** Todas, Activas y Suspendidas, más «Invitación sin usar» y «Sin
-  quien administre» cuando hay alguna. «Con cambio de comida» no está: el
-  servidor no filtra por eso.
-- **«Marcaron en el mes»** sale de `GET /tenants/usage` con la misma página
-  de la lista, que pagina igual. Con una vista por administración la columna
-  no se muestra, porque esa ruta no tiene ese filtro.
-- **La ficha suspendida** no dice el motivo ni quién suspendió: `Tenant` no
-  lo trae; está en la bitácora de la empresa.
+- **Vistas:** Todas, Activas, Suspendidas y «Con cambio de comida», como el lienzo (desde el mvp según el lienzo (contrato 0.37.0), `breakPolicyChange=scheduled`), más «Invitación sin usar» y «Sin quien administre» cuando hay alguna.
+- **«Marcaron en el mes»** sale de `GET /tenants/usage` con la misma página de la lista, que pagina igual. Con una vista por administración o por cambio de comida la columna no se muestra, porque esa ruta no tiene esos filtros.
+- **La ficha suspendida** desde el mvp según el lienzo (contrato 0.37.0) dice cuándo, quién y por qué se suspendió (`suspension`); una suspendida antes de esa versión no lo trae y está en la bitácora.
 - **El mes en curso** de las cifras y de Uso del mes se corta con la hora del
   centro de México; cada conteo sigue cortándose en la zona de su empresa.
 - **El CSV** lo arma el portal recorriendo las páginas; un nombre que empieza
   como fórmula se escribe con apóstrofo.
-- La búsqueda de empresas y el alta están en la pantalla, no en la barra
-  superior.
+- **La búsqueda de empresas y el alta** desde el mvp según el lienzo (contrato 0.37.0) están en la barra superior, como el lienzo; la tecla «/» enfoca la búsqueda.
 
 ### Bloque 6: acceso con marca
 
@@ -251,9 +245,12 @@ Las pantallas de acceso las sirve Keycloak, no el portal: el tema `zenit`
 vive en `infra/keycloak/themes/zenit/login/` y viaja en la imagen de
 identidad. La primera versión (PR #64) sólo traía estilos y textos; desde
 la PR #65 las pantallas que el lienzo dibuja tienen su propia plantilla,
-para quedar iguales a él. Falta ACC-06, «Confirma que eres tú» antes de
-descargar el expediente: hoy esa confirmación muestra la pantalla del código
-(ACC-02).
+para quedar iguales a él. ACC-06, «Confirma que eres tú» antes de descargar
+el expediente, usa las mismas plantillas: el cliente del expediente pide la
+contraseña y después un código nuevo, aunque la sesión del portal siga
+abierta, y las dos pantallas llevan la etiqueta, el título, la cuenta y
+«Cancelar y volver a Zenit» del lienzo. El flujo no cambió; el lienzo junta
+contraseña y código en una pantalla y Keycloak los pide en dos.
 
 | Archivo | Qué lleva |
 | --- | --- |
@@ -310,12 +307,42 @@ Lo que cambia respecto al lienzo, y por qué:
   Keycloak con los estilos de Zenit.
 - **La tarjeta «Asistencia de hoy 38 / 42»** del panel de marca es un
   adorno con el dato de ejemplo del lienzo, no una cifra real.
-- **Sin ícono propio de pestaña:** se queda el de Keycloak hasta tener los
-  íconos de la marca, que llegan con el portal instalable.
+- **Ícono de la pestaña:** el portal ya tiene el suyo, con el logotipo del lienzo; las pantallas de acceso conservan el de Keycloak hasta tener los íconos de la marca.
 
 Para verlo en local sin reconstruir la imagen, montar
 `infra/keycloak/themes` en `/opt/keycloak/themes` y arrancar Keycloak con
 `KC_SPI_THEME_CACHE_THEMES=false` y `KC_SPI_THEME_CACHE_TEMPLATES=false`.
+
+### Portal instalable
+
+TEL-03 y EST-06. El portal se instala en el teléfono o en la computadora y
+abre sin red lo último que se consultó, sin escribir nada sin conexión.
+
+| Archivo | Qué lleva |
+| --- | --- |
+| `web/public/manifest.webmanifest` | Nombre, colores y los íconos |
+| `web/public/icons/`, `web/public/favicon.svg` | Íconos con el logotipo del lienzo; se cambian cuando haya marca definitiva |
+| `web/public/sw.js` | El service worker: guarda la página y sus archivos al instalarse; las consultas al API van primero a la red y, sin red, responden con lo último guardado |
+| `web/src/offline.ts` | Registro del service worker, estado de la red, hora de los datos y la instalación |
+| `web/src/Install.tsx` | «En línea · datos de las…» e «Instalar Zenit» al pie del menú, el aviso «Sin conexión», la píldora del teléfono, la invitación a instalar (TEL-03) y «Zenit en este equipo» en Mi perfil |
+
+Reglas:
+
+- **Sólo lectura.** Lo que escribe (resolver, cerrar, exportar) no se guarda
+  ni se encola: sin red falla y lo dice. La cola sin conexión sigue siendo
+  sólo de la app NFC.
+- **No se guarda** el expediente, sus autorizaciones ni los archivos que se
+  descargan.
+- **Lo guardado se borra** al cerrar sesión y cuando entra otra cuenta en el
+  mismo navegador.
+- **Abrir sin red** muestra «Sin conexión»: para entrar, Zenit confirma la
+  cuenta con el servicio de identidad. Lo que ya estaba abierto se sigue
+  viendo sin señal.
+- **«Instalar»** sólo aparece cuando el navegador ofrece instalarlo; si no,
+  Mi perfil explica cómo hacerlo desde su menú. «Ahora no» en la invitación
+  del teléfono no vuelve a insistir en ese navegador.
+- `nginx.conf` sirve `sw.js` sin caché, para que una versión nueva llegue en
+  la siguiente visita.
 
 ## Reglas para no duplicar
 
@@ -389,7 +416,7 @@ Para verlo en local sin reconstruir la imagen, montar
 | `/usuarios` | Usuarios y roles |
 | `/reportes`, `/reportes/expediente` | Reportes y expediente |
 | `/dossier/callback` | Regreso de la verificación del expediente; está registrada en Keycloak y no se cambia |
-| `/mi-asistencia` | Mi asistencia, desde el menú de la cuenta |
+| `/mi-asistencia` | Ya no existe: lleva al inicio |
 | `/empresas`, `/empresas/uso` | Consola de operación: Empresas y Uso del mes |
 | `/mas` | Más, en teléfono |
 | `/sesion-terminada` | Tu sesión terminó |
@@ -413,20 +440,15 @@ Para verlo en local sin reconstruir la imagen, montar
 | Historial completo de una incidencia: la incidencia trae su apertura, su asignación actual y su resolución; lo demás está en la bitácora, que sólo ven Administración y Auditoría | Bitácora en Reportes (bloque 4) |
 | Buscador (CTA-05) | Dispositivos y tarjetas |
 | Menú Crear (CTA-04) | Dispositivos y tarjetas, con las ventanas de alta de persona, horario, tarjeta y lector; «Invitar» llegó con el bloque 3 y «Generar un reporte» llega con el 4 |
-| «En línea · datos de las…», «Instalar Zenit» y sin conexión | Bloque 6 |
+| ~~«En línea · datos de las…», «Instalar Zenit» y sin conexión~~ | **Hecho:** portal instalable ([detalle](#portal-instalable)) |
 | ~~Empresa suspendida (EST-02)~~ | **Hecho (contrato 0.36.0):** `/me` trae `access` (`active`, `suspended`, `none`) y, sólo con la empresa suspendida y el acceso vigente, `suspendedTenantName`; `App.tsx` muestra `CompanySuspended` de `States.tsx` |
 | ~~Pantallas de acceso con la marca (ACC-01 a 05)~~ | **Hecho:** tema `zenit` de Keycloak ([detalle](#bloque-6-acceso-con-marca)) |
-| ACC-06 «Confirma que eres tú» al descargar el expediente | Bloque 6: hoy se ve la pantalla del código |
+| ~~ACC-06 «Confirma que eres tú» al descargar el expediente~~ | **Hecho:** plantillas del tema ([detalle](#bloque-6-acceso-con-marca)) |
 
 Diferencias deliberadas con el lienzo:
 
-- **Mi asistencia** no está en el lienzo. Se conserva en el menú de la cuenta
-  y es el inicio de quien sólo tiene el rol de trabajador, hasta decidir si
-  el portal la mantiene.
-- **Marcajes de la ficha.** El lienzo dice «Terminal Bodega Norte · tarjeta
-  T-0031». El marcaje no guarda con qué tarjeta se hizo y Supervisión no lee
-  los lectores: la ficha dice «Terminal de *sede*» o «Teléfono personal», sin
-  tarjeta.
+- **Mi asistencia** desde el mvp según el lienzo (contrato 0.37.0) salió del portal, porque el lienzo no la tiene: el trabajador consulta su semana y acusa sus cierres en la app. `/mi-asistencia` lleva al inicio, y quien sólo es trabajador ve que su asistencia está en la app.
+- **Marcajes de la ficha.** Desde el MVP según el lienzo (contrato 0.37.0) dicen «Terminal Bodega Norte · tarjeta T-0031», como el lienzo, con `cardLabel` de cada marcaje.
 - **Atención en Asistencia.** Además de «Extra 3 de 4 días», como en el
   lienzo, la columna muestra los topes rebasados, el tramo sin salida que ya
   no es el turno de hoy y cada incidencia abierta, que abre Incidencias. Una
@@ -456,8 +478,7 @@ Diferencias deliberadas con el lienzo:
 - **Cierres en Supervisión.** Supervisión sólo ve las corridas de su sede;
   si la última fue de toda la empresa, el banner lo dice en lugar de «Sin
   corridas».
-- **Panel: sin «Hoy · Esta semana».** El lienzo tiene ese conmutador sin
-  decir qué cambia; el Panel muestra hoy y la semana en curso a la vez.
+- **Panel: «Hoy · Esta semana».** Desde el MVP según el lienzo (contrato 0.37.0) el conmutador del lienzo cambia la primera tarjeta entre la asistencia de hoy y lo trabajado en la semana en curso (`?periodo=semana`).
 - **Panel: «sin salida»** cuenta a quien tiene un tramo sin cerrar en la
   semana que ya no es su turno, no sólo el de ayer.
 - **Panel: horas de la semana.** Salen de `mostHours` del resumen (contrato
@@ -475,14 +496,10 @@ Diferencias deliberadas con el lienzo:
   no se guardan en el servidor. Un aviso cuya cifra cambia vuelve a contar.
   La campana es de quien ve la operación de la empresa; quien sólo es
   trabajador sigue viendo el aviso de la comida arriba de su pantalla.
-- **Personas: estado en un selector.** El lienzo pone «Activas · Dadas de
-  baja · Todas» como pestañas; van en un selector junto a la sede para que
-  los filtros de horario quepan en una fila.
+- **Personas: estado en un selector.** Como el lienzo vigente, que también lo pone en un selector junto a la sede.
 - **Personas: «Alta reciente»** es quien ingresó en las últimas dos semanas;
   quien ingresa después de hoy dice «Ingresa …».
-- **Ficha: la tarjeta** dice desde cuándo la tiene sólo a quien consulta
-  tarjetas (Administración, RH y Auditoría); «Ver tarjeta» lleva a la lista
-  de tarjetas hasta que exista su detalle (PAD-11).
+- **Ficha: la tarjeta** dice desde cuándo la tiene sólo a quien consulta tarjetas (Administración, RH y Auditoría); desde el mvp según el lienzo (contrato 0.37.0) «Ver tarjeta» abre el detalle de esa tarjeta.
 - **Alta: la fecha de ingreso** es obligatoria en el API; el formulario la
   llena con hoy. La tarjeta se elige sólo si quien da de alta gestiona
   tarjetas.
@@ -492,9 +509,7 @@ Diferencias deliberadas con el lienzo:
 - **Importar: «Importar CSV»** abre el modal sobre Importaciones
   (`?importar=archivo`), también desde Personas, para que al terminar se vea
   el historial.
-- **Importar: aplicar una revisión del historial** pide elegir otra vez el
-  archivo: el servidor no lo guarda y comprueba que sea el mismo por su
-  huella. El lienzo lleva de «Revisar y aplicar» directo a revisar.
+- **Importar: aplicar una revisión del historial.** Desde el MVP según el lienzo (contrato 0.37.0) «Revisar y aplicar» la aplica directo si el archivo se revisó en esta visita, como el lienzo. Tras recargar la página pide elegirlo otra vez: el servidor no guarda el archivo y comprueba que sea el mismo por su huella.
 - **Importar: la huella** es la de las filas aplicadas (`manifestHash`), no
   la del archivo, y así lo dice; el lienzo dice «Huella del archivo». Las
   importaciones anteriores al contrato 0.29.0 no dicen altas, con cambios y

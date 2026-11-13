@@ -62,6 +62,8 @@ data class EventRow(
     val payloadSha256: String,
     /** Incidencias del marcaje, como pares de identificador y tipo. */
     val incidents: List<Pair<UUID, String>>,
+    /** Etiqueta de la tarjeta con la que se marcó. */
+    val cardLabel: String? = null,
 )
 
 data class RejectionRow(val code: String, val message: String, val observedAt: OffsetDateTime?, val receivedAt: OffsetDateTime, val payloadSha256: String)
@@ -117,6 +119,7 @@ data class AttendanceEventView(
     val accuracyMeters: Double?,
     val incidentIds: List<String>,
     val payloadHash: String,
+    val cardLabel: String?,
 )
 
 @Repository
@@ -256,6 +259,7 @@ class CaptureRepository(private val dsl: DSLContext) {
             val (id, type) = it.split('=', limit = 2)
             UUID.fromString(id) to type
         },
+        cardLabel = r.get("card_label", String::class.java),
     )
 
     private companion object {
@@ -263,7 +267,8 @@ class CaptureRepository(private val dsl: DSLContext) {
             "select e.id, e.idempotency_key, e.event_type, e.outcome, e.observed_at, e.received_at, e.device_id, e.device_mode, " +
                 "e.employee_id, e.site_id, e.location_verdict, e.accuracy_m, cast(e.payload_sha256 as text) as payload_sha256, " +
                 "coalesce((select string_agg(cast(i.id as text) || '=' || i.type, ',' order by i.created_at, i.id) from incident i " +
-                "where i.tenant_id = e.tenant_id and i.event_id = e.id), '') as incidents from attendance_event e"
+                "where i.tenant_id = e.tenant_id and i.event_id = e.id), '') as incidents, " +
+                "(select c.label from card c where c.tenant_id = e.tenant_id and c.id = e.card_id) as card_label from attendance_event e"
     }
 }
 
@@ -624,6 +629,7 @@ class CaptureController(private val service: CaptureService) {
                 accuracyMeters = it.accuracyMeters,
                 incidentIds = it.incidents.map { incident -> incident.first.toString() },
                 payloadHash = it.payloadSha256,
+                cardLabel = it.cardLabel,
             )
         }
     }

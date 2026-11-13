@@ -6,7 +6,9 @@ export type Administrator = { email: string; status: 'active' | 'invited'; invit
 export type AdministrationState = 'linked' | 'pending' | 'none'
 /** Una empresa vista desde la operación del servicio. */
 export type OperatedTenant = Tenant & { administration: { state: AdministrationState; total: number; administrators: Administrator[] } }
-export type TenantSummary = { total: number; active: number; suspended: number; administration: Record<AdministrationState, number> }
+export type TenantSummary = { total: number; active: number; suspended: number; administration: Record<AdministrationState, number>
+  /** Desde el contrato 0.37.0. */
+  breakPolicyChange?: number }
 export type UsageItem = { id: string; name: string; slug: string; status: 'active' | 'suspended'; usage: TenantUsage }
 export type UsageSummary = { month: string; tenants: number; complete: number } & Record<UsageKey, number>
 
@@ -30,6 +32,7 @@ export const tenantFilters: { slug: string; label: string; params: Record<string
   { slug: 'todas', label: 'Todas', params: {}, count: summary => summary.total, always: true },
   { slug: 'activas', label: 'Activas', params: { status: 'active' }, count: summary => summary.active, always: true },
   { slug: 'suspendidas', label: 'Suspendidas', params: { status: 'suspended' }, count: summary => summary.suspended, always: true },
+  { slug: 'con-cambio-de-comida', label: 'Con cambio de comida', params: { breakPolicyChange: 'scheduled' }, count: summary => summary.breakPolicyChange ?? 0, always: true },
   { slug: 'invitacion-pendiente', label: 'Invitación sin usar', params: { administration: 'pending' }, count: summary => summary.administration.pending, always: false },
   { slug: 'sin-administracion', label: 'Sin quien administre', params: { administration: 'none' }, count: summary => summary.administration.none, always: false },
 ]

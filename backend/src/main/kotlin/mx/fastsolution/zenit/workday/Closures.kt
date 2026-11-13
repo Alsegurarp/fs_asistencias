@@ -57,6 +57,12 @@ data class ClosureRow(
     val employeeName: String,
     val employeeExternalId: String,
     val closedByName: String?,
+    /** Días con tiempo trabajado; nulo en un cierre anterior al contrato 0.26.0, que no guardó sus días. */
+    val daysWorked: Int? = null,
+    /** El horario vigente en la semana; nulo si no tenía. */
+    val scheduleName: String? = null,
+    /** Incidencias de la semana ya resueltas. */
+    val resolvedIncidents: Int = 0,
 )
 
 data class WeekClosureView(
@@ -74,12 +80,16 @@ data class WeekClosureView(
     val closedBy: String?,
     val closedByName: String?,
     val acknowledgement: AcknowledgementView?,
+    val daysWorked: Int?,
+    val scheduleName: String?,
+    val resolvedIncidents: Int,
 ) {
     companion object {
         fun of(row: ClosureRow) = WeekClosureView(
             row.id.toString(), row.employeeId.toString(), row.employeeName, row.employeeExternalId, row.weekStart.toString(),
             row.version, row.status, RuleSetRef(row.ruleSetId.toString(), row.ruleSetVersion), row.totals, row.hash,
             row.closedAt.toInstant().toString(), row.closedBy?.toString(), row.closedByName, row.acknowledgement,
+            row.daysWorked, row.scheduleName, row.resolvedIncidents,
         )
     }
 }
@@ -93,6 +103,8 @@ data class WeekClosureSummaryView(
     val reopened: Int,
     val blocked: Int,
     val acknowledgements: AcknowledgementCounts,
+    /** Personas de la semana en el alcance, con la regla de la asistencia: activas o que marcaron en ella. */
+    val people: Int,
 )
 
 data class BlockedClosureView(val employeeId: String, val reason: String, val incidentIds: List<String>)
@@ -285,10 +297,31 @@ class ClosureRepository(private val dsl: DSLContext) {
         employeeName = r.get("employee_name", String::class.java),
         employeeExternalId = r.get("employee_external_id", String::class.java),
         closedByName = r.get("closed_by_name", String::class.java),
+        daysWorked = r.get("days_worked", Number::class.java)?.toInt(),
+        scheduleName = r.get("schedule_name", String::class.java),
+        resolvedIncidents = r.get("resolved_incidents", Number::class.java).toInt(),
     )
 
     private companion object {
         const val MISSING_PAIR = "missing_pair"
+        /** Los días guardados en el cálculo del cierre con tiempo trabajado. */
+        const val DAYS_WORKED =
+            "(case when json_typeof(c.snapshot -> 'days') = 'array' then (select count(*) from json_array_elements(c.snapshot -> 'days') d " +
+                "where (d ->> 'workedMinutes')::int > 0) end)"
+
+        /** El horario que más tarde empezó entre los vigentes en algún día de la semana. */
+        const val SCHEDULE_NAME =
+            "(select s.name from schedule_assignment a join schedule s on s.tenant_id = a.tenant_id and s.id = a.schedule_id " +
+                "where a.tenant_id = c.tenant_id and a.employee_id = c.employee_id and a.valid_from <= c.week_start + 6 " +
+                "and (a.valid_to is null or a.valid_to >= c.week_start) order by a.valid_from desc limit 1)"
+
+        /** Incidencias resueltas de la persona cuyo marcaje cae en la semana, con la hora de su empresa. */
+        const val RESOLVED =
+            "(select count(*) from incident ri join attendance_event re on re.tenant_id = ri.tenant_id and re.id = ri.event_id " +
+                "join tenant rt on rt.id = ri.tenant_id where ri.tenant_id = c.tenant_id and ri.employee_id = c.employee_id " +
+                "and ri.status = 'resolved' and re.observed_at >= (c.week_start::timestamp at time zone rt.time_zone) " +
+                "and re.observed_at < ((c.week_start + 7)::timestamp at time zone rt.time_zone))"
+
         const val FROM =
             "from week_closure c join employee emp on emp.tenant_id = c.tenant_id and emp.id = c.employee_id " +
                 "left join closure_acknowledgement k on k.tenant_id = c.tenant_id and k.closure_id = c.id"
@@ -297,7 +330,8 @@ class ClosureRepository(private val dsl: DSLContext) {
                 "c.rule_set_version, c.worked_minutes, c.break_minutes, c.ordinary_minutes, c.overtime_minutes, " +
                 "cast(c.hash as text) as hash, c.closed_at, c.closed_by, k.id as ack_id, k.type as ack_type, k.note as ack_note, " +
                 "k.at as ack_at, cast(k.evidence_hash as text) as ack_hash, emp.display_name as employee_name, " +
-                "emp.external_id as employee_external_id, nullif(closer.display_name, '') as closed_by_name $FROM " +
+                "emp.external_id as employee_external_id, nullif(closer.display_name, '') as closed_by_name, " +
+                "$DAYS_WORKED as days_worked, $SCHEDULE_NAME as schedule_name, $RESOLVED as resolved_incidents $FROM " +
                 "left join tenant_user closer on closer.tenant_id = c.tenant_id and closer.id = c.closed_by"
     }
 }
@@ -371,6 +405,7 @@ class ClosureService(
     private val tenants: TenantRepository,
     private val closer: WeekCloser,
     private val audit: AuditLog,
+    private val attendance: CompanyAttendanceRepository,
 ) {
     @Transactional
     fun close(person: CurrentPerson, request: WeekClosureRequest): WeekClosureResultView {
@@ -448,7 +483,8 @@ class ClosureService(
         val range = weekStart.atStartOfDay(zone).toOffsetDateTime() to weekStart.plusDays(7).atStartOfDay(zone).toOffsetDateTime()
         val (statuses, acknowledgements) = closures.counts(tenantId, weekStart, site)
         val blocked = incidents.blockedPeople(tenantId, IncidentFilter(siteId = site, week = range))
-        return WeekClosureSummaryView(weekStart.toString(), statuses.first, statuses.second, blocked, acknowledgements)
+        val people = attendance.peopleCount(tenantId, Window(range.first, range.second), site)
+        return WeekClosureSummaryView(weekStart.toString(), statuses.first, statuses.second, blocked, acknowledgements, people)
     }
 
     /** Quien sólo es trabajador ve su propio cierre; los de otras personas no existen para él. */

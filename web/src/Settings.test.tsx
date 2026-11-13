@@ -128,8 +128,8 @@ it('muestra la empresa, sus políticas y las sedes con sus cifras', async () => 
   expect(text()).toContain('Hoy no se marca')
   expect(text()).toContain('2026: 48 h ordinarias y hasta 9 h extra por semana')
   expect(rows()).toEqual([
-    ['Matriz Centro', 'Círculo de 120 m', 'Ciudad de México', '2', '29', 'Activa'],
-    ['Bodega Norte', 'Círculo de 200 m', 'Tijuana', '0', '0', 'Inactiva'],
+    ['Matriz Centro', 'Círculo de 120 m', 'Ciudad de México', '2', '29', 'Activa', 'Editar'],
+    ['Bodega Norte', 'Círculo de 200 m', 'Tijuana', '0', '0', 'Inactiva', 'Editar'],
   ])
   expect(container.querySelector('[role="region"][aria-label="Mapa de las sedes"]')).not.toBeNull()
 })
@@ -180,14 +180,17 @@ it('agregar una sede revisa los campos antes de mandarla', async () => {
   expect(location).toBe('/configuracion?sede=s9')
 })
 
-it('desactivar una sede la manda inactiva; una inactiva se reactiva', async () => {
+it('el interruptor «Sede activa» la desactiva en el acto; una inactiva se reactiva', async () => {
   await render('/configuracion?sede=s1')
-  await click('Desactivar sede')
+  const toggle = () => act(async () => { (document.querySelector('input[aria-label="Sede activa"]') as HTMLInputElement).click() })
+  expect((document.querySelector('input[aria-label="Sede activa"]') as HTMLInputElement).checked).toBe(true)
+  await toggle()
   await settle()
   expect(requests('PATCH').at(-1)).toMatchObject({ path: '/sites/s1', body: { status: 'inactive' } })
   await render('/configuracion?sede=s2')
   expect(sheet('Bodega Norte').textContent).toContain('Inactiva')
-  await click('Reactivar sede')
+  expect((document.querySelector('input[aria-label="Sede activa"]') as HTMLInputElement).checked).toBe(false)
+  await toggle()
   await settle()
   expect(requests('PATCH').at(-1)).toMatchObject({ path: '/sites/s2', body: { status: 'active' } })
 })

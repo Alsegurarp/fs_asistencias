@@ -6,7 +6,7 @@ import { color, gradient, shadow } from './design'
 import { Icon, type IconName } from './Icons'
 import { initials, rolesText } from './Shell'
 import { helpParam, profileParam } from './Profile'
-import { type Group, type Section, personalScreen } from './sections'
+import { type Group, type Section } from './sections'
 
 const card = { background: color.white, borderRadius: '18px', boxShadow: shadow.card, overflow: 'hidden' } as const
 const row = { display: 'flex', alignItems: 'center', gap: 1.5, minHeight: 52, p: '6px 12px', textDecoration: 'none', color: `${color.ink} !important`, width: '100%', textAlign: 'left', fontFamily: 'inherit',
@@ -17,8 +17,8 @@ function Tile({ icon }: { icon: IconName }) {
 }
 
 /** TEL-06: el resto de las secciones en teléfono, agrupadas como en el menú lateral. */
-export function More({ me, groups, firstPath, context, personal, onSignOut }: {
-  me: Me; groups: Group[]; firstPath: (section: Section) => string; context: string; personal: boolean; onSignOut: () => void
+export function More({ me, groups, firstPath, context, onSignOut }: {
+  me: Me; groups: Group[]; firstPath: (section: Section) => string; context: string; onSignOut: () => void
 }) {
   useEffect(() => { document.title = 'Más · Zenit' }, [])
   return <Stack spacing={1.5} sx={{ maxWidth: 560, width: '100%', mx: 'auto' }}>
@@ -44,7 +44,6 @@ export function More({ me, groups, firstPath, context, personal, onSignOut }: {
       </Box>
     </Box>)}
     <Box component="ul" sx={{ ...card, listStyle: 'none', m: 0, p: 0 }}>
-      {personal && <li><Box component={Link} to={personalScreen.path} sx={row}><Tile icon="attendance" /><Box component="span" sx={{ flex: 1, fontSize: 15, fontWeight: 600 }}>Mi asistencia</Box></Box></li>}
       <li><Box component={Link} to={`?${helpParam}=1`} sx={row}><Tile icon="info" /><Box component="span" sx={{ flex: 1, fontSize: 15, fontWeight: 600 }}>Ayuda y soporte</Box></Box></li>
       <li><ButtonBase onClick={onSignOut} sx={row}><Tile icon="logout" /><Box component="span" sx={{ flex: 1, fontSize: 15, fontWeight: 600 }}>Cerrar sesión</Box></ButtonBase></li>
     </Box>

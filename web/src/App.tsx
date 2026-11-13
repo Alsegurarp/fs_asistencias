@@ -6,6 +6,7 @@ import { ApiError, api, type Me } from './api'
 import { Portal } from './Portal'
 import { clearDossierVerification } from './dossierFlow'
 import { gradient } from './design'
+import { forgetAccount, rememberAccount } from './offline'
 import { CompanySuspended, FullPageLoading, IdentityUnavailable, NoCompany, SessionEnded, StateCard } from './States'
 import { sessionEndedPath } from './sections'
 
@@ -28,11 +29,11 @@ export function App() {
   const [session, setSession] = useState<Session>('starting')
   const [notice, setNotice] = useState('')
   useEffect(() => {
-    auth.onAuthLogout = () => { clearDossierVerification(); cache.clear(); setSession('ended') }
+    auth.onAuthLogout = () => { clearDossierVerification(); cache.clear(); forgetAccount(); setSession('ended') }
     authReady.then(() => setSession(auth.authenticated ? 'signedIn' : window.location.pathname === sessionEndedPath ? 'ended' : 'signedOut'))
       .catch(() => setSession('unavailable'))
     const timer = window.setInterval(() => {
-      if (auth.authenticated) void auth.updateToken(60).catch(() => auth.clearToken())
+      if (auth.authenticated && navigator.onLine) void auth.updateToken(60).catch(() => auth.clearToken())
     }, 30_000)
     return () => { window.clearInterval(timer); auth.onAuthLogout = undefined }
   }, [cache])
@@ -46,12 +47,14 @@ export function App() {
   useEffect(() => { if (session === 'signedOut') signIn() }, [session])
 
   const signOut = () => {
-    clearDossierVerification(); cache.clear(); setNotice('')
+    clearDossierVerification(); cache.clear(); forgetAccount(); setNotice('')
     void auth.logout({ redirectUri: `${window.location.origin}${sessionEndedPath}` })
       .catch(() => setNotice('No se pudo cerrar la sesión en el proveedor de identidad. Intenta de nuevo.'))
   }
 
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), enabled: session === 'signedIn', retry: false })
+  const userId = me.data?.userId
+  useEffect(() => { if (userId) rememberAccount(userId) }, [userId])
 
   if (session === 'starting') return <FullPageLoading label="Preparando el inicio de sesión" />
   if (session === 'unavailable') return <IdentityUnavailable />

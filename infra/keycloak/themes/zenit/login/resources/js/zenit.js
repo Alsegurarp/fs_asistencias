@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
+  // ACC-06: volver a la página del portal desde la que se pidió el expediente.
+  for (const boton of document.querySelectorAll('[data-za-atras]')) boton.addEventListener('click', () => history.back())
+
   const elegida = document.getElementById('selectedCredentialId')
   for (const boton of document.querySelectorAll('[data-za-credencial]')) {
     boton.addEventListener('click', () => {

@@ -2,6 +2,8 @@ import { color } from './design'
 
 /** Trazos de los íconos del lienzo, en una caja de 24 × 24. */
 const paths = {
+  offline: <><path d="M3 3l18 18" /><path d="M8.5 16.2a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 4-2.3M14.6 10.3A10 10 0 0 1 19 12.5M12 20h.01" /></>,
+  plus: <path d="M12 5v14M5 12h14" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   building: <><rect x="4.5" y="3" width="15" height="18" rx="1.5" /><path d="M9 7h1.5M13.5 7H15M9 11h1.5M13.5 11H15M10.5 21v-3h3v3" /></>,
   panel: <><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /></>,

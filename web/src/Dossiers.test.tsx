@@ -81,6 +81,10 @@ it('muestra el paso, lo que incluye la copia, su carátula y las copias anterior
   vi.mocked(api).mockImplementation(async (path, method) => path === '/me/dossier-permission' ? { enabled: true }
     : path.startsWith('/dossiers?') ? { items: [record, older], nextCursor: null }
       : path.startsWith('/users?') ? { items: [{ id: 'u1', email: 'm@x', displayName: 'Mariana Ortiz', roles: ['admin_empresa'], status: 'active', dossierPermission: true, dossierPermissionSince: '2026-10-19T17:00:00Z' }], nextCursor: null }
+      : path.startsWith('/dossier-history?') ? { items: [
+        { requestedByName: 'Rocío Navarro', own: false, status: 'downloaded', createdAt: '2026-10-25T16:00:00Z', readyAt: '2026-10-25T16:02:00Z', downloadedAt: '2026-10-25T17:00:00Z' },
+        { requestedByName: 'Mariana Ortiz', own: true, status: 'downloaded', createdAt: '2026-10-22T23:00:00Z', readyAt: '2026-10-22T23:05:00Z', downloadedAt: '2026-10-23T00:05:00Z' },
+      ], nextCursor: null }
         : { ...record, status: method === 'POST' ? 'queued' : record.status })
   await act(async () => root.render(<QueryClientProvider client={cache}><MemoryRouter><Dossiers me={admin} context="Ficticia" section={section} screen={screen} /></MemoryRouter></QueryClientProvider>))
   await waitFor(() => !!document.querySelector('.zenit-print-root'))
@@ -90,6 +94,8 @@ it('muestra el paso, lo que incluye la copia, su carátula y las copias anterior
   expect(document.querySelector('.zenit-print-root')!.textContent).toContain('Formato 1 · corte al 6 nov 2026, 10:20, hora de la empresa')
   const tables = [...container.querySelectorAll('section')].map(item => item.querySelector('h2')?.textContent)
   expect(tables).toEqual(expect.arrayContaining(['Copias anteriores', 'Quién puede descargarlo', 'Qué incluye esta copia']))
-  expect(document.body.textContent).toContain('22 oct 2026, 17:05Descargada22 oct 2026, 18:0591c4…02de')
+  // Administración ve todas las copias de la empresa, con quién las pidió.
+  expect(document.body.textContent).toContain('Rocío Navarro25 oct 2026, 10:00Descargada25 oct 2026, 11:00')
+  expect(document.body.textContent).toContain('Tú22 oct 2026, 17:00Descargada22 oct 2026, 18:05')
   expect(document.body.textContent).toContain('Mariana OrtizAdministración19 oct 2026')
 })

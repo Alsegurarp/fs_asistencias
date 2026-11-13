@@ -241,6 +241,10 @@ export function TenantPanel({ tenant, usageTo, onAction, onClose }: { tenant: Op
     </Box>
 
     {suspended && <>
+      {tenant.suspension && <Box sx={{ p: '10px 12px', borderRadius: '12px', background: color.errorBg, fontSize: 13.5 }}>
+        <Box component="strong" sx={{ display: 'block' }}>Suspendida el {dayOf(tenant.suspension.at, tenant.timeZone)} por {tenant.suspension.byName}</Box>
+        <Box component="span" sx={{ fontSize: 12.5, overflowWrap: 'anywhere' }}>Motivo: {tenant.suspension.reason}</Box>
+      </Box>}
       <Typography component="h3" sx={heading}>Mientras siga suspendida</Typography>
       <Effects />
     </>}
@@ -274,7 +278,8 @@ export function TenantPanel({ tenant, usageTo, onAction, onClose }: { tenant: Op
       <Stack direction="row" useFlexGap sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap', p: '10px 12px', borderRadius: '12px', background: color.warnBg, color: color.noteInk, fontSize: 13.5 }}>
         <Box sx={{ minWidth: 0 }}>
           <Box component="strong" sx={{ display: 'block' }}>{breakNames[change.breakPolicy]} desde el {shortDay(change.effectiveOn, true)}</Box>
-          <Box component="span" sx={{ fontSize: 12.5, overflowWrap: 'anywhere' }}>Motivo: {change.reason}</Box>
+          <Box component="span" sx={{ display: 'block', fontSize: 12.5, overflowWrap: 'anywhere' }}>Motivo: {change.reason}</Box>
+          <Box component="span" sx={{ display: 'block', fontSize: 12.5 }}>Programó {change.scheduledByName || 'la operación'} el {dayOf(change.scheduledAt, tenant.timeZone)}</Box>
         </Box>
         {!suspended && <Button variant="outlined" disabled={cancel.isPending} onClick={() => cancel.mutate(change)}>{cancel.isPending ? 'Cancelando…' : 'Cancelar el cambio'}</Button>}
       </Stack>

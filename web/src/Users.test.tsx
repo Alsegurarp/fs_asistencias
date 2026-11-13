@@ -254,6 +254,7 @@ it('Mi perfil sale del menú de la cuenta con el acceso y la seguridad; Ayuda y 
   expect(text()).toContain('AlcanceLas sedes que te asignaron')
   expect(text()).toContain('Expediente de la empresaPuede descargarlo')
   expect(text()).toContain('En el padrónNo')
+  expect(text()).toContain('Activo · app de autenticación')
   const links = [...document.querySelectorAll<HTMLAnchorElement>('section a[href*="/realms/zenit/account"]')]
   expect(links.map(link => link.textContent)).toEqual(['Cambiar', 'Reconfigurar'])
   await menu('Ayuda y soporte')

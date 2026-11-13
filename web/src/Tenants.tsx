@@ -11,7 +11,7 @@ import { problemText } from './personnelData'
 import { PageHeader } from './Shell'
 import type { Screen, Section } from './sections'
 import { breakNames, shortDay, weekDayNames } from './settingsModel'
-import { Badge, FilterChip, Note, Pager, Pane, SearchBox, SkeletonRows, clickRow, tableSx, visuallyHidden } from './ui'
+import { Badge, FilterChip, Note, Pager, Pane, SkeletonRows, clickRow, tableSx, visuallyHidden } from './ui'
 import { InviteAdministratorModal, NewTenantModal, SuspendModal, type TenantAction, TenantMealModal, TenantPanel, UnlinkAdministratorModal } from './TenantForms'
 import { type OperatedTenant, type TenantSummary, type UsageItem, type UsageSummary, administrationNames, administrationText, consoleZone, count, currentMonth, dayOf, monthName, statusNames, tenantFilters, zoneName } from './tenantsModel'
 
@@ -37,7 +37,6 @@ export function Tenants({ me, context, section, screens, screen }: Props) {
   const opener = useRef<HTMLElement | null>(null)
   const filter = tenantFilters.find(item => item.slug === params.get('vista')) || tenantFilters[0]
   const query = params.get('q') || ''
-  const [text, setText] = useState(query)
   const month = currentMonth(consoleZone)
 
   const change = (values: Record<string, string | null>, replace = false) => setParams(current => {
@@ -47,13 +46,6 @@ export function Tenants({ me, context, section, screens, screen }: Props) {
   }, { replace })
   const open = (key: string, value: string, element?: HTMLElement) => { if (element) opener.current = element; change({ [key]: value }) }
   const close = (key: string) => { change({ [key]: null }, true); setTimeout(() => opener.current?.focus(), 0) }
-  useEffect(() => { setText(query) }, [query])
-  useEffect(() => {
-    const value = text.trim()
-    if (value === query) return
-    const timer = setTimeout(() => change({ q: value || null }, true), 300)
-    return () => clearTimeout(timer)
-  }, [text]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const scope = `${filter.slug}|${query}`
   const [pages, setPages] = useState<{ scope: string; cursors: string[] }>({ scope, cursors: [''] })
@@ -68,7 +60,7 @@ export function Tenants({ me, context, section, screens, screen }: Props) {
   const totals = useQuery({ queryKey: ['tenant-summary', ''], enabled: allowed, retry: false, queryFn: () => api<TenantSummary>('/tenants/summary') })
   const monthTotals = useQuery({ queryKey: ['tenant-usage', 'summary', month, '', ''], enabled: allowed, retry: false, queryFn: () => api<UsageSummary>(`/tenants/usage/summary?month=${month}`) })
   // El uso del mes pagina igual que la lista mientras no se filtre por administración: misma página, mismas empresas.
-  const withUsage = !filter.params.administration
+  const withUsage = !filter.params.administration && !filter.params.breakPolicyChange
   const usageParams = new URLSearchParams({ month, limit: String(pageSize) })
   if (filter.params.status) usageParams.set('status', filter.params.status)
   if (query) usageParams.set('q', query)
@@ -111,9 +103,8 @@ export function Tenants({ me, context, section, screens, screen }: Props) {
     : <Box component="span" sx={{ color: color.subtle }}>—</Box>
   const clip = { maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis' } as const
 
-  const filters = <Box component="form" aria-label="Filtros" onSubmit={event => { event.preventDefault(); change({ q: text.trim() || null }, true) }}
-    sx={{ flex: 'none', minWidth: 0, maxWidth: '100%', display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', [`@media ${phoneQuery}`]: { flexDirection: 'column', alignItems: 'stretch', flexWrap: 'nowrap' } }}>
-    <SearchBox name="q" label="Buscar empresas" placeholder="Nombre o identificador" value={text} onChange={setText} grow={phone} />
+  // La búsqueda vive en la barra superior (`ConsoleSearch`), como en el lienzo.
+  const filters = <Box sx={{ flex: 'none', minWidth: 0, maxWidth: '100%', display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
     <Box role="group" aria-label="Vista" sx={{ display: 'flex', gap: 0.75, minWidth: 0, maxWidth: '100%', overflowX: 'auto', pb: phone ? 0.5 : 0 }}>
       {shownFilters.map(item => <FilterChip key={item.slug} small={phone} pressed={item.slug === filter.slug} onClick={() => change({ vista: item.slug === 'todas' ? null : item.slug })}>
         {item.label}{summary.data && ` · ${item.count(summary.data)}`}

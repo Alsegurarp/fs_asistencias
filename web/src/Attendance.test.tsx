@@ -51,7 +51,7 @@ const anaWeek = { employeeId: 'e1', weekStart: '2026-11-02', timeZone: 'America/
     { date: '2026-11-03', workedMinutes: 545, breakMinutes: 0, ordinaryMinutes: 480, overtimeMinutes: 65 },
     { date: '2026-11-06', workedMinutes: 0, breakMinutes: 0, ordinaryMinutes: 0, overtimeMinutes: 0 },
   ] }
-const mark = (id: string, type: string, observedAt: string, extra: object) => ({ id, employeeId: 'e1', siteId: 's2', deviceMode: 'terminal', type, outcome: 'accepted', observedAt,
+const mark = (id: string, type: string, observedAt: string, extra: object) => ({ id, employeeId: 'e1', siteId: 's2', deviceMode: 'terminal', cardLabel: 'T-0031', type, outcome: 'accepted', observedAt,
   receivedAt: observedAt, delaySeconds: 0, locationVerdict: 'inside', accuracyMeters: 12, incidentIds: [], payloadHash: 'x', ...extra })
 const marks = [
   mark('m1', 'clock_out', '2026-11-03T23:02:00Z', { deviceMode: 'personal', accuracyMeters: 9, delaySeconds: 360, outcome: 'accepted_with_incident', incidentIds: ['i9'] }),
@@ -201,7 +201,7 @@ it('abre la ficha con la semana día por día, sus marcajes y sus cierres', asyn
   ])
   // El tramo del turno en curso no es un aviso.
   expect(sheet.textContent).not.toContain('Falta el marcaje')
-  expect(sheet.textContent).toContain('Evidencia de hoy: entrada 07:58 · Terminal de Bodega Norte · dentro de la sede · precisión 12 m')
+  expect(sheet.textContent).toContain('Evidencia de hoy: entrada 07:58 · Terminal Bodega Norte · tarjeta T-0031 · dentro de la sede · precisión 12 m')
   expect(sheet.textContent).toContain('Calculada con reglas laborales 2026, versión 2 · semana sin cierre')
   // El reparto de cada día es del servidor: un día con extra cuenta para el máximo de días de la ley.
   expect(sheet.textContent).toContain('Aviso: tiempo extra en 1 de los 4 días que permite la ley por semana.')
@@ -213,8 +213,8 @@ it('abre la ficha con la semana día por día, sus marcajes y sus cierres', asyn
   expect(document.activeElement).not.toBe(container.querySelector('h1'))
   expect(sheet.textContent).toContain('2 marcas de la semana con su evidencia.')
   expect([...sheet.querySelectorAll('li')].map(li => li.textContent)).toEqual([
-    'vie 607:58Entrada · Terminal de Bodega NorteDentro de la sede · precisión 12 mAceptada',
-    'mar 317:02Salida · Teléfono personalDentro de la sede · precisión 9 m · llegó 6 min despuésCon incidencia',
+    'vie 607:58Entrada · Terminal Bodega Norte · tarjeta T-0031Dentro de la sede · precisión 12 mAceptada',
+    'mar 317:02Salida · Teléfono personal · tarjeta T-0031Dentro de la sede · precisión 9 m · llegó 6 min despuésCon incidencia',
   ])
   expect(server.calls.find(path => path.startsWith('/attendance-events'))).toBe('/attendance-events?employeeId=e1&from=2026-11-02T06%3A00%3A00.000Z&to=2026-11-09T06%3A00%3A00.000Z&limit=200')
 

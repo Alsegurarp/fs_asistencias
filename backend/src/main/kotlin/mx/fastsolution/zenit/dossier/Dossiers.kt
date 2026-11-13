@@ -35,6 +35,15 @@ data class DossierView(
     val downloadedAt: String? = null,
 )
 
+/**
+ * Una copia del expediente vista desde el historial de la empresa: quién la
+ * pidió, cuándo y si se descargó. Sin identificadores ni huellas: con esto no
+ * se consulta ni se descarga una copia, que sólo hace quien la pidió.
+ */
+data class DossierHistoryItem(
+    val requestedByName: String?, val own: Boolean, val status: String, val createdAt: String, val readyAt: String?, val downloadedAt: String?,
+)
+
 data class DossierRow(val view: DossierView, val subject: String, val linkedAt: OffsetDateTime, val requestSha256: String)
 
 internal fun ownedDossier(account: DossierAccount, row: DossierRow): DossierRow {
@@ -61,6 +70,36 @@ class DossierRepository(private val dsl: DSLContext) {
      * Los expedientes de esa cuenta, del más reciente al más antiguo. Los de otra
      * persona, o de una liga anterior de la misma, no existen para quien pregunta.
      */
+    /** Todas las copias de la empresa, de la más reciente a la más antigua, con el nombre de quien las pidió. */
+    fun history(tenantId: UUID, userId: UUID?, after: PageKey?, limit: Int): List<Pair<PageKey, DossierHistoryItem>> {
+        val sql = StringBuilder(
+            "select d.id, d.created_at, d.ready_at, d.status, d.requested_by, d.expires_at <= clock_timestamp() as expired, " +
+                "nullif(u.display_name, '') as requested_by_name, " +
+                "(select max(a.consumed_at) from dossier_authorization a where a.tenant_id = d.tenant_id and a.dossier_id = d.id) as downloaded_at " +
+                "from dossier d left join tenant_user u on u.tenant_id = d.tenant_id and u.id = d.requested_by where d.tenant_id = ?",
+        )
+        val binds = mutableListOf<Any>(tenantId)
+        if (after != null) {
+            sql.append(" and (d.created_at, d.id) < (cast(? as timestamptz), cast(? as uuid))")
+            binds += after.at
+            binds += after.id
+        }
+        sql.append(" order by d.created_at desc, d.id desc limit ?")
+        binds += limit
+        return dsl.fetch(sql.toString(), *binds.toTypedArray()).map { r ->
+            val created = r.get("created_at", OffsetDateTime::class.java)
+            val status = r.get("status", String::class.java)
+            PageKey(created, r.get("id", UUID::class.java)) to DossierHistoryItem(
+                requestedByName = r.get("requested_by_name", String::class.java),
+                own = r.get("requested_by", UUID::class.java) == userId,
+                status = if (status == "ready" && r.get("expired", Boolean::class.java) == true) "expired" else status,
+                createdAt = created.toInstant().toString(),
+                readyAt = r.get("ready_at", OffsetDateTime::class.java)?.toInstant()?.toString(),
+                downloadedAt = r.get("downloaded_at", OffsetDateTime::class.java)?.toInstant()?.toString(),
+            )
+        }
+    }
+
     fun page(account: DossierAccount, after: PageKey?, limit: Int): List<DossierRow> {
         val sql = StringBuilder(
             "select $COLUMNS from dossier where tenant_id = ? and requested_by = ? and requested_subject = ? " +
@@ -146,6 +185,14 @@ class DossierService(
     fun page(person: CurrentPerson, after: PageKey?, limit: Int): List<DossierView> =
         dossiers.page(access.require(person), after, limit + 1).map { it.view }
 
+    /**
+     * El historial de copias de la empresa, para Administración: lo mismo que ya
+     * ve en la bitácora (quién pidió y quién descargó), en una tabla.
+     */
+    @Transactional(readOnly = true)
+    fun history(person: CurrentPerson, after: PageKey?, limit: Int): List<Pair<PageKey, DossierHistoryItem>> =
+        dossiers.history(person.requireTenant(), person.userId, after, limit + 1)
+
     @Transactional
     fun manifest(person: CurrentPerson, id: UUID): ByteArray {
         val row = owned(person, id)
@@ -182,6 +229,12 @@ class DossierController(private val access: DossierAccess, private val service: 
         val size = Paging.limit(limit)
         val rows = service.page(person, Paging.decode(cursor), size)
         return response(Paging.page(rows, size, { PageKey(OffsetDateTime.parse(it.createdAt), it.id) }) { it })
+    }
+
+    @GetMapping("/dossier-history")
+    fun history(@AuthenticationPrincipal person: CurrentPerson, @RequestParam cursor: String?, @RequestParam limit: String?): Page<DossierHistoryItem> {
+        val size = Paging.limit(limit)
+        return Paging.page(service.history(person, Paging.decode(cursor), size), size, { it.first }) { it.second }
     }
 
     @GetMapping("/dossiers/{dossierId}")

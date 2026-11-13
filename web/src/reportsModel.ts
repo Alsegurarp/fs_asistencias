@@ -54,8 +54,8 @@ export function hoursText(minutes: number) {
 export { hours }
 
 /** Columnas que se pueden prender o apagar; las tres primeras son de nómina y siempre van. */
-export type PayrollOptions = { worked: boolean; breaks: boolean; acknowledgement: boolean; bySite: boolean; hashes: boolean; signature: boolean }
-export const defaultOptions: PayrollOptions = { worked: true, breaks: false, acknowledgement: true, bySite: true, hashes: false, signature: true }
+export type PayrollOptions = { days: boolean; worked: boolean; breaks: boolean; acknowledgement: boolean; incidents: boolean; bySite: boolean; hashes: boolean; signature: boolean }
+export const defaultOptions: PayrollOptions = { days: true, worked: false, breaks: false, acknowledgement: true, incidents: false, bySite: true, hashes: false, signature: true }
 
 export const acknowledgementText = (closure: Pick<Closure, 'acknowledgement'>) =>
   closure.acknowledgement?.type === 'agreed' ? 'Conforme' : closure.acknowledgement?.type === 'objected' ? 'Objeción' : 'Sin acuse'

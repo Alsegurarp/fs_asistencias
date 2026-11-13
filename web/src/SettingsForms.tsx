@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Box, Button, MenuItem, Stack, TextField, Typography } from '@mui/material'
+import { Box, Button, MenuItem, Stack, Switch, TextField, Typography } from '@mui/material'
 import { api, ApiError, type BreakPolicy, type BreakPolicyChange, type Site, type Tenant } from './api'
 import { color } from './design'
 import { problemText } from './personnelData'
@@ -63,9 +63,6 @@ export function SitePanel({ site, sites, timeZone, editable, onClose, onSaved }:
   const failure = save.error || status.error
 
   const footer = editable ? <>
-    {site && <Button variant="outlined" color={active ? 'error' : 'primary'} disabled={busy} onClick={() => status.mutate(active ? 'inactive' : 'active')} sx={{ mr: 'auto' }}>
-      {status.isPending ? 'Guardando…' : active ? 'Desactivar sede' : 'Reactivar sede'}
-    </Button>}
     <Button variant="outlined" onClick={onClose} disabled={busy}>Cancelar</Button>
     <Button variant="contained" onClick={submit} disabled={busy}>{save.isPending ? 'Guardando…' : site ? 'Guardar' : 'Agregar sede'}</Button>
   </> : undefined
@@ -93,6 +90,11 @@ export function SitePanel({ site, sites, timeZone, editable, onClose, onSaved }:
       </Stack>
       <TextField name="radiusMeters" label="Radio de la zona de marcaje (metros)" type="number" value={draft.radiusMeters} onChange={event => set('radiusMeters', event.target.value)} disabled={!editable || busy}
         error={!!show('radiusMeters')} helperText={show('radiusMeters') || 'De 20 a 2000 m.'} slotProps={{ htmlInput: { min: 20, max: 2000, step: 10 } }} />
+      {site && <Box component="label" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.25, p: '6px 8px 6px 14px', border: `1px solid ${color.line}`, borderRadius: '14px', fontSize: 14, fontWeight: 600, cursor: editable && !busy ? 'pointer' : 'default' }}>
+        <span>Sede activa{status.isPending ? ' · guardando…' : ''}</span>
+        {/* Se guarda en el acto, como en el lienzo. */}
+        <Switch checked={active} disabled={!editable || busy} onChange={event => status.mutate(event.target.checked ? 'active' : 'inactive')} slotProps={{ input: { 'aria-label': 'Sede activa' } }} />
+      </Box>}
       <Note>Una marca hecha fuera del círculo o sin ubicación clara abre una incidencia para revisarla.</Note>
       {failure && <Note tone="error">{problemText(failure, 'No pudimos guardar la sede.')}</Note>}
       <button type="submit" hidden />
@@ -134,6 +136,7 @@ export function MealModal({ tenant, editable, onSchedule, onClose }: { tenant: T
       </Stack>
       <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 2, rowGap: 1, fontSize: 13.5 }}>
         {row('Programado', shortDay(change.scheduledAt.slice(0, 10), true))}
+        {change.scheduledByName && row('Programó', change.scheduledByName)}
         {row('Motivo', change.reason)}
         {row('Aviso', 'El personal lo ve en la app desde que se programó.')}
       </Box>

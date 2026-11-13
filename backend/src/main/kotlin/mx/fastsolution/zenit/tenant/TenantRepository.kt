@@ -25,7 +25,11 @@ data class TenantRow(
     val autoCloseAfterHours: Int? = null,
     /** Las formas de marcar del plan: `card_terminal` y/o `phone_tag`. */
     val captureMethods: List<String> = CaptureMethods.ALL,
+    /** La suspensión vigente; nula si está activa o se suspendió antes del contrato 0.37.0. */
+    val suspension: TenantSuspension? = null,
 )
+
+data class TenantSuspension(val at: OffsetDateTime, val byName: String, val reason: String)
 
 data class TenantUsageCounts(
     val employeesWithAttendance: Int,
@@ -40,6 +44,8 @@ data class TenantFilter(
     val text: String? = null,
     val status: String? = null,
     val administration: String? = null,
+    /** Sólo las que tienen un cambio de comida que todavía no entra. */
+    val breakPolicyChange: Boolean = false,
 )
 
 /** Una empresa vista desde la operación: con el estado de su administración. */
@@ -61,6 +67,8 @@ data class TenantListSummaryView(
     val active: Int,
     val suspended: Int,
     val administration: Map<String, Int>,
+    /** Las que tienen un cambio de comida que todavía no entra. */
+    val breakPolicyChange: Int,
 )
 
 /** El uso de una empresa en un mes de su calendario, con los límites con que se cortó. */
@@ -124,8 +132,9 @@ class TenantRepository(private val dsl: DSLContext) {
                 "count(*) filter (where status = 'suspended') as suspended, " +
                 "count(*) filter (where administration = 'linked') as admin_linked, " +
                 "count(*) filter (where administration = 'pending') as admin_pending, " +
-                "count(*) filter (where administration = 'none') as admin_none " +
-                "from (select t.status, $ADMINISTRATION as administration from tenant t${where(TenantFilter(text), binds)}) s",
+                "count(*) filter (where administration = 'none') as admin_none, " +
+                "count(*) filter (where change) as break_change " +
+                "from (select t.status, $ADMINISTRATION as administration, $PENDING_CHANGE as change from tenant t${where(TenantFilter(text), binds)}) s",
             *binds.toTypedArray(),
         )!!
         fun n(column: String) = r.get(column, Number::class.java).toInt()
@@ -134,6 +143,7 @@ class TenantRepository(private val dsl: DSLContext) {
             active = n("active"),
             suspended = n("suspended"),
             administration = ADMINISTRATION_STATES.associateWith { n("admin_$it") },
+            breakPolicyChange = n("break_change"),
         )
     }
 
@@ -207,8 +217,16 @@ class TenantRepository(private val dsl: DSLContext) {
     }
 
     /** Cambia el estado sólo si estaba en el que se espera; devuelve nulo si no. */
-    fun setStatus(id: UUID, from: String, to: String): TenantRow? =
-        dsl.fetchOne("update tenant set status = ? where id = ? and status = ? returning $COLUMNS", to, id, from)?.let(::row)
+    /** Al suspender guarda cuándo, quién y por qué; al reactivar lo borra. */
+    fun setStatus(id: UUID, from: String, to: String, byName: String, reason: String): TenantRow? {
+        val suspending = to == "suspended"
+        return dsl.fetchOne(
+            "update tenant set status = ?, suspended_at = case when ? then statement_timestamp() end, " +
+                "suspended_by_name = case when ? then ? end, suspension_reason = case when ? then ? end " +
+                "where id = ? and status = ? returning $COLUMNS",
+            to, suspending, suspending, byName, suspending, reason, id, from,
+        )?.let(::row)
+    }
 
     /** El uso de una empresa en un mes, haya existido o no en él. */
     fun usage(id: UUID, month: YearMonth): TenantMonthUsage =
@@ -337,6 +355,7 @@ class TenantRepository(private val dsl: DSLContext) {
             sql.append(" and $ADMINISTRATION = ?")
             binds += it
         }
+        if (filter.breakPolicyChange) sql.append(" and $PENDING_CHANGE")
         return sql.toString()
     }
 
@@ -356,15 +375,20 @@ class TenantRepository(private val dsl: DSLContext) {
         createdAt = r.get("created_at", OffsetDateTime::class.java),
         autoCloseAfterHours = r.get("auto_close_after_hours", Number::class.java)?.toInt(),
         captureMethods = r.get("capture_methods", Array<String>::class.java).toList(),
+        suspension = r.get("suspended_at", OffsetDateTime::class.java)?.let {
+            TenantSuspension(it, r.get("suspended_by_name", String::class.java), r.get("suspension_reason", String::class.java))
+        },
     )
 
     companion object {
         /** Ya entró: alguien con Administración entró con su cuenta y conserva el acceso. Pendiente: sólo invitaciones. Nadie: ninguna de las dos. */
         val ADMINISTRATION_STATES = listOf("linked", "pending", "none")
 
-        private const val COLUMNS = "id, slug, name, status, time_zone, week_starts_on, break_policy, created_at, auto_close_after_hours, capture_methods"
+        private const val COLUMNS = "id, slug, name, status, time_zone, week_starts_on, break_policy, created_at, auto_close_after_hours, capture_methods, " +
+            "suspended_at, suspended_by_name, suspension_reason"
         private const val T_COLUMNS =
-            "t.id, t.slug, t.name, t.status, t.time_zone, t.week_starts_on, t.break_policy, t.created_at, t.auto_close_after_hours, t.capture_methods"
+            "t.id, t.slug, t.name, t.status, t.time_zone, t.week_starts_on, t.break_policy, t.created_at, t.auto_close_after_hours, t.capture_methods, " +
+                "t.suspended_at, t.suspended_by_name, t.suspension_reason"
 
         /** Alguien de la empresa `t` con el rol de Administración y la condición que sigue. */
         private const val ADMIN_OF_T =
@@ -373,6 +397,11 @@ class TenantRepository(private val dsl: DSLContext) {
 
         /** `active` sólo lo tiene quien está ligada a una cuenta: al soltar la liga vuelve a `invited`. */
         private const val LINKED_ADMIN = "$ADMIN_OF_T u.status = 'active')"
+
+        /** La empresa `t` tiene un cambio de comida que todavía no entra en su calendario. */
+        private const val PENDING_CHANGE =
+            "exists (select 1 from break_policy_change c where c.tenant_id = t.id and c.cancelled_at is null " +
+                "and c.effective_on > cast(statement_timestamp() at time zone t.time_zone as date))"
 
         private const val ADMINISTRATION =
             "(case when $LINKED_ADMIN then 'linked' when $ADMIN_OF_T u.status = 'invited') then 'pending' else 'none' end)"
