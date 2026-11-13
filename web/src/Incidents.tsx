@@ -156,6 +156,9 @@ type ListProps = {
 }
 
 /** OPE-05 y OPE-06; en teléfono, TEL-09. */
+/** Un número de empleado o una sede muy largos se cortan con puntos suspensivos; el texto completo queda en el título. */
+const clipCell = { maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis' } as const
+
 function IncidentList({ phone, status, filters, filtered, total, timeZone, today, siteName, selected, onOpen, onClear, canResolve }: ListProps) {
   const query = incidentQuery(filters, status)
   const scope = query.toString()
@@ -213,8 +216,8 @@ function IncidentList({ phone, status, filters, filtered, total, timeZone, today
               const severity = severityOf(row.severity)
               return <tr key={row.id} data-selected={row.id === selected} onClick={clickRow}>
                 <td>{incidentTitle(row.type)}</td>
-                <td>{row.employeeName} <Box component="span" sx={{ color: color.subtle }}>{row.employeeExternalId}</Box></td>
-                <td>{siteName(row.siteId) || <Muted>Sin sede</Muted>}</td>
+                <Box component="td" sx={clipCell} title={`${row.employeeName} ${row.employeeExternalId}`}>{row.employeeName} <Box component="span" sx={{ color: color.subtle }}>{row.employeeExternalId}</Box></Box>
+                <Box component="td" sx={clipCell} title={siteName(row.siteId)}>{siteName(row.siteId) || <Muted>Sin sede</Muted>}</Box>
                 <td>{whenText(row.occurredAt || row.openedAt, timeZone, today)}</td>
                 <td><Badge tone={severity.tone}>{severity.label}</Badge></td>
                 <td>{row.assigneeUserId ? row.assigneeName || 'Sin nombre' : <Muted>Sin asignar</Muted>}</td>
@@ -226,7 +229,7 @@ function IncidentList({ phone, status, filters, filtered, total, timeZone, today
             <thead><tr><th scope="col">Tipo</th><th scope="col">Persona</th><th scope="col">Del día</th><th scope="col">Resolución</th><th scope="col">Resolvió</th><th scope="col">Cuándo</th><th scope="col"><Box component="span" sx={visuallyHidden}>Acción</Box></th></tr></thead>
             <tbody>{list.isPending ? <SkeletonRows columns={7} rows={8} /> : rows.map(row => <tr key={row.id} data-selected={row.id === selected} onClick={clickRow}>
               <td>{incidentTitle(row.type)}</td>
-              <td>{row.employeeName} <Box component="span" sx={{ color: color.subtle }}>{row.employeeExternalId}</Box></td>
+              <Box component="td" sx={clipCell} title={`${row.employeeName} ${row.employeeExternalId}`}>{row.employeeName} <Box component="span" sx={{ color: color.subtle }}>{row.employeeExternalId}</Box></Box>
               <td>{whenText(row.occurredAt || row.openedAt, timeZone, today)}</td>
               <td><Badge tone="ok">{row.resolution ? outcomes[row.resolution.decision] || row.resolution.decision : 'Resuelta'}</Badge></td>
               <td>{row.resolution?.resolvedByName || <Muted>Sin nombre</Muted>}</td>

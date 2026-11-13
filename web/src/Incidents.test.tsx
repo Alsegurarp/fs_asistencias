@@ -143,6 +143,10 @@ it('lista las abiertas ordenadas por severidad con lo que resuelve el servidor',
   // El texto para lectores de pantalla mide un píxel: con 100 % desbordaba la página.
   const hidden = [...container.querySelectorAll('tbody td:last-child a span')][0] as HTMLElement
   expect([getComputedStyle(hidden).width, getComputedStyle(hidden).position]).toEqual(['1px', 'absolute'])
+  // Persona y sede se cortan si son muy largas, y el texto completo queda en el título.
+  const person = container.querySelector('tbody tr td:nth-child(2)') as HTMLElement
+  expect([person.title, getComputedStyle(person).textOverflow, getComputedStyle(person).maxWidth]).toEqual(['Teresa Lugo 0171', 'ellipsis', '260px'])
+  expect((container.querySelector('tbody tr td:nth-child(3)') as HTMLElement).title).toBe('Matriz Centro')
 })
 
 it('busca, filtra por tipo y con los filtros de un toque en el servidor, y lo deja en la dirección', async () => {
