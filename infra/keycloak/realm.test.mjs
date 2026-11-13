@@ -47,6 +47,23 @@ test('el realm usa el tema de acceso que viaja en la imagen', () => {
   assert.ok(!/style=|on[a-z]+=|href=|src=/.test(marca))
 })
 
+test('las plantillas propias conservan los campos que Keycloak espera', () => {
+  const pagina = nombre => readFileSync(new URL(`./themes/zenit/login/${nombre}.ftl`, import.meta.url), 'utf8')
+  const campos = {
+    login: ['id="kc-form-login"', 'name="username"', '@zenit.clave id="password"', 'name="credentialId"', 'name="login"'],
+    'login-otp': ['id="kc-otp-login-form"', 'name="otp"', 'name="selectedCredentialId"', 'name="login"'],
+    'login-config-totp': ['id="kc-totp-settings-form"', 'name="totp"', 'name="totpSecret"', 'name="userLabel"', 'id="kc-totp-secret-key"'],
+    'login-update-password': ['id="kc-passwd-update-form"', '@zenit.clave id="password-new"', '@zenit.clave id="password-confirm"'],
+    'select-authenticator': ['name="authenticationExecution"'],
+  }
+  for (const [nombre, esperados] of Object.entries(campos)) {
+    const texto = pagina(nombre)
+    assert.match(texto, /action="\$\{url\.loginAction\}"/, `${nombre} no envía a Keycloak`)
+    for (const campo of esperados) assert.ok(texto.includes(campo), `${nombre} perdió ${campo}`)
+  }
+  assert.match(pagina('zenit'), /name="\$\{id\}"/)
+})
+
 test('verificación y recuperación por correo requieren SMTP configurado', () => {
   if (realm.verifyEmail || realm.resetPasswordAllowed) {
     assert.ok(realm.smtpServer.host && realm.smtpServer.from)
