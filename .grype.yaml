@@ -1,2 +1,18 @@
-# Sin hallazgos aceptados: toda vulnerabilidad alta o crítica bloquea el análisis.
-ignore: []
+# Hallazgos aceptados. Aceptar es decisión de una persona y no es corregir:
+# cada regla dice quién la aceptó, cuándo, por qué y cuándo se revisa. Toda
+# otra vulnerabilidad alta o crítica bloquea el análisis.
+ignore:
+  # CVE-2026-76844, zlib de la imagen de identidad (sistema base UBI 9).
+  # Aceptado por Gabriel el 2026-11-13: Red Hat no ha publicado la corrección
+  # y 1.2.11-40.el9 es la versión más nueva de sus repositorios. La falla está
+  # en gz_write(); Java (libzip, libjli, libsplashscreen) sólo usa deflate,
+  # inflate, crc32 y adler32, y ningún otro binario de la imagen carga zlib.
+  # La regla vale sólo para esta versión y mientras no haya corrección: cuando
+  # Red Hat la publique deja de aplicar y el análisis vuelve a fallar hasta
+  # reconstruir la imagen. Se revisa entonces o, a más tardar, el 2027-02-13.
+  - vulnerability: CVE-2026-76844
+    fix-state: not-fixed
+    package:
+      name: zlib
+      version: 1.2.11-40.el9
+      type: rpm

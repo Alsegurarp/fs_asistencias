@@ -17,12 +17,12 @@ ambiente nunca pierde una función.
 | Bloque | Qué entra | Pantallas del lienzo | Pantalla anterior que se retira | Estado |
 | --- | --- | --- | --- | --- |
 | 0 | Marco: colores, tipografía, direcciones, barra superior, menú lateral, barra inferior de teléfono, menú de la cuenta y estados | CTA-02, EST-01, EST-03, EST-04, EST-05, TEL-06, ACC-07 | Las pestañas de `Workspace` | Integrado (PR #37) y desplegado |
-| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Asistencia (PR #38), Incidencias (PR #39) y la fase 6 del backend (PR #40) integradas y desplegadas; Cierres integrado (PR #41), con su despliegue sin confirmar; Panel con la campana integrado (PR #42) |
-| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas (PR #46) y el buscador con el menú Crear (PR #47) integrados en la rama de la #45; llegan a `main` con la PR #48 |
-| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración, y Usuarios y roles con Mi perfil, integrados (PR #50) |
-| 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Inicio y nómina (`feat/portal-reportes`), la bitácora (`feat/portal-bitacora`) y el expediente (`feat/portal-expediente`) en revisión, cada una sobre la anterior ([detalle](#bloque-4-reportes)) |
+| 1 | Operación: Asistencia → Incidencias → Cierres → Panel con avisos y primeros pasos | OPE-01 a 12, CTA-03, EST-08, EST-09, TEL-01, TEL-02, TEL-07 a 10 | `Incidents`, `Closures` | Integrado (PR #38 a #42) y desplegado |
+| 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Integrado (PR #43 a #47; a `main` con la #48) y desplegado |
+| 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Integrado (PR #50) y desplegado |
+| 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Integrado (PR #51 a #53) y desplegado ([detalle](#bloque-4-reportes)) |
 | 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Hecho, sin cambios al API ([detalle](#bloque-5-consola-de-operación)) |
-| 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pantallas de acceso hechas e iguales al lienzo en `feat/acceso-igual-a-la-maqueta` ([detalle](#bloque-6-acceso-con-marca)); falta el portal instalable |
+| 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pantallas de acceso integradas (PR #64 y #65) ([detalle](#bloque-6-acceso-con-marca)); faltan ACC-06, la confirmación para descargar el expediente, y el portal instalable |
 
 El bloque 1 entra en cuatro PR, una por pantalla y en ese orden: Asistencia
 (OPE-02, OPE-07, OPE-08, EST-09, TEL-07, TEL-08), Incidencias (OPE-03,
@@ -250,8 +250,10 @@ Lo que cambia respecto al lienzo:
 Las pantallas de acceso las sirve Keycloak, no el portal: el tema `zenit`
 vive en `infra/keycloak/themes/zenit/login/` y viaja en la imagen de
 identidad. La primera versión (PR #64) sólo traía estilos y textos; desde
-`feat/acceso-igual-a-la-maqueta` las pantallas que el lienzo dibuja tienen
-su propia plantilla, para quedar iguales a él.
+la PR #65 las pantallas que el lienzo dibuja tienen su propia plantilla,
+para quedar iguales a él. Falta ACC-06, «Confirma que eres tú» antes de
+descargar el expediente: hoy esa confirmación muestra la pantalla del código
+(ACC-02).
 
 | Archivo | Qué lleva |
 | --- | --- |
@@ -413,16 +415,14 @@ Para verlo en local sin reconstruir la imagen, montar
 | Menú Crear (CTA-04) | Dispositivos y tarjetas, con las ventanas de alta de persona, horario, tarjeta y lector; «Invitar» llegó con el bloque 3 y «Generar un reporte» llega con el 4 |
 | «En línea · datos de las…», «Instalar Zenit» y sin conexión | Bloque 6 |
 | ~~Empresa suspendida (EST-02)~~ | **Hecho (contrato 0.36.0):** `/me` trae `access` (`active`, `suspended`, `none`) y, sólo con la empresa suspendida y el acceso vigente, `suspendedTenantName`; `App.tsx` muestra `CompanySuspended` de `States.tsx` |
-| ~~Pantallas de acceso con la marca (ACC-01 a 06)~~ | **Hecho:** tema `zenit` de Keycloak ([detalle](#bloque-6-acceso-con-marca)) |
+| ~~Pantallas de acceso con la marca (ACC-01 a 05)~~ | **Hecho:** tema `zenit` de Keycloak ([detalle](#bloque-6-acceso-con-marca)) |
+| ACC-06 «Confirma que eres tú» al descargar el expediente | Bloque 6: hoy se ve la pantalla del código |
 
 Diferencias deliberadas con el lienzo:
 
 - **Mi asistencia** no está en el lienzo. Se conserva en el menú de la cuenta
   y es el inicio de quien sólo tiene el rol de trabajador, hasta decidir si
   el portal la mantiene.
-- **El panel de marca** del lienzo muestra una cifra de ejemplo («Asistencia
-  de hoy 38 / 42»). El portal no la muestra: antes de entrar no hay datos
-  reales.
 - **Marcajes de la ficha.** El lienzo dice «Terminal Bodega Norte · tarjeta
   T-0031». El marcaje no guarda con qué tarjeta se hizo y Supervisión no lee
   los lectores: la ficha dice «Terminal de *sede*» o «Teléfono personal», sin

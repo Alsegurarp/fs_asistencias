@@ -1,12 +1,20 @@
 # Estado y pendientes
 
+**Análisis de imágenes, 13 de noviembre:** el CI empezó a fallar en toda PR
+por un aviso alto nuevo de zlib (CVE-2026-76844) en la imagen de identidad,
+que ya estaba en `main` y en el ambiente publicado. Red Hat no ha publicado
+la corrección; Java no usa la función con la falla (`gz_write`). Gabriel lo
+aceptó en `.grype.yaml`, sólo para esa versión y mientras no haya corrección;
+se revisa cuando Red Hat la publique o, a más tardar, el 13 de febrero de
+2027. La PR #65 se integró antes de llevar la regla, así que `main` falla
+en ese paso hasta integrar esta corrección.
+
 **Acceso igual a la maqueta, 13 de noviembre:** el acceso con la marca está
-desplegado (PR #64). En la rama `feat/acceso-igual-a-la-maqueta` las
-pantallas que el lienzo dibuja (ingreso, «¿No puedes entrar?», código,
-configurar el segundo factor y crear contraseña) tienen plantilla propia y
-quedan iguales a él en escritorio y teléfono. Probado en local con cuentas
-ficticias; falta verlo en el ambiente publicado. Del bloque 6 queda el
-portal instalable
+desplegado (PR #64). Con la PR #65, integrada, las pantallas que el lienzo
+dibuja (ingreso, «¿No puedes entrar?», código, configurar el segundo factor
+y crear contraseña) tienen plantilla propia y quedan iguales a él en
+escritorio y teléfono; falta desplegarla. Del bloque 6 quedan ACC-06, la
+confirmación antes de descargar el expediente, y el portal instalable
 ([detalle](construir-el-portal.md#bloque-6-acceso-con-marca)).
 
 **Consola de operación, 12 de noviembre:** el bloque 5 del portal está
