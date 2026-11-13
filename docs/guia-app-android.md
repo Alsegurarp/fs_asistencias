@@ -674,6 +674,20 @@ Classic 1K disponibles y se pasa a DESFire EV3 cuando haya presupuesto. La
 tarjeta **no guarda datos de la persona**, para que una tarjeta perdida no
 exponga a nadie.
 
+Confirmado el 13 de noviembre: las DESFire cuestan unos 3 dólares cada una,
+así que por ahora se usan las Classic que ya se tienen. Como se pueden
+copiar, la tarjeta lleva sólo un identificador con la clave de la empresa.
+
+### Terminal de sede y teléfono personal
+
+- **La terminal de sede** hoy es un teléfono con la app; el alcance es una
+  Raspberry con lector NFC. Lee las tarjetas de todo el personal de la sede.
+- **Un teléfono que funciona como sede no guarda datos de ninguna persona.**
+  O la sede tiene su terminal y el personal marca con tarjeta, o la sede
+  tiene una etiqueta NFC que escanean los teléfonos personales (la etiqueta
+  llega después del piloto). Por eso, quien pasa a marcar con su teléfono
+  deja de usar tarjeta: es a propósito.
+
 ### Qué lleva la tarjeta
 
 | Dónde | Qué |
@@ -734,8 +748,11 @@ titular, como con cualquier tarjeta.
 3. Encender `CAPTURE_PILOT_CARDS=true` y reiniciar el backend. Los
    dispositivos reciben la configuración al renovar la sesión.
 
-El servidor publicado todavía no tiene el secreto ni el interruptor en su
-`compose.yaml`: se agregan con el despliegue, que necesita autorización.
+En el ambiente publicado la clave se instaló el 13 de noviembre con
+`bash deploy/servidor/demo/demo.sh preparar` (sólo si el servidor no tenía
+una) y el interruptor está en `deploy/servidor/zenit/servidor.env`. La
+[guía de demostración](guia-de-demostracion.md#7-terminal-y-tarjetas)
+recorre la preparación, la asignación y el marcaje en vivo.
 
 ### Herramienta de diagnóstico (debug)
 

@@ -6,8 +6,12 @@ Desde el 13 de noviembre de 2026 el MVP es el lienzo completo: cada pantalla
 que dibuja, igual a él y funcionando en el ambiente publicado con datos
 ficticios. Lo que el lienzo no dibuja queda para después.
 
-Hecho en `feat/mvp-segun-el-lienzo` (contrato 0.37.0, migración V024), sin
-integrar ni desplegar todavía:
+El mismo día el equipo dio el MVP por terminado. Está integrado y desplegado
+en el ambiente publicado (`e5928f3`, contrato 0.37.0, migración V024) y lo
+que sigue es presentarlo con la [guía de demostración](guia-de-demostracion.md),
+que siembra y reinicia una empresa ficticia y genera su PDF.
+
+Lo que trajo la última entrega (`feat/mvp-segun-el-lienzo`):
 
 - **ACC-06, «Confirma que eres tú»:** las dos pantallas del expediente
   (contraseña y código) llevan la etiqueta, el título, la cuenta y «Cancelar
@@ -31,12 +35,29 @@ integrar ni desplegar todavía:
 
 Lo que falta:
 
-1. **Integrar y desplegar** la rama, y recorrer el lienzo en el ambiente
-   publicado con sesiones reales, incluida la consola con la cuenta de
-   operación.
+1. **Tarjetas del piloto en el ambiente publicado.** La clave ya está en el
+   servidor; `CAPTURE_PILOT_CARDS=true` llega con el despliegue de
+   `feat/guia-de-demostracion`. Sin eso, la parte 7 de la demostración no
+   marca con tarjetas reales.
 2. **Correo de identidad**, a cargo de quien administra la cuenta de Brevo:
    autenticar el dominio y definir el remitente. Con eso la invitación llega
-   por correo y «Olvidé mi contraseña» manda el enlace.
+   por correo y «Olvidé mi contraseña» manda el enlace. Mientras, las cuentas
+   las crea quien opera el servicio.
+3. **La consola con la cuenta de operación**, recorrida en el ambiente
+   publicado.
+
+Acuerdos del 13 de noviembre sobre tarjetas y terminales:
+
+- **Tarjetas.** Las seguras (DESFire) cuestan unos 3 dólares cada una. Por
+  ahora se usan las MIFARE Classic que ya se tienen, que se pueden copiar:
+  por eso la tarjeta guarda sólo un identificador con la clave de la
+  empresa y ningún dato de la persona.
+- **Terminal de sede.** Hoy es un teléfono; el alcance es una Raspberry con
+  lector NFC.
+- **Un teléfono que funciona como sede no guarda datos de ninguna persona.**
+  O la sede tiene su terminal y el personal marca con tarjeta, o la sede
+  tiene una etiqueta NFC que escanean los teléfonos personales. Por eso,
+  quien pasa a marcar con su teléfono deja de usar tarjeta: es a propósito.
 
 Las diferencias que no se pueden igualar (un dato que Keycloak no conoce,
 una regla vigente o un límite del navegador) se quedan anotadas en

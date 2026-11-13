@@ -6,6 +6,57 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 13 de noviembre de 2026 — Guía de demostración
+
+Rama `feat/guia-de-demostracion` desde `main` (`e5928f3`, desplegado). El
+equipo dio el MVP por terminado y pidió la guía para presentarlo en el
+ambiente publicado: recorrido completo con la app, comandos de siembra y
+reinicio, y un PDF con los pasos.
+
+- **`deploy/servidor/demo/`**: `demo.sh` con `preparar`, `reiniciar`,
+  `estado`, `limpiar`, `capturas` y `pdf`, todo en contenedores con
+  versiones fijas (Playwright 1.52.0). Siembra por el API, con la sesión de
+  Administración y dispositivos que firman como la app, la empresa ficticia
+  Distribuidora Altiplano: dos sedes, dos horarios, dos terminales, 16
+  personas y la jornada de ayer con tiempo extra, marca fuera de sede,
+  duplicada, sincronizada tarde y salida faltante. En el servidor sólo toca
+  la empresa `demo-altiplano` y las cuentas `demo.<algo>@zenit.example`;
+  borra por `tenant_id` en una transacción.
+- **Cuentas**: cuatro listas para quien presenta (contraseña y código ya
+  configurados, con QR para su app de autenticación) y una nueva para hacer
+  el primer ingreso en vivo. Los secretos viven fuera del repositorio
+  (`DEMO_SECRETOS`); nada se imprime.
+- **Tarjetas del piloto**: la clave se generó e instaló en el servidor
+  (sólo si no había una) y `CAPTURE_PILOT_CARDS=true` entra en
+  `servidor.env` con esta rama.
+- **[Guía](guia-de-demostracion.md)** con 25 capturas del ambiente publicado,
+  el padrón de ejemplo para importar en vivo y su PDF en
+  `output/pdf/guia-de-demostracion.pdf` (24 páginas).
+
+Por qué se reinicia la mañana de la demostración: una marca que llega con
+más de 24 horas de retraso es incidencia, así que la siembra sólo manda
+«ayer» y mueve el inicio de semana al día de hoy para que ayer quede en una
+semana terminada que se cierra en vivo.
+
+Probado en el ambiente publicado: `reiniciar` varias veces seguidas (borra
+y vuelve a crear sin residuos: 16 personas, 11 dispositivos, 28 marcajes),
+el primer ingreso completo de la cuenta nueva (código, contraseña, códigos
+de recuperación y Panel), las capturas con cierre de semana y reporte para
+nómina, y el PDF. Se corrigió que una línea de cuentas con un campo vacío
+creaba la cuenta nueva como lista.
+
+Visto de paso: el reporte para nómina abierto con `?semana=` en un día que
+no es inicio de semana rotula la semana desde ese día; eligiendo la semana
+en el paso 1, como en el recorrido, sale bien.
+
+Sin probar: la parte 7 (terminal, tarjetas y marcaje en vivo) y la 8
+(teléfono personal y acuse) en el ambiente publicado, porque necesitan los
+teléfonos, las tarjetas y el despliegue de esta rama.
+
+Acuerdos del equipo sobre tarjetas y terminales, en
+[estado y pendientes](estado-y-pendientes.md#pendientes-del-mvp) y en la
+[guía de la app](guia-app-android.md#terminal-de-sede-y-teléfono-personal).
+
 ## 13 de noviembre de 2026 — El MVP según el lienzo
 
 Rama `feat/mvp-segun-el-lienzo` desde `main` (`9f21144`, ya desplegado, con
