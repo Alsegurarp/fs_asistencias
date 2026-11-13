@@ -46,7 +46,9 @@ export type Me = { userId: string; displayName: string; roles: string[]; tenant:
   /** Su fila del padrón, cuando también es trabajadora. */
   employeeId?: string | null
   /** Desde el contrato 0.36.0: por qué no hay empresa. */
-  access?: 'active' | 'suspended' | 'none'; suspendedTenantName?: string | null }
+  access?: 'active' | 'suspended' | 'none'; suspendedTenantName?: string | null
+  /** Desde el contrato 0.37.0: las sedes asignadas a Supervisión; nulo para quien ve toda la empresa. */
+  sites?: { id: string; name: string }[] | null }
 export type Page<T> = { items: T[]; nextCursor: string | null }
 export type Site = { id: string; name: string; timeZone: string; latitude: number; longitude: number; radiusMeters: number; status: string }
 export type Employee = { id: string; externalId: string; displayName: string; siteId: string | null; employmentStart: string; employmentEnd: string | null; status: string; activeCardId: string | null; currentScheduleId?: string | null
@@ -60,10 +62,14 @@ export type Card = {
   createdAt?: string; updatedAt?: string
 }
 export type TenantUsage = { tenantId: string; month: string; timeZone: string; from: string; to: string; complete: boolean; employeesWithAttendance: number; employeesInPeriod: number; cardsAssigned: number; devicesActive: number; attendanceEvents: number }
-export type Tenant = { id: string; name: string; slug: string; timeZone: string; weekStartsOn: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'; breakPolicy: BreakPolicy; status: string; createdAt: string; autoCloseAfterHours: number | null; breakPolicyChange: BreakPolicyChange | null }
+export type Tenant = { id: string; name: string; slug: string; timeZone: string; weekStartsOn: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'; breakPolicy: BreakPolicy; status: string; createdAt: string; autoCloseAfterHours: number | null; breakPolicyChange: BreakPolicyChange | null
+  /** Desde el contrato 0.37.0: la suspensión vigente. */
+  suspension?: { at: string; byName: string; reason: string } | null }
 export type BreakPolicy = 'not_considered' | 'marked'
 /** Cambio programado de la política de comida; entra en `effectiveOn`, un inicio de semana de la empresa. */
-export type BreakPolicyChange = { id: string; breakPolicy: BreakPolicy; effectiveOn: string; effectiveAt: string; reason: string; scheduledAt: string }
+export type BreakPolicyChange = { id: string; breakPolicy: BreakPolicy; effectiveOn: string; effectiveAt: string; reason: string; scheduledAt: string
+  /** Desde el contrato 0.37.0: quién lo programó; nulo en los anteriores. */
+  scheduledByName?: string | null }
 export type UpcomingBreakPolicy = { breakPolicy: BreakPolicy; effectiveOn: string; effectiveAt: string }
 export type Device ={ id: string; mode: 'personal' | 'terminal'; status: 'active' | 'revoked' | 'replaced'; employeeId: string | null; employeeName?: string | null; siteId: string | null; label: string | null; model: string; appVersion: string; enrolledAt: string; lastSeenAt: string | null; revokedAt: string | null }
 export type DeviceEnrollment = { id: string; mode: 'personal' | 'terminal'; employeeId: string | null; siteId: string | null; label: string | null; code: string; status: string; expiresAt: string; createdAt: string }

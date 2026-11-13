@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Box, Button, Skeleton, Stack, Typography } from '@mui/material'
 import { api, ApiError, type Me, type Page, permissions, type Site } from './api'
@@ -36,9 +36,14 @@ export function Panel({ me, context, section, screens, screen }: Props) {
   const activity = useQuery({ queryKey: ['audit-log', 'panel'], enabled: readsLog, retry: false, staleTime: 60_000, queryFn: () => api<Page<AuditEntry>>('/audit-log?limit=5') })
   const newCompany = summary.data?.people === 0 && me.roles.includes('admin_empresa')
   const siteName = (id: string | null) => (id ? sites.data?.find(site => site.id === id)?.name : undefined)
+  // «Hoy · Esta semana» del lienzo: la primera tarjeta cuenta el día o la semana en curso.
+  const [params, setParams] = useSearchParams()
+  const week = params.get('periodo') === 'semana'
+  const choose = (value: 'hoy' | 'semana') => setParams(current => { const next = new URLSearchParams(current); if (value === 'semana') next.set('periodo', 'semana'); else next.delete('periodo'); return next }, { replace: true })
 
   const header = <PageHeader context={context} section={section} screens={screens} current={screen} title={`Hola, ${firstName(me.displayName)}`}
-    description={newCompany ? 'deja lista tu empresa en el orden en que Zenit lo necesita' : dateLine(today, timeZone)} />
+    description={newCompany ? 'deja lista tu empresa en el orden en que Zenit lo necesita' : dateLine(today, timeZone)}
+    actions={newCompany ? undefined : <PeriodTabs week={week} onChoose={choose} />} />
   const upcoming = me.tenant?.upcomingBreakPolicy
   const banner = upcoming ? <Box role="status" sx={{ flex: 'none', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5, p: '14px 18px', borderRadius: '18px', background: gradient.banner, color: color.white, boxShadow: shadow.banner }}>
       <Icon name="notice" size={22} />
@@ -68,7 +73,7 @@ export function Panel({ me, context, section, screens, screen }: Props) {
     {header}
     {banner}
     <Box sx={{ flex: 'none', display: 'grid', gap: 1.5, gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1fr)', [`@media (max-width:1180px)`]: { gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }, [`@media ${phoneQuery}`]: { gridTemplateColumns: 'minmax(0, 1fr)' } }}>
-      <Today summary={data} />
+      {week ? <ThisWeek summary={data} /> : <Today summary={data} />}
       <PreviousWeek summary={data} closures={closures.data} canClose={allowed.closeWeeks} />
       <Stats summary={data} />
     </Box>
@@ -146,6 +151,37 @@ function Today({ summary }: { summary: AttendanceSummary }) {
       <Figure value={day.attendanceEvents} label="marcajes" />
       <Figure value={week.missingExit} label="sin salida" to={week.missingExit ? '/asistencia?filtro=alertas' : undefined} tone={week.missingExit ? 'warn' : undefined} />
       <Figure value={day.foreignSite} label="fuera de su sede" to={day.foreignSite ? '/incidencias?tipo=foreign_site' : undefined} tone={day.foreignSite ? 'warn' : undefined} />
+    </Box>
+  </Card>
+}
+
+function PeriodTabs({ week, onChoose }: { week: boolean; onChoose: (value: 'hoy' | 'semana') => void }) {
+  const tab = (value: 'hoy' | 'semana', label: string) => {
+    const selected = (value === 'semana') === week
+    return <Box component="button" type="button" role="tab" aria-selected={selected} onClick={() => onChoose(value)}
+      sx={{ minHeight: 36, px: 2, border: 0, borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600,
+        background: selected ? color.white : 'transparent', color: selected ? color.deep : color.muted, boxShadow: selected ? shadow.card : 'none',
+        '&:focus-visible': { outline: `2px solid ${color.accent}`, outlineOffset: 2 } }}>{label}</Box>
+  }
+  return <Box role="tablist" aria-label="Periodo" sx={{ display: 'inline-flex', gap: 0.5, p: 0.5, borderRadius: 999, background: color.selected }}>
+    {tab('hoy', 'Hoy')}{tab('semana', 'Esta semana')}
+  </Box>
+}
+
+/** «Esta semana»: lo trabajado en la semana en curso, hasta hoy. */
+function ThisWeek({ summary }: { summary: AttendanceSummary }) {
+  const { week } = summary
+  const ordinary = Math.round(week.ordinaryMinutes / 60).toLocaleString('es-MX')
+  const overtime = Math.round(week.overtimeMinutes / 60).toLocaleString('es-MX')
+  return <Card id="panel-esta-semana" title="Esta semana" detail={shortWeekLabel(summary.weekStart)}>
+    <Box component={Link} to="/asistencia" sx={{ textDecoration: 'none', color: `${color.ink} !important` }}>
+      <Box component="span" sx={{ fontSize: 34, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{ordinary} h</Box>
+      <Box component="span" sx={{ display: 'block', fontSize: 13, color: color.muted }}>ordinarias hasta hoy, de {summary.people} {summary.people === 1 ? 'persona' : 'personas'}</Box>
+    </Box>
+    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1 }}>
+      <Figure value={`${overtime} h`} label="tiempo extra" />
+      <Figure value={week.withOvertime} label="con tiempo extra" to={week.withOvertime ? '/asistencia?filtro=extra' : undefined} />
+      <Figure value={week.missingExit} label="sin salida" to={week.missingExit ? '/asistencia?filtro=alertas' : undefined} tone={week.missingExit ? 'warn' : undefined} />
     </Box>
   </Card>
 }

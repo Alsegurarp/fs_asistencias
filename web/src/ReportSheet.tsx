@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Box, ButtonBase, GlobalStyles, Stack, Typography } from '@mui/material'
 import { color, font, gradient, shadow } from './design'
@@ -11,12 +11,50 @@ import { FilterChip, SelectBox, visuallyHidden } from './ui'
  * su tamaño y zoom, y la misma hoja en una copia fuera de `#root` que es lo
  * único que se imprime. «Imprimir» y «Descargar PDF» abren el diálogo del
  * navegador, donde se elige la impresora o «Guardar como PDF».
+ *
+ * La vista previa va por páginas, como el lienzo: el contenido se mide a la
+ * escala del papel y se corta antes de una fila o un bloque, para que ninguno
+ * quede partido; se ve una página a la vez.
  */
 export function ReportSheet({ title, children, paper, onPaper, toolbar }: {
   title: string; children: ReactNode; paper: PaperKey; onPaper: (paper: PaperKey) => void; toolbar?: ReactNode
 }) {
   const [zoom, setZoom] = useState(100)
   const size = paperSizes.find(item => item.key === paper)!
+  const measure = useRef<HTMLDivElement>(null)
+  const pageBox = useRef<HTMLDivElement>(null)
+  const [breaks, setBreaks] = useState<number[]>([0])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(0)
+  useLayoutEffect(() => {
+    const root = measure.current
+    const box = pageBox.current
+    if (!root || !box) return
+    const compute = () => {
+      const height = box.clientHeight
+      const full = root.scrollHeight
+      if (!height || !full) { setBreaks([0]); setTotal(full); return }
+      const origin = root.getBoundingClientRect().top
+      const tops = [...root.querySelectorAll('tr, h1, h2, h3, p, li, section, [data-block]')]
+        .map(element => element.getBoundingClientRect().top - origin).filter(top => top > 0).sort((a, b) => a - b)
+      const starts = [0]
+      while (full - starts.at(-1)! > height) {
+        const start = starts.at(-1)!
+        const fits = tops.filter(top => top > start && top <= start + height)
+        starts.push(fits.length ? fits.at(-1)! : start + height)
+      }
+      setBreaks(starts)
+      setTotal(full)
+    }
+    compute()
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(compute)
+    observer?.observe(root)
+    return () => observer?.disconnect()
+  }, [paper, children])
+  const pages = breaks.length
+  const current = Math.min(page, pages - 1)
+  const start = breaks[current]
+  const end = breaks[current + 1] ?? total
   const zoomButton = { width: 32, height: 32, borderRadius: '8px', border: `1px solid ${color.line}`, background: color.white, color: color.link, fontFamily: font, fontSize: 18, '&.Mui-disabled': { color: color.field } } as const
   return <Box component="section" aria-label={`Vista previa: ${title}`} sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: color.page, borderRadius: '20px', boxShadow: shadow.table, overflow: 'hidden' }}>
     <GlobalStyles styles={{
@@ -32,6 +70,11 @@ export function ReportSheet({ title, children, paper, onPaper, toolbar }: {
       {toolbar}
       <SelectBox name="hoja" label="Hoja" value={paper} onChange={value => onPaper(value as PaperKey)} options={paperSizes.map(item => ({ value: item.key, label: item.label }))} />
       <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', ml: 'auto' }}>
+        <ButtonBase aria-label="Página anterior" disabled={current === 0} onClick={() => setPage(current - 1)} sx={zoomButton}><Icon name="back" size={16} /></ButtonBase>
+        <Typography aria-live="polite" sx={{ fontSize: 13, color: color.muted, whiteSpace: 'nowrap' }}>Página <Box component="strong" sx={{ color: color.ink }}>{current + 1}</Box> de {pages}</Typography>
+        <ButtonBase aria-label="Página siguiente" disabled={current >= pages - 1} onClick={() => setPage(current + 1)} sx={zoomButton}><Icon name="chevron" size={16} /></ButtonBase>
+      </Stack>
+      <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
         <ButtonBase aria-label="Alejar" disabled={zoom <= 50} onClick={() => setZoom(value => value - 10)} sx={zoomButton}>−</ButtonBase>
         <Typography aria-live="polite" sx={{ fontSize: 13, minWidth: 44, textAlign: 'center', color: color.muted }}>{zoom} %</Typography>
         <ButtonBase aria-label="Acercar" disabled={zoom >= 150} onClick={() => setZoom(value => value + 10)} sx={zoomButton}>+</ButtonBase>
@@ -39,9 +82,17 @@ export function ReportSheet({ title, children, paper, onPaper, toolbar }: {
     </Stack>
     <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2 }}>
       {/* `zoom` cambia también el espacio que ocupa la hoja, a diferencia de `transform`. */}
-      <Box sx={{ width: `${size.width}mm`, minHeight: `${size.height}mm`, zoom: zoom / 100, mx: 'auto', boxSizing: 'border-box', p: '12mm',
+      <Box component="article" aria-label={`Vista previa de la página ${current + 1} de ${pages}`} sx={{ width: `${size.width}mm`, height: `${size.height}mm`, zoom: zoom / 100, mx: 'auto', boxSizing: 'border-box', p: '12mm',
         background: color.white, boxShadow: '0 2px 10px rgba(18,35,63,0.12)', borderRadius: '4px' }}>
-        <Paper>{children}</Paper>
+        <Box ref={pageBox} sx={{ height: '100%', overflow: 'hidden' }}>
+          <Box sx={{ height: total ? `${end - start}px` : 'auto', overflow: 'hidden' }}>
+            <Box sx={{ transform: `translateY(-${start}px)` }}><Paper>{children}</Paper></Box>
+          </Box>
+        </Box>
+      </Box>
+      {/* La misma hoja a tamaño real, invisible, para medir dónde corta cada página. */}
+      <Box aria-hidden="true" sx={{ position: 'absolute', left: -10000, top: 0, visibility: 'hidden', width: `${size.width - 24}mm` }}>
+        <Box ref={measure}><Paper>{children}</Paper></Box>
       </Box>
     </Box>
     {createPortal(<Box className="zenit-print-root" aria-hidden="true"><Paper>{children}</Paper></Box>, document.body)}

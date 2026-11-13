@@ -1,16 +1,63 @@
 # Estado y pendientes
 
+## Pendientes del MVP
+
+Desde el 13 de noviembre de 2026 el MVP es el lienzo completo: cada pantalla
+que dibuja, igual a él y funcionando en el ambiente publicado con datos
+ficticios. Lo que el lienzo no dibuja queda para después.
+
+Hecho en `feat/mvp-segun-el-lienzo` (contrato 0.37.0, migración V024), sin
+integrar ni desplegar todavía:
+
+- **ACC-06, «Confirma que eres tú»:** las dos pantallas del expediente
+  (contraseña y código) llevan la etiqueta, el título, la cuenta y «Cancelar
+  y volver a Zenit» del lienzo; el flujo no cambió.
+- **Portal instalable:** invitación a instalar en el teléfono, «Instalar
+  Zenit», «Zenit en este equipo» en Mi perfil, «En línea · datos de las…» y
+  el aviso sin conexión ([detalle](construir-el-portal.md#portal-instalable)).
+- **«Mi asistencia»** salió del portal y «Ver tarjeta» abre el detalle de la
+  tarjeta.
+- **Los siete datos del lienzo:** la tarjeta de cada marcaje; quién programó
+  el cambio de comida; cuándo, quién y por qué se suspendió una empresa, con
+  la vista «Con cambio de comida»; «39 de 42 cerradas»; días trabajados,
+  horario e incidencias resueltas en el reporte para nómina; las copias del
+  expediente de toda la empresa para Administración; y las sedes de
+  Supervisión y el segundo factor activo en Mi perfil.
+- **Diferencias igualadas:** «Hoy · Esta semana» en el Panel, «Sede activa»
+  y «Editar» en Configuración, la vista previa del PDF por páginas, «Revisar
+  y aplicar» directo en la misma visita, y la búsqueda y el alta de empresas
+  en la barra superior. Cerrar personas elegidas en Cierres se queda fuera:
+  abriría un segundo camino para cerrar la semana.
+
+Lo que falta:
+
+1. **Integrar y desplegar** la rama, y recorrer el lienzo en el ambiente
+   publicado con sesiones reales, incluida la consola con la cuenta de
+   operación.
+2. **Correo de identidad**, a cargo de quien administra la cuenta de Brevo:
+   autenticar el dominio y definir el remitente. Con eso la invitación llega
+   por correo y «Olvidé mi contraseña» manda el enlace.
+
+Las diferencias que no se pueden igualar (un dato que Keycloak no conoce,
+una regla vigente o un límite del navegador) se quedan anotadas en
+[construir el portal](construir-el-portal.md).
+
+Después del MVP: las dos formas de marcar (etiqueta de la sede y su
+pantalla), el chip con el que se vende y la tarjeta real, producción y datos
+reales, la versión 1.0 del contrato, seguridad, marca definitiva y la
+revisión manual de accesibilidad.
+
 **Análisis de imágenes, 13 de noviembre:** el CI empezó a fallar en toda PR
 por un aviso alto nuevo de zlib (CVE-2026-76844) en la imagen de identidad,
 que ya estaba en `main` y en el ambiente publicado. Red Hat no ha publicado
 la corrección; Java no usa la función con la falla (`gz_write`). Gabriel lo
 aceptó en `.grype.yaml`, sólo para esa versión y mientras no haya corrección;
 se revisa cuando Red Hat la publique o, a más tardar, el 13 de febrero de
-2027. La PR #65 se integró antes de llevar la regla, así que `main` falla
-en ese paso hasta integrar esta corrección.
+2027. La PR #65 se integró antes de llevar la regla; la regla entró con la
+PR #66 y `main` volvió a pasar, desplegado en `9f21144`.
 
 **Acceso igual a la maqueta, 13 de noviembre:** el acceso con la marca está
-desplegado (PR #64). Con la PR #65, integrada, las pantallas que el lienzo
+desplegado (PR #64). Con la PR #65, integrada y desplegada en `9f21144`, las pantallas que el lienzo
 dibuja (ingreso, «¿No puedes entrar?», código, configurar el segundo factor
 y crear contraseña) tienen plantilla propia y quedan iguales a él en
 escritorio y teléfono; falta desplegarla. Del bloque 6 quedan ACC-06, la
@@ -139,9 +186,9 @@ inferior de teléfono con «Más», menú de la cuenta y estados de sin permiso,
 página no encontrada, error, cuenta sin empresa y sesión terminada. Las
 pantallas anteriores siguen dentro del marco hasta reconstruir su sección.
 Recorrido con sesiones reales de los cinco roles en local, a 1440 y 390 px,
-incluido el expediente con verificación y descarga. Falta: que `/me`
-distinga una empresa suspendida (hoy se ve como cuenta sin acceso), decidir
-si se queda «Mi asistencia» y el canal de «Ayuda y soporte»
+incluido el expediente con verificación y descarga. Después: `/me`
+distingue la empresa suspendida (contrato 0.36.0), «Mi asistencia» salió del
+portal (13 de noviembre) y queda el canal de «Ayuda y soporte»
 ([orden y pendientes](construir-el-portal.md)). Integrado con la PR #37 y
 desplegado el 8 de noviembre.
 

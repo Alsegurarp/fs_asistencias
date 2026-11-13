@@ -131,7 +131,7 @@ function CardBlock({ me, employee }: { me: Me; employee: Employee }) {
   const inventory = useQuery({ queryKey: ['cards', 'inventario'], enabled: choosing, retry: false, queryFn: () => api<Page<Card>>('/cards?status=inventory&limit=50') })
   const assign = useMutation({ mutationFn: (cardId: string) => api(`/cards/${cardId}/assignments`, 'POST', { employeeId: employee.id }), onSuccess: () => { setChoosing(false); refreshPeople(cache) } })
   const since = card.data?.assignment?.since
-  return <Block title={label ? `Tarjeta ${label}` : 'Tarjeta'} action={label && allowed.cards ? <SheetLink to="/dispositivos/tarjetas">Ver tarjetas</SheetLink> : undefined}>
+  return <Block title={label ? `Tarjeta ${label}` : 'Tarjeta'} action={label && allowed.cards ? <SheetLink to={card.data ? `/dispositivos/tarjetas?tarjeta=${encodeURIComponent(card.data.id)}` : '/dispositivos/tarjetas'}>Ver tarjeta</SheetLink> : undefined}>
     {label ? <Typography sx={{ fontSize: 13, color: color.muted }}>Activa{since ? ` desde el ${shortDate(since.slice(0, 10))}` : ''}.</Typography>
       : <Typography sx={{ fontSize: 13, color: employee.status === 'active' ? color.warnText : color.muted, fontWeight: employee.status === 'active' ? 600 : 400 }}>{employee.status === 'active' ? 'Sin tarjeta: no puede marcar en un lector.' : 'Sin tarjeta.'}</Typography>}
     {!label && employee.status === 'active' && allowed.manageDevices && (!choosing

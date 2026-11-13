@@ -72,6 +72,10 @@ export function CompanySuspended({ company, onSignOut }: { company?: string | nu
 
 /** No se pudo hablar con el servicio de identidad: no hay sesión que mostrar. */
 export function IdentityUnavailable() {
+  // EST-06 al abrir Zenit sin red: la sesión se confirma con el servicio de identidad, que necesita señal.
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return <BrandLayout icon="alert" title="Sin conexión" lead="Para entrar, Zenit confirma tu cuenta con el servidor y eso necesita red. Lo que ya tenías abierto se sigue viendo sin señal; para volver a entrar, conéctate e intenta de nuevo.">
+    <Button variant="contained" size="large" sx={{ minHeight: 48, fontSize: 15 }} onClick={() => window.location.reload()}>Reintentar</Button>
+  </BrandLayout>
   return <BrandLayout icon="alert" title="No pudimos conectar con el inicio de sesión" lead="El servicio que verifica tu cuenta no respondió. Intenta de nuevo en un momento.">
     <Button variant="contained" size="large" sx={{ minHeight: 48, fontSize: 15 }} onClick={() => window.location.reload()}>Reintentar</Button>
   </BrandLayout>

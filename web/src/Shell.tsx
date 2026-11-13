@@ -4,9 +4,11 @@ import { Box, ButtonBase, Divider, MenuItem, MenuList, Popover, Stack, ThemeProv
 import type { Me } from './api'
 import { color, font, gradient, phoneQuery, shadow } from './design'
 import { Icon, ZenitMark } from './Icons'
+import { ConnectionStatus, InstallButton, InstallSheet, OfflineNotice, OfflinePill } from './Install'
+import { useInstall } from './offline'
 import { HelpModal, ProfilePanel, helpParam, profileParam, securityUrl } from './Profile'
 import { visuallyHidden } from './ui'
-import { type Group, type Screen, type Section, dossierCallbackPath, joinNames, personalScreen, roleLabel } from './sections'
+import { type Group, type Screen, type Section, dossierCallbackPath, joinNames, roleLabel } from './sections'
 
 const menuKey = 'zenit.menu.oculto'
 function readHidden() { try { return window.localStorage.getItem(menuKey) === '1' } catch { return false } }
@@ -81,24 +83,31 @@ export function Shell({ me, email, groups, firstPath, context, onSignOut, notice
         <ZenitMark size={30} /><Typography component="span" sx={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em' }}>Zenit</Typography>
       </Box>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: 40, pl: 1.75, borderLeft: '1px solid rgba(255,255,255,0.3)', fontSize: 14, fontWeight: 600, [`@media ${phoneQuery}`]: { display: 'none' } }}>
-        <Icon name="building" size={18} /><span>{context}</span>
+        <Icon name={me.tenant ? 'building' : 'settings'} size={18} /><span>{me.tenant ? context : 'Operación del servicio'}</span>
       </Stack>
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center', [`@media ${phoneQuery}`]: { display: 'contents' } }}>{search}</Box>
+      {phone && <OfflinePill />}
       {create}
       {bell}
       <AccountMenu me={me} email={email} context={context} onSignOut={onSignOut} onOpen={openParam} />
     </Box>
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', [`@media ${phoneQuery}`]: { display: 'block' } }}>
-      {hasMenu && !phone && !hidden && <Box component="aside" id={sideId} sx={{ flex: '0 0 232px', height: '100%', overflow: 'auto', background: color.white, borderRight: `1px solid ${color.line}`, p: '14px 10px' }}>
+      {hasMenu && !phone && !hidden && <Box component="aside" id={sideId} sx={{ flex: '0 0 232px', height: '100%', overflow: 'auto', background: color.white, borderRight: `1px solid ${color.line}`, p: '14px 10px', display: 'flex', flexDirection: 'column', gap: 1 }}>
         <SideNav groups={groups} active={active} firstPath={firstPath} counts={counts} label={me.tenant ? 'Secciones del portal' : 'Secciones de la consola'} />
+        <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 1, p: '10px 4px 0', borderTop: `1px solid ${color.lineSoft}` }}>
+          <ConnectionStatus />
+          <InstallButton />
+        </Box>
       </Box>}
       <Box component="main" id="contenido" tabIndex={-1} sx={{ flex: 1, minWidth: 0, height: '100%', overflow: 'auto', p: '18px 24px', display: 'flex', flexDirection: 'column', gap: 1.25, outline: 'none',
         [`@media ${phoneQuery}`]: { height: 'auto', overflow: 'visible', p: '16px 16px 96px' } }}>
+        <OfflineNotice />
         {notice}
         <Outlet />
       </Box>
     </Box>
     {hasMenu && phone && <BottomNav groups={groups} active={active} firstPath={firstPath} pathname={pathname} counts={counts} />}
+    {phone && <InstallSheet />}
     {params.get(profileParam) && <ProfilePanel me={me} email={email} context={context} onClose={() => closeParam(profileParam)} onSignOut={onSignOut} />}
     {params.get(helpParam) && <HelpModal onClose={() => closeParam(helpParam)} />}
   </Box>
@@ -156,13 +165,13 @@ function BottomNav({ groups, active, firstPath, pathname, counts }: { groups: Gr
   </Box>
 }
 
-/** CTA-02: Mi perfil, la seguridad de la cuenta, ayuda y salir. «Instalar Zenit» llega con el portal instalable (bloque 6). */
+/** CTA-02: Mi perfil, la seguridad de la cuenta, instalar Zenit, ayuda y salir. */
 function AccountMenu({ me, email, context, onSignOut, onOpen }: { me: Me; email?: string; context: string; onSignOut: () => void; onOpen: (key: string) => void }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const navigate = useNavigate()
   const menuId = useId()
   const close = () => setAnchor(null)
-  const personal = me.roles.includes('trabajador') && !!me.tenant
+  const { available, install } = useInstall()
   const itemSx = { gap: 1.5, minHeight: 44, color: color.ink, fontSize: 14, fontWeight: 600, '& svg': { color: color.accent } }
   return <>
     <ButtonBase aria-label={`Cuenta de ${me.displayName}, ${rolesText(me)}`} aria-haspopup="menu" aria-controls={anchor ? menuId : undefined} aria-expanded={anchor ? true : undefined}
@@ -183,10 +192,10 @@ function AccountMenu({ me, email, context, onSignOut, onOpen }: { me: Me; email?
       <Divider />
       <MenuList id={menuId} aria-label="Cuenta" autoFocusItem={!!anchor} sx={{ py: 1 }}>
         <MenuItem onClick={() => { close(); onOpen(profileParam) }} sx={itemSx}><Icon name="person" />Mi perfil</MenuItem>
-        {personal && <MenuItem onClick={() => { close(); void navigate(personalScreen.path) }} sx={itemSx}><Icon name="attendance" />Mi asistencia</MenuItem>}
         <MenuItem component="a" href={securityUrl} target="_blank" rel="noopener" onClick={close} sx={{ ...itemSx, alignItems: 'flex-start' }}>
           <Icon name="closures" /><Box>Seguridad de la cuenta<Box component="span" sx={{ display: 'block', fontSize: 12, fontWeight: 400, color: color.muted }}>Contraseña y segundo factor</Box></Box>
         </MenuItem>
+        {available && <MenuItem onClick={() => { close(); void install() }} sx={itemSx}><Icon name="download" />Instalar Zenit en este equipo</MenuItem>}
         <MenuItem onClick={() => { close(); onOpen(helpParam) }} sx={itemSx}><Icon name="info" />Ayuda y soporte</MenuItem>
         <Divider />
         <MenuItem onClick={() => { close(); onSignOut() }} sx={itemSx}><Icon name="logout" />Cerrar sesión</MenuItem>

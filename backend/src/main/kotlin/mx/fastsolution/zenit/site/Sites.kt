@@ -90,6 +90,13 @@ class SiteRepository(private val dsl: DSLContext) {
         )
     }
 
+    /** Identificador y nombre de las sedes indicadas de esa empresa, por nombre. */
+    fun names(tenantId: UUID, ids: Collection<UUID>): List<Pair<UUID, String>> {
+        if (ids.isEmpty()) return emptyList()
+        return dsl.fetch("select id, name from site where tenant_id = ? and id = any(?) order by name, id", tenantId, ids.toTypedArray())
+            .map { it.get("id", UUID::class.java) to it.get("name", String::class.java) }
+    }
+
     fun find(tenantId: UUID, id: UUID): SiteRow? =
         dsl.fetchOne("select $COLUMNS from site where tenant_id = ? and id = ?${SiteScope.clause("id")}", tenantId, id)?.let(::row)
 

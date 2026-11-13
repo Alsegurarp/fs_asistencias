@@ -200,7 +200,7 @@ it('el detalle muestra las marcas del día, la salida que falta, y asigna', asyn
   expect(panel.textContent).toContain('Luis Hernández · 0114 · jueves 5 de noviembre')
   expect(panel.textContent).toContain('Horario' + 'Oficina L–V · L–V 09:00–18:00')
   expect([...panel.querySelectorAll('ol li')].map(li => li.textContent)).toEqual([
-    'Entrada09:04· Terminal de Matriz Centro · dentro de la sede · precisión 12 m · abrió la incidencia', 'SalidaSin marca',
+    'Entrada09:04· Terminal Matriz Centro · dentro de la sede · precisión 12 m · abrió la incidencia', 'SalidaSin marca',
   ])
   // Para «falta la marca que cierra» el formulario ya propone agregar la salida.
   expect(field<HTMLInputElement>('input[name="decision"][value="adjusted"]').checked).toBe(true)

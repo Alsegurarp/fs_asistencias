@@ -109,15 +109,17 @@ export function Settings({ me, context, section, screens, screen }: Props) {
             <Typography sx={{ fontSize: 13, color: color.muted }}>Círculo de {site.radiusMeters} m · {site.terminals ?? '—'} terminales · {site.people ?? '—'} personas</Typography>
           </Box>)}
         </Box> : <Box sx={{ overflowX: 'auto' }}><Box component="table" sx={tableSx}>
-          <thead><tr><th scope="col">Sede</th><th scope="col">Zona de marcaje</th><th scope="col">Zona horaria</th><th scope="col">Terminales</th><th scope="col">Personas</th><th scope="col">Estado</th></tr></thead>
+          <thead><tr><th scope="col">Sede</th><th scope="col">Zona de marcaje</th><th scope="col">Zona horaria</th><th scope="col">Terminales</th><th scope="col">Personas</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead>
           <tbody>
-            {sites.isPending ? <SkeletonRows columns={6} rows={3} /> : siteRows.map(site => <tr key={site.id} data-selected={site.id === selectedId} onClick={clickRow}>
+            {sites.isPending ? <SkeletonRows columns={7} rows={3} /> : siteRows.map(site => <tr key={site.id} data-selected={site.id === selectedId} onClick={clickRow}>
               <td><SiteLink site={site} onOpen={element => open(siteParam, site.id, element)} /></td>
               <td>Círculo de {site.radiusMeters} m</td>
               <td>{zoneLabel(site.timeZone)}</td>
               <td>{site.terminals ?? '—'}</td>
               <td>{site.people ?? '—'}</td>
               <td><Badge tone={site.status === 'active' ? 'ok' : 'neutral'}>{site.status === 'active' ? 'Activa' : 'Inactiva'}</Badge></td>
+              <td><Button variant="outlined" size="small" aria-label={`${allowed.editSites ? 'Editar' : 'Ver'} ${site.name}`} onClick={event => { event.stopPropagation(); open(siteParam, site.id, event.currentTarget) }}
+                sx={{ minHeight: 30, px: 1.5, borderRadius: 999, fontSize: 12 }}>{allowed.editSites ? 'Editar' : 'Ver'}</Button></td>
             </tr>)}
           </tbody>
         </Box></Box>}

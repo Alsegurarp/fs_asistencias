@@ -501,6 +501,38 @@ a:hover {
   background: #EEF4FE;
 }
 
+/* ACC-06: la cuenta que confirma. */
+.za-cuenta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #F2F6FE;
+}
+
+.za-cuenta strong,
+.za-cuenta .za-chico {
+  display: block;
+}
+
+.za-cuenta .za-chico {
+  overflow-wrap: anywhere;
+}
+
+.za-avatar {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #2C66D0 0%, #1C4A9C 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
 /* Opciones de «¿No puedes entrar?» y de elegir cómo entrar. */
 .za-opt {
   display: flex;
@@ -718,7 +750,7 @@ body:has(#za-ayuda:target) :is(#za-ingreso, .pf-v5-c-login__main-header, .pf-v5-
 /* En las páginas propias sobran piezas del marco de Keycloak: el correo con
    el que se intenta entrar, su botón «otra forma» y el aviso que repite el
    subtítulo. */
-body:is([data-page-id="login-login-otp"], [data-page-id="login-select-authenticator"]) .pf-v5-c-login__main-body > .pf-v5-c-form:has(#kc-attempted-username),
+body:is([data-page-id="login-login"], [data-page-id="login-login-otp"], [data-page-id="login-select-authenticator"]) .pf-v5-c-login__main-body > .pf-v5-c-form:has(#kc-attempted-username),
 body[data-page-id="login-login-otp"] #try-another-way,
 body:is([data-page-id="login-login-config-totp"], [data-page-id="login-login-update-password"]) .pf-v5-c-alert.pf-m-warning {
   display: none;

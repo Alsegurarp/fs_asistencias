@@ -33,6 +33,8 @@ data class TenantView(
     val breakPolicyChange: BreakPolicyChangeView?,
     /** Las formas de marcar del plan; las fija la operación del servicio. */
     val captureMethods: List<String>,
+    /** La suspensión vigente: cuándo, quién y por qué. */
+    val suspension: SuspensionView?,
 ) {
     companion object {
         /** `breakPolicy` es la que vale hoy en la empresa, no la de su alta: la da `BreakPolicies`. */
@@ -48,9 +50,12 @@ data class TenantView(
             autoCloseAfterHours = row.autoCloseAfterHours,
             breakPolicyChange = change,
             captureMethods = row.captureMethods,
+            suspension = row.suspension?.let { SuspensionView(it.at.toInstant().toString(), it.byName, it.reason) },
         )
     }
 }
+
+data class SuspensionView(val at: String, val byName: String, val reason: String)
 
 data class TenantUsageView(
     val tenantId: String,
@@ -177,11 +182,12 @@ class TenantController(private val service: TenantService, private val policies:
         @RequestParam q: String?,
         @RequestParam status: String?,
         @RequestParam administration: String?,
+        @RequestParam breakPolicyChange: String?,
         @RequestParam cursor: String?,
         @RequestParam limit: String?,
     ): Page<OperatedTenantView> {
         val size = Paging.limit(limit)
-        val rows = service.page(TenantService.ListQuery(q, status, administration), Paging.decode(cursor), size)
+        val rows = service.page(TenantService.ListQuery(q, status, administration, breakPolicyChange), Paging.decode(cursor), size)
         // Lo de cada empresa de la página se lee en lote: un número fijo de consultas por página.
         val shown = rows.take(size).map { it.tenant }
         val views = policies.views(shown)

@@ -138,6 +138,14 @@ function PhoneHistory({ rows, loading, failure, empty, pager, today, timeZone, o
 }
 
 type Picked = { file: File; rows: number | null }
+
+/**
+ * Los archivos revisados en esta visita, por revisión: «Revisar y aplicar»
+ * del historial los aplica directo, como el lienzo, sin volver a elegirlos.
+ * Sólo viven en la memoria de la página; tras recargarla se elige otra vez,
+ * porque el servidor no guarda el archivo.
+ */
+const reviewedFiles = new Map<string, Picked>()
 const newKeys = () => ({ review: crypto.randomUUID(), apply: crypto.randomUUID() })
 
 /**
@@ -152,7 +160,7 @@ function ImportModal({ me, importId, onClose }: { me: Me; importId: string | nul
   const existing = useQuery({ queryKey: ['import', importId], enabled: !!importId, retry: false, queryFn: () => api<ImportResult>(`/imports/${importId}`) })
   // `undefined` mientras se muestra la importación del historial; `null` al volver a subir un archivo.
   const [shown, setShown] = useState<ImportResult | null | undefined>(undefined)
-  const [picked, setPicked] = useState<Picked | null>(null)
+  const [picked, setPicked] = useState<Picked | null>(() => (importId && reviewedFiles.get(importId)) || null)
   const [fileError, setFileError] = useState('')
   // Cada archivo lleva sus claves: reintentar tras perder la respuesta no duplica nada.
   const [keys, setKeys] = useState(newKeys)
@@ -166,7 +174,9 @@ function ImportModal({ me, importId, onClose }: { me: Me; importId: string | nul
       if (reviewedImportId) body.append('reviewedImportId', reviewedImportId)
       return api<ImportResult>('/imports/csv', 'POST', body, dryRun ? keys.review : keys.apply)
     },
-    onSuccess: row => {
+    onSuccess: (row, { dryRun }) => {
+      if (dryRun && picked) reviewedFiles.set(row.id, picked)
+      if (row.status === 'applied') for (const [id, file] of reviewedFiles) if (file === picked) reviewedFiles.delete(id)
       setShown(row)
       void cache.invalidateQueries({ queryKey: ['imports'] })
       if (row.status === 'applied') {

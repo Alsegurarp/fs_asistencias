@@ -1,5 +1,5 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Box, ButtonBase, MenuItem, MenuList, Popover, Stack, Typography, useMediaQuery } from '@mui/material'
 import { api, type Card, type Device, type Employee, type Me, type Page, permissions } from './api'
@@ -113,6 +113,62 @@ export function GlobalSearch({ me }: { me: Me }) {
     </Box>}
     {showList && <Typography role="status" sx={visuallyHidden}>{loading ? 'Buscando…' : `${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}`}</Typography>}
   </Box>
+}
+
+/**
+ * Consola de operación: busca empresas por nombre o identificador desde la
+ * barra superior, como en el lienzo. Escribe `?q=` en Empresas; desde otra
+ * pantalla de la consola, lleva a Empresas con la búsqueda. «/» la enfoca.
+ */
+export function ConsoleSearch() {
+  const navigate = useNavigate()
+  const phone = useMediaQuery(phoneQuery)
+  const { pathname, search } = useLocation()
+  const input = useRef<HTMLInputElement>(null)
+  const onList = pathname === '/empresas'
+  const current = onList ? new URLSearchParams(search).get('q') || '' : ''
+  const [text, setText] = useState(current)
+  useEffect(() => { setText(current) }, [current])
+  const go = (value: string) => {
+    const next = onList ? new URLSearchParams(search) : new URLSearchParams()
+    if (value) next.set('q', value); else next.delete('q')
+    const query = next.toString()
+    void navigate(`/empresas${query ? `?${query}` : ''}`, { replace: onList })
+  }
+  useEffect(() => {
+    const value = text.trim()
+    if (value === current) return
+    const timer = setTimeout(() => go(value), 300)
+    return () => clearTimeout(timer)
+  }, [text]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => { if (event.key === '/' && shortcut(event)) { event.preventDefault(); input.current?.focus() } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  return <Box component="form" role="search" onSubmit={event => { event.preventDefault(); go(text.trim()) }}
+    sx={{ flex: '0 1 560px', minWidth: 0, [`@media ${phoneQuery}`]: { order: 10, flex: '1 1 100%' } }}>
+    <Box component="label" sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 40, px: 1.5, borderRadius: '12px', background: 'rgba(255,255,255,0.16)', color: color.white,
+      '&:focus-within': { background: color.white, color: color.muted, boxShadow: `0 0 0 2px ${color.white}` } }}>
+      <Icon name="search" size={18} />
+      <Box component="input" ref={input} type="search" name="q" aria-label="Buscar empresas" autoComplete="off" maxLength={100}
+        placeholder={phone ? 'Buscar empresas' : 'Buscar empresas por nombre o identificador…'} value={text} onChange={event => setText(event.target.value)}
+        sx={{ flex: 1, minWidth: 0, border: 0, outline: 'none !important', background: 'transparent', color: 'inherit', fontFamily: font, fontSize: 14, minHeight: 36,
+          '&::placeholder': { color: 'inherit', opacity: 0.85 }, 'label:focus-within &': { color: color.ink } }} />
+      {!phone && <Box component="kbd" aria-hidden="true" sx={{ px: 0.75, borderRadius: '6px', border: '1px solid currentColor', fontFamily: font, fontSize: 12, opacity: 0.8 }}>/</Box>}
+    </Box>
+  </Box>
+}
+
+/** Consola: «Dar de alta una empresa» en la barra superior; abre el alta en Empresas. */
+export function ConsoleCreate() {
+  const navigate = useNavigate()
+  const phone = useMediaQuery(phoneQuery)
+  return <ButtonBase onClick={() => void navigate('/empresas?alta=1')} aria-label="Dar de alta una empresa"
+    sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minHeight: 40, px: phone ? 1.25 : 2, borderRadius: 999, background: color.white, color: color.deep, fontFamily: font, fontSize: 14, fontWeight: 600,
+      boxShadow: '0 6px 14px rgba(13,38,92,0.18)', '&.Mui-focusVisible': { boxShadow: `0 0 0 2px ${color.white}, 0 0 0 4px ${color.deep}` } }}>
+    <Icon name="plus" size={16} strokeWidth={2.2} />{phone ? 'Alta' : 'Dar de alta una empresa'}
+  </ButtonBase>
 }
 
 export type CreateKind = 'persona' | 'horario' | 'lector' | 'tarjeta'

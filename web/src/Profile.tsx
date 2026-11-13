@@ -6,8 +6,9 @@ import { identityBase } from './auth'
 import { color } from './design'
 import { dossierPermissionKey } from './Dossiers'
 import { Icon } from './Icons'
+import { InstallRow } from './Install'
 import { initials, rolesText } from './Shell'
-import { roleLabel } from './sections'
+import { joinNames, roleLabel } from './sections'
 import { Modal, Note, SidePanel } from './ui'
 import { support } from './usersModel'
 
@@ -41,16 +42,18 @@ export function ProfilePanel({ me, email, context, onClose, onSignOut }: { me: M
     <Group title="Tu acceso">
       <Fact label={me.tenant ? 'Empresa' : 'Servicio'} value={context} />
       <Fact label={roles.length > 1 ? 'Roles' : 'Rol'} value={roles.length ? (me.tenant ? rolesText(me) : roles.map(roleLabel).join(', ')) : 'Sin rol'} />
-      <Fact label="Alcance" value={myScope(roles)} />
+      <Fact label="Alcance" value={me.sites && roles.includes('supervisor') && !roles.some(role => role === 'admin_empresa' || role === 'rh' || role === 'auditor')
+        ? (me.sites.length ? joinNames(me.sites.map(site => site.name)) : 'Ninguna sede asignada') : myScope(roles)} />
       {me.tenant && <Fact label="Expediente de la empresa" value={permission.isPending ? '…' : permission.data?.enabled ? 'Puede descargarlo' : 'No'} />}
       {me.tenant && <Fact label="En el padrón" value={me.employeeId ? 'Sí' : 'No'} />}
     </Group>
     <Typography sx={{ fontSize: 12.5, color: color.muted }}>Tu nombre y tu rol los cambia Administración; el correo no se cambia, se invita de nuevo.</Typography>
     <Group title="Seguridad" list={false}>
       <Action label="Contraseña" detail="12 caracteres o más" action="Cambiar" />
-      <Action label="Segundo factor" detail="App de autenticación" action="Reconfigurar" />
+      <Action label="Segundo factor" detail="Activo · app de autenticación" action="Reconfigurar" />
     </Group>
     <Typography sx={{ fontSize: 12.5, color: color.muted }}>Se cambian en tu cuenta de Zenit, en otra pestaña; al terminar vuelve aquí.</Typography>
+    <InstallRow />
   </SidePanel>
 }
 

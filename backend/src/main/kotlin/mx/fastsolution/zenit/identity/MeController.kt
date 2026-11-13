@@ -1,5 +1,6 @@
 package mx.fastsolution.zenit.identity
 
+import mx.fastsolution.zenit.site.SiteRepository
 import mx.fastsolution.zenit.tenant.BreakPolicies
 import mx.fastsolution.zenit.tenant.TenantRepository
 import mx.fastsolution.zenit.tenant.UpcomingBreakPolicyView
@@ -28,11 +29,15 @@ data class CurrentUser(
     val access: String,
     /** Nombre de la empresa suspendida, sólo para quien conservaba su acceso. */
     val suspendedTenantName: String?,
+    /** Las sedes que se le asignaron a Supervisión, por nombre; nulo para quien ve toda la empresa. */
+    val sites: List<MeSite>?,
 )
+
+data class MeSite(val id: String, val name: String)
 
 @RestController
 @RequestMapping("/api/v1")
-class MeController(private val tenants: TenantRepository, private val policies: BreakPolicies) {
+class MeController(private val tenants: TenantRepository, private val policies: BreakPolicies, private val siteRepository: SiteRepository) {
     /**
      * Quién llama, con su empresa y sus roles. Una identidad válida a la que
      * nadie ha invitado, o cuyo acceso se deshabilitó, aparece sin empresa y
@@ -57,6 +62,11 @@ class MeController(private val tenants: TenantRepository, private val policies: 
                 else -> "none"
             },
             suspendedTenantName = person.suspendedTenantName,
+            sites = if (tenant != null && Role.SUPERVISOR in person.roles) {
+                siteRepository.names(tenant.id, person.siteIds).map { (id, name) -> MeSite(id.toString(), name) }
+            } else {
+                null
+            },
         )
     }
 }

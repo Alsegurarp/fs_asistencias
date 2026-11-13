@@ -15,7 +15,6 @@ import { Payroll } from './Payroll'
 import { Reports } from './Reports'
 import { Imports } from './Imports'
 import { Incidents, type IncidentSummary } from './Incidents'
-import { PersonalAttendance } from './PersonalAttendance'
 import { Schedules } from './Schedules'
 import { Personnel } from './Personnel'
 import { Sources } from './Sources'
@@ -29,10 +28,10 @@ import { StateCard } from './States'
 import { More } from './More'
 import { NoticesButton, useNotices } from './Notices'
 import { Panel } from './Panel'
-import { CreateMenu, GlobalSearch } from './TopBar'
+import { CreateMenu, ConsoleCreate, ConsoleSearch, GlobalSearch } from './TopBar'
 import {
   type Allowed, type Screen, type Section, companyGroups, consoleGroups, dossierCallbackPath, homePath, joinNames,
-  personalScreen, personalSection, roleLabel, rolesFor, sessionEndedPath, visibleGroups, visibleScreens,
+  retiredPersonalPath, roleLabel, rolesFor, sessionEndedPath, visibleGroups, visibleScreens,
 } from './sections'
 
 type PortalProps = { me: Me; email?: string; onSignOut: () => void; notice?: ReactNode }
@@ -69,13 +68,13 @@ export function Portal({ me, email, onSignOut, notice }: PortalProps) {
   return <Routes>
     <Route element={<Shell me={me} email={email} groups={groups} firstPath={firstPath} context={context} onSignOut={onSignOut} counts={counts}
       bell={me.tenant && allowed.attendance ? <NoticesButton notices={notices} /> : undefined}
-      search={me.tenant ? <GlobalSearch me={me} /> : undefined} create={me.tenant ? <CreateMenu me={me} /> : undefined}
+      search={me.tenant ? <GlobalSearch me={me} /> : operator ? <ConsoleSearch /> : undefined} create={me.tenant ? <CreateMenu me={me} /> : operator ? <ConsoleCreate /> : undefined}
       notice={<>{notice}{breakNotice && <Alert severity="info" role="status" aria-live="polite">Aviso sobre la comida: {upcomingText(upcoming)}</Alert>}</>} />}>
       <Route index element={home ? <Navigate to={home} replace /> : <NoScreens me={me} />} />
       {all.flatMap(section => section.screens.map(screen => <Route key={screen.path} path={screen.path} element={page(section, screen)} />))}
-      <Route path={personalScreen.path} element={page(personalSection, personalScreen)} />
+      <Route path={retiredPersonalPath} element={<Navigate to="/" replace />} />
       <Route path={dossierCallbackPath} element={page(all.find(section => section.key === 'reportes')!, all.flatMap(section => section.screens).find(screen => screen.key === 'dossier')!, true)} />
-      <Route path="/mas" element={<More me={me} groups={groups} firstPath={firstPath} context={context} personal={allowed.personal} onSignOut={onSignOut} />} />
+      <Route path="/mas" element={<More me={me} groups={groups} firstPath={firstPath} context={context} onSignOut={onSignOut} />} />
       <Route path={sessionEndedPath} element={<Navigate to="/" replace />} />
       {/* Las sedes ahora viven dentro de Configuración (EMP-01). */}
       <Route path="/configuracion/sedes" element={<Navigate to="/configuracion" replace />} />
@@ -94,7 +93,7 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
     </StateCard>
     return <NoPermission me={me} section={section} screen={screen} home={home} />
   }
-  const screens = section.key === personalSection.key ? [screen] : visibleScreens(section, allowed, roles)
+  const screens = visibleScreens(section, allowed, roles)
   // Las pantallas ya reconstruidas con el lienzo llevan su propio encabezado.
   if (screen.key === 'panel') return <Panel me={me} context={context} section={section} screens={screens} screen={screen} />
   if (screen.key === 'attendance') return <Attendance me={me} context={context} section={section} screens={screens} screen={screen} />
@@ -123,7 +122,6 @@ function ScreenPage({ me, section, screen, allowed, roles, context, home, dossie
 /** Las pantallas anteriores del portal, cada una en su dirección. */
 function Legacy({ screen, me }: { screen: Screen['key']; me: Me }) {
   switch (screen) {
-    case 'personal': return <PersonalAttendance me={me} />
     case 'tenants': case 'tenantUsage': case 'users': case 'exports': case 'payroll': case 'audit': case 'dossier': case 'panel': case 'attendance': case 'incidents': case 'closures': case 'employees': case 'schedules': case 'imports': case 'sources': case 'devices': case 'cards': case 'settings': return null
   }
 }
@@ -157,6 +155,8 @@ function NotFound({ home }: { home: string | null }) {
 /** Cuenta vigente cuyo rol no tiene pantallas en el portal. */
 function NoScreens({ me }: { me: Me }) {
   return <StateCard icon="person" eyebrow="Tu cuenta" title="Tu cuenta está activa">
-    {me.roles.length ? `Tu rol es ${rolesText(me)} y todavía no tiene pantallas en el portal.` : 'Tu cuenta todavía no tiene un rol con pantallas en el portal.'} Pide a Administración el rol que necesitas.
+    {me.roles.length === 1 && me.roles[0] === 'trabajador'
+      ? 'Tu rol es Trabajador: tu asistencia y el acuse de tus cierres están en la app de Zenit, en tu teléfono. El portal es para quien administra la empresa.'
+      : <>{me.roles.length ? `Tu rol es ${rolesText(me)} y todavía no tiene pantallas en el portal.` : 'Tu cuenta todavía no tiene un rol con pantallas en el portal.'} Pide a Administración el rol que necesitas.</>}
   </StateCard>
 }

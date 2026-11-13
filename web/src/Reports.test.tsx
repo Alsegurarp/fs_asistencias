@@ -39,7 +39,7 @@ const closure = (id: string, externalId: string, name: string, ordinary: number,
   totals: { workedMinutes: ordinary + overtime + 60, breakMinutes: 60, ordinaryMinutes: ordinary, overtimeMinutes: overtime }, hash: `hash-${id}-0123456789abcdef`,
   closedAt: '2026-11-02T08:00:00Z', closedBy: null, acknowledgement: ack ? { type: ack, note: null, at: '2026-11-02T10:00:00Z' } : null,
 })
-const closures = [closure('c1', '0187', 'Ana Torres', 2880, 255, 'agreed'), closure('c2', '0121', 'Carmen Vega', 2400, 0, 'objected'), closure('c3', '0300', 'Pedro Sin Sede', 600, 0, null)]
+const closures = [{ ...closure('c1', '0187', 'Ana Torres', 2880, 255, 'agreed'), scheduleName: 'Matutino 6 días', daysWorked: 6, resolvedIncidents: 1 }, closure('c2', '0121', 'Carmen Vega', 2400, 0, 'objected'), closure('c3', '0300', 'Pedro Sin Sede', 600, 0, null)]
 const siteOf: Record<string, string> = { c1: 's2', c2: 's1' }
 const sites = [
   { id: 's1', name: 'Matriz Centro', timeZone: 'America/Mexico_City', latitude: 19.4, longitude: -99.1, radiusMeters: 120, status: 'active', people: 29, terminals: 2 },
@@ -193,13 +193,16 @@ it('el paso 1 elige la última semana con cierres y dice quién entra y quién n
 it('el paso 2 muestra las columnas elegidas agrupadas por sede', async () => {
   await render('/reportes/nomina?semana=2026-10-26&paso=2')
   expect(rows()).toEqual([
-    ['Matriz Centro · 1 persona'], ['0121', 'Carmen Vega', '40:00', '0:00', '41:00', 'Objeción'],
-    ['Bodega Norte · 1 persona'], ['0187', 'Ana Torres', '48:00', '4:15', '53:15', 'Conforme'],
-    ['Sin sede · 1 persona'], ['0300', 'Pedro Sin Sede', '10:00', '0:00', '11:00', 'Sin acuse'],
+    ['Matriz Centro · 1 persona'], ['0121', 'Carmen Vega', 'Sin horario', '—', '40:00', '0:00', 'Objeción'],
+    ['Bodega Norte · 1 persona'], ['0187', 'Ana Torres', 'Matutino 6 días', '6', '48:00', '4:15', 'Conforme'],
+    ['Sin sede · 1 persona'], ['0300', 'Pedro Sin Sede', 'Sin horario', '—', '10:00', '0:00', 'Sin acuse'],
   ])
   await act(async () => [...container.querySelectorAll<HTMLLabelElement>('label')].find(item => item.textContent?.startsWith('Agrupar por sede'))!.click())
   await act(async () => [...container.querySelectorAll<HTMLLabelElement>('label')].find(item => item.textContent?.startsWith('Acuse'))!.click())
-  expect(rows()[0]).toEqual(['0121', 'Carmen Vega', '40:00', '0:00', '41:00'])
+  expect(rows()[0]).toEqual(['0121', 'Carmen Vega', 'Sin horario', '—', '40:00', '0:00'])
+  // Las incidencias resueltas se prenden aparte, como en el lienzo.
+  await act(async () => [...container.querySelectorAll<HTMLLabelElement>('label')].find(item => item.textContent?.startsWith('Incidencias resueltas'))!.click())
+  expect(rows().find(row => row[1] === 'Ana Torres')?.at(-1)).toBe('1')
 })
 
 it('el paso 3 arma la hoja con subtotales y la imprime; el anexo lleva las huellas', async () => {
@@ -208,7 +211,7 @@ it('el paso 3 arma la hoja con subtotales y la imprime; el anexo lleva las huell
   expect(sheet().textContent).toContain('Semana 26 oct – 1 nov 2026 · Toda la empresa · reglas laborales, versión 2')
   expect(sheet().textContent).toContain('Generado por Rocío Navarro el 10 nov 2026, 10:42')
   expect(sheet().textContent).toContain('1 · 1 · 1conformes · objeción · sin acuse')
-  expect(rows(sheet())).toContainEqual(['Subtotal Bodega Norte', '48:00', '4:15', '53:15', ''])
+  expect(rows(sheet())).toContainEqual(['Subtotal Bodega Norte', '48:00', '4:15', ''])
   expect(sheet().textContent).not.toContain('Anexo de huellas')
   await click('Descargar PDF')
   expect(window.print).toHaveBeenCalledOnce()

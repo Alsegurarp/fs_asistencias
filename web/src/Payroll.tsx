@@ -156,11 +156,13 @@ export function Payroll({ me, context, section, screen }: Props) {
     {step === 2 && <Box sx={{ display: 'grid', gridTemplateColumns: phone ? '1fr' : 'minmax(0, 0.8fr) minmax(0, 1.5fr)', gap: 2, alignItems: 'start' }}>
       <Box component="section" aria-labelledby="columnas" sx={card}>
         <Typography component="h2" id="columnas" sx={heading}>Columnas</Typography>
+        <Option checked={options.days} onChange={days => setOptions({ ...options, days })} label="Días trabajados" detail="con al menos una entrada" />
         <Option checked disabled label="Horas ordinarias" detail="hasta el tope de la semana" />
         <Option checked disabled label="Tiempo extra" detail="diario y semanal, sin contar doble" />
         <Option checked={options.worked} onChange={worked => setOptions({ ...options, worked })} label="Tiempo trabajado" detail="todo lo registrado en la semana" />
         <Option checked={options.breaks} onChange={breaks => setOptions({ ...options, breaks })} label="Comida y descansos" detail={breaksMarked ? 'la empresa marca la comida' : 'la empresa no marca la comida'} />
         <Option checked={options.acknowledgement} onChange={acknowledgement => setOptions({ ...options, acknowledgement })} label="Acuse" detail="conforme, objeción o sin acuse" />
+        <Option checked={options.incidents} onChange={incidents => setOptions({ ...options, incidents })} label="Incidencias resueltas" detail="cuántas hubo en la semana" />
         <Typography component="h2" id="presentacion" sx={{ ...heading, mt: 1 }}>Presentación</Typography>
         <Option checked={options.bySite} onChange={bySite => setOptions({ ...options, bySite })} label="Agrupar por sede" detail="con subtotal" />
         <Option checked={options.hashes} onChange={hashes => setOptions({ ...options, hashes })} label="Anexo de huellas" detail="para comprobar que nada cambió" />
@@ -177,7 +179,9 @@ export function Payroll({ me, context, section, screen }: Props) {
       </Box>
     </Box>}
 
-    {step === 3 && <PreviewStep me={me} weekStart={weekStart} siteId={siteId} scopeName={scopeName} groups={groups} rows={rows} options={options}
+    {/* Abierto directo en el paso 3, la semana se conoce cuando llegan los resúmenes. */}
+    {step === 3 && !weekStart && <Typography role="status" sx={{ fontSize: 13, color: color.muted }}>Cargando las semanas…</Typography>}
+    {step === 3 && !!weekStart && <PreviewStep me={me} weekStart={weekStart} siteId={siteId} scopeName={scopeName} groups={groups} rows={rows} options={options}
       blocked={counts?.blocked ?? blocked.length} ruleVersion={rows[0]?.ruleSet.version} />}
 
     <Stack direction="row" sx={{ flex: 'none', justifyContent: 'space-between', gap: 1, pb: 1 }}>
@@ -188,7 +192,8 @@ export function Payroll({ me, context, section, screen }: Props) {
 }
 
 function weekCounts(week: ClosureSummary) {
-  const parts = [`${week.closed} ${week.closed === 1 ? 'cerrada' : 'cerradas'}`]
+  // «39 de 42 cerradas», como el lienzo, cuando el servidor dice cuántas personas tuvo la semana.
+  const parts = [week.people !== undefined ? `${week.closed} de ${week.people} ${week.closed === 1 ? 'cerrada' : 'cerradas'}` : `${week.closed} ${week.closed === 1 ? 'cerrada' : 'cerradas'}`]
   if (week.blocked) parts.push(`${week.blocked} ${week.blocked === 1 ? 'bloqueada' : 'bloqueadas'}`)
   if (!week.closed && !week.blocked) return 'sin cierres'
   return parts.join(' · ')
@@ -234,10 +239,12 @@ function Option({ label, detail, checked, disabled, onChange }: { label: string;
 /** La tabla del reporte, en pantalla (paso 2) o en la hoja (paso 3). */
 function PayrollTable({ groups, counts, options, screen = false }: { groups: PayrollGroup[]; counts: Record<string, number>; options: PayrollOptions; screen?: boolean }) {
   const head = <tr>
-    <th scope="col">No.</th><th scope="col">Persona</th><th scope="col" className="num">Ordinarias</th><th scope="col" className="num">Extra</th>
+    <th scope="col">No.</th><th scope="col">Persona</th><th scope="col">Horario</th>{options.days && <th scope="col" className="num">Días</th>}
+    <th scope="col" className="num">Ordinarias</th><th scope="col" className="num">Extra</th>
     {options.worked && <th scope="col" className="num">Trabajado</th>}{options.breaks && <th scope="col" className="num">Comida</th>}{options.acknowledgement && <th scope="col">Acuse</th>}
+    {options.incidents && <th scope="col" className="num">Incidencias</th>}
   </tr>
-  const columns = 4 + Number(options.worked) + Number(options.breaks) + Number(options.acknowledgement)
+  const columns = 5 + Number(options.days) + Number(options.worked) + Number(options.breaks) + Number(options.acknowledgement) + Number(options.incidents)
   const screenSx = screen ? { width: '100%', borderCollapse: 'collapse', fontSize: 13,
     '& th': { textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: color.subtle, fontWeight: 600, p: '6px 8px', borderBottom: `1px solid ${color.line}`, whiteSpace: 'nowrap' },
     '& td': { p: '7px 8px', borderBottom: `1px solid ${color.lineSoft}`, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }, '& .num': { textAlign: 'right' },
@@ -251,14 +258,17 @@ function PayrollTable({ groups, counts, options, screen = false }: { groups: Pay
         {group.name && <tr className="group"><td colSpan={columns}>{group.name} · {shown} {shown === 1 ? 'persona' : 'personas'}</td></tr>}
         {group.rows.map(row => <tr key={row.id}>
           <td className="muted">{row.employeeExternalId || '—'}</td><td>{row.employeeName || 'Persona'}</td>
+          <td className={row.scheduleName ? undefined : 'muted'}>{row.scheduleName || 'Sin horario'}</td>
+          {options.days && <td className="num">{row.daysWorked ?? '—'}</td>}
           <td className="num">{hours(row.totals.ordinaryMinutes)}</td><td className="num">{hours(row.totals.overtimeMinutes)}</td>
           {options.worked && <td className="num">{hours(row.totals.workedMinutes)}</td>}{options.breaks && <td className="num">{hours(row.totals.breakMinutes)}</td>}
           {options.acknowledgement && <td>{acknowledgementText(row)}</td>}
+          {options.incidents && <td className="num">{row.resolvedIncidents ?? '—'}</td>}
         </tr>)}
         {screen && shown > group.rows.length && <tr><td colSpan={columns} className="muted">… {shown - group.rows.length} más</td></tr>}
         {!screen && group.name && options.bySite && <tr className="total">
-          <td colSpan={2}>Subtotal {group.name}</td><td className="num">{hours(totals.ordinary)}</td><td className="num">{hours(totals.overtime)}</td>
-          {options.worked && <td className="num">{hours(totals.worked)}</td>}{options.breaks && <td className="num">{hours(totals.breaks)}</td>}{options.acknowledgement && <td />}
+          <td colSpan={3 + Number(options.days)}>Subtotal {group.name}</td><td className="num">{hours(totals.ordinary)}</td><td className="num">{hours(totals.overtime)}</td>
+          {options.worked && <td className="num">{hours(totals.worked)}</td>}{options.breaks && <td className="num">{hours(totals.breaks)}</td>}{options.acknowledgement && <td />}{options.incidents && <td />}
         </tr>}
       </tbody>
     })}

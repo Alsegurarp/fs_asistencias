@@ -119,7 +119,7 @@ class TenantService(
         }
     }
 
-    data class ListQuery(val q: String? = null, val status: String? = null, val administration: String? = null)
+    data class ListQuery(val q: String? = null, val status: String? = null, val administration: String? = null, val breakPolicyChange: String? = null)
 
     @Transactional(readOnly = true)
     fun page(query: ListQuery, after: PageKey?, limit: Int): List<OperatedTenantRow> =
@@ -321,8 +321,9 @@ class TenantService(
         val text = TextSearch.pattern(checks, query.q)
         val status = checks.oneOf("status", query.status, STATUSES, required = false)
         val administration = checks.oneOf("administration", query.administration, TenantRepository.ADMINISTRATION_STATES.toSet(), required = false)
+        val change = checks.oneOf("breakPolicyChange", query.breakPolicyChange, setOf("scheduled"), required = false)
         checks.done()
-        return TenantFilter(text, status, administration)
+        return TenantFilter(text, status, administration, change == "scheduled")
     }
 
     private fun month(checks: Checks, month: String?): YearMonth? {
@@ -382,7 +383,7 @@ class TenantService(
 
         if (tenants.find(id) == null) throw Problems.notFound()
         // El cambio sólo ocurre si la empresa estaba en el estado del que se parte: dos peticiones a la vez no lo repiten.
-        val tenant = tenants.setStatus(id, from, to) ?: throw conflict()
+        val tenant = tenants.setStatus(id, from, to, operator.displayName, reason!!) ?: throw conflict()
         // Queda en la bitácora de la propia empresa: quien la administra lo ve al volver.
         audit.record(id, operator, action, "tenant", id, mapOf("reason" to reason!!))
         return tenant

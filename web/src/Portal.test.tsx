@@ -124,12 +124,13 @@ it.each(['admin_empresa', 'supervisor', 'trabajador'])('avisa a %s del cambio de
   expect(text()).not.toContain('Aviso sobre la comida')
 })
 
-it('el inicio abre el Panel, o Mi asistencia para quien sólo es trabajador', async () => {
+it('el inicio abre el Panel; quien sólo es trabajador ve que su asistencia está en la app', async () => {
   await render(['admin_empresa'])
   expect(container.querySelector('a[aria-current="page"]')?.getAttribute('href')).toBe('/panel')
   expect(heading()).toMatch(/^Hola, Mariana · /)
   await render(['trabajador'])
-  expect(heading()).toBe('Mi asistencia')
+  expect(heading()).toBe('Tu cuenta está activa')
+  expect(text()).toContain('están en la app de Zenit')
   expect(container.querySelector('aside')).toBeNull()
   expect(container.querySelector('button[aria-label^="Ocultar"]')).toBeNull()
 })
@@ -138,8 +139,10 @@ it('el trabajador no tiene secciones de empresa y el rol combinado conserva amba
   await render(['trabajador'], '/personal')
   expect(heading()).toBe('Esta sección no está disponible para tu rol')
   expect(text()).toContain('Tu rol es Trabajador.')
+  // «Mi asistencia» salió del portal (el lienzo no la tiene): su dirección lleva al inicio.
   await render(['admin_empresa', 'trabajador'], '/mi-asistencia')
-  expect(heading()).toBe('Mi asistencia')
+  expect(heading()).not.toBe('Mi asistencia')
+  expect(text()).not.toContain('Mi asistencia')
   expect(sideLinks()).toContain('/personal')
 })
 
@@ -211,7 +214,7 @@ it('el menú de la cuenta muestra quién entró y cierra la sesión', async () =
   await waitFor(() => !!document.querySelector('[role="menu"]'))
   const menu = document.querySelector('[role="menu"]')!
   expect(document.body.textContent).toContain('mariana@demo.example')
-  expect([...menu.querySelectorAll('[role="menuitem"]')].map(item => item.textContent)).toEqual(['Mi perfil', 'Mi asistencia', 'Seguridad de la cuentaContraseña y segundo factor', 'Ayuda y soporte', 'Cerrar sesión'])
+  expect([...menu.querySelectorAll('[role="menuitem"]')].map(item => item.textContent)).toEqual(['Mi perfil', 'Seguridad de la cuentaContraseña y segundo factor', 'Ayuda y soporte', 'Cerrar sesión'])
   await act(async () => [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')].at(-1)!.click())
   expect(signOut).toHaveBeenCalledOnce()
 })

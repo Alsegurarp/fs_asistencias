@@ -6,8 +6,12 @@ export type Closure = {
   acknowledgement: { type: 'agreed' | 'objected'; note: string | null; at: string } | null;
   /** Desde el contrato 0.20.0: los nombres viajan en el cierre. */
   employeeName?: string; employeeExternalId?: string; closedByName?: string | null;
+  /** Desde el contrato 0.37.0: días trabajados (nulo si el cierre no guardó sus días), horario de la semana e incidencias resueltas. */
+  daysWorked?: number | null; scheduleName?: string | null; resolvedIncidents?: number;
 }
-export type ClosureSummary = { weekStart: string; closed: number; reopened: number; blocked: number; acknowledgements: { agreed: number; objected: number; none: number } }
+export type ClosureSummary = { weekStart: string; closed: number; reopened: number; blocked: number; acknowledgements: { agreed: number; objected: number; none: number }
+  /** Desde el contrato 0.37.0: personas de la semana en el alcance. */
+  people?: number }
 export type BlockedClosure = { employeeId: string; reason: string; incidentIds: string[] }
 export type ClosureRun = {
   id: string; weekStart: string; siteId: string | null; origin: 'requested' | 'scheduled'; status: 'queued' | 'running' | 'done' | 'failed';

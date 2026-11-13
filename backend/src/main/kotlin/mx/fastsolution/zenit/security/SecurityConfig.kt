@@ -163,6 +163,7 @@ class SecurityConfig {
                 it.requestMatchers(HttpMethod.GET, "/api/v1/me/dossier-permission", "/api/v1/dossiers", "/api/v1/dossiers/{dossierId}", "/api/v1/dossiers/{dossierId}/manifest")
                     .hasAnyRole(admin, rh, supervisor, auditor, worker)
                 it.requestMatchers(HttpMethod.PUT, "/api/v1/users/{userId}/dossier-permission").hasRole(admin)
+                it.requestMatchers(HttpMethod.GET, "/api/v1/dossier-history").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/dossiers").hasAnyRole(admin, rh, supervisor, auditor, worker)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/dossiers/{dossierId}/challenges", "/api/v1/dossiers/{dossierId}/authorizations", "/api/v1/dossiers/{dossierId}/download")
                     .hasAnyRole(admin, rh, supervisor, auditor, worker)
