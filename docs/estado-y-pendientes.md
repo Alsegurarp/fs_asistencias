@@ -1,5 +1,13 @@
 # Estado y pendientes
 
+**Consola de operación, 12 de noviembre:** el bloque 5 del portal está hecho
+en la rama `feat/portal-consola-operacion`, sin cambios al API: Empresas con
+quién las administra, la ficha con sus acciones (comida, soltar la liga,
+invitar otra administración, suspender y reactivar) y Uso del mes con su CSV.
+Probado en local con sesión de operación; falta verlo en el ambiente
+publicado. Del portal queda el bloque 6, acceso con marca e instalable
+([detalle](construir-el-portal.md#bloque-5-consola-de-operación)).
+
 **Despliegue y recorridos, 12 de noviembre:** el ambiente publicado corre
 `f1637ac` (PR #61), con el contrato 0.36.0 y las migraciones hasta V023;
 `/me` ya distingue la empresa suspendida y el portal lo dice. Los registros
@@ -9,9 +17,9 @@ recorrió por rol en local (190 vistas) y en el ambiente publicado (152
 vistas, con cuentas temporales ya borradas), y se probaron sus acciones en
 local, con importar CSV, el cierre y el reporte para nómina. El único
 defecto del ambiente publicado, la tabla de Incidencias desbordada por
-textos muy largos, está corregido en la rama
-`fix/incidencias-desborde-textos-largos`. Falta recorrer lo que trajo la
-PR #59 (lector fijo en su sede y las dos formas de marcar)
+textos muy largos, se corrigió y está desplegado (PR #62, `32ca441`). De las
+dos formas de marcar (PR #57) sólo existe el primer paso: falta la etiqueta
+de la sede y su pantalla
 ([bitácora](bitacora-trabajo.md)).
 
 **Tarjetas del piloto, 10 de noviembre (contrato 0.30.0):** decidido usar las

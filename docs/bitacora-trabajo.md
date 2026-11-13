@@ -6,6 +6,31 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 12 de noviembre de 2026 — Consola de operación según el lienzo
+
+Rama `feat/portal-consola-operacion` desde `main` (`32ca441`, ya desplegado).
+El bloque 5 del portal: Empresas, la ficha de cada empresa con sus acciones y
+Uso del mes ([detalle](construir-el-portal.md#bloque-5-consola-de-operación)).
+Usa las rutas de la consola del contrato 0.23.0; no cambia el API. Se retira
+la pantalla anterior de empresas; `WeekNav` acepta la unidad «Mes» para
+nombrar sus flechas.
+
+Lo nuevo para quien opera: ve quién administra cada empresa y si ya entró,
+suspende una empresa desde el portal (antes sólo se reactivaba), suelta la
+liga de quien la administra, invita a otra persona cuando nadie la administra
+con su cuenta, y descarga el uso de un mes de todas las empresas en CSV.
+
+Probado en local con sesión real de operación, a 1440 y 390 px: alta de una
+empresa ficticia, programar y cancelar el cambio de comida, invitar otra
+administración, suspender y reactivar, búsqueda, vistas, Uso del mes, mes
+anterior y CSV. Sin errores de consola, respuestas fallidas ni desborde, y
+cada acción quedó en la bitácora de la empresa. 311 pruebas del portal en 31
+archivos sin fallas.
+
+Sin verificar: nada de esto en el ambiente publicado; soltar la liga contra
+el servidor, que sólo se probó en las pruebas del portal; más de una página
+de empresas.
+
 ## 12 de noviembre de 2026 — Recorrido del ambiente publicado y textos largos
 
 Rama `fix/incidencias-desborde-textos-largos` desde `main` (`f1637ac`, ya

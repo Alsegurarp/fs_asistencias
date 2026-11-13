@@ -4,7 +4,7 @@ import { roleLabel } from './roles'
 
 /** Lo que cada rol puede ver, más el permiso explícito del expediente. */
 export type Allowed = ReturnType<typeof permissions> & { dossier: boolean }
-export type ScreenKey = 'panel' | 'sources' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'users' | 'exports' | 'payroll' | 'audit' | 'dossier' | 'personal' | 'tenants'
+export type ScreenKey = 'panel' | 'sources' | 'attendance' | 'incidents' | 'closures' | 'employees' | 'schedules' | 'imports' | 'devices' | 'cards' | 'settings' | 'users' | 'exports' | 'payroll' | 'audit' | 'dossier' | 'personal' | 'tenants' | 'tenantUsage'
 
 export type Screen = {
   key: ScreenKey
@@ -24,7 +24,7 @@ export type Section = {
 }
 export type Group = { key: string; label: string; sections: Section[] }
 
-const can = (key: Exclude<ScreenKey, 'panel' | 'sources' | 'dossier' | 'tenants' | 'payroll' | 'audit'>) => (allowed: Allowed) => allowed[key]
+const can = (key: Exclude<ScreenKey, 'panel' | 'sources' | 'dossier' | 'tenants' | 'tenantUsage' | 'payroll' | 'audit'>) => (allowed: Allowed) => allowed[key]
 
 /**
  * Menú del lienzo (OPE, PAD, EMP). Mientras cada sección no se construya,
@@ -81,6 +81,9 @@ export const consoleGroups: Group[] = [
     { key: 'empresas', label: 'Empresas', short: 'Empresas', icon: 'building', description: 'las que usan Zenit', screens: [
       { key: 'tenants', path: '/empresas', tab: 'Empresas', allowed: (_, roles) => roles.includes('operador_saas') },
     ] },
+    { key: 'uso', label: 'Uso del mes', short: 'Uso', icon: 'columns', description: 'para facturar a cada empresa', screens: [
+      { key: 'tenantUsage', path: '/empresas/uso', tab: 'Uso del mes', allowed: (_, roles) => roles.includes('operador_saas') },
+    ] },
   ] },
 ]
 
@@ -119,7 +122,7 @@ export function joinNames(names: string[]) {
 
 /** Roles que ven una pantalla, calculados con la misma regla del menú. */
 export function rolesFor(screen: Screen) {
-  if (screen.key === 'tenants') return ['operador_saas']
+  if (screen.key === 'tenants' || screen.key === 'tenantUsage') return ['operador_saas']
   if (screen.key === 'dossier') return []
   return companyRoles.filter(role => screen.allowed({ ...permissions([role]), dossier: false }, [role]))
 }
