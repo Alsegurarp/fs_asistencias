@@ -14,6 +14,7 @@ contradice al contrato, manda el contrato.
 
 | Si vas a… | Lee, en este orden |
 | --- | --- |
+| Presentar Zenit en el ambiente publicado, con la app | [Guía de demostración](guia-de-demostracion.md) y su [PDF](../output/pdf/guia-de-demostracion.pdf): siembra, reinicio y recorrido completo |
 | Preparar una demo sin conocimientos técnicos | [Guía del cliente](guia-demo-cliente.md) y [PDF paso a paso](../output/pdf/guia-demo-zenit-cliente.pdf) |
 | Entender el orden de uso y dónde falta terminar el producto | [Flujo del producto y pendientes](flujo-del-producto-y-pendientes.md) |
 | Consultar decisiones pendientes con el equipo | [Dudas del producto para el equipo](dudas-producto-para-equipo.md) |
@@ -55,6 +56,7 @@ contradice al contrato, manda el contrato.
 | [Resultado local de QA del 21](qa-a1-a5-2026-10-21.md) | 33 casos comprobados, login/OTP real, renovación por rol, paginación, corrección de recursos Keycloak y límites frente al ambiente público |
 | [Semana/acuse Android real local del 21](qa-android-semana-acuse-2026-10-21.md) | Recorrido visual en teléfono, objeción, recuperación sin copia local, reapertura, conformidad y restauración de la vinculación original |
 | [Recorrido completo](recorrido-completo.md) | De una empresa nueva a un exporte, petición por petición |
+| [Guía de demostración](guia-de-demostracion.md) | Preparar, sembrar, reiniciar y presentar el recorrido completo del portal y la app en el ambiente publicado; genera su PDF |
 | [Continuar el backend](continuar-el-backend.md) | Cómo está hecho el código y cómo se agrega una ruta, una tabla o un trabajo |
 | [Estado y pendientes](estado-y-pendientes.md) | Qué está hecho, qué falta y qué no se ha verificado |
 | [Jerarquía general PlantUML](dbFlow/01-jerarquia.puml) y [relaciones PlantUML](dbFlow/02-relaciones.puml) | Conceptos, entidades y cardinalidades; 34 tablas V001–V010 y fronteras de identidad/Android |

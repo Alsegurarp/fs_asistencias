@@ -1,0 +1,11 @@
+{
+  "name": "zenit-demostracion",
+  "private": true,
+  "type": "module",
+  "description": "Guiones de la demostración: preparar, sembrar, capturas y PDF de la guía.",
+  "dependencies": {
+    "marked": "15.0.12",
+    "playwright": "1.52.0",
+    "qrcode": "1.5.4"
+  }
+}

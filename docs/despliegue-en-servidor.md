@@ -71,6 +71,16 @@ El ambiente acepta la tarjeta simulada (`CAPTURE_SIMULATED_CARDS=true` en
 tarjeta real. La tarjeta simulada no está autenticada: se apaga antes de
 cargar datos de personas reales.
 
+También acepta las tarjetas del piloto (`CAPTURE_PILOT_CARDS=true`, en el
+mismo archivo). Su clave vive en `ZENIT_SECRETOS/pilot_card_key`, se
+respalda con los demás secretos y no se reemplaza: cambiarla invalida las
+tarjetas ya preparadas. La instaló `deploy/servidor/demo/demo.sh preparar`,
+que sólo la escribe si el servidor no tiene una.
+
+La demostración usa una empresa ficticia propia (`demo-altiplano`) y las
+cuentas `demo.<algo>@zenit.example`; `demo.sh` sólo toca esas
+([guía de demostración](guia-de-demostracion.md#los-comandos)).
+
 La dirección del visitante llega al backend a través del borde y del portal:
 el borde sobrescribe `X-Forwarded-For` y `X-Forwarded-Proto`, el nginx del
 portal los conserva y el backend sólo les cree si vienen de una dirección
