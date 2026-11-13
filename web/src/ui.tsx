@@ -63,12 +63,12 @@ export function SelectBox({ name, label, value, onChange, options }: { name: str
 }
 
 /** «‹ 2 – 8 nov 2026 ›». */
-export function WeekNav({ label, onPrevious, onNext, nextDisabled }: { label: string; onPrevious: () => void; onNext: () => void; nextDisabled?: boolean }) {
+export function WeekNav({ label, onPrevious, onNext, nextDisabled, unit = 'Semana' }: { label: string; onPrevious: () => void; onNext: () => void; nextDisabled?: boolean; /** «Semana» o «Mes», para el nombre de las flechas. */ unit?: 'Semana' | 'Mes' }) {
   const arrow = { width: 36, height: 36, borderRadius: '50%', color: color.link, '&:hover': { background: color.hover }, '&.Mui-disabled': { color: color.field }, '&.Mui-focusVisible': { outline: `2px solid ${color.accent}` } } as const
   return <Box sx={{ display: 'flex', alignItems: 'center', gap: '2px', background: color.white, border: `1px solid ${color.line}`, borderRadius: 999, p: '3px' }}>
-    <ButtonBase aria-label="Semana anterior" onClick={onPrevious} sx={arrow}><Icon name="back" size={18} strokeWidth={2.2} /></ButtonBase>
+    <ButtonBase aria-label={`${unit} anterior`} onClick={onPrevious} sx={arrow}><Icon name="back" size={18} strokeWidth={2.2} /></ButtonBase>
     <Typography component="span" aria-live="polite" sx={{ fontSize: 14, fontWeight: 600, px: 1, whiteSpace: 'nowrap' }}>{label}</Typography>
-    <ButtonBase aria-label="Semana siguiente" onClick={onNext} disabled={nextDisabled} sx={arrow}><Icon name="chevron" size={18} strokeWidth={2.2} /></ButtonBase>
+    <ButtonBase aria-label={`${unit} siguiente`} onClick={onNext} disabled={nextDisabled} sx={arrow}><Icon name="chevron" size={18} strokeWidth={2.2} /></ButtonBase>
   </Box>
 }
 

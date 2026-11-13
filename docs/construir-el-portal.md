@@ -21,7 +21,7 @@ ambiente nunca pierde una función.
 | 2 | Padrón: Personal y horarios → Importar → Dispositivos y tarjetas, con el buscador | PAD-01 a 12, CTA-05, EST-07 | `Directory` (personas y tarjetas), `Schedules`, `Imports`, `Devices` | Personal y horarios (PR #43) e Importar (PR #44) integrados; Dispositivos y tarjetas (PR #46) y el buscador con el menú Crear (PR #47) integrados en la rama de la #45; llegan a `main` con la PR #48 |
 | 3 | Empresa: Configuración, sedes, comida y reglas → Usuarios y permisos, con Mi perfil | EMP-01 a 08, CTA-01, TEL-11 | `TenantSettings`, `BreakPolicyChange`, `Users`, sedes de `Directory` | Configuración, y Usuarios y roles con Mi perfil, integrados (PR #50) |
 | 4 | Reportes: nómina, expediente y bitácora con vista previa del PDF | REP-01 a 09 | `Exports`, `Dossiers` | Inicio y nómina (`feat/portal-reportes`), la bitácora (`feat/portal-bitacora`) y el expediente (`feat/portal-expediente`) en revisión, cada una sobre la anterior ([detalle](#bloque-4-reportes)) |
-| 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Pendiente |
+| 5 | Consola de operación; puede ir en paralelo desde el bloque 0 | CON-01 a 08 | `Tenants` | Hecho en `feat/portal-consola-operacion`, sin cambios al API ([detalle](#bloque-5-consola-de-operación)) |
 | 6 | Antes del piloto: pantallas de acceso con la marca en Keycloak y portal instalable | ACC-01 a 06, TEL-03 a 05, EST-06 | Tema genérico de Keycloak | Pendiente |
 
 El bloque 1 entra en cuatro PR, una por pantalla y en ese orden: Asistencia
@@ -208,6 +208,43 @@ se suman a «Generados recientemente». Retira la pantalla anterior de
 - **La carátula** se ve en cuanto la copia está lista, no sólo después de confirmar la identidad, y se imprime desde el navegador.
 - **Huellas:** del manifiesto y del ZIP, completas en la carátula y abreviadas en pantalla.
 
+### Bloque 5: consola de operación
+
+Hecho el 12 de noviembre en `feat/portal-consola-operacion`, con las rutas de
+la consola que ya existían (contrato 0.23.0) y sin cambios al API. Es de
+quien opera el servicio: no ve datos de las personas de ninguna empresa.
+
+| Pantalla | Dirección | Qué hace |
+| --- | --- | --- |
+| CON-01 Empresas | `/empresas` | Cifras del servicio, búsqueda, vistas con su conteo y la tabla; `?vista=`, `?q=` |
+| CON-02 y CON-03 Ficha de la empresa | `?empresa=<id>` | Configuración, quién la administra, uso del mes y acciones; suspendida: qué implica y reactivarla |
+| CON-04 Uso del mes | `/empresas/uso` | Conteos por empresa con su total, mes a mes, y el CSV; `?mes=AAAA-MM`, `?q=` |
+| CON-05 Alta | `?alta=1` | Da de alta e invita a quien la administrará; al terminar abre su ficha |
+| CON-06 Comida, CON-07 Soltar, CON-08 Suspender | `?accion=comida`, `soltar`, `suspender` | Cada una pide su motivo, que queda en la bitácora de la empresa |
+| Invitar otra administración | `?accion=invitar` | Sólo cuando nadie la administra con su cuenta |
+
+Archivos: `Tenants.tsx` (Empresas), `TenantForms.tsx` (ficha y ventanas),
+`TenantUsage.tsx` (Uso del mes) y `tenantsModel.ts` (tipos, textos y CSV).
+
+Lo que cambia respecto al lienzo:
+
+- **Quién administra** es una columna de la tabla y una parte de la ficha,
+  con el correo y si ya entró; el lienzo no lo dibuja.
+- **Vistas:** Todas, Activas y Suspendidas, más «Invitación sin usar» y «Sin
+  quien administre» cuando hay alguna. «Con cambio de comida» no está: el
+  servidor no filtra por eso.
+- **«Marcaron en el mes»** sale de `GET /tenants/usage` con la misma página
+  de la lista, que pagina igual. Con una vista por administración la columna
+  no se muestra, porque esa ruta no tiene ese filtro.
+- **La ficha suspendida** no dice el motivo ni quién suspendió: `Tenant` no
+  lo trae; está en la bitácora de la empresa.
+- **El mes en curso** de las cifras y de Uso del mes se corta con la hora del
+  centro de México; cada conteo sigue cortándose en la zona de su empresa.
+- **El CSV** lo arma el portal recorriendo las páginas; un nombre que empieza
+  como fórmula se escribe con apóstrofo.
+- La búsqueda de empresas y el alta están en la pantalla, no en la barra
+  superior.
+
 ### Qué se necesita para probar y avanzar
 
 Para empezar Dispositivos y tarjetas no hace falta nada más: se prueba con
@@ -314,7 +351,7 @@ lleva al ambiente publicado.
 | `/reportes`, `/reportes/expediente` | Reportes y expediente |
 | `/dossier/callback` | Regreso de la verificación del expediente; está registrada en Keycloak y no se cambia |
 | `/mi-asistencia` | Mi asistencia, desde el menú de la cuenta |
-| `/empresas` | Consola de operación |
+| `/empresas`, `/empresas/uso` | Consola de operación: Empresas y Uso del mes |
 | `/mas` | Más, en teléfono |
 | `/sesion-terminada` | Tu sesión terminó |
 

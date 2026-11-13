@@ -175,7 +175,7 @@ it('una dirección que no existe dice que no se encontró', async () => {
 
 it('quien opera el servicio sólo ve la consola, y una sección de empresa le dice por qué no', async () => {
   await render(['operador_saas'], '/', { tenant: null })
-  expect(links('Secciones de la consola')).toEqual(['/empresas'])
+  expect(links('Secciones de la consola')).toEqual(['/empresas', '/empresas/uso'])
   expect(heading()).toBe('Empresas · las que usan Zenit')
   expect(text()).toContain('Operación / Empresas')
   await render(['operador_saas'], '/incidencias', { tenant: null })
