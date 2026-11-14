@@ -15,7 +15,10 @@ type Props = {
   editing?: { latitude: number; longitude: number; radiusMeters: number } | null
   onMove?: (latitude: number, longitude: number) => void
   label: string
+  /** Alto fijo o, con `grow`, alto mínimo. */
   height?: number
+  /** Crece con el espacio libre de su contenedor (columna flexible) sin bajar de `height`. */
+  grow?: boolean
 }
 
 const tiles = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -32,7 +35,7 @@ const pin = L.divIcon({
  * edición siempre tienen su alternativa en la tabla y en latitud y longitud:
  * el mapa es una ayuda, no el único camino.
  */
-export default function SiteMap({ sites, onSelect, editing, onMove, label, height = 260 }: Props) {
+export default function SiteMap({ sites, onSelect, editing, onMove, label, height = 260, grow = false }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map | null>(null)
   const layer = useRef<L.LayerGroup | null>(null)
@@ -58,6 +61,16 @@ export default function SiteMap({ sites, onSelect, editing, onMove, label, heigh
     layer.current = L.layerGroup().addTo(created)
     map.current = created
     return () => { created.remove(); map.current = null; layer.current = null; marker.current = null; circle.current = null; fitted.current = false }
+  }, [])
+
+  // Leaflet mide su caja sólo al crearse: si la caja crece o se encoge (ventana,
+  // menú lateral, `grow`), se le avisa para que pida los mosaicos que faltan.
+  useEffect(() => {
+    const element = box.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+    const watcher = new ResizeObserver(() => map.current?.invalidateSize())
+    watcher.observe(element)
+    return () => watcher.disconnect()
   }, [])
 
   // Las demás sedes: un círculo por sede; el de la que se edita lo dibuja abajo.
@@ -109,6 +122,6 @@ export default function SiteMap({ sites, onSelect, editing, onMove, label, heigh
   }, [lat, lng, radius])
 
   return <Box ref={box} role="region" aria-label={label}
-    sx={{ height, width: '100%', borderRadius: '14px', overflow: 'hidden', border: `1px solid ${color.line}`, background: color.page, zIndex: 0,
+    sx={{ ...(grow ? { flex: '1 0 auto', minHeight: height } : { height }), width: '100%', borderRadius: '14px', overflow: 'hidden', border: `1px solid ${color.line}`, background: color.page, zIndex: 0,
       '& .leaflet-container': { fontFamily: 'inherit' }, '& .zenit-pin': { background: 'transparent', border: 0 } }} />
 }

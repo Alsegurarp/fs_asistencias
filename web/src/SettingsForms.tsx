@@ -13,7 +13,7 @@ const SiteMap = lazy(() => import('./SiteMap'))
 
 /** El mapa se carga aparte: Leaflet sólo baja cuando hace falta. */
 export function LazyMap(props: React.ComponentProps<typeof SiteMap>) {
-  return <Suspense fallback={<Box role="status" sx={{ height: props.height ?? 260, borderRadius: '14px', background: color.page, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: color.muted }}>Cargando el mapa…</Box>}>
+  return <Suspense fallback={<Box role="status" sx={{ ...(props.grow ? { flex: '1 0 auto', minHeight: props.height ?? 260 } : { height: props.height ?? 260 }), borderRadius: '14px', background: color.page, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: color.muted }}>Cargando el mapa…</Box>}>
     <SiteMap {...props} />
   </Suspense>
 }

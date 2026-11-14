@@ -119,6 +119,13 @@ eso sólo la capa de mosaicos lleva `referrerPolicy:
 'strict-origin-when-cross-origin'`, que manda el origen sin la ruta.
 Diferencias con el lienzo:
 
+- **Alto de «Sedes y zonas de marcaje»:** la sección toma el alto de su
+  contenido (`Pane` con `grow`) y no el que le sobra a la página: debajo de la
+  empresa y las políticas quedaba aplastada en una franja con desplazamiento
+  propio. El mapa nunca baja de 320 px (220 en teléfono) y se queda con el alto
+  libre en pantallas altas; si no cabe, se desplaza la página. Leaflet mide su
+  caja sólo al crearse, así que `SiteMap` le avisa con un `ResizeObserver`
+  cuando cambia de tamaño.
 - **«Programó Mariana Ortiz»:** Desde el MVP según el lienzo (contrato 0.37.0) el cambio guarda quién lo programó y Configuración lo muestra; los programados antes no tienen nombre.
 - **«Sede activa»:** Desde el MVP según el lienzo (contrato 0.37.0) es el interruptor del lienzo y se guarda en el acto.
 - **Columna «Acciones»:** Desde el MVP según el lienzo (contrato 0.37.0) lleva «Editar» (o «Ver» para quien sólo consulta); un clic en la fila sigue abriendo la sede.

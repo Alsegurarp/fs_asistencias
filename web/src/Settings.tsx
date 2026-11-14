@@ -87,14 +87,15 @@ export function Settings({ me, context, section, screens, screen }: Props) {
       </Box>
     </Box>
 
-    <Pane titleId="sedes" title="Sedes y zonas de marcaje" detail={sites.data ? String(siteRows.length) : undefined}
+    <Pane titleId="sedes" title="Sedes y zonas de marcaje" detail={sites.data ? String(siteRows.length) : undefined} grow
       actions={allowed.editSites ? <Button variant="contained" onClick={event => open(siteParam, newSite, event.currentTarget)}>Agregar sede</Button> : undefined}>
       {sites.isError ? <Box sx={{ p: 2 }}><Stack spacing={1.5} sx={{ alignItems: 'flex-start' }}>
         <Note tone="error">{problemText(sites.error, 'No pudimos cargar las sedes.')}</Note>
         <Button variant="outlined" onClick={() => void sites.refetch()}>Reintentar</Button>
       </Stack></Box> : <>
-        {!!siteRows.length && <Box sx={{ p: '0 16px 12px' }}>
-          <LazyMap label="Mapa de las sedes" sites={mapSites} height={phone ? 200 : 260} onSelect={id => open(siteParam, id)} />
+        {/* El mapa nunca baja de su mínimo y se queda con el alto que sobre en pantallas altas. */}
+        {!!siteRows.length && <Box sx={{ flex: '1 0 auto', display: 'flex', flexDirection: 'column', p: '0 16px 12px' }}>
+          <LazyMap label="Mapa de las sedes" sites={mapSites} height={phone ? 220 : 320} grow onSelect={id => open(siteParam, id)} />
         </Box>}
         {sites.isPending && <Typography role="status" sx={visuallyHidden}>Cargando sedes…</Typography>}
         {!sites.isPending && !siteRows.length ? <Stack spacing={1} sx={{ p: 4, alignItems: 'center', textAlign: 'center' }}>
