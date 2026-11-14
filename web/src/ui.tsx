@@ -89,14 +89,21 @@ export function IconButton({ icon, label, onClick, ...rest }: { icon: IconName; 
 }
 
 /** Tarjeta blanca de una tabla, con su encabezado, su cuerpo con desplazamiento propio y su pie. */
-export function Pane({ title, detail, titleId, actions, footer, children }: { title: ReactNode; detail?: ReactNode; titleId: string; actions?: ReactNode; footer?: ReactNode; children: ReactNode }) {
-  return <Box component="section" aria-labelledby={titleId} sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column', background: color.white, borderRadius: '20px', boxShadow: shadow.table, overflow: 'hidden',
+/**
+ * Sección con encabezado. Por omisión ocupa el alto que le queda a la página y
+ * su contenido se desplaza dentro (tablas). Con `grow` toma el alto de su
+ * contenido, crece si sobra espacio y nunca se encoge por debajo de él: si no
+ * cabe, se desplaza la página. Su contenido es una columna flexible, así que un
+ * hijo con `flex: 1` (el mapa de sedes) se queda con el espacio que sobre.
+ */
+export function Pane({ title, detail, titleId, actions, footer, grow = false, children }: { title: ReactNode; detail?: ReactNode; titleId: string; actions?: ReactNode; footer?: ReactNode; grow?: boolean; children: ReactNode }) {
+  return <Box component="section" aria-labelledby={titleId} sx={{ flex: grow ? '1 0 auto' : 1, minHeight: grow ? 'auto' : 0, minWidth: 0, display: 'flex', flexDirection: 'column', background: color.white, borderRadius: '20px', boxShadow: shadow.table, overflow: 'hidden',
     [`@media ${phoneQuery}`]: { flex: 'none', minHeight: 'auto' } }}>
     <Stack direction="row" sx={{ flex: 'none', justifyContent: 'space-between', alignItems: 'center', gap: 1, p: '12px 16px', borderBottom: `1px solid ${color.lineSoft}` }}>
       <Typography component="h2" id={titleId} sx={{ fontSize: 14, fontWeight: 600 }}>{title}{detail && <Box component="span" sx={{ fontWeight: 400, color: color.muted }}> · {detail}</Box>}</Typography>
       {actions}
     </Stack>
-    <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{children}</Box>
+    <Box sx={grow ? { flex: '1 0 auto', display: 'flex', flexDirection: 'column' } : { flex: 1, minHeight: 0, overflow: 'auto' }}>{children}</Box>
     {footer}
   </Box>
 }
