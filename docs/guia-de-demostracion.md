@@ -103,6 +103,20 @@ Por qué a esa hora:
   pasa a ser el de hoy, para que ayer quede en una semana terminada que se
   pueda cerrar en vivo.
 
+Si se pasó la hora, se reinicia como si fuera una de esa ventana:
+
+```bash
+DEMO_HORA=07:30 bash deploy/servidor/demo/demo.sh reiniciar
+```
+
+Las marcas de ayer quedan como si se hubiera sembrado a las 7:30 y, al
+terminar, la creación, la recepción y la bitácora de la siembra pasan a esa
+hora. Se quitan sólo las incidencias «sincronizada tarde» que abrió el
+desfase: recibidas a las 7:30, esas marcas llegan dentro de las 24 horas.
+Sirve sólo con una hora de hoy que ya pasó, y antes de las 7:30 tampoco
+conviene: las marcas atrasadas de Héctor empiezan antes de las 6:00, su
+jornada cuenta como mixta y le sale media hora extra.
+
 Si se presenta lejos del Centro de la Ciudad de México, poner en
 `.env.despliegue` las coordenadas del lugar (`DEMO_LATITUD` y
 `DEMO_LONGITUD`) antes de reiniciar: ahí queda la sede Matriz Centro y las
@@ -409,6 +423,7 @@ en una terminal.
 | El recibo dice `card_unknown` | La tarjeta no tiene titular | Asignarla en Tarjetas |
 | El código de vinculación no sirve | Venció o ya se usó | «Activar lector» de nuevo |
 | Muchas incidencias «sincronizada tarde» | Se reinició la tarde anterior | Reiniciar la mañana de la demostración |
+| Media hora extra para todos | Se reinició después de las 11:30 | `DEMO_HORA=07:30 demo.sh reiniciar` |
 | La importación dice «la cuota por minuto se agotó» | Demasiadas peticiones seguidas | Esperar un minuto |
 
 ## Los comandos
@@ -420,7 +435,7 @@ herramienta del despliegue.
 | Comando | Qué hace |
 | --- | --- |
 | `preparar` | Una vez: cuentas, QR y clave de las tarjetas en `DEMO_SECRETOS`; instala la clave si el servidor no tiene |
-| `reiniciar` | Borra la empresa de demostración y sus cuentas, las crea de nuevo y siembra la jornada de ayer |
+| `reiniciar` | Borra la empresa de demostración y sus cuentas, las crea de nuevo y siembra la jornada de ayer; con `DEMO_HORA`, como si fuera esa hora de hoy |
 | `estado` | Conteos de la empresa y si la clave de las tarjetas está presente, sin datos personales |
 | `limpiar` | Borra la empresa y sus cuentas |
 | `capturas` | Toma las capturas de esta guía; cierra la semana, así que después se reinicia |
@@ -437,14 +452,14 @@ Lo que cuidan:
   tarjetas ya preparadas.
 - **La siembra usa el API** con la sesión de Administración y dispositivos
   que firman como la app; la base de datos sólo se toca para crear y borrar
-  la empresa.
+  la empresa y, con `DEMO_HORA`, para mover la siembra a esa hora.
 
 Los archivos:
 
 | Archivo | Qué es |
 | --- | --- |
 | `demo.sh` | Los comandos |
-| `en-servidor.sh` | Lo que corre dentro del servidor: borrar, crear cuentas y empresa, instalar la clave, conteos |
+| `en-servidor.sh` | Lo que corre dentro del servidor: borrar, crear cuentas y empresa, mover la siembra a `DEMO_HORA`, instalar la clave, conteos |
 | `preparar.mjs` | Genera las cuentas, los QR y la clave |
 | `sembrar.mjs` | Siembra sedes, horarios, personas, tarjetas, dispositivos y la jornada de ayer |
 | `capturas.mjs` | Las capturas de esta guía |

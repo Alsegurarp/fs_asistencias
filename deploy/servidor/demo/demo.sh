@@ -3,6 +3,7 @@
 #
 #   bash deploy/servidor/demo/demo.sh preparar    # una vez: cuentas, QR y clave de tarjetas
 #   bash deploy/servidor/demo/demo.sh reiniciar   # borra la empresa de demostración y la siembra de nuevo
+#   DEMO_HORA=07:00 bash deploy/servidor/demo/demo.sh reiniciar   # tarde: como si se hubiera sembrado a las 7:00
 #   bash deploy/servidor/demo/demo.sh estado      # conteos, sin datos personales
 #   bash deploy/servidor/demo/demo.sh limpiar     # borra la empresa y las cuentas de la demostración
 #   bash deploy/servidor/demo/demo.sh capturas    # capturas para la guía (cierra la semana: reiniciar después)
@@ -46,6 +47,8 @@ if [ -f "$DESPLIEGUE/.env.despliegue" ]; then
 fi
 : "${DEMO_SECRETOS:?Defina DEMO_SECRETOS en deploy/servidor/.env.despliegue: una carpeta local fuera del repositorio}"
 SECRETOS=$(ruta_docker "$DEMO_SECRETOS")
+DEMO_HORA=${DEMO_HORA:-}
+[[ -z $DEMO_HORA || $DEMO_HORA =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]] || falla "DEMO_HORA va como HH:MM, por ejemplo 07:00"
 mkdir -p "$DEMO_SECRETOS" "$MONOREPO/output/pdf"
 
 # Guiones de Node en el contenedor del navegador, con versiones fijas.
@@ -54,7 +57,7 @@ node_demo() {
     -v "$AQUI:/demo" -v zenit-demo-node-modules:/demo/node_modules \
     -v "$SECRETOS:/secretos" -v "$MONOREPO/docs:/docs" -v "$MONOREPO/output/pdf:/salida" \
     -e DEMO_PORTAL="${DEMO_PORTAL:-https://zenit.fastsolution.com.mx}" \
-    -e DEMO_LATITUD="${DEMO_LATITUD:-}" -e DEMO_LONGITUD="${DEMO_LONGITUD:-}" \
+    -e DEMO_LATITUD="${DEMO_LATITUD:-}" -e DEMO_LONGITUD="${DEMO_LONGITUD:-}" -e DEMO_HORA="$DEMO_HORA" \
     -w /demo "$NAVEGADOR" sh -c "npm ci --silent --no-audit --no-fund > /dev/null && node $*"
 }
 
@@ -102,6 +105,7 @@ case "$orden" in
     terminar_carga
     node_demo sembrar.mjs
     preparar_carga
+    [ -z "$DEMO_HORA" ] || en_servidor recepcion "$DEMO_HORA"
     en_servidor estado
     terminar_carga
     ;;
