@@ -2,14 +2,14 @@
 # Pasos de despliegue que corren en el servidor. Los invoca, por SSH,
 # deploy/servidor/desplegar.sh desde la estación:
 #
-#   remoto.sh <acción> <zenit|landing> [versión]
+#   remoto.sh <acción> <zenit|landing|zenit-landing> [versión]
 #
 # Acciones: construir, actualizar, esperar, borde (sólo zenit) y registrar.
 set -Eeuo pipefail
 
 BASE=/opt/.fastsolution
 accion=${1:?indique la acción}
-objetivo=${2:?indique zenit o landing}
+objetivo=${2:?indique zenit, landing o zenit-landing}
 version=${3:-sin-version}
 
 zenit() {
@@ -21,6 +21,11 @@ zenit() {
 
 landing() {
   (cd "$BASE/landing" && LANDING_VERSION=$version \
+    docker compose --progress plain --env-file servidor.env "$@" < /dev/null)
+}
+
+zenit_landing() {
+  (cd "$BASE/zenit-landing" && ZENIT_LANDING_VERSION=$version \
     docker compose --progress plain --env-file servidor.env "$@" < /dev/null)
 }
 
@@ -45,13 +50,15 @@ esperar_zenit() {
   return 1
 }
 
-esperar_landing() {
-  local i estado
+# Espera a que el contenedor de una landing corra la imagen de esta versión y
+# su prueba de salud pase.
+esperar_landing() { # proyecto Compose (también es el nombre de la imagen)
+  local proyecto=$1 i estado
   for ((i = 1; i <= 40; i++)); do
-    estado=$(docker inspect fastsolution-landing-landing-1 \
+    estado=$(docker inspect "$proyecto-landing-1" \
       --format '{{.Config.Image}} {{.State.Health.Status}}' 2>/dev/null || true)
     case "$estado" in
-      "fastsolution-landing:$version healthy")
+      "$proyecto:$version healthy")
         echo "landing sana: $estado"
         return 0
         ;;
@@ -59,7 +66,7 @@ esperar_landing() {
     sleep 3
   done
   echo "la landing no quedó sana en 120 s: $estado" >&2
-  docker logs --tail 20 fastsolution-landing-landing-1 >&2 || true
+  docker logs --tail 20 "$proyecto-landing-1" >&2 || true
   return 1
 }
 
@@ -127,8 +134,11 @@ case "$accion:$objetivo" in
   borde:zenit) borde ;;
   construir:landing) landing build ;;
   actualizar:landing) landing up -d ;;
-  esperar:landing) esperar_landing ;;
-  registrar:zenit | registrar:landing)
+  esperar:landing) esperar_landing fastsolution-landing ;;
+  construir:zenit-landing) zenit_landing build ;;
+  actualizar:zenit-landing) zenit_landing up -d ;;
+  esperar:zenit-landing) esperar_landing fastsolution-zenit-landing ;;
+  registrar:zenit | registrar:landing | registrar:zenit-landing)
     resultado=${4:?indique el resultado}
     segundos=${5:?indique la duración}
     printf '%s\t%s\t%s\t%ss\n' "$(date -Iseconds)" "$version" "$resultado" "$segundos" \

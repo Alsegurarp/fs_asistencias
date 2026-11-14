@@ -81,7 +81,7 @@ services:
     tmpfs:
       - /tmp:uid=101,gid=101,mode=0700
     environment:
-      CERTIFICADOS: "fastsolution.com.mx,www.fastsolution.com.mx zenit.fastsolution.com.mx"
+      CERTIFICADOS: "fastsolution.com.mx,www.fastsolution.com.mx zenit.fastsolution.com.mx zenitlanding.fastsolution.com.mx"
       LEGO_PATH: /var/lib/lego
       LEGO_ACCOUNT_ID: fastsolution
       LEGO_ACCEPT_TOS: "true"

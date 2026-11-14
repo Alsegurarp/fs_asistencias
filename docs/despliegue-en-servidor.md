@@ -5,7 +5,8 @@ Estado al 18 de octubre de 2026: Zenit está publicado en
 personas todavía. La landing de fastSolution corre en
 <https://fastsolution.com.mx> desde el mismo día; su formulario envía por
 Brevo y necesita un remitente verificado (`SMTP_FROM`) para que los mensajes
-salgan.
+salgan. La landing de Zenit (repositorio `zenit-landing`, Next.js) corre en
+<https://zenitlanding.fastsolution.com.mx> desde el 14 de noviembre de 2026.
 
 Es un servidor que presta un tercero. Sólo admite datos ficticios hasta que
 exista un acuerdo por escrito con su dueño; no se cargan datos de personas
@@ -21,12 +22,14 @@ incluye credenciales ni habilita cuentas adicionales.
 visitante ── 443 ──> borde del anfitrión
                      lee el nombre pedido (SNI) sin descifrar
                      │
-                     ├─ fastsolution.com.mx, www., zenit. ──> 127.0.0.1:19443
+                     ├─ fastsolution.com.mx, www., zenit.,
+                     │  zenitlanding. ──────────────────────> 127.0.0.1:19443
                      │                                        borde de fastSolution
                      │                                        (TLS con certificados propios)
                      │                                        ├─ fastsolution.com.mx ──> landing:3000
                      │                                        ├─ www. ──> 301 a fastsolution.com.mx
-                     │                                        └─ zenit. ──> portal e identidad
+                     │                                        ├─ zenit. ──> portal e identidad
+                     │                                        └─ zenitlanding. ──> zenit-landing:3000
                      └─ cualquier otro nombre ──> servicios del anfitrión
 
 visitante ── 80 ──> borde del anfitrión ──> 127.0.0.1:19080 (borde de fastSolution)
@@ -96,6 +99,8 @@ separado.
 | `/opt/.fastsolution/zenit/secretos/` | Secretos generados en el servidor (directorio 0700, archivos 0444); nunca salen de ahí |
 | `/opt/.fastsolution/landing/fuente/` | Árbol del repositorio de la landing en el commit desplegado |
 | `/opt/.fastsolution/landing/secretos/smtp.env` | Credencial del correo del formulario (0600) |
+| `/opt/.fastsolution/zenit-landing/fuente/` | Árbol del repositorio `zenit-landing` en el commit desplegado |
+| `/opt/.fastsolution/zenit-landing/` | Copia de `deploy/servidor/zenit-landing/` y `remoto.sh`; sin secretos |
 
 `/opt/.fastsolution` es 0750: otras cuentas del servidor no entran. Ningún
 servicio publica puertos hacia fuera; en la interfaz local sólo están el borde
@@ -106,6 +111,7 @@ servicio publica puertos hacia fuera; en la interfaz local sólo están el borde
 | `fastsolution-borde` | `borde` (nginx 1.30.6 sin privilegios) y `certificados` (lego 5.5.2) |
 | `fastsolution-zenit` | `db`, `migrate`, `keycloak`, `backend` y `web` |
 | `fastsolution-landing` | `landing` |
+| `fastsolution-zenit-landing` | `landing` (alias `zenit-landing` en la red del borde) |
 
 Todos se reinician solos, tienen tope de memoria y de registros, corren sin
 capacidades de Linux y con el sistema de archivos de sólo lectura.
@@ -188,10 +194,39 @@ remitente verificado en Brevo o una dirección de un dominio autenticado ahí.
 Si la cuenta de Brevo bloquea las direcciones IP no autorizadas, un cambio de
 la IP del servidor detiene el envío hasta autorizar la nueva.
 
+## Desplegar una versión nueva de la landing de Zenit
+
+Con el guion: `bash deploy/servidor/desplegar.sh zenit-landing`. El
+repositorio `zenit-landing` lleva la aplicación (Next.js, trece páginas
+prerenderizadas) y su `Dockerfile` (Node 24 fijado por digest, `npm ci` y
+`next build`; al correr, sólo dependencias de producción, sin npm, con el
+usuario `node`); un commit sin `Dockerfile` no se puede desplegar. Cómo corre
+en el servidor está en `deploy/servidor/zenit-landing/`: `compose.yaml` y
+`servidor.env`. A mano, sobre el árbol exportado copiado a
+`/opt/.fastsolution/zenit-landing/fuente/`:
+
+```bash
+cd /opt/.fastsolution/zenit-landing
+ZENIT_LANDING_VERSION=<commit> docker compose --env-file servidor.env up -d --build
+```
+
+No tiene secretos ni formularios que lleguen al servidor. El contenedor corre
+con el sistema de archivos de sólo lectura; la caché de imágenes optimizadas
+de Next es un tmpfs. La aplicación pone sus cabeceras de seguridad (CSP,
+`X-Frame-Options`, `nosniff`, `Referrer-Policy` y `Permissions-Policy`); el
+borde pone HSTS en lugar del de la aplicación, sólo deja pasar `GET` y `HEAD`
+(`403` a lo demás) y limita a 20 peticiones por segundo por dirección con
+ráfaga de 120.
+
+La primera vez se crea la carpeta en el servidor
+(`mkdir /opt/.fastsolution/zenit-landing`) y se emite su certificado (ver
+abajo) antes de desplegar Zenit con el bloque nuevo del borde.
+
 ## Certificados
 
 Cada nombre tiene su certificado de Let's Encrypt (ECDSA P-256): uno para
-`fastsolution.com.mx` con `www`, y otro para `zenit.fastsolution.com.mx`. El
+`fastsolution.com.mx` con `www`, otro para `zenit.fastsolution.com.mx` y otro
+para `zenitlanding.fastsolution.com.mx`. El
 servicio `certificados` corre `lego run` cada doce horas: pide uno nuevo sólo
 cuando falta o le queda un tercio de vida, y el borde recarga cada seis horas.
 
@@ -241,5 +276,5 @@ bloque nuevo se copia después de emitirlo.
 | Recorrido autenticado del portal y de la app por HTTPS | Nada se ha recorrido con sesión en este ambiente |
 | Cuota por dirección real en el backend | El backend ve la dirección del portal, no la del visitante |
 | Pipeline | Hoy se despliega a mano desde un árbol exportado |
-| IP del servidor | Es dinámica y el registro `A` de `fastsolution.com.mx` es fijo: si cambia, los tres nombres dejan de responder hasta corregirlo |
+| IP del servidor | Es dinámica y el registro `A` de `fastsolution.com.mx` es fijo: si cambia, los cuatro nombres dejan de responder hasta corregirlo |
 | Correo del dominio | El registro MX apunta al mismo servidor, que no recibe correo |

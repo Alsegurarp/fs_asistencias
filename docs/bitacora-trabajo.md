@@ -6,6 +6,35 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 14 de noviembre de 2026 — Landing de Zenit en el servidor
+
+Rama `feat/landing-zenit-en-servidor` desde `main` (`8f1498b`). La landing de
+Zenit (repositorio `zenit-landing`, Next.js 16.4.5) se publica en
+`zenitlanding.fastsolution.com.mx`, en el mismo servidor y detrás del mismo
+borde que Zenit y la landing de fastSolution.
+
+- **`Dockerfile` en `zenit-landing`**, como la landing de fastSolution: dos
+  etapas (Node 24 fijado por digest; al correr, sólo dependencias de
+  producción, sin npm y con el usuario `node`) y `.dockerignore`, que deja
+  fuera `design/`, pruebas y herramientas.
+- **`deploy/servidor/zenit-landing/`**: `compose.yaml` (sólo lectura, sin
+  capacidades, 384 MB, tmpfs para la caché de imágenes) y `servidor.env`.
+- **`desplegar.sh zenit-landing`** y su parte en `remoto.sh`: los mismos
+  pasos que la landing, con la configuración tomada del monorepo y una
+  comprobación pública propia. Las dos landings se detienen al exportar un
+  commit sin `Dockerfile`.
+- **Borde**: certificado y bloque propios
+  (`30-zenitlanding.fastsolution.com.mx.conf`), HSTS del borde en lugar del
+  de la aplicación, sólo `GET` y `HEAD`, y límite `zenit_landing` de 20
+  peticiones por segundo con ráfaga de 120.
+- **Verificado en local**: la imagen construye las trece páginas como
+  estáticas; con el endurecimiento del servidor, `npm run check:site` del
+  repositorio pasa (13 páginas, 531 enlaces internos, videos por rangos y
+  404) y usa 43 MiB. Por el borde, con protocolo PROXY y certificados de
+  prueba: `200`, una sola HSTS, `POST` en `403`, `404`, `421` con otro
+  `Host`, videos en `206` y `429` al pasar la ráfaga. `nginx -t` y
+  `shellcheck` sin hallazgos nuevos.
+
 ## 13 de noviembre de 2026 — Guía de demostración
 
 Rama `feat/guia-de-demostracion` desde `main` (`e5928f3`, desplegado). El
