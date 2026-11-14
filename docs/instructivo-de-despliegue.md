@@ -175,7 +175,7 @@ La landing de Zenit sigue los pasos de la landing, con estas diferencias:
 | Paso | Landing de Zenit |
 | --- | --- |
 | Revisar | Comprueba que exista `/opt/.fastsolution/zenit-landing`; no tiene secretos |
-| Exportar | El commit de `zenit-landing` y, del monorepo (HEAD), su composición, su `Dockerfile` y el guion del servidor |
+| Exportar | El commit de `zenit-landing`, que trae su `Dockerfile` (sin él se detiene), y, del monorepo (HEAD), su composición y el guion del servidor |
 | Subir | Árbol a `/opt/.fastsolution/zenit-landing/fuente` y su configuración |
 | Construir | La imagen `fastsolution-zenit-landing:<commit>`: `npm ci` y `next build`, unos dos minutos |
 | Comprobar | Raíz `200` sin `X-Powered-By`, una página interior con su `<h1`, `404` en una ruta que no existe, `http` en `301` y `POST` en `403` |

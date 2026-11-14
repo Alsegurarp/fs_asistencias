@@ -197,13 +197,13 @@ la IP del servidor detiene el envío hasta autorizar la nueva.
 ## Desplegar una versión nueva de la landing de Zenit
 
 Con el guion: `bash deploy/servidor/desplegar.sh zenit-landing`. El
-repositorio `zenit-landing` sólo lleva la aplicación (Next.js, trece páginas
-prerenderizadas); cómo se construye y corre en el servidor está en
-`deploy/servidor/zenit-landing/`: `Dockerfile` (Node 24 fijado por digest,
-`npm ci` y `next build`; al correr, sólo dependencias de producción, sin npm,
-con el usuario `node`), `Dockerfile.dockerignore` (deja fuera `design/`,
-pruebas y herramientas), `compose.yaml` y `servidor.env`. A mano, sobre el
-árbol exportado copiado a `/opt/.fastsolution/zenit-landing/fuente/`:
+repositorio `zenit-landing` lleva la aplicación (Next.js, trece páginas
+prerenderizadas) y su `Dockerfile` (Node 24 fijado por digest, `npm ci` y
+`next build`; al correr, sólo dependencias de producción, sin npm, con el
+usuario `node`); un commit sin `Dockerfile` no se puede desplegar. Cómo corre
+en el servidor está en `deploy/servidor/zenit-landing/`: `compose.yaml` y
+`servidor.env`. A mano, sobre el árbol exportado copiado a
+`/opt/.fastsolution/zenit-landing/fuente/`:
 
 ```bash
 cd /opt/.fastsolution/zenit-landing

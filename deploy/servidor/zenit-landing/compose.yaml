@@ -1,9 +1,9 @@
 # Landing de Zenit en el servidor compartido.
 #
-# El código vive en su propio repositorio; aquí se describe cómo se construye
-# y corre en el servidor. Se construye desde el árbol exportado de un commit,
-# en ZENIT_LANDING_FUENTE, con el Dockerfile de esta carpeta, y no publica
-# puertos: la alcanza el borde por la red fastsolution-entrada con el alias
+# El código y su Dockerfile viven en su propio repositorio (zenit-landing);
+# aquí sólo se describe cómo corre en el servidor. Se construye desde el árbol
+# exportado de un commit, en ZENIT_LANDING_FUENTE, y no publica puertos: la
+# alcanza el borde por la red fastsolution-entrada con el alias
 # `zenit-landing`. No tiene secretos.
 #   ZENIT_LANDING_VERSION=<commit> docker compose --env-file servidor.env up -d --build
 name: fastsolution-zenit-landing
@@ -12,7 +12,7 @@ services:
   landing:
     build:
       context: ${ZENIT_LANDING_FUENTE:?Defina ZENIT_LANDING_FUENTE}
-      dockerfile: ${ZENIT_LANDING_CONFIG:?Defina ZENIT_LANDING_CONFIG}/Dockerfile
+      dockerfile: Dockerfile
     image: fastsolution-zenit-landing:${ZENIT_LANDING_VERSION:-sin-version}
     restart: unless-stopped
     read_only: true

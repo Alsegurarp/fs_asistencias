@@ -13,14 +13,16 @@ Zenit (repositorio `zenit-landing`, Next.js 16.4.5) se publica en
 `zenitlanding.fastsolution.com.mx`, en el mismo servidor y detrás del mismo
 borde que Zenit y la landing de fastSolution.
 
-- **`deploy/servidor/zenit-landing/`**: `Dockerfile` en dos etapas (Node 24
-  fijado por digest; al correr, sólo dependencias de producción, sin npm y
-  con el usuario `node`), `Dockerfile.dockerignore`, `compose.yaml` (sólo
-  lectura, sin capacidades, 384 MB, tmpfs para la caché de imágenes) y
-  `servidor.env`. El repositorio de la landing no cambia.
+- **`Dockerfile` en `zenit-landing`**, como la landing de fastSolution: dos
+  etapas (Node 24 fijado por digest; al correr, sólo dependencias de
+  producción, sin npm y con el usuario `node`) y `.dockerignore`, que deja
+  fuera `design/`, pruebas y herramientas.
+- **`deploy/servidor/zenit-landing/`**: `compose.yaml` (sólo lectura, sin
+  capacidades, 384 MB, tmpfs para la caché de imágenes) y `servidor.env`.
 - **`desplegar.sh zenit-landing`** y su parte en `remoto.sh`: los mismos
   pasos que la landing, con la configuración tomada del monorepo y una
-  comprobación pública propia.
+  comprobación pública propia. Las dos landings se detienen al exportar un
+  commit sin `Dockerfile`.
 - **Borde**: certificado y bloque propios
   (`30-zenitlanding.fastsolution.com.mx.conf`), HSTS del borde en lugar del
   de la aplicación, sólo `GET` y `HEAD`, y límite `zenit_landing` de 20

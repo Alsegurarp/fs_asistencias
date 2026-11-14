@@ -162,12 +162,12 @@ paso_exportar() {
     tar --force-local -x -C "$TRABAJO/arbol"
   echo "$CORTO" > "$TRABAJO/arbol/.version-desplegada"
   echo "árbol de $CORTO: $(find "$TRABAJO/arbol" -type f | wc -l) archivos"
-  # Las landings corren con la composición y el guion de este repositorio; la
-  # de Zenit, además, con su Dockerfile.
+  # Las landings traen su Dockerfile y corren con la composición y el guion de
+  # este repositorio.
   case "$objetivo" in
-    landing) config_del_monorepo landing compose.yaml servidor.env ;;
-    zenit-landing)
-      config_del_monorepo zenit-landing compose.yaml servidor.env Dockerfile Dockerfile.dockerignore
+    landing | zenit-landing)
+      [ -f "$TRABAJO/arbol/Dockerfile" ] || falla "$CORTO no tiene Dockerfile: no se puede construir"
+      config_del_monorepo "$objetivo" compose.yaml servidor.env
       ;;
   esac
 }
