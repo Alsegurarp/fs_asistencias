@@ -1,0 +1,48 @@
+# Landing de Zenit en el servidor compartido.
+#
+# El código vive en su propio repositorio; aquí se describe cómo se construye
+# y corre en el servidor. Se construye desde el árbol exportado de un commit,
+# en ZENIT_LANDING_FUENTE, con el Dockerfile de esta carpeta, y no publica
+# puertos: la alcanza el borde por la red fastsolution-entrada con el alias
+# `zenit-landing`. No tiene secretos.
+#   ZENIT_LANDING_VERSION=<commit> docker compose --env-file servidor.env up -d --build
+name: fastsolution-zenit-landing
+
+services:
+  landing:
+    build:
+      context: ${ZENIT_LANDING_FUENTE:?Defina ZENIT_LANDING_FUENTE}
+      dockerfile: ${ZENIT_LANDING_CONFIG:?Defina ZENIT_LANDING_CONFIG}/Dockerfile
+    image: fastsolution-zenit-landing:${ZENIT_LANDING_VERSION:-sin-version}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      # Caché de imágenes optimizadas de Next; se pierde al recrear.
+      - /app/.next/cache:uid=1000,gid=1000,mode=0700,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      entrada:
+        aliases:
+          - zenit-landing
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    pids_limit: 64
+    mem_limit: 384m
+
+networks:
+  entrada:
+    external: true
+    name: fastsolution-entrada

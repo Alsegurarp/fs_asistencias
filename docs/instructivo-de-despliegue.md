@@ -1,7 +1,7 @@
 # Instructivo de despliegue
 
-Cómo publicar una versión de Zenit o de la landing en el servidor compartido
-con una sola orden. El guion `deploy/servidor/desplegar.sh` exporta un commit,
+Cómo publicar una versión de Zenit, de la landing de fastSolution o de la
+landing de Zenit en el servidor compartido con una sola orden. El guion `deploy/servidor/desplegar.sh` exporta un commit,
 lo sube, construye, actualiza, espera a que responda y lo comprueba por la
 dirección pública. Mientras corre muestra el porcentaje, el paso actual, el
 tiempo transcurrido y el tiempo que falta, y deja todo en un registro.
@@ -17,6 +17,7 @@ Cómo está montado el servidor y qué falta está en
 | Bash: Git Bash en Windows, o la terminal en Linux o macOS | El guion es de bash |
 | Acceso SSH al servidor | Una carpeta privada con `config`, `known_hosts` e `identity`. La entrega quien administra el acceso; nunca va en Git |
 | Clon del repositorio de la landing | Sólo para desplegar la landing |
+| Clon del repositorio de la landing de Zenit (`zenit-landing`) | Sólo para desplegar la landing de Zenit |
 | El commit ya hecho, y de preferencia subido | Se despliega un commit, nunca cambios sin commit |
 
 El `config` del acceso SSH define un alias con `HostName`, `User` y `Port`. La
@@ -71,12 +72,13 @@ ni en archivos versionados.
 
 1. Copia `deploy/servidor/despliegue.env.ejemplo` como
    `deploy/servidor/.env.despliegue`. Git ya lo ignora.
-2. Llena sus tres valores:
+2. Llena sus valores; los de las landings, sólo si las vas a desplegar:
 
    ```bash
    FS_SSH_PERFIL=D:/ruta/a/la/carpeta/del/acceso
    FS_SSH_ALIAS=alias-del-servidor
    LANDING_REPO=D:/ruta/al/clon/de/la/landing
+   ZENIT_LANDING_REPO=D:/ruta/al/clon/de/zenit-landing
    ```
 
    En Windows usa rutas con `/` (`D:/carpeta`); también sirven las de Git
@@ -107,6 +109,9 @@ bash deploy/servidor/desplegar.sh zenit
 
 # La landing, en el commit actual de su repositorio
 bash deploy/servidor/desplegar.sh landing
+
+# La landing de Zenit, en el commit actual de su repositorio
+bash deploy/servidor/desplegar.sh zenit-landing
 
 # Un commit en particular (también sirve para volver a uno anterior)
 bash deploy/servidor/desplegar.sh zenit 5f36b5c
@@ -164,6 +169,16 @@ después todo su registro. Para forzar la barra en ese caso:
 | Identidad | Crea en el realm lo que agrega el versionado y el cliente técnico; si algo difiere, se detiene | No aplica |
 | Borde | Si cambió `deploy/servidor/borde`, prueba los bloques con `nginx -t` y recarga; si no, nada | No aplica |
 | Comprobar | Portal, estado del backend, emisor de la identidad, `401` sin token y `404` en la administración | Raíz `200` sin `X-Powered-By`, `www` `301` y contacto inválido `400` |
+
+La landing de Zenit sigue los pasos de la landing, con estas diferencias:
+
+| Paso | Landing de Zenit |
+| --- | --- |
+| Revisar | Comprueba que exista `/opt/.fastsolution/zenit-landing`; no tiene secretos |
+| Exportar | El commit de `zenit-landing` y, del monorepo (HEAD), su composición, su `Dockerfile` y el guion del servidor |
+| Subir | Árbol a `/opt/.fastsolution/zenit-landing/fuente` y su configuración |
+| Construir | La imagen `fastsolution-zenit-landing:<commit>`: `npm ci` y `next build`, unos dos minutos |
+| Comprobar | Raíz `200` sin `X-Powered-By`, una página interior con su `<h1`, `404` en una ruta que no existe, `http` en `301` y `POST` en `403` |
 
 Al terminar, el servidor anota fecha, commit, resultado y duración en
 `/opt/.fastsolution/<objetivo>/despliegues.log`.

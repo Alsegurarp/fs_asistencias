@@ -1,0 +1,15 @@
+# Fuera del contexto de construcción de la landing de Zenit: dependencias y
+# salidas locales, material de diseño y herramientas que no forman parte del
+# sitio publicado.
+.git
+node_modules
+.next
+out
+build
+coverage
+design
+seo_geo_agent
+tests
+scripts
+*.md
+.env*

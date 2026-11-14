@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Despliega Zenit o la landing en el servidor compartido y muestra el avance:
-# porcentaje, paso actual, tiempo transcurrido y tiempo restante estimado.
-# Todo lo que hace queda en un registro en build/despliegue/registros/.
+# Despliega Zenit, la landing de fastSolution o la de Zenit en el servidor
+# compartido y muestra el avance: porcentaje, paso actual, tiempo transcurrido
+# y tiempo restante estimado. Todo queda en build/despliegue/registros/.
 #
-#   bash deploy/servidor/desplegar.sh zenit   [commit] [--detalle]
-#   bash deploy/servidor/desplegar.sh landing [commit] [--detalle] [--credencial <smtp.env>]
+#   bash deploy/servidor/desplegar.sh zenit         [commit] [--detalle]
+#   bash deploy/servidor/desplegar.sh landing       [commit] [--detalle] [--credencial <smtp.env>]
+#   bash deploy/servidor/desplegar.sh zenit-landing [commit] [--detalle]
 #
 # Despliega siempre un commit, nunca cambios sin commit. Sin commit, usa HEAD.
 # La configuración local va en deploy/servidor/.env.despliegue, fuera de Git:
@@ -24,7 +25,7 @@ AQUI=$(ruta_docker "$(cd "$(dirname "$0")" && pwd)")
 MONOREPO=$(ruta_docker "$(cd "$AQUI/../.." && pwd)")
 
 uso() {
-  sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
   exit 64
 }
 
@@ -78,6 +79,11 @@ case "$objetivo" in
     REPO=$(ruta_docker "$LANDING_REPO")
     REMOTO=$SERVIDOR/landing/remoto.sh
     ;;
+  zenit-landing)
+    : "${ZENIT_LANDING_REPO:?Defina ZENIT_LANDING_REPO, el clon del repositorio de la landing de Zenit}"
+    REPO=$(ruta_docker "$ZENIT_LANDING_REPO")
+    REMOTO=$SERVIDOR/zenit-landing/remoto.sh
+    ;;
   *) uso ;;
 esac
 [ -z "$credencial" ] || [ "$objetivo" = landing ] || falla "--credencial sólo aplica a la landing"
@@ -125,7 +131,27 @@ paso_revisar() {
   # La primera vez construye la herramienta; después, Docker la toma de caché.
   docker build --quiet --tag fastsolution-despliegue:1 "$AQUI/herramienta" > /dev/null
   echo "herramienta de despliegue lista"
-  herramienta remoto "test -d $SERVIDOR/$objetivo/secretos && echo 'conexión correcta: $objetivo existe en el servidor'"
+  # La landing de Zenit no tiene secretos: basta con que exista su carpeta.
+  local marca=$SERVIDOR/$objetivo/secretos
+  [ "$objetivo" = zenit-landing ] && marca=$SERVIDOR/$objetivo
+  herramienta remoto "test -d $marca && echo 'conexión correcta: $objetivo existe en el servidor'"
+}
+
+# Copia a $TRABAJO/config, desde el monorepo en HEAD, la configuración con la
+# que corre en el servidor una aplicación que vive en otro repositorio.
+config_del_monorepo() { # carpeta de deploy/servidor, archivos de esa carpeta
+  local carpeta=$1 config_sha archivo
+  shift
+  config_sha=$(git -C "$MONOREPO" rev-parse --short HEAD)
+  mkdir -p "$TRABAJO/config" "$TRABAJO/tmp"
+  git -C "$MONOREPO" -c core.autocrlf=false archive --format=tar HEAD \
+    "deploy/servidor/$carpeta" deploy/servidor/remoto.sh | tar --force-local -x -C "$TRABAJO/tmp"
+  for archivo in "$@"; do
+    mv "$TRABAJO/tmp/deploy/servidor/$carpeta/$archivo" "$TRABAJO/config/"
+  done
+  mv "$TRABAJO/tmp/deploy/servidor/remoto.sh" "$TRABAJO/config/"
+  rm -rf "$TRABAJO/tmp"
+  echo "configuración de $objetivo tomada del monorepo en $config_sha"
 }
 
 paso_exportar() {
@@ -136,18 +162,14 @@ paso_exportar() {
     tar --force-local -x -C "$TRABAJO/arbol"
   echo "$CORTO" > "$TRABAJO/arbol/.version-desplegada"
   echo "árbol de $CORTO: $(find "$TRABAJO/arbol" -type f | wc -l) archivos"
-  if [ "$objetivo" = landing ]; then
-    # La landing corre con la composición y el guion de este repositorio.
-    local config_sha
-    config_sha=$(git -C "$MONOREPO" rev-parse --short HEAD)
-    mkdir -p "$TRABAJO/config" "$TRABAJO/tmp"
-    git -C "$MONOREPO" -c core.autocrlf=false archive --format=tar HEAD \
-      deploy/servidor/landing deploy/servidor/remoto.sh | tar --force-local -x -C "$TRABAJO/tmp"
-    mv "$TRABAJO/tmp/deploy/servidor/landing/compose.yaml" "$TRABAJO/tmp/deploy/servidor/landing/servidor.env" \
-      "$TRABAJO/tmp/deploy/servidor/remoto.sh" "$TRABAJO/config/"
-    rm -rf "$TRABAJO/tmp"
-    echo "configuración de la landing tomada del monorepo en $config_sha"
-  fi
+  # Las landings corren con la composición y el guion de este repositorio; la
+  # de Zenit, además, con su Dockerfile.
+  case "$objetivo" in
+    landing) config_del_monorepo landing compose.yaml servidor.env ;;
+    zenit-landing)
+      config_del_monorepo zenit-landing compose.yaml servidor.env Dockerfile Dockerfile.dockerignore
+      ;;
+  esac
 }
 
 paso_subir() {
@@ -155,8 +177,8 @@ paso_subir() {
     herramienta subir arbol "$SERVIDOR/zenit/fuente" --borrar
     herramienta remoto "find $SERVIDOR/zenit/fuente -name '*.sh' -exec chmod 755 {} +"
   else
-    herramienta subir arbol "$SERVIDOR/landing/fuente" --borrar
-    herramienta subir config "$SERVIDOR/landing"
+    herramienta subir arbol "$SERVIDOR/$objetivo/fuente" --borrar
+    herramienta subir config "$SERVIDOR/$objetivo"
   fi
 }
 
@@ -180,11 +202,19 @@ GET https://zenit.fastsolution.com.mx/api/v1/me 401
 GET https://zenit.fastsolution.com.mx/id/admin/ 404
 GET https://zenit.fastsolution.com.mx/id/realms/master 404
 FIN
-  else
+  elif [ "$objetivo" = landing ]; then
     herramienta comprobar << 'FIN'
 GET https://fastsolution.com.mx/ 200 !X-Powered-By
 GET https://www.fastsolution.com.mx/ 301
 POST https://fastsolution.com.mx/api/contact 400
+FIN
+  else
+    herramienta comprobar << 'FIN'
+GET https://zenitlanding.fastsolution.com.mx/ 200 !X-Powered-By
+GET https://zenitlanding.fastsolution.com.mx/reloj-checador-digital/ 200 <h1
+GET https://zenitlanding.fastsolution.com.mx/no-existe/ 404
+GET http://zenitlanding.fastsolution.com.mx/ 301
+POST https://zenitlanding.fastsolution.com.mx/ 403
 FIN
   fi
 }
@@ -210,8 +240,10 @@ else
     "subir|Subiendo el árbol al servidor|10"
   )
   [ -n "$credencial" ] && PASOS+=("credencial|Copiando la credencial de correo|5")
+  construir=40
+  [ "$objetivo" = zenit-landing ] && construir=150
   PASOS+=(
-    "construir|Construyendo la imagen|40"
+    "construir|Construyendo la imagen|$construir"
     "actualizar|Actualizando el contenedor|10"
     "esperar|Esperando a que la landing esté sana|15"
     "comprobar|Comprobando por la dirección pública|10"
