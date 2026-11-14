@@ -112,7 +112,12 @@ Reportes y Mi asistencia, pasan a `legacy.tsx`. `BreakPolicyChange` se queda
 para la Consola. `/configuracion/sedes` lleva a `/configuracion`. El mapa es
 OpenStreetMap con Leaflet 1.9.4, en un archivo aparte que sólo baja al abrir
 Configuración; la política de seguridad del portal admite
-`https://tile.openstreetmap.org` en `img-src`. Diferencias con el lienzo:
+`https://tile.openstreetmap.org` en `img-src`. El portal manda
+`Referrer-Policy: no-referrer`, y OpenStreetMap bloquea con un 403 («Access
+blocked») los mosaicos que llegan sin `Referer` (su política de uso, 3.1): por
+eso sólo la capa de mosaicos lleva `referrerPolicy:
+'strict-origin-when-cross-origin'`, que manda el origen sin la ruta.
+Diferencias con el lienzo:
 
 - **«Programó Mariana Ortiz»:** Desde el MVP según el lienzo (contrato 0.37.0) el cambio guarda quién lo programó y Configuración lo muestra; los programados antes no tienen nombre.
 - **«Sede activa»:** Desde el MVP según el lienzo (contrato 0.37.0) es el interruptor del lienzo y se guarda en el acto.

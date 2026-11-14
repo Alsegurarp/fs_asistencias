@@ -51,7 +51,10 @@ export default function SiteMap({ sites, onSelect, editing, onMove, label, heigh
       link.setAttribute('aria-label', link.classList.contains('leaflet-control-zoom-in') ? 'Acercar el mapa' : 'Alejar el mapa')
     })
     created.attributionControl.setPrefix(false)
-    L.tileLayer(tiles, { maxZoom: 19, attribution }).addTo(created)
+    // El portal manda `Referrer-Policy: no-referrer`, y OpenStreetMap bloquea los
+    // mosaicos que llegan sin `Referer` (política de uso, 3.1). Sólo las imágenes
+    // de los mosaicos mandan el origen del portal, sin ruta; lo demás sigue igual.
+    L.tileLayer(tiles, { maxZoom: 19, attribution, referrerPolicy: 'strict-origin-when-cross-origin' }).addTo(created)
     layer.current = L.layerGroup().addTo(created)
     map.current = created
     return () => { created.remove(); map.current = null; layer.current = null; marker.current = null; circle.current = null; fitted.current = false }
