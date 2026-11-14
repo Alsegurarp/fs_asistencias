@@ -5,6 +5,7 @@
 #   en-servidor.sh estado
 #   en-servidor.sh borrar
 #   en-servidor.sh crear  <carpeta con cuentas.tsv>
+#   en-servidor.sh recepcion <HH:MM>
 #   en-servidor.sh piloto <carpeta con pilot_card_key>
 #
 # Sólo toca la empresa de demostración (identificador fijo) y las cuentas
@@ -89,6 +90,48 @@ COMMIT;
 SQL
 }
 
+# Una siembra tardía, como si se hubiera corrido a las HH:MM de hoy: lo que
+# creó pasa a esa hora (creación, recepción y bitácora) y se quitan las
+# incidencias «sincronizada tarde» que abrió el desfase, porque recibidas a esa
+# hora esas marcas llegan dentro de las 24 horas (lateSyncHours del servidor).
+# Va justo después de sembrar; repetirla no mueve nada.
+recepcion() {
+  local hora=${1:?falta la hora}
+  [[ $hora =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]] || { echo "hora inválida: use HH:MM" >&2; exit 64; }
+  psql_demo << SQL
+BEGIN;
+DO \$\$
+DECLARE empresa uuid; desfase interval; columna record; quitadas bigint;
+BEGIN
+  SELECT id, created_at - (((now() AT TIME ZONE time_zone)::date + time '$hora') AT TIME ZONE time_zone)
+    INTO empresa, desfase FROM tenant WHERE slug = '$EMPRESA';
+  IF empresa IS NULL THEN RAISE EXCEPTION 'no hay empresa de demostración'; END IF;
+  IF desfase < interval '0' THEN RAISE EXCEPTION 'la empresa es anterior a las $hora de hoy: no hay siembra que mover'; END IF;
+  FOR columna IN SELECT c.table_name, c.column_name FROM information_schema.columns c
+                 WHERE c.table_schema = 'public' AND c.column_name IN ('created_at', 'received_at', 'at')
+                   AND EXISTS (SELECT 1 FROM information_schema.columns t WHERE t.table_schema = 'public'
+                               AND t.table_name = c.table_name AND t.column_name = 'tenant_id') LOOP
+    EXECUTE format('UPDATE %I SET %I = %I - \$2 WHERE tenant_id = \$1', columna.table_name, columna.column_name, columna.column_name)
+      USING empresa, desfase;
+  END LOOP;
+  UPDATE tenant SET created_at = created_at - desfase WHERE id = empresa;
+  WITH quitar AS (
+    DELETE FROM incident i USING attendance_event e
+    WHERE i.tenant_id = empresa AND e.tenant_id = empresa AND e.id = i.event_id
+      AND i.type = 'late_sync' AND e.received_at - e.observed_at <= interval '24 hours'
+    RETURNING i.id)
+  DELETE FROM audit_log a USING quitar q
+  WHERE a.tenant_id = empresa AND a.action = 'incident.opened' AND a.target_id = q.id::text;
+  GET DIAGNOSTICS quitadas = ROW_COUNT;
+  UPDATE attendance_event e SET outcome = 'accepted'
+  WHERE e.tenant_id = empresa AND e.outcome = 'accepted_with_incident'
+    AND NOT EXISTS (SELECT 1 FROM incident i WHERE i.tenant_id = empresa AND i.event_id = e.id);
+  RAISE NOTICE 'siembra movida % atrás; % incidencias del desfase quitadas', date_trunc('second', desfase), quitadas;
+END \$\$;
+COMMIT;
+SQL
+}
+
 # cuentas.tsv: rol, correo, nombre, contraseña, secreto del código, modo.
 # Modo «listo»: contraseña y código ya configurados, para quien presenta.
 # Modo «nuevo»: contraseña temporal; el primer ingreso se hace en vivo.
@@ -157,6 +200,7 @@ case "$orden" in
   estado) estado ;;
   borrar) borrar ;;
   crear) crear "$@" ;;
+  recepcion) recepcion "$@" ;;
   piloto) piloto "$@" ;;
-  *) echo "uso: en-servidor.sh estado|borrar|crear <carpeta>|piloto <carpeta>" >&2; exit 64 ;;
+  *) echo "uso: en-servidor.sh estado|borrar|crear <carpeta>|recepcion <HH:MM>|piloto <carpeta>" >&2; exit 64 ;;
 esac

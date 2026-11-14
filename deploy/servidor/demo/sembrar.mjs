@@ -5,7 +5,10 @@
 // una semana terminada, lista para cerrarse en la demostración.
 //
 // Variables: DEMO_PORTAL, DEMO_CUENTAS, DEMO_LATITUD y DEMO_LONGITUD (dónde
-// se presenta: ahí queda Matriz Centro, para que marcar en vivo caiga dentro).
+// se presenta: ahí queda Matriz Centro, para que marcar en vivo caiga dentro)
+// y DEMO_HORA (HH:MM, opcional): la hora de hoy a la que se debió sembrar,
+// cuando se reinicia tarde. Las marcas de ayer quedan como si la siembra se
+// hubiera corrido a esa hora; demo.sh mueve después su recepción a esa hora.
 import { Dispositivo, ZONA, api, cuentas, dormir, huella, navegador, sesion } from './comun.mjs';
 
 const latitud = Number(process.env.DEMO_LATITUD || 19.432608);
@@ -18,8 +21,20 @@ const hoy = dia(new Date());
 const semanaDe = (fecha) => new Intl.DateTimeFormat('en-US', { timeZone: ZONA, weekday: 'long' }).format(fecha).toLowerCase();
 const antes = (dias) => dia(new Date(Date.now() - dias * 86400000));
 
+// La hora de la siembra: la de ahora o, con DEMO_HORA, una de hoy que ya pasó.
+function horaDeHoy(texto) {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(texto)) throw new Error('DEMO_HORA va como HH:MM, por ejemplo 07:00.');
+  const desfase = new Intl.DateTimeFormat('en-US', { timeZone: ZONA, timeZoneName: 'longOffset' })
+    .formatToParts(new Date()).find((p) => p.type === 'timeZoneName').value.replace('GMT', '') || '+00:00';
+  const fecha = new Date(`${hoy}T${texto}:00${desfase}`);
+  if (fecha > new Date()) throw new Error(`DEMO_HORA (${texto}) todavía no llega: sólo sirve una hora de hoy que ya pasó.`);
+  return fecha;
+}
+const siembra = process.env.DEMO_HORA ? horaDeHoy(process.env.DEMO_HORA) : new Date();
+if (process.env.DEMO_HORA) console.log(`Siembra como si fueran las ${process.env.DEMO_HORA}: las marcas de ayer llegan con más de 24 horas y salen «sincronizada tarde» hasta que demo.sh mueve su recepción a esa hora.`);
+
 // Hace casi 24 horas: todavía es ayer y todavía no cuenta como sincronización tardía.
-const inicio = new Date(Math.floor((Date.now() - 23.5 * 3600000) / 900000) * 900000);
+const inicio = new Date(Math.floor((siembra.getTime() - 23.5 * 3600000) / 900000) * 900000);
 const mas = (horas) => new Date(inicio.getTime() + horas * 3600000);
 if (dia(inicio) === hoy) console.log('Aviso: a esta hora la jornada sembrada cae hoy y no se podrá cerrar; conviene sembrar después de las 7 de la mañana.');
 // Una jornada diurna termina antes de las 20:00; la de tiempo extra dura casi
