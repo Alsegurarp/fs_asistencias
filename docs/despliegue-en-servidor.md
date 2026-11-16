@@ -172,6 +172,37 @@ arrancar: si el paso lo cambió, el guion recrea el backend y vuelve a
 esperar a que responda. El paso entra con la cuenta de arranque; cuando se
 sustituya por cuentas personales, necesitará una credencial propia.
 
+### Correo de la identidad
+
+`bash deploy/servidor/desplegar.sh zenit --credencial <archivo>` sube la
+credencial de correo y enciende «Olvidé mi contraseña». El archivo lleva
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` y `SMTP_FROM`, y si se
+quiere `SMTP_FROM_NAME` (por omisión, «Zenit»); puede ser un `.env` con más
+cosas, porque sólo viajan las líneas `SMTP_`. Basta hacerlo una vez: la
+credencial queda en `secretos/correo/smtp.env` y los despliegues siguientes
+la vuelven a aplicar. Para cambiarla, se sube otra.
+
+Con la credencial presente, el servicio `identidad`:
+
+- comprueba que el flujo con que el realm recupera la contraseña sea el
+  versionado, que conserva el segundo factor y obliga a entrar otra vez; si
+  difiere, se detiene sin encender nada;
+- guarda el servidor de correo en el realm, con autenticación y STARTTLS
+  (TLS directo en el puerto 465), y enciende `resetPasswordAllowed`;
+- deja apagada la verificación de correo (`verifyEmail`).
+
+Sin credencial no cambia nada. El enlace del correo vale cinco minutos
+(`actionTokenGeneratedByUserLifespan`) y el mensaje es el de Keycloak en
+español, sin la marca. `SMTP_FROM` tiene que ser un remitente que Brevo
+acepte; el login `...@smtp-brevo.com` se rechaza antes de tocar el realm.
+Keycloak sale a Brevo desde el servidor: si la cuenta de Brevo limita las
+direcciones IP, la del servidor tiene que estar autorizada.
+
+La invitación por correo no llega con esto: las cuentas las sigue creando
+quien opera el servicio. Para que Zenit las cree y mande el enlace, el
+backend tendría que poder crear cuentas en la identidad, y hoy su cliente
+técnico sólo puede pedir una contraseña nueva.
+
 ## Desplegar una versión nueva de la landing
 
 Con el guion: `bash deploy/servidor/desplegar.sh landing`, y
@@ -271,7 +302,7 @@ bloque nuevo se copia después de emitirlo.
 | Remitente verificado de la landing (`SMTP_FROM`) y su cambio de código | Que su formulario envíe: con Brevo, usar el login SMTP como remitente hace que rechace el mensaje. Lo mejor es autenticar `fastsolution.com.mx` en Brevo, con registros en su DNS |
 | Cuentas personales en la consola de identidad, con segundo factor | Retirar la cuenta temporal de arranque después de comprobarlas |
 | Correos de quien opera el servicio (`operator_emails`) | Nadie puede dar de alta una empresa mientras esté vacío |
-| Servicio de correo en la identidad | Verificación de correo y recuperación de contraseña |
+| Subir la credencial de correo de la identidad (`desplegar.sh zenit --credencial`) | Enciende la recuperación de contraseña ([cómo](#correo-de-la-identidad)); el guion está listo y probado en local, falta correrlo. Después quedan el remitente definitivo, la invitación por correo y la verificación de correo |
 | Respaldo fuera del servidor | No hay copia operativa; con datos ficticios no se pierde nada que importe |
 | Recorrido autenticado del portal y de la app por HTTPS | Nada se ha recorrido con sesión en este ambiente |
 | Cuota por dirección real en el backend | El backend ve la dirección del portal, no la del visitante |

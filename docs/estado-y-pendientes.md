@@ -47,6 +47,22 @@ Lo que falta:
 3. **La consola con la cuenta de operación**, recorrida en el ambiente
    publicado.
 
+**Revisión del 16 de noviembre.** Los tres puntos de arriba siguen abiertos
+y ninguno se cierra con código: necesitan a una persona.
+
+| Pendiente | Qué hace falta | De quién |
+| --- | --- | --- |
+| Partes 7 y 8 de la guía con teléfono y tarjeta | Una cuenta de Administración en el ambiente publicado para generar los códigos de vinculación (las de la demostración viven en `DEMO_SECRETOS`, en la estación que despliega), las tarjetas Classic y alguien que las acerque. El Samsung tiene la app vigente | Alexis |
+| Correo de identidad | La credencial ya autentica en Brevo y el despliegue sabe subirla y encender «Olvidé mi contraseña» ([cómo](despliegue-en-servidor.md#correo-de-la-identidad)). Falta correr `desplegar.sh zenit --credencial` desde una estación con acceso SSH. El remitente es por ahora una dirección de Gmail (decidido el 16 de noviembre); más adelante se cambiará por una del dominio, autenticado en Brevo. La invitación por correo no está construida | Quien despliega |
+| Consola con la cuenta de operación | Entrar al ambiente publicado con la cuenta de operación y su segundo factor | Quien tiene esa cuenta |
+| «Instalar Zenit» en un teléfono | Abrir el portal publicado en un teléfono y aceptar la instalación: el navegador automatizado no la ofrece | Cualquiera del equipo |
+
+Ese día se corrigió el reporte para nómina abierto con `?semana=` en un día
+que no es inicio de semana (rama `fix/cierre-de-pendientes`, sin integrar ni
+desplegar) y entraron a la bitácora las entradas del 10 al 12 de noviembre.
+La landing de Zenit está publicada en `zenitlanding.fastsolution.com.mx`
+(PR #73).
+
 Acuerdos del 13 de noviembre sobre tarjetas y terminales:
 
 - **Tarjetas.** Las seguras (DESFire) cuestan unos 3 dólares cada una. Por
@@ -82,9 +98,9 @@ PR #66 y `main` volvió a pasar, desplegado en `9f21144`.
 desplegado (PR #64). Con la PR #65, integrada y desplegada en `9f21144`, las pantallas que el lienzo
 dibuja (ingreso, «¿No puedes entrar?», código, configurar el segundo factor
 y crear contraseña) tienen plantilla propia y quedan iguales a él en
-escritorio y teléfono; falta desplegarla. Del bloque 6 quedan ACC-06, la
-confirmación antes de descargar el expediente, y el portal instalable
-([detalle](construir-el-portal.md#bloque-6-acceso-con-marca)).
+escritorio y teléfono. ACC-06, la confirmación antes de descargar el
+expediente, y el portal instalable llegaron después con el MVP según el
+lienzo ([detalle](construir-el-portal.md#bloque-6-acceso-con-marca)).
 
 **Consola de operación, 12 de noviembre:** el bloque 5 del portal está
 integrado (PR #63) y desplegado, sin cambios al API: Empresas con

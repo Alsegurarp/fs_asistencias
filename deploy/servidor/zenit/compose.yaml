@@ -108,9 +108,12 @@ services:
       SECRETOS: /secretos
     volumes:
       - ./deploy/servidor/zenit/identidad.mjs:/trabajo/identidad.mjs:ro
+      - ./deploy/servidor/zenit/correo.mjs:/trabajo/correo.mjs:ro
       - ./infra/keycloak/realm:/realm:ro
       - ${ZENIT_SECRETOS}/keycloak_admin_password:/secretos/keycloak_admin_password:ro
       - ${ZENIT_SECRETOS}/identity-admin:/secretos/identity-admin
+      # Credencial de correo (smtp.env), si ya se subió; vacía mientras no.
+      - ${ZENIT_SECRETOS}/correo:/secretos/correo:ro
     depends_on:
       keycloak:
         condition: service_healthy

@@ -221,6 +221,15 @@ it('el paso 3 arma la hoja con subtotales y la imprime; el anexo lleva las huell
   expect(sheet().textContent).toContain('hash-c1-0123456789abcdef')
 })
 
+it('con un día que no es inicio de semana en la dirección, el reporte es de la semana que lo contiene', async () => {
+  await render('/reportes/nomina?semana=2026-10-28&paso=3')
+  expect(sheet().textContent).toContain('Semana 26 oct – 1 nov 2026 · Toda la empresa')
+  expect(rows(sheet())).toContainEqual(['Subtotal Bodega Norte', '48:00', '4:15', ''])
+  await act(async () => [...container.querySelectorAll<HTMLButtonElement>('[role="group"][aria-label="Formato"] button')][1].click())
+  expect(text()).toContain('(Toda la empresa, 26 oct – 1 nov 2026)')
+  expect(server.calls.filter(call => call.path.startsWith('/week-closures?')).every(call => call.path.includes('week=2026-10-26'))).toBe(true)
+})
+
 it('el CSV oficial se pide al servidor, se espera y se descarga una vez', async () => {
   await render('/reportes/nomina?semana=2026-10-26&sede=s2&paso=3')
   await act(async () => [...container.querySelectorAll<HTMLButtonElement>('[role="group"][aria-label="Formato"] button')][1].click())

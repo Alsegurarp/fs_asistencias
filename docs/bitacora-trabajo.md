@@ -6,6 +6,61 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 16 de noviembre de 2026 — Revisión de pendientes para cerrar
+
+Rama `fix/cierre-de-pendientes` desde `main` (`ac0d8f0`). Se revisó todo lo
+abierto para separar lo que se podía cerrar sin una persona de lo que no.
+
+- **Reporte para nómina con `?semana=` en un día cualquiera.** Abierto con un
+  día que no es inicio de semana rotulaba la semana desde ese día (visto el
+  13 de noviembre). Ahora la semana es la que el servidor dice que contiene
+  ese día, en la hoja, en el CSV y en las consultas. Prueba nueva en
+  `Reports.test.tsx`, que falla sin el cambio.
+- **Bitácora del 10 al 12 de noviembre.** Sus ocho entradas estaban en la
+  rama `docs/bitacora-10-al-12-nov`, que nunca se integró; entran con esta.
+- **Etiquetas de la sede:** el contrato 0.37.0 lo tomó el MVP, así que el
+  paso 2 saldrá con la siguiente versión. El
+  [diseño](diseno-etiqueta-en-sede.md) ya dice qué está hecho.
+- **Landing de Zenit:** integrada con la PR #73; hoy
+  `zenitlanding.fastsolution.com.mx`, `zenit.fastsolution.com.mx` y
+  `fastsolution.com.mx` responden `200` desde la estación de trabajo.
+
+- **Correo de la identidad.** Con la credencial de Brevo que Alexis dejó en
+  `.env`, `desplegar.sh zenit --credencial <archivo>` la sube (sólo las
+  líneas `SMTP_`) y el paso de identidad la guarda en
+  `secretos/correo/smtp.env`, configura el correo del realm y enciende
+  «Olvidé mi contraseña», si el flujo de recuperación es el versionado. Sin
+  credencial no cambia nada; la verificación de correo sigue apagada
+  ([detalle](despliegue-en-servidor.md#correo-de-la-identidad)).
+
+Verificado: las 304 pruebas y la compilación de tipos del portal. Las 19
+pruebas de identidad con Keycloak recién importado, incluida la nueva
+`reset-email.test.mjs`: pedir el enlace desde el ingreso, recibir el mensaje
+en un buzón de prueba con el remitente y el usuario configurados, y abrir
+con él «crear contraseña». `identidad.mjs` contra ese Keycloak, sin
+credencial, con ella y por segunda vez. La credencial contra Brevo: el
+login autentica con TLS 1.3 y acepta el remitente, y Keycloak entregó a
+Brevo un mensaje de prueba dirigido al propio remitente. El paso que guarda
+la credencial en el servidor, simulado con la misma imagen y capacidades:
+sin `DAC_OVERRIDE` no puede leerla y con ella queda en 0444. `shellcheck`
+sin hallazgos nuevos.
+
+Sin verificar: nada en el ambiente publicado. Esta estación no tiene acceso
+SSH al servidor (el perfil sólo tiene `config`, sin usuario ni llave), así
+que la credencial no se subió y la recuperación sigue apagada ahí. Tampoco
+se sabe si el mensaje de prueba llegó a la bandeja o a correo no deseado: el
+remitente es una dirección de Gmail enviada por Brevo. La prueba nueva de
+identidad no ha corrido en el CI, donde Keycloak alcanza el buzón por
+`host.docker.internal`.
+
+Teléfono: el Samsung SM-S928B conectado tiene la app del 14 de noviembre,
+posterior al último cambio de `android/`. Las partes 7 y 8 de la guía no se
+hicieron: no hay en esta estación una cuenta del ambiente publicado para
+generar los códigos de vinculación, y la 7 necesita acercar las tarjetas.
+
+Lo que sigue abierto y de quién depende está en
+[estado y pendientes](estado-y-pendientes.md#pendientes-del-mvp).
+
 ## 14 de noviembre de 2026 — Landing de Zenit en el servidor
 
 Rama `feat/landing-zenit-en-servidor` desde `main` (`8f1498b`). La landing de
@@ -352,6 +407,179 @@ corregir los tres registros en el panel del dominio.
 
 Integrado con la PR #58 (`a5ca133`) y desplegado ese día; la comprobación
 por la dirección pública sigue sin pasar hasta corregir los registros DNS.
+
+## 12 de noviembre de 2026 — Dos formas de marcar: el plan, la sede y la persona (paso 1)
+
+Rama `feat/formas-de-marcar` sobre `feat/lector-fijo-en-su-sede`; integrada
+con la PR #57 (`fd4eb8a`). Es el paso 1 del
+[diseño de la etiqueta en la sede](diseno-etiqueta-en-sede.md). Contrato
+0.35.0 y migración V023.
+
+- **Plan de la empresa** (`tenant.capture_methods`): `card_terminal` (la
+  tarjeta en el lector fijo), `phone_tag` (el teléfono en la etiqueta de la
+  sede) o las dos. Se venden por separado. Sólo lo fija quien opera el
+  servicio, con `PUT /tenants/{tenantId}/capture-methods` y un motivo, y queda
+  en la bitácora (`tenant.capture_methods_changed`). No quita una forma con
+  la que todavía marca alguien activo: responde 409 `capture_method_in_use`.
+  Las empresas que ya existían quedaron con las dos.
+- **Sede** (`site.capture_methods`): puede admitir menos que el plan; nulo
+  quiere decir todo el plan. Una forma fuera del plan responde 422
+  `not_in_plan`.
+- **Persona** (`employee.capture_method`): `card` o `phone`, una sola. Sin
+  dato al darla de alta, la tarjeta si su sede la admite y si no el
+  teléfono. Pasar al teléfono revoca su tarjeta vigente y ya no se le asigna
+  otra (409 `employee_marks_with_phone`); pasar a la tarjeta revoca sus
+  teléfonos personales. Ambas cosas quedan en la bitácora con el motivo
+  `capture_method_changed`. No se puede mover a una sede que no admite su
+  forma (422 `capture_method_not_allowed`).
+- **Lector fijo:** rechaza con `method_not_allowed` la marca de quien marca
+  con teléfono o de una sede que no admite tarjeta.
+- **Portal:** por ahora sólo dice estos cambios en la Bitácora
+  (`auditModel.ts`). El plan, la forma de cada persona y lo que admite cada
+  sede se muestran en el paso 5.
+
+Todavía no cambian, a propósito: el teléfono personal sigue leyendo la
+tarjeta de su titular (se retira en el paso 2, cuando ya lea la etiqueta) y
+el expediente aún no incluye estos datos (se agregan en el paso 2, junto con
+el cambio de formato que trae la etiqueta).
+
+Pruebas: `CaptureMethodsIT` (plan, cambio de forma con lo que revoca, sede
+que admite menos y rechazo en el lector) y `auditModel.test.ts`. Verificado:
+`contract-lint`, `backend-it` sin fallas, 308 pruebas del portal y `tsc` sin
+errores. Sin despliegue propio.
+
+Con la PR #59 (`10c0f04`) el diseño quedó corregido: la ruta real del plan,
+el paso 1 hecho y que FastSolution prepara las etiquetas. El contrato 0.36.0
+lo tomó después `/me` con la empresa suspendida, así que las etiquetas en el
+servidor (paso 2) saldrán con 0.37.0. (El 13 de noviembre el MVP según el
+lienzo tomó también la 0.37.0: las etiquetas saldrán con la siguiente.)
+
+## 12 de noviembre de 2026 — Tomcat embebido 11.0.27 en la PR #56
+
+La PR #56 (lector fijo) falló en contrato-y-seguridad, pero no por el
+contrato: el paso «Inventario y vulnerabilidades de las cinco imágenes»
+encontró dos avisos críticos y dos altos nuevos en `tomcat-embed-core`
+11.0.26. Se fijó `tomcat.version` en 11.0.27 en `backend/build.gradle.kts`
+(`1303486`); las cinco imágenes pasan `infra/check-images.ps1` en local y la
+CI de la rama terminó en verde. No se aceptó ningún aviso en `.grype.yaml`.
+
+La PR #59 falló en el mismo paso por la misma causa: su rama salía de un
+`main` anterior al arreglo. Al traer `main` a la rama pasó completa.
+
+## 12 de noviembre de 2026 — Decisiones de la etiqueta en la sede
+
+Sin código; integrado con la PR #59. El
+[diseño](diseno-etiqueta-en-sede.md) se reescribió con lo que se decidió:
+
+- Las dos formas de marcar se venden por separado, según el plan y el
+  cliente.
+- Una persona marca de una sola forma: con su tarjeta en el teléfono de la
+  oficina, o con su teléfono en la etiqueta de la oficina. Nadie lee su
+  propia tarjeta en su teléfono personal ni tiene ahí sus datos.
+- Las etiquetas las registra Administración desde el portal y puede dar ese
+  permiso a otra persona al crear su perfil (`site_tag_permission`).
+- Cada etiqueta lleva nombre.
+- Primero etiquetas MIFARE Classic y después NTAG 424 DNA SUN; las 424 DNA
+  todavía no se tienen.
+- FastSolution prepara cada etiqueta antes de entregarla, con un código
+  corto impreso, y el cliente la registra por ese código.
+
+## 11 de noviembre de 2026 — El lector fijo cuenta en su sede aunque no mande ubicación
+
+Rama `feat/lector-fijo-en-su-sede`; integrada con la PR #56. Contrato
+0.34.0 y migración V022.
+
+Las 8 incidencias abiertas de PIL-001 (5 de ubicación no concluyente y 3 de
+lectura duplicada) salieron de la terminal de la sede, que no mandaba GPS.
+Como el lector fijo siempre está en su sede, una terminal con sede que no
+manda ubicación, o que manda una menos precisa que el radio, deja la marca
+con el veredicto nuevo `device_site`, sin incidencia. Una ubicación simulada,
+o una precisa fuera de la sede, siguen abriendo incidencia
+(`Geo.verdict` en `CaptureRules.kt`). El portal lo muestra como «En el lector
+fijo de la sede», sin precisión.
+
+Las marcas anteriores no cambian: las incidencias que ya estaban abiertas se
+resuelven a mano.
+
+Pruebas: `CaptureRulesTest`, `CaptureIT` (marca de terminal sin ubicación,
+aceptada con `device_site`) y del portal.
+
+También el 11 de noviembre, con la PR #55, se escribió el primer diseño de
+la etiqueta en la sede leída por el teléfono personal, para revisar.
+
+## 11 de noviembre de 2026 — Asistencia: incidencias agrupadas y la incidencia de cada marca
+
+Rama `fix/asistencia-atencion-agrupada`; integrada con la PR #54. Al revisar
+«Exportar vista» de Asistencia (`asistencia-2026-11-09.csv`), el archivo era
+correcto, pero «Atención» repetía la misma etiqueta por cada incidencia.
+
+- **Atención agrupada:** una etiqueta por tipo con su número («Ubicación no
+  concluyente (5)»), en la tabla y en el CSV. Con una sola incidencia abre
+  esa incidencia; con varias, Incidencias filtrada por la persona y el tipo.
+- **Marcajes de la ficha:** cada marca dice qué incidencia tiene («Lectura
+  duplicada», «Ubicación no concluyente») en lugar de «Con incidencia», y
+  lleva a ella. Dos marcas del mismo minuto se distinguen por los segundos.
+
+Pruebas en `attendanceModel.test.ts`.
+
+## 11 de noviembre de 2026 — Bloque 4: Reportes, Bitácora y Expediente
+
+Tres PR integradas: #51, #52 y #53. Ninguna cambia el API.
+
+- **Reportes** (REP-01 a 04; `5a4499c`): el inicio muestra lo que el rol
+  puede generar y los exportes recientes con su estado. El reporte para
+  nómina va en tres pasos (alcance y semana cerrada, columnas, presentación)
+  y muestra la hoja para imprimir o guardar como PDF desde el navegador. El
+  archivo oficial sigue siendo el CSV del servidor. Se retira Exports.
+- **Bitácora** (REP-07 y 08; `9dff5af`): filtros del servidor por periodo,
+  quién actuó, grupo de acciones y persona, con su conteo. La vista previa
+  lleva la lista completa a la hoja para imprimir o a un CSV. Cada acción se
+  dice en una frase (`auditModel.ts`), que ahora también usa el Panel. Los
+  nombres de los roles pasan a `roles.ts`.
+- **Expediente** (REP-05 y 06; `8e29115`): preparar la copia, confirmar la
+  identidad y descargar el ZIP una vez. Lo que incluye la copia y la carátula
+  salen del manifiesto; se ven las copias propias anteriores y, a
+  Administración, quién puede descargarlo.
+
+## 11 de noviembre de 2026 — Usuarios y roles, e imágenes de Alpine
+
+- **Usuarios y roles** (EMP-04 a 06, CTA-01 y TEL-11; `b86d147`, PR #50):
+  la lista, sus pestañas por rol, la búsqueda y las cifras salen de
+  `GET /users` y `GET /users/summary`. «Editar acceso» guarda sólo lo que
+  cambió y el expediente aparte; la seguridad de la cuenta pide
+  confirmación. Mi perfil y Ayuda y soporte se abren desde el menú de la
+  cuenta, y el menú Crear suma «Invitar». Sin cambios al API.
+- **Imágenes** (`6975b8c`): avisos nuevos de Alpine 3.24 en zlib (crítico),
+  libxslt (alto, en el catálogo KEV) y krb5-libs (alto). Se subió la versión
+  mínima de cada uno.
+
+## 10 de noviembre de 2026 — Tarjetas del piloto, Dispositivos, buscador y Configuración
+
+- **Tarjetas MIFARE Classic del piloto** (`a74ef48`, contrato 0.30.0): la
+  tarjeta guarda sólo un código aleatorio con la firma del servidor, ligada a
+  su identificador; no lleva datos de la persona. Una terminal la prepara y
+  la da de alta en inventario, el portal la asigna, la app comprueba la firma
+  sin red y el servidor la vuelve a comprobar. Nace apagado
+  (`CAPTURE_PILOT_CARDS` y el secreto `pilot_card_key`). Se retiran
+  «Consultar tarjeta» y el formato que guardaba nombre y puesto.
+- **Dispositivos y tarjetas** (PAD-02, 11 y 12; `19ff232`, contrato 0.31.0):
+  Lectores con sus cifras, búsqueda, revocar con motivo y activar una
+  terminal de sede o un teléfono personal. Tarjetas por estado, con su
+  detalle (quién la registró, última lectura, historial, asignar, reponer y
+  revocar). Registrar tarjeta con la opción de asignarla en el mismo paso.
+  `GET /cards/{cardId}` y el índice V019.
+- **Buscador y menú Crear** (CTA-05 y 04; `f8f4079`): personas, tarjetas y
+  lectores, sólo lo que el rol ve, con teclado («/» y «C»).
+- **Tecnología de la tarjeta** (`451df4a`, contrato 0.32.0, V020): manual o
+  `mifare_classic_signed`, y cuántas lecturas tiene. Quedaron anotadas las
+  decisiones del recorrido: mapas con OpenStreetMap, el canal de soporte y el
+  SMTP de Brevo.
+- **Configuración** (EMP-01, 02, 03, 07 y 08; `08e98cd`, contrato 0.33.0,
+  V021): la empresa, la comida, las reglas y las sedes en una sola pantalla.
+  Las sedes se editan con un punto arrastrable en un mapa de OpenStreetMap
+  (Leaflet 1.9.4). Se retiran TenantSettings y Directory.
+- **Ajustes** (`24d3b45`): un clic en cualquier parte de la fila abre su
+  detalle, y la tarjeta sin titular dice quién la tuvo.
 
 ## 9 de noviembre de 2026 — Lo que sigue: Dispositivos y tarjetas, y Empresa
 

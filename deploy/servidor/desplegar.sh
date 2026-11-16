@@ -3,7 +3,7 @@
 # compartido y muestra el avance: porcentaje, paso actual, tiempo transcurrido
 # y tiempo restante estimado. Todo queda en build/despliegue/registros/.
 #
-#   bash deploy/servidor/desplegar.sh zenit         [commit] [--detalle]
+#   bash deploy/servidor/desplegar.sh zenit         [commit] [--detalle] [--credencial <smtp.env>]
 #   bash deploy/servidor/desplegar.sh landing       [commit] [--detalle] [--credencial <smtp.env>]
 #   bash deploy/servidor/desplegar.sh zenit-landing [commit] [--detalle]
 #
@@ -86,7 +86,7 @@ case "$objetivo" in
     ;;
   *) uso ;;
 esac
-[ -z "$credencial" ] || [ "$objetivo" = landing ] || falla "--credencial sólo aplica a la landing"
+[ -z "$credencial" ] || [ "$objetivo" != zenit-landing ] || falla "--credencial no aplica a la landing de Zenit"
 [ -z "$credencial" ] || [ -f "$credencial" ] || falla "no existe la credencial: $credencial"
 
 SHA=$(git -C "$REPO" rev-parse --verify "${commit:-HEAD}^{commit}" 2> /dev/null) ||
@@ -183,7 +183,22 @@ paso_subir() {
 }
 
 paso_credencial() {
-  herramienta credencial "$SERVIDOR/landing/secretos/smtp.env"
+  if [ "$objetivo" = zenit ]; then
+    # Sólo viajan las líneas SMTP_: el archivo puede ser un .env con más cosas.
+    # Llega a una carpeta de quien despliega; el paso de identidad la guarda
+    # con los secretos y enciende la recuperación de contraseña por correo.
+    local filtrada=$TRABAJO/smtp.env
+    (umask 077 && grep -E '^[[:space:]]*SMTP_[A-Z_]+[[:space:]]*=' "$credencial" | tr -d '\r' > "$filtrada") ||
+      falla "la credencial no trae líneas SMTP_"
+    local estado=0
+    { herramienta remoto "mkdir -p -m 700 $SERVIDOR/zenit/correo-entrante" &&
+      credencial=$filtrada herramienta credencial "$SERVIDOR/zenit/correo-entrante/smtp.env"; } || estado=$?
+    # La copia filtrada no se queda en la estación.
+    rm -f "$filtrada"
+    return $estado
+  else
+    herramienta credencial "$SERVIDOR/landing/secretos/smtp.env"
+  fi
 }
 
 paso_construir() { remoto construir "$objetivo" "$CORTO"; }
@@ -226,6 +241,9 @@ if [ "$objetivo" = zenit ]; then
     "revisar|Revisando la estación y la conexión|10"
     "exportar|Exportando el commit|5"
     "subir|Subiendo el árbol al servidor|20"
+  )
+  [ -n "$credencial" ] && PASOS+=("credencial|Copiando la credencial de correo|5")
+  PASOS+=(
     "construir|Construyendo las imágenes|200"
     "actualizar|Actualizando los servicios|30"
     "esperar|Esperando a que Zenit responda|30"

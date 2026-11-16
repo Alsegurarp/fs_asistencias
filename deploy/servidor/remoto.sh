@@ -114,8 +114,24 @@ borde() {
 # Aplica al realm existente lo que agrega el versionado y prepara el cliente
 # técnico de contraseñas. El backend lee su secreto al arrancar: si cambió, se
 # recrea y se vuelve a esperar. Sólo compara huellas; el secreto no se muestra.
+#
+# La credencial de correo que sube `desplegar.sh zenit --credencial` llega a
+# una carpeta de quien despliega. La guarda con los demás secretos un
+# contenedor, porque esa carpeta es de root; después se borra la copia.
+instalar_correo() {
+  local entrada=$BASE/zenit/correo-entrante
+  [ -f "$entrada/smtp.env" ] || return 0
+  zenit --profile identidad run --rm --no-deps --cap-add DAC_OVERRIDE \
+    -v "$entrada:/entrada:ro" -v "$BASE/zenit/secretos:/destino" --entrypoint sh identidad -c \
+    'mkdir -p /destino/correo && cp /entrada/smtp.env /destino/correo/smtp.env.nuevo &&
+     chmod 444 /destino/correo/smtp.env.nuevo && mv /destino/correo/smtp.env.nuevo /destino/correo/smtp.env'
+  rm -rf "$entrada"
+  echo "credencial de correo guardada con los secretos, sin mostrarla"
+}
+
 identidad_zenit() {
   local secreto=$BASE/zenit/secretos/identity-admin/identity_admin_client_secret antes despues
+  instalar_correo
   antes=$(sha256sum "$secreto" 2> /dev/null || true)
   zenit --profile identidad run --rm identidad
   despues=$(sha256sum "$secreto" 2> /dev/null || true)

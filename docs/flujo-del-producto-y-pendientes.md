@@ -1,5 +1,12 @@
 # Flujo del producto y lo que falta para terminarlo
 
+**Actualización del 16 de noviembre:** este documento es anterior al MVP
+según el lienzo. Desde entonces la captura en release funciona con las
+tarjetas del piloto (MIFARE Classic, riesgo aceptado), los supervisores
+operan por sedes y el portal se reconstruyó completo. Lo vigente está en
+[estado y pendientes](estado-y-pendientes.md#pendientes-del-mvp); las tablas
+de abajo conservan su fecha.
+
 **Actualización del 5 de noviembre:** el mapa de uso sigue aplicando; los
 estados de su corte del día 4 son históricos. Ya están implementadas las
 propuestas Q10–Q13 (captura existente durante suspensión, baja con fecha y

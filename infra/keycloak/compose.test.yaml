@@ -11,6 +11,9 @@ services:
     environment:
       KC_HOSTNAME: http://localhost:38082
     ports: !override ["127.0.0.1:38082:8082"]
+    # reset-email.test.mjs recibe el correo en un buzón de la estación.
+    extra_hosts:
+      - host.docker.internal:host-gateway
 
   secrets-init:
     volumes: !override
