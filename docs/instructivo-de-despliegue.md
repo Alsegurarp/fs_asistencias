@@ -121,6 +121,10 @@ bash deploy/servidor/desplegar.sh zenit --detalle
 
 # Subir además la credencial de correo de la landing
 bash deploy/servidor/desplegar.sh landing --credencial D:/ruta/privada/smtp.env
+
+# Zenit con la credencial de correo de la identidad: enciende «Olvidé mi
+# contraseña». Sirve el .env de la raíz: sólo viajan sus líneas SMTP_
+bash deploy/servidor/desplegar.sh zenit --credencial .env
 ```
 
 ## Qué vas a ver
@@ -162,11 +166,11 @@ después todo su registro. Para forzar la barra en ese caso:
 | Revisar | Docker en marcha, acceso SSH completo, herramienta construida y conexión al servidor | Lo mismo |
 | Exportar | `git archive` del commit, con los fines de línea de Git | El commit de la landing y, del monorepo (HEAD), su composición y el guion del servidor |
 | Subir | Árbol a `/opt/.fastsolution/zenit/fuente`, borrando lo que ya no existe | Árbol a `/opt/.fastsolution/landing/fuente` y su configuración |
-| Credencial | No aplica | Sólo con `--credencial`: copia `smtp.env` con permisos 0600, sin mostrarlo |
+| Credencial | Sólo con `--credencial`: copia las líneas `SMTP_` del archivo a `/opt/.fastsolution/zenit/correo-entrante/`, sin mostrarlas; el paso Identidad las guarda con los secretos y borra esa copia | Sólo con `--credencial`: copia `smtp.env` con permisos 0600, sin mostrarlo |
 | Construir | `docker compose build` de las cinco imágenes | La imagen `fastsolution-landing:<commit>` |
 | Actualizar | `docker compose up -d`: sólo recrea lo que cambió | Recrea el contenedor |
 | Esperar | Hasta 240 s a que el estado del backend responda 200 a través del borde | Hasta 120 s a que el contenedor esté sano |
-| Identidad | Crea en el realm lo que agrega el versionado y el cliente técnico; si algo difiere, se detiene | No aplica |
+| Identidad | Crea en el realm lo que agrega el versionado y el cliente técnico; si algo difiere, se detiene. Con la credencial de correo en el servidor, configura el correo del realm y enciende la recuperación de contraseña | No aplica |
 | Borde | Si cambió `deploy/servidor/borde`, prueba los bloques con `nginx -t` y recarga; si no, nada | No aplica |
 | Comprobar | Portal, estado del backend, emisor de la identidad, `401` sin token y `404` en la administración | Raíz `200` sin `X-Powered-By`, `www` `301` y contacto inválido `400` |
 

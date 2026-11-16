@@ -25,10 +25,38 @@ abierto para separar lo que se podía cerrar sin una persona de lo que no.
   `zenitlanding.fastsolution.com.mx`, `zenit.fastsolution.com.mx` y
   `fastsolution.com.mx` responden `200` desde la estación de trabajo.
 
-Verificado: las pruebas y la compilación de tipos del portal, en la estación
-de trabajo. Sin verificar: nada en el ambiente publicado; Docker estaba
-detenido, así que no se repitieron backend, identidad ni imágenes, que este
-cambio no toca.
+- **Correo de la identidad.** Con la credencial de Brevo que Alexis dejó en
+  `.env`, `desplegar.sh zenit --credencial <archivo>` la sube (sólo las
+  líneas `SMTP_`) y el paso de identidad la guarda en
+  `secretos/correo/smtp.env`, configura el correo del realm y enciende
+  «Olvidé mi contraseña», si el flujo de recuperación es el versionado. Sin
+  credencial no cambia nada; la verificación de correo sigue apagada
+  ([detalle](despliegue-en-servidor.md#correo-de-la-identidad)).
+
+Verificado: las 304 pruebas y la compilación de tipos del portal. Las 19
+pruebas de identidad con Keycloak recién importado, incluida la nueva
+`reset-email.test.mjs`: pedir el enlace desde el ingreso, recibir el mensaje
+en un buzón de prueba con el remitente y el usuario configurados, y abrir
+con él «crear contraseña». `identidad.mjs` contra ese Keycloak, sin
+credencial, con ella y por segunda vez. La credencial contra Brevo: el
+login autentica con TLS 1.3 y acepta el remitente, y Keycloak entregó a
+Brevo un mensaje de prueba dirigido al propio remitente. El paso que guarda
+la credencial en el servidor, simulado con la misma imagen y capacidades:
+sin `DAC_OVERRIDE` no puede leerla y con ella queda en 0444. `shellcheck`
+sin hallazgos nuevos.
+
+Sin verificar: nada en el ambiente publicado. Esta estación no tiene acceso
+SSH al servidor (el perfil sólo tiene `config`, sin usuario ni llave), así
+que la credencial no se subió y la recuperación sigue apagada ahí. Tampoco
+se sabe si el mensaje de prueba llegó a la bandeja o a correo no deseado: el
+remitente es una dirección de Gmail enviada por Brevo. La prueba nueva de
+identidad no ha corrido en el CI, donde Keycloak alcanza el buzón por
+`host.docker.internal`.
+
+Teléfono: el Samsung SM-S928B conectado tiene la app del 14 de noviembre,
+posterior al último cambio de `android/`. Las partes 7 y 8 de la guía no se
+hicieron: no hay en esta estación una cuenta del ambiente publicado para
+generar los códigos de vinculación, y la 7 necesita acercar las tarjetas.
 
 Lo que sigue abierto y de quién depende está en
 [estado y pendientes](estado-y-pendientes.md#pendientes-del-mvp).

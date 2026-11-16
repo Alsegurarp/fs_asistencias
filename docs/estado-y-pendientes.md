@@ -52,8 +52,8 @@ y ninguno se cierra con código: necesitan a una persona.
 
 | Pendiente | Qué hace falta | De quién |
 | --- | --- | --- |
-| Partes 7 y 8 de la guía con teléfono y tarjeta | Los teléfonos, las tarjetas Classic y alguien que haga el recorrido en el ambiente publicado | Alexis |
-| Correo de identidad | Autenticar el dominio en Brevo, definir el remitente y dejar la credencial SMTP en el servidor | Quien administra la cuenta de Brevo |
+| Partes 7 y 8 de la guía con teléfono y tarjeta | Una cuenta de Administración en el ambiente publicado para generar los códigos de vinculación (las de la demostración viven en `DEMO_SECRETOS`, en la estación que despliega), las tarjetas Classic y alguien que las acerque. El Samsung tiene la app vigente | Alexis |
+| Correo de identidad | La credencial ya autentica en Brevo y el despliegue sabe subirla y encender «Olvidé mi contraseña» ([cómo](despliegue-en-servidor.md#correo-de-la-identidad)). Falta correr `desplegar.sh zenit --credencial` desde una estación con acceso SSH, y decidir el remitente: hoy es una dirección de Gmail, y lo propio es una del dominio, autenticado en Brevo. La invitación por correo no está construida | Quien despliega; quien administra la cuenta de Brevo |
 | Consola con la cuenta de operación | Entrar al ambiente publicado con la cuenta de operación y su segundo factor | Quien tiene esa cuenta |
 | «Instalar Zenit» en un teléfono | Abrir el portal publicado en un teléfono y aceptar la instalación: el navegador automatizado no la ofrece | Cualquiera del equipo |
 
