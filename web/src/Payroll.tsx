@@ -61,12 +61,15 @@ export function Payroll({ me, context, section, screen }: Props) {
   }) })
   const weeks = summaries.flatMap(item => item.data ? [item.data] : [])
   const requested = params.get('semana')
-  const weekStart = requested || weeks.find(item => item.closed > 0)?.weekStart || weeks[0]?.weekStart || ''
-  const summary = weeks.find(item => item.weekStart === weekStart)
-  const scope = new URLSearchParams({ week: weekStart, ...(siteId ? { siteId } : {}) })
-  const otherSummary = useQuery({ queryKey: ['closure-summary', scope.toString()], enabled: !!weekStart && !summary, retry: false,
-    queryFn: () => api<ClosureSummary>(`/week-closures/summary?${scope}`) })
+  const asked = requested || weeks.find(item => item.closed > 0)?.weekStart || weeks[0]?.weekStart || ''
+  const summary = weeks.find(item => item.weekStart === asked)
+  const askedScope = new URLSearchParams({ week: asked, ...(siteId ? { siteId } : {}) })
+  const otherSummary = useQuery({ queryKey: ['closure-summary', askedScope.toString()], enabled: !!asked && !summary, retry: false,
+    queryFn: () => api<ClosureSummary>(`/week-closures/summary?${askedScope}`) })
   const counts = summary || otherSummary.data
+  // `?semana=` puede traer cualquier día: la semana es la que el servidor dice que lo contiene.
+  const weekStart = counts?.weekStart || (otherSummary.isError ? asked : '')
+  const scope = new URLSearchParams({ week: weekStart, ...(siteId ? { siteId } : {}) })
 
   const closures = useQuery({ queryKey: ['payroll', 'cierres', scope.toString()], enabled: !!weekStart, retry: false, staleTime: 30_000,
     queryFn: () => allPages<Closure>(`/week-closures?${new URLSearchParams({ week: weekStart, status: 'closed', ...(siteId ? { siteId } : {}) })}`) })
