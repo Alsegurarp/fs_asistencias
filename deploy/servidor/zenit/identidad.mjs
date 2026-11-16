@@ -3,8 +3,9 @@
 // los clientes indicados con sus flujos y el cliente técnico del cambio
 // obligatorio de contraseña; lo que ya existe sólo se comprueba. Nunca
 // borra usuarios ni credenciales. Q03 habilita de forma explícita los códigos
-// en el flujo normal y el realm toma el tema de acceso versionado; los demás
-// cambios inesperados detienen el despliegue.
+// en el flujo normal y el realm toma el tema de acceso versionado; con la
+// credencial de correo en el servidor, enciende la recuperación de contraseña.
+// Los demás cambios inesperados detienen el despliegue.
 //
 //   node identidad.mjs [clientId ...]      # por omisión, zenit-dossier
 //
@@ -14,6 +15,7 @@ import assert from 'node:assert/strict'
 import { createHash, randomBytes } from 'node:crypto'
 import { chmod, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { servidorDeCorreo } from './correo.mjs'
 
 const base = (process.env.KEYCLOAK_URL || 'http://keycloak:8082').replace(/\/$/, '')
 const secretos = process.env.SECRETOS || '/secretos'
@@ -296,6 +298,33 @@ async function asegurarTema() {
   console.log(`tema de acceso: ${tema}`)
 }
 
+// «Olvidé mi contraseña» manda un enlace por correo. Sólo se enciende cuando
+// la credencial está con los secretos del servidor (correo/smtp.env, que
+// lleva `desplegar.sh zenit --credencial`) y el flujo de recuperación es el
+// versionado, que conserva el segundo factor y obliga a entrar otra vez. Sin
+// credencial no cambia nada. La verificación de correo sigue apagada.
+async function asegurarCorreo() {
+  const texto = await readFile(join(secretos, 'correo', 'smtp.env'), 'utf8')
+    .catch(error => { if (error.code === 'ENOENT') return null; throw error })
+  const activo = await leer(prefijo)
+  if (texto === null) {
+    console.log(`correo: sin credencial en el servidor; recuperación de contraseña por correo ${activo.resetPasswordAllowed ? 'encendida desde antes' : 'apagada'}`)
+    return
+  }
+  const smtpServer = servidorDeCorreo(texto)
+  const flujo = realm.resetCredentialsFlow
+  assert.equal(activo.resetCredentialsFlow, flujo, 'El realm del servidor recupera la contraseña con otro flujo; no se enciende')
+  assert.deepEqual(await vigente(flujo), esperado(flujo), `El flujo ${flujo} del servidor difiere del versionado; no se enciende la recuperación`)
+  await escribir('PUT', prefijo, { smtpServer, resetPasswordAllowed: true }, [204])
+  const aplicado = await leer(prefijo)
+  for (const campo of ['host', 'port', 'from', 'fromDisplayName', 'auth', 'user', 'ssl', 'starttls']) {
+    assert.equal(aplicado.smtpServer?.[campo], smtpServer[campo], `El realm no guardó ${campo} del correo`)
+  }
+  assert.equal(aplicado.resetPasswordAllowed, true)
+  assert.equal(aplicado.verifyEmail, false, 'La verificación de correo no se enciende con este paso')
+  console.log(`correo: ${smtpServer.host}:${smtpServer.port}, remitente ${smtpServer.from}; recuperación de contraseña encendida`)
+}
+
 for (const clientId of clientes) {
   const cliente = await asegurarCliente(clientId)
   if (cliente.standardFlowEnabled && cliente.redirectUris?.length) await probarInicio(cliente)
@@ -304,4 +333,5 @@ for (const clientId of clientes) {
 await asegurarTecnico()
 await asegurarRecuperacion()
 await asegurarTema()
+await asegurarCorreo()
 console.log('identidad lista: el realm del servidor tiene lo que agrega el versionado')
