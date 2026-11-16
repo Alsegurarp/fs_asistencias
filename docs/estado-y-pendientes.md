@@ -52,7 +52,7 @@ y ninguno se cierra con código: necesitan a una persona.
 
 | Pendiente | Qué hace falta | De quién |
 | --- | --- | --- |
-| Partes 7 y 8 de la guía con teléfono y tarjeta | Una cuenta de Administración en el ambiente publicado para generar los códigos de vinculación (las de la demostración viven en `DEMO_SECRETOS`, en la estación que despliega), las tarjetas Classic y alguien que las acerque. El Samsung tiene la app vigente | Alexis |
+| Partes 7 y 8 de la guía con teléfono y tarjeta | Hechas el 16 de noviembre en el ambiente publicado, salvo el último paso: responder al cierre desde la app de Ana Torres y ver «Conformes 1» en el portal ([acta](qa-ambiente-publicado-2026-11-16.md)). Necesita el teléfono conectado y una sesión de Administración | Alexis |
 | Correo de identidad | La credencial ya autentica en Brevo y el despliegue sabe subirla y encender «Olvidé mi contraseña» ([cómo](despliegue-en-servidor.md#correo-de-la-identidad)). Falta correr `desplegar.sh zenit --credencial` desde una estación con acceso SSH. El remitente es por ahora una dirección de Gmail (decidido el 16 de noviembre); más adelante se cambiará por una del dominio, autenticado en Brevo. La invitación por correo no está construida | Quien despliega |
 | Consola con la cuenta de operación | Entrar al ambiente publicado con la cuenta de operación y su segundo factor | Quien tiene esa cuenta |
 | «Instalar Zenit» en un teléfono | Abrir el portal publicado en un teléfono y aceptar la instalación: el navegador automatizado no la ofrece | Cualquiera del equipo |
