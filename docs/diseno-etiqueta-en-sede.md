@@ -1,6 +1,8 @@
 # Diseño: dos formas de marcar
 
-Estado: **propuesta para revisar**. Nada de esto está construido.
+Estado: **el paso 1 está construido** (plan, sede y persona; contrato 0.35.0,
+PR #57) sin pantalla en el portal. Los pasos 2 a 8 son propuesta para
+revisar; ver el [orden](#orden-propuesto).
 
 ## Decisiones (2026-11-11 y 2026-11-12)
 
@@ -162,7 +164,7 @@ Los esquemas de `siteTag`:
 7. **Lo demás:** tipo de marca, duplicados, `late_sync`, `clock_anomaly` y la
    semana cerrada siguen igual.
 
-### API (0.35.0 el plan y la forma; 0.37.0 las etiquetas)
+### API (0.35.0 el plan y la forma; las etiquetas, la versión que siga a la 0.37.0)
 
 | Ruta | Quién | Qué hace |
 | --- | --- | --- |
@@ -239,12 +241,13 @@ Todo queda en la bitácora: `site_tag.registered`, `site_tag.updated`,
    y la sede, `captureMethod` de cada persona, y las reglas que rechazan la
    forma equivocada.
 2. **Etiquetas en el servidor:** tabla, registro, sobre `siteTag`, reglas, API
-   0.37.0 y el expediente.
+   (la versión que siga a la 0.37.0, que tomó el MVP) y el expediente.
 3. **Preparar etiquetas Classic:** la herramienta interna de FastSolution.
 4. **Android:** el teléfono personal lee etiquetas y deja de leer la propia
    tarjeta.
 5. **Portal:** la ficha de la persona, las etiquetas en Dispositivos, el
    permiso en Usuarios y las formas en Configuración.
 6. **Prueba con una etiqueta Classic real** en la Sede Piloto NFC.
-7. **Consola de operación:** el plan de cada empresa, dentro del bloque 5.
+7. **Consola de operación:** el plan de cada empresa. El bloque 5 se integró
+   sin él (PR #63); hoy el plan sólo se fija por el API.
 8. **Fase 2:** NTAG 424 DNA, cuando tengas las etiquetas.

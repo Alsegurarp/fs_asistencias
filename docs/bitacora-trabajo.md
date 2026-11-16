@@ -6,6 +6,33 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 16 de noviembre de 2026 — Revisión de pendientes para cerrar
+
+Rama `fix/cierre-de-pendientes` desde `main` (`ac0d8f0`). Se revisó todo lo
+abierto para separar lo que se podía cerrar sin una persona de lo que no.
+
+- **Reporte para nómina con `?semana=` en un día cualquiera.** Abierto con un
+  día que no es inicio de semana rotulaba la semana desde ese día (visto el
+  13 de noviembre). Ahora la semana es la que el servidor dice que contiene
+  ese día, en la hoja, en el CSV y en las consultas. Prueba nueva en
+  `Reports.test.tsx`, que falla sin el cambio.
+- **Bitácora del 10 al 12 de noviembre.** Sus ocho entradas estaban en la
+  rama `docs/bitacora-10-al-12-nov`, que nunca se integró; entran con esta.
+- **Etiquetas de la sede:** el contrato 0.37.0 lo tomó el MVP, así que el
+  paso 2 saldrá con la siguiente versión. El
+  [diseño](diseno-etiqueta-en-sede.md) ya dice qué está hecho.
+- **Landing de Zenit:** integrada con la PR #73; hoy
+  `zenitlanding.fastsolution.com.mx`, `zenit.fastsolution.com.mx` y
+  `fastsolution.com.mx` responden `200` desde la estación de trabajo.
+
+Verificado: las pruebas y la compilación de tipos del portal, en la estación
+de trabajo. Sin verificar: nada en el ambiente publicado; Docker estaba
+detenido, así que no se repitieron backend, identidad ni imágenes, que este
+cambio no toca.
+
+Lo que sigue abierto y de quién depende está en
+[estado y pendientes](estado-y-pendientes.md#pendientes-del-mvp).
+
 ## 14 de noviembre de 2026 — Landing de Zenit en el servidor
 
 Rama `feat/landing-zenit-en-servidor` desde `main` (`8f1498b`). La landing de
@@ -396,7 +423,8 @@ errores. Sin despliegue propio.
 Con la PR #59 (`10c0f04`) el diseño quedó corregido: la ruta real del plan,
 el paso 1 hecho y que FastSolution prepara las etiquetas. El contrato 0.36.0
 lo tomó después `/me` con la empresa suspendida, así que las etiquetas en el
-servidor (paso 2) saldrán con 0.37.0.
+servidor (paso 2) saldrán con 0.37.0. (El 13 de noviembre el MVP según el
+lienzo tomó también la 0.37.0: las etiquetas saldrán con la siguiente.)
 
 ## 12 de noviembre de 2026 — Tomcat embebido 11.0.27 en la PR #56
 
