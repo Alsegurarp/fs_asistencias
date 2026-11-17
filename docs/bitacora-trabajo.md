@@ -6,6 +6,33 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 17 de noviembre de 2026 — Respuesta al cierre desde el teléfono personal
+
+Con el Samsung otra vez por ADB, vinculado como teléfono de Ana Torres: en
+Mi semana, la semana del 7 al 13 cerrada, «Responder al cierre» → «Estoy
+conforme» → «Enviar respuesta». La app mostró «Respuesta registrada» a las
+16:00 y la semana recargada del servidor la trae.
+
+Con la sesión de Administración que abrió Alexis en el Chrome del teléfono,
+manejado por ADB y las herramientas de desarrollo de Chrome: Cierres muestra
+«Conformes 1» con Ana Torres «Conforme»; el lector «Terminal · SM-S928B»
+seguía activo tras el cambio de vinculación y se revocó; y la invitación
+«Instala Zenit» instaló el portal como app, que abre sin barra del navegador.
+Quedan anotados dos detalles: el lector viejo no se revoca solo y un
+teléfono personal que sólo consulta sale «sin señal». Sigue abierta la
+consola con la cuenta de operación.
+[Acta](qa-ambiente-publicado-2026-11-16.md#continuación-17-de-noviembre).
+
+## 16 de noviembre de 2026 — Terminal, tarjeta y teléfono personal en el ambiente publicado
+
+Después de integrar la PR #74, con el Samsung por ADB, una tarjeta Classic
+que acercó Alexis y su sesión de Administración en Chrome: preparar la
+tarjeta (`ZC-E0D0B451`), rechazo sin titular (`card_unknown`), marca aceptada
+ya asignada, cierre de la semana del 7 al 13 (14 de 17), código de teléfono
+personal para Ana Torres y cambio de vinculación del teléfono. Quedó sin
+hacer responder al cierre desde la app: el teléfono se desconectó y la sesión
+del portal venció. [Acta](qa-ambiente-publicado-2026-11-16.md).
+
 ## 16 de noviembre de 2026 — Revisión de pendientes para cerrar
 
 Rama `fix/cierre-de-pendientes` desde `main` (`ac0d8f0`). Se revisó todo lo
