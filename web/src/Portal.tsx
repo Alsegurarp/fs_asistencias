@@ -133,11 +133,18 @@ function HomeButton({ home }: { home: string | null }) {
 /** EST-03. */
 function NoPermission({ me, section, screen, home }: { me: Me; section: Section; screen: Screen; home: string | null }) {
   useEffect(() => { document.title = 'Sin permiso · Zenit' }, [])
-  const who = rolesFor(screen).map(roleLabel)
+  const roles = rolesFor(screen)
+  const who = roles.map(roleLabel)
   const name = section.screens.length > 1 ? screen.tab : section.label
+  const sees = `${name} sólo lo ${who.length > 1 ? 'ven' : 've'} ${joinNames(who)}`
+  // Administración da los roles de su empresa; Operación del servicio no es de ninguna empresa.
   const reason = screen.key === 'dossier'
     ? 'El expediente sólo lo descarga quien tiene el permiso explícito; si lo necesitas, pídeselo a Administración.'
-    : `${name} sólo lo ${who.length > 1 ? 'ven' : 've'} ${joinNames(who)}; si lo necesitas, pide a Administración que te dé ese rol.`
+    : roles.every(role => role === 'operador_saas')
+      ? `${sees}, que no se da desde una empresa: es de quien opera Zenit en fastSolution.`
+      : !me.tenant
+        ? `${sees} de cada empresa; es de las cuentas de la empresa, no de Operación del servicio.`
+        : `${sees}; si lo necesitas, pide a Administración que te dé ese rol.`
   const mine = me.tenant ? rolesText(me) : me.roles.includes('operador_saas') ? roleLabel('operador_saas') : ''
   return <StateCard icon="closures" eyebrow="Sin permiso" title="Esta sección no está disponible para tu rol" actions={<HomeButton home={home} />}>
     {mine && `Tu rol es ${mine}. `}{reason}
