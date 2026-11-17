@@ -52,10 +52,10 @@ y ninguno se cierra con código: necesitan a una persona.
 
 | Pendiente | Qué hace falta | De quién |
 | --- | --- | --- |
-| Partes 7 y 8 de la guía con teléfono y tarjeta | Hechas en el ambiente publicado el 16 y el 17 de noviembre: Ana Torres respondió «Estoy conforme» desde la app y el servidor lo devuelve ([acta](qa-ambiente-publicado-2026-11-16.md)). Falta mirarlo en el portal: «Conformes 1» en Cierres semanales y el lector «Terminal · SM-S928B» en Dispositivos y tarjetas. Necesita una sesión de Administración | Alexis |
+| Partes 7 y 8 de la guía con teléfono y tarjeta | **Hechas** en el ambiente publicado el 16 y el 17 de noviembre: Ana Torres respondió «Estoy conforme» desde la app y Cierres semanales muestra «Conformes 1». El lector viejo de la terminal quedó activo al cambiar la vinculación y se revocó a mano ([acta](qa-ambiente-publicado-2026-11-16.md)) | — |
 | Correo de identidad | La credencial ya autentica en Brevo y el despliegue sabe subirla y encender «Olvidé mi contraseña» ([cómo](despliegue-en-servidor.md#correo-de-la-identidad)). Falta correr `desplegar.sh zenit --credencial` desde una estación con acceso SSH. El remitente es por ahora una dirección de Gmail (decidido el 16 de noviembre); más adelante se cambiará por una del dominio, autenticado en Brevo. La invitación por correo no está construida | Quien despliega |
 | Consola con la cuenta de operación | Entrar al ambiente publicado con la cuenta de operación y su segundo factor | Quien tiene esa cuenta |
-| «Instalar Zenit» en un teléfono | Abrir el portal publicado en un teléfono y aceptar la instalación: el navegador automatizado no la ofrece | Cualquiera del equipo |
+| «Instalar Zenit» en un teléfono | **Hecho** el 17 de noviembre en el Samsung: la invitación del portal instala la app, abre sin barra del navegador y Mi perfil dice «Ya está instalado» ([acta](qa-ambiente-publicado-2026-11-16.md)) | — |
 
 Ese día se corrigió el reporte para nómina abierto con `?semana=` en un día
 que no es inicio de semana (rama `fix/cierre-de-pendientes`, sin integrar ni

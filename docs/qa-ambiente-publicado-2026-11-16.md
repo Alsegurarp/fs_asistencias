@@ -37,25 +37,41 @@ Ana Torres:
 | Responder al cierre (16:00) | La revisión previa pide marcar «He revisado las jornadas y los totales» antes de habilitar las respuestas; «Confirmar respuesta» dice «Versión 1 · Estoy conforme». Al enviar: «Respuesta registrada · Se registró la conformidad con el cierre · 17 nov 2026 · 16:00» |
 | Recargar la semana | La respuesta sigue ahí: la trae el servidor en `/me/attendance`, no un recibo local. La app la manda con un POST directo a `/week-closures/{id}/acknowledgements`, sin cola |
 
+Después, con la sesión de Administración (Mariana Ortiz) que abrió Alexis en
+el Chrome del mismo teléfono, manejado por ADB y las herramientas de
+desarrollo de Chrome:
+
+| Paso | Resultado |
+| --- | --- |
+| Cierres semanales, 7 – 13 nov | «1 Conformes · 0 Con objeción · 13 Sin acuse»; Ana Torres (0101) aparece «Conforme» |
+| Dispositivos y tarjetas | «Terminal · SM-S928B» seguía activo después del cambio de vinculación, junto a «Teléfono de Ana Torres». Se revocó con el motivo «QA 17 nov: el telefono se vinculo como personal de Ana Torres»: Activos pasó de 13 a 12 y Revocados de 0 a 1 |
+| «Instala Zenit» en el teléfono | La invitación del portal salió sola después de entrar. «Instalar» → el diálogo de Chrome «Zenit · Control de asistencia» → Install. Quedó la app (`org.chromium.webapk.a938cfad3bbc27edb_v2`): abre el Panel sin barra del navegador (`display-mode: standalone`) y con la sesión vigente. En Mi perfil, «Zenit en este equipo · Ya está instalado» y el menú de la cuenta ya no ofrece instalar |
+
 ## Sin terminar
 
-- **Ver «Conformes 1» en Cierres semanales** del portal, con una sesión de
-  Administración. Esta estación no tenía navegador automatizado el 17.
-- **Revisar el lector «Terminal · SM-S928B»** en Dispositivos y tarjetas
-  (ver abajo), en la misma sesión.
-- La consola con la cuenta de operación y «Instalar Zenit» en un teléfono.
+- La consola con la cuenta de operación: no se tuvo esa cuenta.
 
 ## Lo que se vio de paso
 
 - **La guía asigna la tarjeta a Carlos Medina**, que no está en el padrón
   sembrado: se da de alta en vivo en la parte 6 (`0122`). Como esa parte no
   se hizo, la tarjeta se asignó a Óscar Mendoza, sembrado sin tarjeta.
-- **Sin comprobar: qué pasa con el lector «Terminal · SM-S928B»** en el
-  portal al cambiar la vinculación del teléfono. Antes del cambio estaba
-  activo; si sigue así, hay que revocarlo en Dispositivos y tarjetas.
+- **Cambiar la vinculación de un teléfono deja activo el lector anterior.**
+  El teléfono borra su clave vieja, pero el servidor no lo sabe: hay que
+  revocarlo a mano en Dispositivos y tarjetas (se hizo el 17). Vale decirlo
+  en la guía o revocarlo solo al vincular el mismo teléfono otra vez.
+- **El teléfono de Ana Torres sale «Sin señal · sin señal todavía»** aunque
+  consultó su semana y respondió al cierre. La última señal sólo se mueve al
+  abrir sesión de captura o al marcar (`Devices.kt` `openSession`,
+  `Capture.kt`); un teléfono personal que sólo consulta no la mueve y cuenta
+  en «Sin señal más de 24 h».
+- **Con la sesión cerrada, el menú de Chrome dice «This app cannot be
+  installed»**: la pantalla de ingreso es de Keycloak (`/id/realms/zenit/…`)
+  y no lleva el manifiesto. Se instala desde el portal, ya dentro.
 - **La demostración quedó modificada**: semana cerrada, una tarjeta nueva
-  asignada, el teléfono de Ana y su conformidad. `demo.sh reiniciar` la deja
-  como al principio.
+  asignada, el teléfono de Ana y su conformidad, y el lector de la terminal
+  revocado. `demo.sh reiniciar` la deja como al principio. En el teléfono
+  queda instalada la app del portal.
 - **El inicio del teléfono personal dice «Aproxime su tarjeta al lector NFC
   del dispositivo»** (17 de noviembre). Con lo decidido el 12 de noviembre,
   un teléfono personal no lee tarjetas: marcará en la etiqueta de la sede,

@@ -11,8 +11,16 @@ originales para no atribuir pruebas de una versión a otra.
 Con el Samsung otra vez por ADB, vinculado como teléfono de Ana Torres: en
 Mi semana, la semana del 7 al 13 cerrada, «Responder al cierre» → «Estoy
 conforme» → «Enviar respuesta». La app mostró «Respuesta registrada» a las
-16:00 y la semana recargada del servidor la trae. Falta mirar «Conformes 1»
-y el lector de la terminal en el portal, con sesión de Administración.
+16:00 y la semana recargada del servidor la trae.
+
+Con la sesión de Administración que abrió Alexis en el Chrome del teléfono,
+manejado por ADB y las herramientas de desarrollo de Chrome: Cierres muestra
+«Conformes 1» con Ana Torres «Conforme»; el lector «Terminal · SM-S928B»
+seguía activo tras el cambio de vinculación y se revocó; y la invitación
+«Instala Zenit» instaló el portal como app, que abre sin barra del navegador.
+Quedan anotados dos detalles: el lector viejo no se revoca solo y un
+teléfono personal que sólo consulta sale «sin señal». Sigue abierta la
+consola con la cuenta de operación.
 [Acta](qa-ambiente-publicado-2026-11-16.md#continuación-17-de-noviembre).
 
 ## 16 de noviembre de 2026 — Terminal, tarjeta y teléfono personal en el ambiente publicado
