@@ -26,12 +26,23 @@ desplegar todavía: el ambiente corría lo anterior.
 | Generar el código de teléfono personal de Ana Torres | «Activar lector» → Teléfono personal → Ana Torres: código de un solo uso con vencimiento a 15 minutos |
 | Cambiar la vinculación del teléfono | «Cambiar vinculación» → «Continuar con un código nuevo» → el código → «Vincular teléfono». El teléfono pasó de terminal a personal y aparece «Mi semana» |
 
+## Continuación, 17 de noviembre
+
+Con el teléfono otra vez en ADB, todavía vinculado como teléfono personal de
+Ana Torres:
+
+| Paso | Resultado |
+| --- | --- |
+| Mi semana → 7 nov – 13 nov | «Semana cerrada», 8 h 0 min, 1 día con registros, 0 incidencias, y «Revisión del cierre» con «Responder al cierre» |
+| Responder al cierre (16:00) | La revisión previa pide marcar «He revisado las jornadas y los totales» antes de habilitar las respuestas; «Confirmar respuesta» dice «Versión 1 · Estoy conforme». Al enviar: «Respuesta registrada · Se registró la conformidad con el cierre · 17 nov 2026 · 16:00» |
+| Recargar la semana | La respuesta sigue ahí: la trae el servidor en `/me/attendance`, no un recibo local. La app la manda con un POST directo a `/week-closures/{id}/acknowledgements`, sin cola |
+
 ## Sin terminar
 
-- **Responder al cierre desde la app** (Mi semana → semana del 7 al 13 →
-  «Responder al cierre» → «Estoy conforme») y ver que Conformes sube a 1 en
-  Cierres semanales. El teléfono se desconectó del ADB y la sesión del portal
-  venció antes de hacerlo.
+- **Ver «Conformes 1» en Cierres semanales** del portal, con una sesión de
+  Administración. Esta estación no tenía navegador automatizado el 17.
+- **Revisar el lector «Terminal · SM-S928B»** en Dispositivos y tarjetas
+  (ver abajo), en la misma sesión.
 - La consola con la cuenta de operación y «Instalar Zenit» en un teléfono.
 
 ## Lo que se vio de paso
@@ -43,5 +54,9 @@ desplegar todavía: el ambiente corría lo anterior.
   portal al cambiar la vinculación del teléfono. Antes del cambio estaba
   activo; si sigue así, hay que revocarlo en Dispositivos y tarjetas.
 - **La demostración quedó modificada**: semana cerrada, una tarjeta nueva
-  asignada y el teléfono de Ana. `demo.sh reiniciar` la deja como al
-  principio.
+  asignada, el teléfono de Ana y su conformidad. `demo.sh reiniciar` la deja
+  como al principio.
+- **El inicio del teléfono personal dice «Aproxime su tarjeta al lector NFC
+  del dispositivo»** (17 de noviembre). Con lo decidido el 12 de noviembre,
+  un teléfono personal no lee tarjetas: marcará en la etiqueta de la sede,
+  que todavía no existe. El texto se cambia cuando llegue esa pantalla.

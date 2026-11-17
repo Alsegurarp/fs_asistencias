@@ -6,6 +6,15 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 17 de noviembre de 2026 — Respuesta al cierre desde el teléfono personal
+
+Con el Samsung otra vez por ADB, vinculado como teléfono de Ana Torres: en
+Mi semana, la semana del 7 al 13 cerrada, «Responder al cierre» → «Estoy
+conforme» → «Enviar respuesta». La app mostró «Respuesta registrada» a las
+16:00 y la semana recargada del servidor la trae. Falta mirar «Conformes 1»
+y el lector de la terminal en el portal, con sesión de Administración.
+[Acta](qa-ambiente-publicado-2026-11-16.md#continuación-17-de-noviembre).
+
 ## 16 de noviembre de 2026 — Terminal, tarjeta y teléfono personal en el ambiente publicado
 
 Después de integrar la PR #74, con el Samsung por ADB, una tarjeta Classic
