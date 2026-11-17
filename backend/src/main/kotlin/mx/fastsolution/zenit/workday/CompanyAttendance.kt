@@ -126,8 +126,28 @@ data class PersonWeek(
     )
 }
 
-/** Un periodo semiabierto en instantes: [from, until). */
-data class Window(val from: OffsetDateTime, val until: OffsetDateTime)
+/**
+ * Un periodo semiabierto en instantes: [from, until). Si lleva sus días
+ * ([firstDay], [untilDay]), sólo entra quien estaba contratado en alguno.
+ */
+data class Window(val from: OffsetDateTime, val until: OffsetDateTime, val firstDay: LocalDate? = null, val untilDay: LocalDate? = null)
+
+/**
+ * Quién entra a una semana: quien estaba contratado en alguno de sus días o
+ * marcó en ella. Sin las fechas de contrato, una persona dada de alta hoy
+ * entraba a los cierres de semanas anteriores a su ingreso.
+ */
+internal fun employedOrMarked(alias: String, eventAlias: String, firstDay: LocalDate?, untilDay: LocalDate?): Pair<String, List<Any>> {
+    val employed = if (firstDay != null && untilDay != null) {
+        " and $alias.employment_start < cast(? as date) and ($alias.employment_end is null or $alias.employment_end >= cast(? as date))"
+    } else {
+        ""
+    }
+    val sql = "(($alias.status = 'active'$employed) or exists (select 1 from attendance_event $eventAlias " +
+        "where $eventAlias.tenant_id = $alias.tenant_id and $eventAlias.employee_id = $alias.id " +
+        "and $eventAlias.observed_at >= cast(? as timestamptz) and $eventAlias.observed_at < cast(? as timestamptz)))"
+    return sql to (if (employed.isEmpty()) emptyList() else listOf<Any>(untilDay.toString(), firstDay.toString()))
+}
 
 /**
  * Lecturas en lote para la asistencia de la empresa. Cada consulta recibe la
@@ -141,12 +161,12 @@ class CompanyAttendanceRepository(private val dsl: DSLContext) {
      * no se recorta, se oculta completo.
      */
     private fun peopleWhere(tenantId: UUID, week: Window, siteId: UUID?): Pair<String, List<Any>> {
-        val sql = StringBuilder(
-            "e.tenant_id = ?${SiteScope.clause("e.site_id")} and (e.status = 'active' or exists (select 1 from attendance_event m " +
-                "where m.tenant_id = e.tenant_id and m.employee_id = e.id and m.observed_at >= cast(? as timestamptz) " +
-                "and m.observed_at < cast(? as timestamptz)))",
-        )
-        val binds = mutableListOf<Any>(tenantId, week.from, week.until)
+        val (who, whoBinds) = employedOrMarked("e", "m", week.firstDay, week.untilDay)
+        val sql = StringBuilder("e.tenant_id = ?${SiteScope.clause("e.site_id")} and $who")
+        val binds = mutableListOf<Any>(tenantId)
+        binds.addAll(whoBinds)
+        binds += week.from
+        binds += week.until
         if (siteId != null) {
             sql.append(" and e.site_id = ?")
             binds += siteId
@@ -539,7 +559,7 @@ class CompanyAttendanceService(
     private fun window(weekStart: LocalDate, zone: ZoneId) = window(weekStart, weekStart.plusDays(7), zone)
 
     private fun window(from: LocalDate, until: LocalDate, zone: ZoneId) =
-        Window(from.atStartOfDay(zone).toOffsetDateTime(), until.atStartOfDay(zone).toOffsetDateTime())
+        Window(from.atStartOfDay(zone).toOffsetDateTime(), until.atStartOfDay(zone).toOffsetDateTime(), from, until)
 
     private companion object {
         /** Personas por consulta: el mismo tope de una página. */

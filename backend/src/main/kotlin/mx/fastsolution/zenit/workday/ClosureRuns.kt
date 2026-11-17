@@ -398,7 +398,7 @@ class ClosureRunJob(
         val zone = ZoneId.of(tenant.timeZone)
         val from = run.weekStart.atStartOfDay(zone).toOffsetDateTime()
         val until = run.weekStart.plusDays(7).atStartOfDay(zone).toOffsetDateTime()
-        val people = closures.candidates(tenantId, run.siteId, from, until, Int.MAX_VALUE)
+        val people = closures.candidates(tenantId, run.siteId, run.weekStart, from, until, Int.MAX_VALUE)
         runs.start(tenantId, run.id, people.size)
 
         val by = if (run.requestedBy != null) Closer(run.requestedBy, "user", run.requestedBy.toString()) else Closer(null, "system", null)
