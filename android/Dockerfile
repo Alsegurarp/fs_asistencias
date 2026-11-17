@@ -10,6 +10,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Si la primera vuelta falla por la red (descargar Gradle, un plugin o una
 # dependencia), se repite una sola vez. Una prueba o el lint que fallan no se
 # repiten: la falla es del código. Si existe el reporte de lint, se muestra.
+# El patrón no distingue mayúsculas: Gradle dice «Could not resolve» y también
+# «could not resolve plugin artifact» (CI de la PR #75, 17 de noviembre).
 RUN --mount=type=cache,target=/root/.gradle,sharing=locked \
     --mount=type=cache,target=/root/.android,sharing=locked \
     chmod +x gradlew; \
@@ -17,7 +19,7 @@ RUN --mount=type=cache,target=/root/.gradle,sharing=locked \
     network='Could not (resolve|GET|HEAD|download|install Gradle distribution)|Connection reset|Connect timed out|Read timed out|Remote host terminated the handshake|Received status code (429|5[0-9][0-9])'; \
     for attempt in 1 2; do \
         ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest 2>&1 | tee /tmp/gradle.log && exit 0; \
-        if [ "$attempt" = 1 ] && grep -qE "$network" /tmp/gradle.log; then \
+        if [ "$attempt" = 1 ] && grep -qiE "$network" /tmp/gradle.log; then \
             echo 'Falla de red al descargar; se repite una vez en 30 s.'; sleep 30; continue; \
         fi; \
         if [ -f "$report" ]; then cat "$report"; fi; \
