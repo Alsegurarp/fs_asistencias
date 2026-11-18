@@ -103,7 +103,7 @@ data class WeekClosureSummaryView(
     val reopened: Int,
     val blocked: Int,
     val acknowledgements: AcknowledgementCounts,
-    /** Personas de la semana en el alcance, con la regla de la asistencia: activas o que marcaron en ella. */
+    /** Personas de la semana en el alcance, con la regla de la asistencia: contratadas en algún día de ella o que marcaron en ella. */
     val people: Int,
 )
 
@@ -228,14 +228,17 @@ class ClosureRepository(private val dsl: DSLContext) {
         )
     }
 
-    /** Personas que entran a un cierre: las activas y las que marcaron esa semana, de toda la empresa o de una sede. */
-    fun candidates(tenantId: UUID, siteId: UUID?, from: OffsetDateTime, until: OffsetDateTime, limit: Int): List<UUID> {
-        val sql = StringBuilder(
-            "select e.id from employee e where e.tenant_id = ? and (e.status = 'active' or exists (select 1 from attendance_event a " +
-                "where a.tenant_id = e.tenant_id and a.employee_id = e.id and a.observed_at >= cast(? as timestamptz) " +
-                "and a.observed_at < cast(? as timestamptz)))",
-        )
-        val binds = mutableListOf<Any>(tenantId, from, until)
+    /**
+     * Personas que entran a un cierre, de toda la empresa o de una sede: las
+     * activas contratadas en algún día de la semana y las que marcaron en ella.
+     */
+    fun candidates(tenantId: UUID, siteId: UUID?, weekStart: LocalDate, from: OffsetDateTime, until: OffsetDateTime, limit: Int): List<UUID> {
+        val (who, whoBinds) = employedOrMarked("e", "a", weekStart, weekStart.plusDays(7))
+        val sql = StringBuilder("select e.id from employee e where e.tenant_id = ? and $who")
+        val binds = mutableListOf<Any>(tenantId)
+        binds.addAll(whoBinds)
+        binds += from
+        binds += until
         if (siteId != null) {
             sql.append(" and e.site_id = ?")
             binds += siteId
@@ -427,7 +430,7 @@ class ClosureService(
         // Una semana que no ha terminado todavía puede recibir marcajes.
         if (until > OffsetDateTime.now()) throw Problems.validation("weekStart", "week_not_finished", "La semana todavía no termina.")
 
-        val selected = listed ?: closures.candidates(tenantId, siteId, from, until, MAX_EMPLOYEES + 1)
+        val selected = listed ?: closures.candidates(tenantId, siteId, weekStart, from, until, MAX_EMPLOYEES + 1)
         if (selected.size > MAX_EMPLOYEES) {
             throw Problems.validation("siteId", "too_many", "Son más de $MAX_EMPLOYEES personas: hay que pedir una corrida de cierre, o cerrar por sede o por lista.")
         }
@@ -483,7 +486,7 @@ class ClosureService(
         val range = weekStart.atStartOfDay(zone).toOffsetDateTime() to weekStart.plusDays(7).atStartOfDay(zone).toOffsetDateTime()
         val (statuses, acknowledgements) = closures.counts(tenantId, weekStart, site)
         val blocked = incidents.blockedPeople(tenantId, IncidentFilter(siteId = site, week = range))
-        val people = attendance.peopleCount(tenantId, Window(range.first, range.second), site)
+        val people = attendance.peopleCount(tenantId, Window(range.first, range.second, weekStart, weekStart.plusDays(7)), site)
         return WeekClosureSummaryView(weekStart.toString(), statuses.first, statuses.second, blocked, acknowledgements, people)
     }
 

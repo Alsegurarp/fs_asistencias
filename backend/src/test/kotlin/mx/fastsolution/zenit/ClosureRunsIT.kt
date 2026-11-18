@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import java.sql.DriverManager
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.test.Test
@@ -176,6 +177,45 @@ class ClosureRunsIT : WorkdayTestBase() {
         assertEquals(511, count("select count(*) from week_closure where tenant_id = ? and status = 'closed'", tenant))
         assertEquals(1, count("select count(*) from week_closure where tenant_id = ? and worked_minutes = 480", tenant))
         assertEquals(1, count("select count(*) from job where reference_id = ? and status = 'done' and attempts = 1", UUID.fromString(id)))
+    }
+
+    @Test
+    fun `the week leaves out whoever was hired after it or left before it`() {
+        /** Una empresa con quien marcó, quien entró el último día, quien entró después y quien salió antes. */
+        fun padron(): Triple<Company, String, String> {
+            val c = companyWithFinishedWeek()
+            val tenant = UUID.fromString(c.id)
+            val marking = staffed(c)
+            shift(marking, 40, 32)
+            fun hired(name: String, start: LocalDate, end: LocalDate? = null): String {
+                val id = UUID.randomUUID()
+                val columns = "insert into employee (tenant_id, id, external_id, display_name, status, employment_start, source"
+                if (end == null) {
+                    change("$columns) values (?, ?, ?, ?, 'active', cast(? as date), 'manual')", tenant, id, name, name, start.toString())
+                } else {
+                    change("$columns, employment_end) values (?, ?, ?, ?, 'active', cast(? as date), 'manual', cast(? as date))", tenant, id, name, name, start.toString(), end.toString())
+                }
+                return id.toString()
+            }
+            // Entró el último día de la semana: esa semana es suya, aunque no haya marcado.
+            val lastDay = hired("ULTIMO-DIA", yesterday)
+            // Dada de alta hoy, después de la semana (el caso del 17 de noviembre en la demostración).
+            hired("NUEVA", today)
+            // Su contrato terminó el día antes de que empezara la semana.
+            hired("SALIO", LocalDate.parse("2026-01-05"), lastWeek.minusDays(1))
+            return Triple(c, marking.employeeId, lastDay)
+        }
+
+        // El cierre directo y la ventana del portal cuentan a las mismas personas.
+        val (direct, marking, lastDay) = padron()
+        assertEquals(2, call("GET", "/api/v1/week-closures/summary?week=$yesterday", direct.adminToken).at<Int>("people"))
+        assertEquals(setOf(marking, lastDay), close(direct).list("closed[*].employeeId").toSet())
+
+        // La corrida, también.
+        val (byRun) = padron()
+        val id = request(byRun).at<String>("id")
+        jobWorker.drain()
+        assertEquals(listOf(2, 2, 0, 0), counts(run(byRun, id)))
     }
 
     @Test
