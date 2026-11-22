@@ -16,6 +16,6 @@ RUN apk add --no-cache -X https://nginx.org/packages/alpine/v3.24/main \
     && nginx -v 2>&1 | grep -q 'nginx/1.30.7'
 # Mismos paquetes corregidos que el portal (web/Dockerfile). curl no se usa
 # dentro del borde (la salud es `nginx -t`); retirarlo elimina libcurl vulnerable.
-RUN apk add --no-cache "tiff>=4.7.2-r0" "zlib>=1.4-r0" "libxslt>=1.1.43-r4" "libexpat>=2.10.0-r0" "libx11>=1.8.14-r0" "musl>=1.2.6-r3" "musl-utils>=1.2.6-r3" "brotli-libs>=1.2.1-r0" \
+RUN apk add --no-cache "tiff>=4.7.2-r0" "zlib>=1.4-r0" "libxslt>=1.1.43-r4" "libexpat>=2.10.0-r0" "libx11>=1.8.14-r0" "musl>=1.2.6-r3" "musl-utils>=1.2.6-r3" "brotli-libs>=1.2.1-r0" "libcrypto3>=3.5.9-r1" "libssl3>=3.5.9-r1" "libxml2>=2.13.9-r3" \
     && apk del --no-network curl
 USER 101
