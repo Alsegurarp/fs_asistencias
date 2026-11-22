@@ -98,7 +98,7 @@ borde() {
       -v "$nuevo/conf.d:/etc/nginx/conf.d:ro" \
       -v "$B/estado/lego/certificates:/etc/nginx/certificados:ro" \
       -v "$B/estado/acme:/var/www/acme:ro" \
-      --entrypoint nginx fastsolution-borde-nginx:1.30.6 -t < /dev/null
+      --entrypoint nginx fastsolution-borde-nginx:1.30.7 -t < /dev/null
     rm -f "$B"/conf.d/*.conf
     cp "$nuevo"/conf.d/*.conf "$B/conf.d/"
     chmod 644 "$B"/conf.d/*.conf
