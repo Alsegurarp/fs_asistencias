@@ -3,7 +3,8 @@
 # El código vive en su propio repositorio; aquí sólo se describe cómo corre en
 # el servidor. Se construye desde el árbol exportado de un commit, en
 # LANDING_FUENTE, y no publica puertos: la alcanza el borde por la red
-# fastsolution-entrada con el alias `landing`.
+# fastsolution-entrada con el alias `fastsolution-landing` (único: el servicio de
+# zenit-landing también se llama `landing` y Docker registra ese nombre en la red).
 #
 # Las credenciales del correo del formulario viven en LANDING_SECRETOS/smtp.env
 # (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS y SMTP_FROM), fuera de Git:
@@ -37,7 +38,7 @@ services:
     networks:
       entrada:
         aliases:
-          - landing
+          - fastsolution-landing
     logging:
       driver: json-file
       options:

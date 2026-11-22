@@ -26,7 +26,7 @@ visitante ── 443 ──> borde del anfitrión
                      │  zenitlanding. ──────────────────────> 127.0.0.1:19443
                      │                                        borde de fastSolution
                      │                                        (TLS con certificados propios)
-                     │                                        ├─ fastsolution.com.mx ──> landing:3000
+                     │                                        ├─ fastsolution.com.mx ──> fastsolution-landing:3000
                      │                                        ├─ www. ──> 301 a fastsolution.com.mx
                      │                                        ├─ zenit. ──> portal e identidad
                      │                                        └─ zenitlanding. ──> zenit-landing:3000
