@@ -6,6 +6,19 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 17 de noviembre de 2026 — Consola de operación, pendiente de entrega
+
+Con la sesión de Administración (Mariana Ortiz) en Chrome, `/empresas`
+responde «Sin permiso»: el portal cierra la consola a quien no opera el
+servicio. El texto de ese aviso dice «pide a Administración que te dé ese
+rol», que no aplica a Operación del servicio: ese rol no lo da
+Administración sino `operator_emails` en el servidor
+(`web/src/Portal.tsx`, `NoPermission`). Sin corregir.
+
+Nadie tiene hoy una cuenta de operación en el ambiente publicado, así que
+el recorrido de la consola queda como pendiente de entrega, a cargo de
+quien despliega ([estado](estado-y-pendientes.md)).
+
 ## 17 de noviembre de 2026 — Respuesta al cierre desde el teléfono personal
 
 Con el Samsung otra vez por ADB, vinculado como teléfono de Ana Torres: en
