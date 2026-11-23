@@ -76,6 +76,16 @@ it.each(['trabajador', 'operador_saas'])('Asistencia de la empresa no está disp
   await render([role], '/asistencia', role === 'operador_saas' ? { tenant: null } : {})
   expect(heading()).toBe('Esta sección no está disponible para tu rol')
   expect(text()).toContain('Asistencia sólo lo ven Administración, RH, Supervisión y Auditoría')
+  // A quien opera el servicio no se le manda a pedir el rol a Administración: no es de ninguna empresa.
+  if (role === 'operador_saas') expect(text()).toContain('es de las cuentas de la empresa, no de Operación del servicio')
+  else expect(text()).toContain('pide a Administración que te dé ese rol')
+})
+
+it('la consola de operación no manda a Administración a pedir el rol', async () => {
+  await render(['admin_empresa'], '/empresas')
+  expect(heading()).toBe('Esta sección no está disponible para tu rol')
+  expect(text()).toContain('Tu rol es Administración. Empresas sólo lo ve Operación del servicio, que no se da desde una empresa: es de quien opera Zenit en fastSolution.')
+  expect(text()).not.toContain('pide a Administración')
 })
 
 it('sólo el administrador ve Usuarios y roles', async () => {
