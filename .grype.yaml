@@ -16,3 +16,42 @@ ignore:
       name: zlib
       version: 1.2.11-40.el9
       type: rpm
+
+  # CVE-2026-124709, CVE-2026-107494, CVE-2026-121482, CVE-2026-84786 y
+  # CVE-2026-107493, OpenSSL 3.5.9-r1 (openssl, libssl3 y libcrypto3) de las
+  # imágenes sobre Alpine 3.24 (backend, portal, base, respaldo y borde).
+  # Aceptado por Alsegurarp el 2026-11-22: Alpine no ha publicado la corrección
+  # (3.5.9-r1 es la más nueva en v3.24 y en edge). Todas son de denegación de
+  # servicio en funciones que el producto no usa: QUIC del lado servidor
+  # (124709, 107494; nginx no tiene HTTP/3 ni QUIC configurado y Java usa su
+  # propia pila TLS), verificación CMS/PKCS#7 con CRL (121482), cliente TLS
+  # con DANE (84786; no se configura DANE) y PEM_X509_INFO_read_bio_ex con una
+  # pila previa (107493; nginx y PostgreSQL cargan certificados propios, no de
+  # terceros). Las reglas valen sólo para 3.5.9-r1 y mientras no haya
+  # corrección: al publicarse, el análisis vuelve a fallar hasta reconstruir
+  # las imágenes. Se revisa entonces o, a más tardar, el 2027-02-22.
+  - vulnerability: CVE-2026-124709
+    fix-state: unknown
+    package:
+      version: 3.5.9-r1
+      type: apk
+  - vulnerability: CVE-2026-107494
+    fix-state: unknown
+    package:
+      version: 3.5.9-r1
+      type: apk
+  - vulnerability: CVE-2026-121482
+    fix-state: unknown
+    package:
+      version: 3.5.9-r1
+      type: apk
+  - vulnerability: CVE-2026-84786
+    fix-state: unknown
+    package:
+      version: 3.5.9-r1
+      type: apk
+  - vulnerability: CVE-2026-107493
+    fix-state: unknown
+    package:
+      version: 3.5.9-r1
+      type: apk

@@ -19,10 +19,10 @@ RUN gradle :backend:test :backend:bootJar :backend:simulatorClasses :backend:dos
 FROM build AS it
 CMD ["gradle", ":backend:integrationTest", "--no-daemon", "--offline"]
 
-FROM eclipse-temurin:25.0.4.1_1-jre-alpine-3.24@sha256:3c0a9084927a221ccd1d007fcaf614465672c0af37aaa834c5184483afe56d61
+FROM eclipse-temurin:25.0.5.1_2-jre-alpine-3.24@sha256:69c2a26e9894016e274c880fa542956d005b3755f84db765145185e87405bd89
 # Paquetes del sistema con vulnerabilidades ya corregidas, que la imagen
 # base todavía no trae. Se quita cuando la imagen base los incluya.
-RUN apk add --no-cache "zlib>=1.4-r0" "openssl>=3.5.9-r0" "libcrypto3>=3.5.9-r0" "libssl3>=3.5.9-r0" "libpng>=1.6.59-r0" "libexpat>=2.10.0-r0" "brotli-libs>=1.2.1-r0" "musl>=1.2.6-r3" "musl-utils>=1.2.6-r3"
+RUN apk add --no-cache "zlib>=1.4-r0" "openssl>=3.5.9-r1" "libcrypto3>=3.5.9-r1" "libssl3>=3.5.9-r1" "libpng>=1.6.59-r0" "libexpat>=2.10.0-r0" "brotli-libs>=1.2.1-r0" "musl>=1.2.6-r3" "musl-utils>=1.2.6-r3"
 RUN addgroup -S app && adduser -S -G app app
 WORKDIR /app
 COPY --from=build --chown=app:app /workspace/backend/build/libs/backend.jar /app/app.jar
