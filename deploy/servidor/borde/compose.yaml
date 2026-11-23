@@ -31,7 +31,7 @@ services:
   borde:
     build:
       context: imagenes/nginx
-    image: fastsolution-borde-nginx:1.30.6
+    image: fastsolution-borde-nginx:1.30.7
     <<: [*hardening, *logging]
     restart: unless-stopped
     read_only: true

@@ -108,7 +108,7 @@ servicio publica puertos hacia fuera; en la interfaz local sólo están el borde
 
 | Proyecto Compose | Servicios |
 | --- | --- |
-| `fastsolution-borde` | `borde` (nginx 1.30.6 sin privilegios) y `certificados` (lego 5.5.2) |
+| `fastsolution-borde` | `borde` (nginx 1.30.7 sin privilegios) y `certificados` (lego 5.5.2) |
 | `fastsolution-zenit` | `db`, `migrate`, `keycloak`, `backend` y `web` |
 | `fastsolution-landing` | `landing` |
 | `fastsolution-zenit-landing` | `landing` (alias `zenit-landing` en la red del borde) |
