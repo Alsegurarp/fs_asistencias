@@ -58,8 +58,60 @@ y ninguno se cierra con código: necesitan a una persona.
 | «Instalar Zenit» en un teléfono | **Hecho** el 17 de noviembre en el Samsung: la invitación del portal instala la app, abre sin barra del navegador y Mi perfil dice «Ya está instalado» ([acta](qa-ambiente-publicado-2026-11-16.md)) | — |
 
 Ese día se corrigió el reporte para nómina abierto con `?semana=` en un día
-que no es inicio de semana (rama `fix/cierre-de-pendientes`, sin integrar ni
-desplegar) y entraron a la bitácora las entradas del 10 al 12 de noviembre.
+que no es inicio de semana y entraron a la bitácora las entradas del 10 al
+12 de noviembre (integrado con la PR #74).
+
+**Revisión del 23 de noviembre** (`main` en `0dc90f0`, PR #76 a #80
+integradas; [bitácora](bitacora-trabajo.md#23-de-noviembre-de-2026--revisión-de-pendientes-y-del-contexto)).
+Quedan tres pendientes del MVP, los tres de quien despliega y con acceso
+SSH:
+
+1. **Correo de identidad.** Hoy la pantalla de ingreso publicada todavía
+   dice «Pide a quien administra tu empresa…» en lugar de ofrecer el enlace.
+2. **Consola con la cuenta de operación.**
+3. **Desplegar `0dc90f0`** (PR #76 a #80) o confirmar que ya corre, y
+   anotarlo en la bitácora: el último despliegue registrado es `6609ebd`.
+
+Resuelto desde el 17:
+
+| Qué | Cómo |
+| --- | --- |
+| El aviso «Sin permiso» mandaba a pedir a Administración el rol de operación | Corregido con la PR #77 |
+| El cierre contaba a personas dadas de alta después de la semana («14 de 17» el 16 de noviembre) | Corregido con la PR #78: sólo entra quien estaba contratado en algún día de la semana o marcó en ella |
+| El borde repartía `fastsolution.com.mx` entre las dos landings | Alias `fastsolution-landing` (PR #79); el 23, seis de seis peticiones dieron la landing correcta |
+| Críticas de nginx, PostgreSQL, JRE y OpenSSL en las imágenes | nginx 1.30.7, PostgreSQL 18.7, Temurin 25.0.5.1 y OpenSSL 3.5.9-r1 (PR #80); cinco altas de OpenSSL sin corrección, aceptadas hasta el 22 de febrero de 2027 |
+
+Detalles abiertos que anotó el [acta del 16 y 17](qa-ambiente-publicado-2026-11-16.md),
+sin corregir:
+
+- Cambiar la vinculación de un teléfono deja activo su lector anterior; hoy
+  se revoca a mano en Dispositivos y tarjetas.
+- Un teléfono personal que sólo consulta sale «Sin señal»: la última señal
+  sólo se mueve al abrir sesión de captura o al marcar.
+- El inicio del teléfono personal dice «Aproxime su tarjeta…»; cambia cuando
+  llegue la pantalla de la etiqueta de la sede.
+- Limitación, no defecto: con la sesión cerrada el portal no se puede
+  instalar, porque la pantalla de ingreso es de Keycloak y no lleva el
+  manifiesto. Se instala ya dentro del portal.
+
+La guía asigna la primera tarjeta a Carlos Medina, que no está en el padrón
+sembrado: no es un defecto, se da de alta en vivo en la parte 6 de la
+[guía](guia-de-demostracion.md). Si se salta esa parte, se asigna a alguien
+sembrado sin tarjeta, como el 16 de noviembre.
+
+Mantenimiento con fecha: revisar zlib CVE-2026-76844 a más tardar el 13 de
+febrero de 2027 y las cinco de OpenSSL 3.5.9-r1 a más tardar el 22 de
+febrero de 2027. Si la corrección sale antes, el CI vuelve a fallar hasta
+reconstruir las imágenes.
+
+Limpieza del repositorio: de las ramas remotas sin integrar,
+`docs/bitacora-10-al-12-nov` ya no aporta nada (sus once entradas entraron
+con la PR #74) y se puede borrar; `feat/expediente-e2-e3` lleva un commit
+del 27 de octubre sin integrar y hay que revisarlo antes de descartarla.
+
+En esta copia de trabajo quedan sin commit `demo-local.sh`, `puente.mjs`,
+el cambio de `en-servidor.sh` y `CLAUDE.md`: probarlos y subirlos en su
+propia rama.
 La landing de Zenit está publicada en `zenitlanding.fastsolution.com.mx`
 (PR #73).
 
@@ -653,6 +705,20 @@ del 18, declaración del 19, bloqueos para datos reales y tareas técnicas que p
 
 ## Qué está hecho
 
+Corte del 23 de noviembre de 2026:
+
+| Pieza | Estado |
+| --- | --- |
+| Contrato | Versión 0.37.0, 98 operaciones; todavía sin congelar (la 1.0 sigue pendiente) |
+| Base | 24 migraciones (hasta V024) |
+| Ambiente publicado | MVP según el lienzo, desplegado el 13 de noviembre con tarjetas del piloto encendidas; partes 7 y 8 de la guía ensayadas con teléfono y tarjeta el 16 y 17. Sólo datos ficticios. Pendientes: correo de identidad y consola con cuenta de operación |
+| Identidad | Keycloak 26.8.1 con acceso de la marca. Recuperación de contraseña por correo construida pero apagada en el servidor |
+| Imágenes | nginx 1.30.7, PostgreSQL 18.7, Temurin 25.0.5.1 y OpenSSL 3.5.9-r1 desde el 22 de noviembre; aceptadas en `.grype.yaml` zlib (hasta el 13 de febrero de 2027) y cinco de OpenSSL (hasta el 22 de febrero de 2027) |
+| Tarjetas | MIFARE Classic del piloto, sin datos de la persona; DESFire y la Raspberry con lector son alcance posterior |
+| Conector | No existe |
+
+Corte anterior, del 22 de octubre, que se conserva como antecedente:
+
 | Pieza | Estado |
 | --- | --- |
 | Contrato | Versión 0.13, con 62 operaciones. Acuse semanal desde servidor y cambio obligatorio de contraseña; todavía sin congelar |
@@ -711,6 +777,10 @@ a V008 conservan sólo sus conteos.
 
 ### Esperan una decisión
 
+**Al 23 de noviembre:** suspensión, baja y alcance del supervisor se
+decidieron el 5 de noviembre (Q10–Q13) y están implementados; sus filas de
+abajo son antecedente. Siguen abiertas las demás.
+
 Suspensión, baja, alcance del supervisor y tipo de marcaje tienen
 [propuestas concretas para aprobación](decisiones-de-negocio.md). No se han
 cambiado sus comportamientos ni se consideran decisiones cerradas.
@@ -744,7 +814,17 @@ cambiado sus comportamientos ni se consideran decisiones cerradas.
 
 ## Vulnerabilidades conocidas
 
-Actualización del 21, posterior a `b2f7832`: Actions encontró tres críticas y
+**Corte del 22 de noviembre (PR #80).** nginx 1.30.7 en portal y borde
+(cinco críticas y una alta de 1.30.6; el borde dejó curl y brotli, con
+quince críticas más), PostgreSQL 18.7 en la base y el respaldo (38 altas de
+18.6), Temurin 25.0.5.1 en el backend y OpenSSL 3.5.9-r1 en todas las
+imágenes Alpine. Aceptadas en `.grype.yaml`: cinco altas de OpenSSL sin
+corrección de Alpine, de denegación de servicio en funciones que el producto
+no usa, hasta el 22 de febrero de 2027, y zlib CVE-2026-76844 en identidad,
+hasta el 13 de febrero de 2027. Falta confirmar que esas imágenes son las
+que corren en el servidor. Lo que sigue son cortes anteriores.
+
+Actualización del 21 de octubre, posterior a `b2f7832`: Actions encontró tres críticas y
 dos altas en el portal que no aparecían en el corte local previo. Se
 actualizó la base a Nginx 1.30.6 por digest y se retiró curl/libcurl sin uso
 en el portal. El análisis local web de las 16:31:18 UTC aprobó con 0 críticas,
@@ -892,6 +972,21 @@ defecto se pueda aprovechar aquí.
 - El formato de correo y las cabeceras, contra el contrato.
 
 ## Lista consolidada de tareas pendientes
+
+**Revisión del 23 de noviembre.** Con el MVP integrado, desplegado y
+ensayado con teléfono y tarjeta, varias tareas de la tabla de abajo ya no
+están como dice su columna:
+
+| N.º | Al 23 de noviembre |
+| --- | --- |
+| 2 | Decididas el 5 de noviembre e implementadas: la suspensión conserva los dispositivos, la baja con fecha revoca la tarjeta y termina el horario, y Supervisión opera en sus sedes ([decisiones](decisiones-de-negocio.md)) |
+| 4, 9, 10 | Recorridas en el ambiente publicado el 12 de noviembre por rol (152 vistas), y el MVP se dio por terminado el 13. Hechas |
+| 12 | Hecha en el ambiente publicado: el 17 Ana Torres respondió «Estoy conforme» desde la app y Cierres lo muestra. Quedan los criterios jurídicos de la 17 |
+| 13 | Consola de operación (bloque 5, con suspender y reactivar) integrada y desplegada; falta recorrerla con una cuenta de operación |
+| 14 | TLS desde el 18 de octubre; faltan el correo de identidad y la cuenta de operación |
+| 16 | Piloto con MIFARE Classic probado en el ambiente publicado el 16; la tarjeta autenticada (DESFire) sigue pendiente |
+| 7, 11 | Sin cambio: hechas en su alcance; la protección de `main` (Q22) sigue sin decidir |
+| 8, 15, 17, 18, 19, 20 | Sin cambio |
 
 Declaración al 17 de octubre de 2026. Se conserva la numeración de la evaluación
 original y el orden de menor a mayor complejidad; este orden no sustituye la

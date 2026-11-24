@@ -1,5 +1,10 @@
 # Tareas pendientes
 
+> **Corte histórico.** Lo último de este documento es del 6 de noviembre de
+> 2026, antes del MVP según el lienzo (13 de noviembre). Lo vigente está en
+> [Estado y pendientes](estado-y-pendientes.md#pendientes-del-mvp), revisado
+> el 23 de noviembre.
+
 ## Ejecución con tres agentes — 6 de noviembre de 2026
 
 Portal corregido para partir ID/huella largos del acuse: **218 pruebas,

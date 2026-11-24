@@ -25,7 +25,7 @@ contradice al contrato, manda el contrato.
 | Continuar el backend | [Lógica de negocio](logica-de-negocio.md), [Continuar el backend](continuar-el-backend.md) y [Estado y pendientes](estado-y-pendientes.md) |
 | Entender un término, un estado o una tabla | [Diccionario](diccionario.md) |
 | Saber qué falta | [Estado y pendientes](estado-y-pendientes.md) |
-| Elegir qué resolver primero | [Tareas críticas primero](tareas-criticas-primero.md) |
+| Elegir qué resolver primero | [Pendientes del MVP](estado-y-pendientes.md#pendientes-del-mvp) |
 | Preparar la sesión de QA y decidir el siguiente desarrollo | [Trabajo ejecutable y preguntas para QA](tareas-ejecutables-y-preguntas-qa.md) |
 | Revisar la lógica actual en diagramas | [Flujos PlantUML](flujos/README.md) |
 | Desplegar una versión en el servidor | [Instructivo de despliegue](instructivo-de-despliegue.md) |
@@ -64,11 +64,11 @@ contradice al contrato, manda el contrato.
 | [Entrega E4/E5 del expediente](entrega-expediente-e4-e5.md) | MFA por operación, autorización de un uso, portal, configuración efectiva e historia con navegador real |
 | [Verificación independiente E6](entrega-expediente-e6.md) | JAR sin conexión a Zenit, integridad/relaciones, consulta de históricos y procedimiento de salida; aceptación pendiente |
 | [QA Android del 28](qa-android-2026-10-28.md) | Navegación, captura personal/terminal, cola/sincronización, acuses reales locales, limpieza y límites |
-| [Tareas pendientes](TareasPendientes.md) | Resumen de las 17 tareas abiertas, prioridades, dependencias y trabajo disponible; incluye entrega de la prueba móvil a otro desarrollador |
+| [Tareas pendientes](TareasPendientes.md) | Corte histórico al 6 de noviembre: resumen de las 17 tareas abiertas, prioridades, dependencias y trabajo disponible; incluye entrega de la prueba móvil a otro desarrollador |
 | [Verificación E2–E5 del 27 de octubre](verificacion-e2-e5-2026-10-27.md) | Corte previo a implementar E2/E3; evidencia de integración E1, pendientes y orden de trabajo |
 | [Desarrollo disponible al 26 de octubre](tareas-desarrollo-2026-10-26.md) | Corte anterior de código/GitHub/CI, criterios E1–E6, QA Android y bloqueos externos |
 | [Contrato y formato del expediente E1](contrato-expediente-e1.md) | Diseño y evidencia originales; actualización E2–E5 con ocho operaciones implementadas en API 0.15.0 |
-| [Tareas críticas primero](tareas-criticas-primero.md) | Declaración de las 20 tareas priorizadas, dependencias, criterios de cierre y primer trabajo técnico |
+| [Tareas críticas primero](tareas-criticas-primero.md) | Corte histórico al 5 de noviembre: declaración de las 20 tareas priorizadas, dependencias, criterios de cierre y primer trabajo técnico |
 | [Verificaciones automáticas](verificaciones-automaticas.md) | Workflow de GitHub Actions, pruebas por cambio, análisis de imágenes y comprobación del servidor |
 | [Validación de cierres](validacion-cierres.md) | Pruebas ejecutadas y guion de aceptación de cierres semanales |
 | [Revisión jurídica de jornada y acuse](revision-juridica-jornada-acuse.md) | Fuentes oficiales, brechas del código y decisiones para el dictamen |

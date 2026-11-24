@@ -6,6 +6,94 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 23 de noviembre de 2026 — Revisión de pendientes y del contexto
+
+`main` en `0dc90f0`, sincronizado con `origin/main`, después de integrar las
+PR #76 a #80. Se compararon los pendientes con lo integrado desde el 17 y
+con lo que responde hoy el ambiente publicado desde la estación de trabajo.
+
+- **Resuelto desde el último corte:** el aviso «Sin permiso» que mandaba a
+  pedir a Administración el rol de operación (PR #77); el cierre que contaba
+  a personas dadas de alta después de la semana, el «14 de 17» del 16 de
+  noviembre (PR #78); el borde que repartía `fastsolution.com.mx` entre las
+  dos landings (PR #79), y las críticas de nginx, PostgreSQL, el JRE y
+  OpenSSL en las imágenes (PR #80). Detalle en las dos entradas siguientes.
+- **Sigue abierto, comprobado hoy:** la pantalla de ingreso publicada no
+  ofrece el enlace de «Olvidé mi contraseña» (dice «Pide a quien administra
+  tu empresa…»), así que el correo de identidad sigue sin subirse; la
+  consola con la cuenta de operación sigue sin recorrer. Los dos necesitan
+  acceso SSH, que esta estación no tiene.
+- **`fastsolution.com.mx`**: seis peticiones seguidas devolvieron la landing
+  de Vite, como se espera con el alias de la PR #79. Las tres direcciones
+  responden `200`.
+- **Sin registrar hasta hoy, sin commit:** `deploy/servidor/demo/demo-local.sh`
+  y `puente.mjs` (19 de noviembre) siembran y reinician la empresa de
+  demostración en el ambiente local, con las mismas piezas que `demo.sh`;
+  `en-servidor.sh` toma `ZENIT_SECRETOS` y `ZENIT_KC` del entorno para eso.
+  También está sin commit `CLAUDE.md` (20 de noviembre). Falta probarlos y
+  subirlos en su propia rama.
+- **No se sabe qué commit corre el ambiente publicado.** Los commits del 22
+  se hicieron desde el servidor (autor `deploy`), pero el último despliegue
+  registrado es `6609ebd`. Desplegar `0dc90f0` o confirmarlo queda como
+  tercer pendiente del MVP.
+- **Ramas remotas sin integrar:** `docs/bitacora-10-al-12-nov` ya está toda
+  en `main` (PR #74) y se puede borrar; `feat/expediente-e2-e3` tiene un
+  commit del 27 de octubre por revisar.
+- El encabezado del README seguía en el 9 de noviembre (contrato 0.29.0);
+  ahora abre con este corte.
+
+Se actualizaron el [estado](estado-y-pendientes.md#pendientes-del-mvp),
+la tabla «Qué está hecho», el corte de vulnerabilidades y la lista
+consolidada, y se dejó al principio de
+[Tareas críticas primero](tareas-criticas-primero.md) y de
+[Tareas pendientes](TareasPendientes.md) un aviso de que su corte es
+anterior al MVP.
+
+## 22 de noviembre de 2026 — Landing en la red de entrada y vulnerabilidades críticas
+
+Trabajo hecho desde el servidor (autor `deploy`), integrado el 23 con las
+PR #79 y #80. Sin registro de despliegue.
+
+- **Alias único para la landing (PR #79).** Los servicios de `landing` y de
+  `zenit-landing` se llaman los dos `landing`, y Docker registraba ese
+  nombre para ambos en `fastsolution-entrada`: el borde repartía
+  `fastsolution.com.mx` entre la landing de Vite y la de Next.js. El borde
+  usa ahora el alias `fastsolution-landing`.
+- **nginx 1.30.7 en el portal y en el borde (PR #80).** Corrige cinco
+  críticas y una alta de 1.30.6. La imagen oficial sin privilegios todavía
+  no lo trae, así que se instala del repositorio firmado de nginx.org. El
+  borde, que conservaba curl 8.22.0 y brotli con quince críticas más, pasa a
+  la misma base que el portal, sin curl (su salud es `nginx -t`), como
+  `fastsolution-borde-nginx:1.30.7`.
+- **PostgreSQL 18.7, Temurin 25.0.5.1 y OpenSSL 3.5.9-r1 (PR #80).** La base
+  y el respaldo dejan 18.6 (38 altas) y suben libxml2; el backend corrige
+  tres CVE del JRE; todas las imágenes Alpine llevan `libssl3`/`libcrypto3`
+  3.5.9-r1.
+- **Cinco altas de OpenSSL aceptadas** en `.grype.yaml` (CVE-2026-124709,
+  -107494, -121482, -84786 y -107493): Alpine no ha publicado la corrección
+  y todas son de denegación de servicio en funciones que el producto no usa
+  (QUIC servidor, CMS con CRL, cliente DANE, `PEM_X509_INFO_read_bio_ex`).
+  Limitadas a 3.5.9-r1; se revisan a más tardar el 22 de febrero de 2027.
+
+## 17 de noviembre de 2026 — Aviso sin permiso, build de Android y cierre por fecha de ingreso
+
+Integrado el 23 con las PR #76, #77 y #78.
+
+- **Aviso «Sin permiso» (PR #77).** Lo anotado en la entrada siguiente queda
+  corregido en `NoPermission` (`web/src/Portal.tsx`): una pantalla que sólo
+  ve Operación del servicio dice que ese rol no se da desde una empresa, y
+  quien opera el servicio y abre una pantalla de empresa lee que es de las
+  cuentas de la empresa. Prueba nueva en `Portal.test.tsx`.
+- **Build de Android.** El reintento por falla de red reconoce también
+  «could not resolve» en minúscula, y la segunda vuelta corre con
+  `--refresh-dependencies` para volver a buscar lo que no encontró.
+- **El cierre respeta la fecha de ingreso (PR #78).** La semana del 7 al 13
+  cerró «14 de 17» en la demostración porque contaba a personas dadas de
+  alta después. Ahora la semana sólo incluye a quien estaba contratado en
+  alguno de sus días o marcó en ella, igual en el cierre directo, en la
+  ventana del portal y en la corrida. Prueba nueva en `ClosureRunsIT`: quien
+  entró el último día cuenta, quien entró después o salió antes no.
+
 ## 17 de noviembre de 2026 — Consola de operación, pendiente de entrega
 
 Con la sesión de Administración (Mariana Ortiz) en Chrome, `/empresas`
@@ -13,7 +101,8 @@ responde «Sin permiso»: el portal cierra la consola a quien no opera el
 servicio. El texto de ese aviso dice «pide a Administración que te dé ese
 rol», que no aplica a Operación del servicio: ese rol no lo da
 Administración sino `operator_emails` en el servidor
-(`web/src/Portal.tsx`, `NoPermission`). Sin corregir.
+(`web/src/Portal.tsx`, `NoPermission`). Corregido el mismo día con la
+PR #77 (ver la entrada siguiente).
 
 Nadie tiene hoy una cuenta de operación en el ambiente publicado, así que
 el recorrido de la consola queda como pendiente de entrega, a cargo de

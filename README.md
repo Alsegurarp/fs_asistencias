@@ -4,6 +4,17 @@ Plataforma de control de jornada desarrollada por fastSolution.
 
 ## Estado técnico
 
+**Corte del 23 de noviembre:** `main` en `0dc90f0`, contrato 0.37.0 y
+migraciones hasta V024. El MVP según el lienzo se dio por terminado el 13
+de noviembre y está desplegado en el ambiente publicado (último despliegue
+registrado: `6609ebd`); el 16 y 17 se ensayó con teléfono y tarjeta. Las
+PR #76 a #80 (aviso sin permiso, cierre por fecha de ingreso, alias de la
+landing y vulnerabilidades críticas de las imágenes) están integradas y sin
+despliegue registrado. Faltan el correo de identidad y la consola con la
+cuenta de operación. Lo vigente está en
+[Pendientes del MVP](docs/estado-y-pendientes.md#pendientes-del-mvp); los
+cortes de abajo son antecedentes.
+
 **Portal según el lienzo, 9 de noviembre:** contrato 0.29.0. Integrados el
 marco (PR #37), Asistencia (PR #38), Incidencias (PR #39), los días de la
 semana con su tiempo ordinario y extra (PR #40), Cierres (PR #41), el Panel
@@ -120,7 +131,7 @@ y cómo se continúa:
 | Buscar un término, un código o una tabla | [Diccionario](docs/diccionario.md) |
 | Agregar algo al backend | [Continuar el backend](docs/continuar-el-backend.md) |
 | Saber qué falta | [Estado y pendientes](docs/estado-y-pendientes.md) |
-| Priorizar lo pendiente | [Tareas críticas primero](docs/tareas-criticas-primero.md) |
+| Priorizar lo pendiente | [Pendientes del MVP](docs/estado-y-pendientes.md#pendientes-del-mvp) |
 | Entender los flujos implementados y dónde nacen los datos | [Flujos PlantUML](docs/flujos/README.md) |
 
 Este README resume las reglas de cada parte; el detalle está en esa carpeta, y

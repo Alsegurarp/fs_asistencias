@@ -1,5 +1,10 @@
 # Tareas críticas primero
 
+> **Corte histórico.** El «corte vigente» de abajo es del 5 de noviembre de
+> 2026, antes del MVP según el lienzo (13 de noviembre). Lo vigente está en
+> [Estado y pendientes](estado-y-pendientes.md#pendientes-del-mvp), revisado
+> el 23 de noviembre.
+
 **Corte técnico vigente del 5 de noviembre de 2026:** las 17 tareas se
 atendieron en orden de necesidad y su [resultado individual y condición de
 cierre están en la bitácora](bitacora-trabajo.md#5-de-noviembre-de-2026--ejecución-de-las-17-tareas-por-necesidad-inmediata).

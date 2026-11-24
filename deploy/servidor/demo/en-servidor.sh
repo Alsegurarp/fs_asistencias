@@ -15,10 +15,11 @@ set -Eeuo pipefail
 
 EMPRESA=demo-altiplano
 NOMBRE='Distribuidora Altiplano'
-SECRETOS=/opt/.fastsolution/zenit/secretos
+# demo-local.sh las cambia para el ambiente local; en el servidor quedan así.
+SECRETOS=${ZENIT_SECRETOS:-/opt/.fastsolution/zenit/secretos}
 BASE=fastsolution-zenit-db-1
 BACKEND=fastsolution-zenit-backend-1
-KC=http://127.0.0.1:19082
+KC=${ZENIT_KC:-http://127.0.0.1:19082}
 CUENTA='^demo\.[a-z]+@zenit\.example$'
 
 psql_demo() { docker exec -i "$BASE" psql -U zenit_admin -d zenit -v ON_ERROR_STOP=1 -At; }
