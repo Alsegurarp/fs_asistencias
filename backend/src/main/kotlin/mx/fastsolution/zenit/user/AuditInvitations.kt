@@ -61,7 +61,7 @@ class AuditInvitations(
             origin.path !in listOf("", "/", "/auditoria", "/auditoria/")) {
             throw unavailable()
         }
-        if (send && (mailKey.isBlank() || sender.isBlank())) throw unavailable()
+        if (send && (mailKey.isBlank() || sender.isBlank())) throw mailUnavailable()
         val token = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also(random::nextBytes))
         val expiration = OffsetDateTime.now().plusHours(72)
         if (!users.issueAuditInvitation(tenantId, id, hash(token), expiration)) throw Problems.notFound()
@@ -100,12 +100,12 @@ class AuditInvitations(
                 .header("api-key", mailKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(payload))).build()
-            if (mail.send(request, HttpResponse.BodyHandlers.discarding()).statusCode() != 201) throw unavailable()
+            if (mail.send(request, HttpResponse.BodyHandlers.discarding()).statusCode() != 201) throw mailUnavailable()
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
-            throw unavailable()
+            throw mailUnavailable()
         } catch (_: java.io.IOException) {
-            throw unavailable()
+            throw mailUnavailable()
         }
     }
 
@@ -113,7 +113,10 @@ class AuditInvitations(
         HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(token.toByteArray(Charsets.US_ASCII)))
 
     private fun unavailable() = ApiException(HttpStatus.SERVICE_UNAVAILABLE, "audit-invitation-unavailable",
-        "audit_invitation_unavailable", "Invitación no disponible", "Revisa la configuración del portal y del envío de correo.")
+        "audit_invitation_unavailable", "Invitación no disponible")
+
+    private fun mailUnavailable() = ApiException(HttpStatus.SERVICE_UNAVAILABLE, "audit-mail-unavailable",
+        "audit_mail_unavailable", "Invitación no disponible")
 
     companion object {
         private val TOKEN = Regex("[A-Za-z0-9_-]{43}")

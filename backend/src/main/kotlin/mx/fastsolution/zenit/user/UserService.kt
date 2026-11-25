@@ -82,15 +82,28 @@ class UserService(
         if (operators.isOperator(email!!)) throw Conflicts.emailUnavailable()
         if (request.externalAuditor) {
             tenants.lock(tenantId)
-            val pending = users.findByEmail(tenantId, email)
-            if (pending != null) {
-                if (pending.status != "invited" || pending.roles != setOf(Role.AUDITOR.wire) ||
-                    pending.employeeId != null || pending.siteIds.isNotEmpty() ||
-                    !users.markExternalAuditor(tenantId, pending.id)) throw Conflicts.emailUnavailable()
-                if (!pending.externalAuditor) {
-                    audit.record(tenantId, admin, "user.external_auditor_selected", "user", pending.id)
+            val existing = users.findByEmail(tenantId, email)
+            if (existing != null) {
+                if (existing.roles != setOf(Role.AUDITOR.wire) || existing.employeeId != null ||
+                    existing.siteIds.isNotEmpty()) throw Conflicts.emailUnavailable()
+                when (existing.status) {
+                    "invited" -> {
+                        if (!users.markExternalAuditor(tenantId, existing.id)) throw Conflicts.emailUnavailable()
+                        if (!existing.externalAuditor) {
+                            audit.record(tenantId, admin, "user.external_auditor_selected", "user", existing.id)
+                        }
+                    }
+                    "disabled" -> {
+                        if (!users.reopenExternalAuditInvitation(tenantId, existing.id)) throw Conflicts.emailUnavailable()
+                        audit.record(tenantId, admin, "user.audit_reinvited", "user", existing.id)
+                    }
+                    else -> throw Conflicts.emailUnavailable()
                 }
-                return users.find(tenantId, pending.id)!!
+                if (displayName.isNotEmpty() && displayName != existing.displayName) {
+                    users.setDisplayName(tenantId, existing.id, displayName)
+                    audit.record(tenantId, admin, "user.updated", "user", existing.id, mapOf("fields" to "displayName"))
+                }
+                return users.find(tenantId, existing.id)!!
             }
         }
 
@@ -196,8 +209,11 @@ class UserService(
             audit.record(tenantId, admin, "user.updated", "user", id, mapOf("fields" to "employeeId"))
         }
         if (nextStatus != before.status) {
-            if (before.externalAuditor && nextStatus == "invited") users.unlink(tenantId, id)
-            users.setStatus(tenantId, id, nextStatus)
+            if (before.externalAuditor && nextStatus == "invited") {
+                check(users.reopenExternalAuditInvitation(tenantId, id))
+            } else {
+                users.setStatus(tenantId, id, nextStatus)
+            }
             if (before.externalAuditor && nextStatus == "disabled") dossiers.revokeExternal(admin, before)
             audit.record(tenantId, admin, if (nextStatus == "disabled") "user.disabled" else "user.enabled", "user", id)
         }

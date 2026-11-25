@@ -160,6 +160,39 @@ Motivos frecuentes dentro de un 422, en `errors[].code`: `required`,
 `screen_lock_required`, `invalid_proof` y `key_already_registered`. La lista
 no es cerrada.
 
+### Códigos de soporte de auditoría
+
+Busca el número que reportó la persona. Estos códigos identifican el tipo
+de problema. Si necesitas localizar un intento concreto, pide la hora
+aproximada y si ocurrió en local o en producción. Los registros del backend
+conservan la referencia de la petición y el código de la API.
+
+Asigna códigos nuevos dentro del bloque que corresponda. Conserva el
+significado de los códigos publicados y deja libres los números sin asignar.
+
+| Bloque | Tema |
+| --- | --- |
+| 700–709 | Disponibilidad y servicio |
+| 710–719 | Invitaciones, correo y enlaces |
+| 720–729 | Cuentas, sesiones y permisos |
+| 730–739 | Consultas, filtros y registros |
+
+| Error | Significado | Dónde revisar |
+| --- | --- | --- |
+| 700 | Portal de auditoría sin configurar en este ambiente | `audit_invitation_unavailable`. Valida la URL HTTPS y la configuración del portal PHP. |
+| 701 | No se pudo completar la operación | Revisa la conexión y los registros del portal y del backend a la hora del intento. |
+| 702 | Demasiados intentos seguidos | `rate_limited`. Consulta la cuota de solicitudes del ambiente. |
+| 710 | No se pudo enviar el correo de invitación | `audit_mail_unavailable`. Comprueba el remitente, la clave de Brevo y la entrega del correo. |
+| 711 | Correo ya asociado a un acceso incompatible con la invitación | `email_unavailable`. Revisa el acceso existente desde la empresa autorizada. |
+| 712 | Invitación no disponible | `not_found` al gestionar la invitación. Comprueba su estado y que pertenezca a la empresa. |
+| 713 | Enlace de auditoría inválido, vencido, usado o abierto con otra cuenta | Revisa la vigencia del enlace emitido y el correo verificado del auditor. |
+| 714 | Datos de invitación inválidos | `validation`. Revisa el formato del nombre y el correo. |
+| 720 | No se pudo preparar la cuenta del auditor | `audit_identity_unavailable`. Comprueba el cliente de alta de Keycloak y su correo de activación. |
+| 721 | Sesión vencida o sin autenticar | `unauthorized`. Repite el ingreso. Si persiste, revisa la sesión en Keycloak. |
+| 722 | Permiso insuficiente o acceso revocado | `forbidden`. Comprueba el rol de quien invita o la vigencia del acceso del auditor. |
+| 730 | Registro no disponible en el portal de auditoría | `not_found` durante una consulta. Comprueba el registro solicitado y su alcance. |
+| 731 | Datos rechazados por el portal de auditoría | Revisa los filtros o campos enviados en la solicitud. |
+
 ### Códigos de rechazo de un marcaje
 
 Vienen en `rejection.code` del recibo, con estado 200.

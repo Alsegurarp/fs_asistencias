@@ -106,11 +106,10 @@ y el recorrido completo con doble factor quedan pendientes de verificar.
 ## Recorrido de prueba
 
 1. Entra al portal de Zenit como administrador de la empresa. En **Usuarios
-   → Invitar**, selecciona **Auditor externo**, indica el correo y pulsa
-   **Continuar**.
-2. Selecciona **Generar enlace** y **Copiar enlace**, o **Enviar por correo**
-   si el envío ya está configurado. Un enlace nuevo reemplaza al anterior y
-   caduca a las 72 horas.
+   → Invitar**, selecciona **Auditor externo** e indica el correo.
+2. En ese mismo formulario, elige **Generar enlace** o **Enviar por correo**.
+   Si generas el enlace, puedes copiarlo desde la confirmación. Un enlace
+   nuevo reemplaza al anterior y caduca a las 72 horas.
 3. Si el correo es nuevo, Zenit crea la cuenta en Keycloak al generar la
    invitación. Keycloak le envía al auditor las acciones para verificar
    su correo, crear su contraseña y configurar OTP. El auditor completa
@@ -121,3 +120,16 @@ y el recorrido completo con doble factor quedan pendientes de verificar.
    administrador, abre **Usuarios → Editar acceso → Revocar acceso de
    auditoría**. Verifica que se bloqueen las consultas, las descargas y el
    expediente.
+5. Para otra auditoría, vuelve a invitar el mismo correo como **Auditor
+   externo** desde la misma empresa. El auditor recupera el acceso cuando
+   acepta el enlace nuevo.
+
+## Ayuda con la invitación y el acceso
+
+Si aparece un aviso en Zenit, comparte el código con soporte. En **Usuarios**,
+el botón **Copiar código** copia el texto que aparece en el aviso, como
+`Error 700`. En el portal de auditoría, puedes seleccionar y copiar el código.
+
+Si soporte necesita localizar tu intento, indica la hora aproximada y el
+ambiente. Mantén privadas las contraseñas, los códigos de inicio de sesión,
+los QR y los enlaces de invitación.

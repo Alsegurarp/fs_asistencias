@@ -114,8 +114,7 @@ class AuditIdentityProvisioning(
     private fun encode(value: String) = URLEncoder.encode(value, UTF_8)
 
     private fun unavailable() = ApiException(HttpStatus.SERVICE_UNAVAILABLE, "audit-identity-unavailable",
-        "audit_identity_unavailable", "Alta de auditor no disponible",
-        "Revisa la integración y el envío de correo de Keycloak antes de volver a generar la invitación.")
+        "audit_identity_unavailable", "Invitación no disponible")
 
     companion object {
         private val ACTIONS = listOf("VERIFY_EMAIL", "UPDATE_PASSWORD", "CONFIGURE_TOTP")

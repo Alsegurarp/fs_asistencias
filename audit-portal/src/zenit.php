@@ -1,13 +1,29 @@
 <?php
 declare(strict_types=1);
 
-final class PortalError extends RuntimeException {}
+final class PortalError extends RuntimeException
+{
+    public readonly int $supportCode;
+
+    public function __construct(string $message, int $status, ?int $supportCode = null)
+    {
+        parent::__construct($message, $status);
+        $this->supportCode = $supportCode ?? match ($status) {
+            400, 422 => 731,
+            401 => 721,
+            403 => 722,
+            404 => 730,
+            429 => 702,
+            default => 701,
+        };
+    }
+}
 
 function setting(string $name): string
 {
     $value = getenv($name);
     if ($value === false || $value === '') {
-        throw new PortalError('El portal requiere configuración.', 503);
+        throw new PortalError('El portal de auditoría todavía no está disponible en este ambiente.', 503, 700);
     }
     return $value;
 }
@@ -16,7 +32,7 @@ function secureUrl(string $name): string
 {
     $url = setting($name);
     if (parse_url($url, PHP_URL_SCHEME) !== 'https' || !parse_url($url, PHP_URL_HOST)) {
-        throw new PortalError('El portal requiere direcciones HTTPS.', 503);
+        throw new PortalError('El portal de auditoría todavía no está disponible en este ambiente.', 503, 700);
     }
     return rtrim($url, '/');
 }
@@ -42,6 +58,7 @@ function requestJson(string $url, array $headers, ?array $form = null, bool $jso
     $body = @file_get_contents($url, false, $context, 0, 8 * 1024 * 1024);
     preg_match('/^HTTP\/\S+ (\d{3})/', $http_response_header[0] ?? '', $statusLine);
     $status = (int) ($statusLine[1] ?? 0);
+    $data = $body === false ? null : json_decode($body, true);
     if (in_array($status, [401, 403], true)) {
         throw new PortalError('La sesión expiró o el acceso ya no está disponible.', $status);
     }
@@ -51,9 +68,11 @@ function requestJson(string $url, array $headers, ?array $form = null, bool $jso
     if ($status === 404) {
         throw new PortalError('El registro no está disponible.', 404);
     }
-    $data = $body === false ? null : json_decode($body, true);
+    if ($status === 429) {
+        throw new PortalError('Hubo demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.', 429);
+    }
     if ($status !== 200 || !is_array($data)) {
-        throw new PortalError('Zenit no pudo completar la consulta.', 502);
+        throw new PortalError('Zenit no pudo completar la consulta. Inténtalo de nuevo o comparte el código con soporte.', 502);
     }
     return $data;
 }
@@ -127,7 +146,7 @@ function completeLogin(): never
     $code = input('code');
     if (!$attempt || time() - $attempt['created'] > 600 || $code === ''
         || !hash_equals($attempt['state'], input('state'))) {
-        throw new PortalError('El inicio de sesión venció. Vuelve a intentarlo.', 400);
+        throw new PortalError('El inicio de sesión venció. Vuelve a intentarlo.', 400, 721);
     }
     $tokens = requestJson(keycloak('token'), [], [
         'grant_type' => 'authorization_code',
@@ -145,7 +164,7 @@ function completeLogin(): never
         } catch (PortalError $error) {
             $_SESSION = [];
             if (in_array($error->getCode(), [403, 404], true)) {
-                throw new PortalError('La invitación venció, ya se usó o corresponde a otro correo verificado.', 403);
+                throw new PortalError('La invitación no se pudo aceptar. Usa el correo que recibió la invitación. Si el enlace venció o ya se usó, inicia sesión o pide uno nuevo a la empresa.', 403, 713);
             }
             throw $error;
         }

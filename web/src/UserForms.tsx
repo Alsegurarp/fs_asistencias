@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Box, Button, ButtonBase, Checkbox, Stack, TextField, Typography } from '@mui/material'
 import { api, ApiError, type Employee, type Me, type Site } from './api'
+import { AuditInvitationNotice } from './AuditInvitationNotice'
 import { color, font } from './design'
 import { type Picked, PersonPicker } from './DeviceForms'
 import { Icon } from './Icons'
@@ -174,7 +175,7 @@ function AccessForm({ user, me, sites, onClose }: { user: UserRow; me: Me; sites
             }}>Copiar enlace</Button>
             {copyStatus && <Typography role="status">{copyStatus}</Typography>}
           </>}
-          {invitation.error && <Note tone="error">{problemText(invitation.error, 'No se pudo generar la invitación.')}</Note>}
+          {invitation.error && <AuditInvitationNotice error={invitation.error} />}
         </Stack>}
         <Box>
           <Typography component="h3" sx={{ fontSize: 13, fontWeight: 600, color: color.inkSoft, mb: 0.75 }}>Seguridad de la cuenta</Typography>
@@ -240,17 +241,10 @@ function ConfirmModal({ kind, user, me, onClose }: { kind: Confirm; user: UserRo
   </Modal>
 }
 
-/**
- * EMP-05: invitar con nombre, correo, roles y, para Supervisión, sus sedes.
- * No se manda correo: la persona entra con ese correo verificado y su cuenta
- * se liga la primera vez. El expediente se concede después, ya ligada.
- */
+/** EMP-05: el equipo elige sus roles y la auditoría externa elige el medio de entrega. */
 export function InviteModal({ me, sites, onClose, onInvited }: { me: Me; sites: Site[]; onClose: () => void; onInvited: (id: string) => void }) {
   const cache = useQueryClient()
   const [external, setExternal] = useState(false)
-  const [auditor, setAuditor] = useState<{ email: string; displayName: string }>()
-  const [details, setDetails] = useState({ email: '', displayName: '' })
-  const [auditorId, setAuditorId] = useState<string>()
   const [copyMessage, setCopyMessage] = useState('')
   const [roles, setRoles] = useState<string[]>([])
   const [siteIds, setSiteIds] = useState<string[]>([])
@@ -262,17 +256,11 @@ export function InviteModal({ me, sites, onClose, onInvited }: { me: Me; sites: 
     onError: error => forbidden(cache, error),
   })
   const deliver = useMutation({
-    mutationFn: async (send: boolean) => {
-      if (!auditor) throw new Error('Faltan los datos del auditor.')
-      let id = auditorId
-      if (!id) {
-        const created = await api<UserRow>('/users', 'POST', { email: auditor.email,
-          ...(auditor.displayName ? { displayName: auditor.displayName } : {}), roles: ['auditor'], externalAuditor: true })
-        id = created.id
-        setAuditorId(id)
-        refreshUsers(cache, me, id)
-      }
-      return api<{ url: string; sent: boolean }>(`/users/${id}/audit-invitation?send=${send}`, 'POST')
+    mutationFn: async ({ email, displayName, send }: { email: string; displayName: string; send: boolean }) => {
+      const created = await api<UserRow>('/users', 'POST', { email, ...(displayName ? { displayName } : {}),
+        roles: ['auditor'], externalAuditor: true })
+      refreshUsers(cache, me, created.id)
+      return api<{ url: string; sent: boolean }>(`/users/${created.id}/audit-invitation?send=${send}`, 'POST')
     },
     onMutate: () => setCopyMessage(''),
     onError: error => forbidden(cache, error),
@@ -280,56 +268,56 @@ export function InviteModal({ me, sites, onClose, onInvited }: { me: Me; sites: 
   const fieldError = (field: string) => problem?.field === field ? problem.text
     : invite.error instanceof ApiError ? invite.error.errors.find(item => item.field === field)?.message
       || (field === 'email' && invite.error.code === 'email_unavailable' ? 'Este correo ya tiene acceso a una empresa.' : undefined) : undefined
-  const submit = (form: HTMLFormElement) => {
+  const busy = invite.isPending || deliver.isPending
+  const submit = (form: HTMLFormElement, send = true) => {
+    if (busy) return
     const data = new FormData(form)
     const displayName = String(data.get('displayName') || '').trim()
     const email = String(data.get('email') || '').trim().toLowerCase()
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setProblem({ field: 'email', text: 'Escribe un correo válido.' }); return }
     if (external) {
       setProblem(undefined)
-      setDetails({ email, displayName })
-      setAuditor({ email, displayName })
+      deliver.mutate({ email, displayName, send })
       return
     }
     if (!roles.length) { setProblem({ field: 'roles', text: 'Elige al menos un rol.' }); return }
     setProblem(undefined)
     invite.mutate({ email, roles, ...(displayName ? { displayName } : {}), ...(roles.includes('supervisor') && siteIds.length ? { siteIds } : {}), ...(roles.includes('trabajador') && employeeId ? { employeeId } : {}) })
   }
-  const busy = invite.isPending
   const general = invite.error && !fieldError('email') && !(invite.error instanceof ApiError && invite.error.errors.length) ? <Note tone="error">{problemText(invite.error, 'No pudimos enviar la invitación.')}</Note> : undefined
-  if (auditor) return <Modal id="invitar-titulo" icon="users" title="Enviar invitación de auditoría" subtitle={`Paso 2 de 2 · ${auditor.email}`}
-    onClose={onClose} onSubmit={() => { if (!deliver.isSuccess) deliver.mutate(false) }} busy={deliver.isPending} closable
-    error={deliver.error ? <Note tone="error">{problemText(deliver.error, 'No se pudo preparar la invitación. Puedes intentarlo de nuevo.')}</Note> : undefined}
-    actions={deliver.isSuccess ? <Button variant="contained" onClick={onClose}>Listo</Button> : <>
-      {!auditorId && <Button variant="outlined" disabled={deliver.isPending} onClick={() => { deliver.reset(); setAuditor(undefined) }}>Atrás</Button>}
-      <Button type="button" variant="outlined" disabled={deliver.isPending} onClick={() => deliver.mutate(false)}>Generar enlace</Button>
-      <Button type="button" variant="contained" disabled={deliver.isPending} onClick={() => deliver.mutate(true)}>Enviar por correo</Button>
-    </>}>
-    {deliver.isSuccess ? <>
-      <Typography role="status">{deliver.data.sent ? 'Invitación enviada.' : 'Enlace listo para compartir.'} Caduca en 72 horas.</Typography>
-      <TextField label="Enlace de un solo uso" value={deliver.data.url} size="small" slotProps={{ input: { readOnly: true } }}
-        onFocus={event => event.target.select()} />
-      <Button sx={{ alignSelf: 'flex-start' }} onClick={async () => {
-        try { await navigator.clipboard.writeText(deliver.data.url); setCopyMessage('Enlace copiado.') }
-        catch { setCopyMessage('Selecciona el enlace y cópialo manualmente.') }
-      }}>Copiar enlace</Button>
-      {copyMessage && <Typography role="status">{copyMessage}</Typography>}
-    </> : <Note>El auditor podrá consultar toda la empresa, descargar PDF y CSV y acceder al expediente con la verificación adicional.</Note>}
-    {deliver.isPending && <Typography role="status">Preparando la invitación…</Typography>}
+  if (deliver.isSuccess) return <Modal id="invitar-titulo" icon="users" title="Invitación de auditoría" subtitle={deliver.variables.email}
+    onClose={onClose} onSubmit={onClose} closable
+    actions={<Button variant="contained" onClick={onClose}>Listo</Button>}>
+    <Typography role="status">{deliver.data.sent ? 'Invitación enviada.' : 'Enlace listo para compartir.'} Caduca en 72 horas.</Typography>
+    <TextField label="Enlace de un solo uso" value={deliver.data.url} size="small" slotProps={{ input: { readOnly: true } }}
+      onFocus={event => event.target.select()} />
+    <Button sx={{ alignSelf: 'flex-start' }} onClick={async () => {
+      try { await navigator.clipboard.writeText(deliver.data.url); setCopyMessage('Enlace copiado.') }
+      catch { setCopyMessage('Selecciona el enlace y cópialo manualmente.') }
+    }}>Copiar enlace</Button>
+    {copyMessage && <Typography role="status">{copyMessage}</Typography>}
   </Modal>
   return <Modal id="invitar-titulo" icon="users" title={external ? 'Invitar a un auditor externo' : 'Invitar a alguien de tu equipo'}
-    subtitle={external ? 'Paso 1 de 2 · Datos del auditor' : 'Entra con su correo, una contraseña y su segundo factor'} onClose={onClose} onSubmit={submit}
-    submit={external ? 'Continuar' : 'Invitar'} busy={busy} error={general} closable>
+    subtitle="Entra con su correo, una contraseña y su segundo factor" onClose={onClose} onSubmit={submit}
+    submit="Invitar" busy={busy} closable
+    error={external && deliver.error ? <AuditInvitationNotice error={deliver.error} /> : general}
+    actions={external ? <>
+      <Button variant="outlined" onClick={onClose} disabled={busy}>Cancelar</Button>
+      <Button type="button" variant="outlined" disabled={busy} onClick={event => {
+        if (event.currentTarget.form) submit(event.currentTarget.form, false)
+      }}>Generar enlace</Button>
+      <Button type="submit" variant="contained" disabled={busy}>{busy ? 'Preparando…' : 'Enviar por correo'}</Button>
+    </> : undefined}>
     <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1 }} role="group" aria-label="Tipo de invitación">
       <Button variant={external ? 'outlined' : 'contained'} aria-pressed={!external} disabled={busy}
-        onClick={() => { setExternal(false); setProblem(undefined) }}>Equipo</Button>
+        onClick={() => { setExternal(false); setProblem(undefined); deliver.reset() }}>Equipo</Button>
       <Button variant={external ? 'contained' : 'outlined'} aria-pressed={external} disabled={busy}
         onClick={() => { setExternal(true); setProblem(undefined); invite.reset() }}>Auditor externo</Button>
     </Stack>
     <Stack direction="row" useFlexGap sx={{ gap: 1.5, flexWrap: 'wrap', '& > *': { flex: '1 1 200px' } }}>
-      <TextField name="displayName" label="Nombre" defaultValue={details.displayName} disabled={busy} size="small" error={!!fieldError('displayName')} helperText={fieldError('displayName')} slotProps={{ htmlInput: { maxLength: 120 } }} />
-      <TextField name="email" label="Correo" type="email" defaultValue={details.email} required disabled={busy} size="small" error={!!fieldError('email')} helperText={fieldError('email')} slotProps={{ htmlInput: { maxLength: 254 } }}
-        onChange={() => { if (problem?.field === 'email') setProblem(undefined) }} />
+      <TextField name="displayName" label="Nombre" disabled={busy} size="small" error={!!fieldError('displayName')} helperText={fieldError('displayName')} slotProps={{ htmlInput: { maxLength: 120 } }} />
+      <TextField name="email" label="Correo" type="email" required disabled={busy} size="small" error={!!fieldError('email')} helperText={fieldError('email')} slotProps={{ htmlInput: { maxLength: 254 } }}
+        onChange={() => { if (problem?.field === 'email') setProblem(undefined); if (deliver.isError) deliver.reset() }} />
     </Stack>
     {!external && <>
       <RoleChips detailed teamOnly value={roles} onChange={value => { setRoles(value); if (problem?.field === 'roles') setProblem(undefined) }} disabled={busy} />
@@ -337,10 +325,9 @@ export function InviteModal({ me, sites, onClose, onInvited }: { me: Me; sites: 
       {roles.includes('supervisor') && <SiteChips sites={sites} value={siteIds} onChange={setSiteIds} disabled={busy} />}
       {roles.includes('trabajador') && <LinkedPerson employeeId={employeeId} onChange={setEmployee} disabled={busy} />}
     </>}
-    <Typography sx={{ fontSize: 12.5, color: color.muted }}>
-      {external ? 'En el siguiente paso podrás enviar el correo o copiar el enlace de auditoría.'
-        : <>{me.tenant?.name ? `Queda invitada a ${me.tenant.name}. ` : ''}No le llega un correo: compártele la dirección del portal. El permiso del expediente se concede después de que entre por primera vez.</>}
-    </Typography>
+    {external
+      ? <Note>El auditor podrá consultar toda la empresa, descargar PDF y CSV y acceder al expediente con la verificación adicional.</Note>
+      : <Typography sx={{ fontSize: 12.5, color: color.muted }}>{me.tenant?.name ? `Queda invitada a ${me.tenant.name}. ` : ''}No le llega un correo: compártele la dirección del portal. El permiso del expediente se concede después de que entre por primera vez.</Typography>}
   </Modal>
 }
 

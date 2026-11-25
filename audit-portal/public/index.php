@@ -20,7 +20,7 @@ session_start([
     'cookie_path' => '/',
 ]);
 
-$me = $error = $week = $event = null;
+$me = $errorCode = $week = $event = null;
 $rows = $filters = [];
 $incidents = [];
 $dossierUrl = null;
@@ -80,7 +80,7 @@ try {
         if ($action === 'invite') {
             $invitation = $_POST['token'] ?? null;
             if (!is_string($invitation) || !preg_match('/^[A-Za-z0-9_-]{43}$/D', $invitation)) {
-                throw new PortalError('La invitación no es válida.', 404);
+                throw new PortalError('La invitación no es válida. Pide un enlace nuevo a la empresa.', 404, 713);
             }
             startLogin($invitation);
         }
@@ -175,7 +175,7 @@ try {
     }
 } catch (PortalError $e) {
     http_response_code($e->getCode());
-    $error = $e->getMessage();
+    $errorCode = $e->supportCode;
     if (in_array($e->getCode(), [401, 403], true)) {
         unset($_SESSION['access_token'], $_SESSION['refresh_token'], $_SESSION['expires_at']);
     }
@@ -230,7 +230,7 @@ try {
     <?php endif; ?>
 </header>
 <main>
-    <?php if ($error): ?><p role="alert" class="error"><?= h($error) ?></p><?php endif; ?>
+    <?php if ($errorCode !== null): ?><p role="alert" class="error"><strong>Error <?= h($errorCode) ?></strong></p><?php endif; ?>
     <?php if (!isset($_SESSION['access_token'])): ?>
         <h1>Portal de auditoría</h1>
         <a class="button" href="?action=login">Iniciar sesión con Zenit</a>

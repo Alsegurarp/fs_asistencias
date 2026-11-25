@@ -150,6 +150,14 @@ class UserRepository(private val dsl: DSLContext) {
             tenantId, id,
         ) == 1
 
+    fun reopenExternalAuditInvitation(tenantId: UUID, id: UUID): Boolean =
+        dsl.execute(
+            "update tenant_user set status = 'invited', subject = null, linked_at = null, " +
+                "audit_invitation_hash = null, audit_invitation_expires_at = null " +
+                "where tenant_id = ? and id = ? and external_auditor and status = 'disabled'",
+            tenantId, id,
+        ) == 1
+
     fun acceptAuditInvitation(email: String, subject: String, hash: String): UserRow? {
         val id = dsl.fetchOne(
             "update tenant_user u set subject = ?, linked_at = now(), status = 'active', audit_invitation_hash = null " +

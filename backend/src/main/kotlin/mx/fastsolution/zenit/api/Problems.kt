@@ -66,6 +66,12 @@ class ProblemHandler {
                 request.method, request.requestURI, request.userPrincipal?.name, Correlation.of(request),
             )
         }
+        if (e.status == HttpStatus.SERVICE_UNAVAILABLE && e.code.startsWith("audit_")) {
+            log.warn("Invitación de auditoría interrumpida, código {} correlación {}", e.code, Correlation.of(request))
+        }
+        if (e.code == "email_unavailable") {
+            log.info("Invitación rechazada, código {} correlación {}", e.code, Correlation.of(request))
+        }
         return respond(e, request)
     }
 

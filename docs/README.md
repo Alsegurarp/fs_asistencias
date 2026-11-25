@@ -30,6 +30,7 @@ contradice al contrato, manda el contrato.
 | Revisar la lógica actual en diagramas | [Flujos PlantUML](flujos/README.md) |
 | Desplegar una versión en el servidor | [Instructivo de despliegue](instructivo-de-despliegue.md) |
 | Publicar o probar el portal de auditoría gubernamental | [Portal PHP de auditoría](portal-auditoria-php.md#despliegue-en-el-servidor-compartido) |
+| Resolver o reportar problemas al invitar a un auditor | [Ayuda con la invitación y el acceso](portal-auditoria-php.md#ayuda-con-la-invitación-y-el-acceso) |
 | Entender cómo está publicado | [Despliegue en el servidor](despliegue-en-servidor.md) |
 
 ## Documentos

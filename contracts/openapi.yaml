@@ -1459,6 +1459,11 @@ paths:
         correo verificado. Responde 409 con `code` `email_unavailable` si el
         correo ya pertenece a alguien; la respuesta no dice a qué empresa.
 
+        Para auditoría externa, se reutiliza una invitación pendiente
+        compatible de la misma empresa. Un acceso de auditoría externa
+        revocado por esa empresa vuelve a `invited` y requiere un enlace
+        nuevo y su aceptación para recuperar el acceso.
+
         `employeeId` liga la cuenta con una fila del padrón: es lo que deja a
         un `trabajador` ver su semana y acusar su cierre desde el portal. Una
         fila se liga a una sola cuenta: responde 409 con `code`
@@ -1759,7 +1764,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
-          description: Portal o correo de auditoría sin configurar
+          description: El portal, el envío de correo o la activación de la cuenta de auditoría no están disponibles
           content:
             application/problem+json:
               schema:

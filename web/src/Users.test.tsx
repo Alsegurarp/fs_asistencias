@@ -169,6 +169,26 @@ it('editar acceso guarda sólo lo que cambió y concede el expediente aparte', a
   expect(location).toBe('/usuarios')
 })
 
+it('editar acceso muestra solo el código al volver a emitir una invitación de auditoría', async () => {
+  const auditor = { ...people[3], externalAuditor: true, status: 'invited', linkedAt: null }
+  server.handler = call => {
+    if (call.path === '/users/u4') return Promise.resolve(auditor)
+    if (call.path.startsWith('/users/u4/audit-invitation?')) {
+      return Promise.reject(new ApiError(503, 'audit_invitation_unavailable', 'Detalle interno', 'ref-interna'))
+    }
+    return defaultServer(call)
+  }
+  await render('/usuarios?persona=u4')
+  for (const action of ['Generar enlace', 'Enviar por correo']) {
+    await confirmAndSettle(action)
+    expect(document.querySelector('[role="alert"]')?.textContent).toBe('Error 700')
+  }
+  expect(writes().map(call => call.path)).toEqual([
+    '/users/u4/audit-invitation?send=false',
+    '/users/u4/audit-invitation?send=true',
+  ])
+})
+
 it('sin roles no se guarda; a quien no ha entrado no se le concede el expediente ni se le pide contraseña', async () => {
   await render('/usuarios?persona=u3')
   expect(document.querySelector<HTMLInputElement>('[name="dossierPermission"]')!.disabled).toBe(true)
@@ -234,10 +254,11 @@ it('invita a un auditor externo y entrega el enlace en el mismo diálogo', async
   await click('Invitar')
   await click('Auditor externo')
   expect(document.querySelector('[role="dialog"] input[value="rh"]')).toBeNull()
-  await setInput('email', 'auditor.externo@demo.example')
-  await click('Continuar')
-  expect(text()).toContain('Paso 2 de 2')
+  expect(button('Enviar por correo')).toBeTruthy()
+  await click('Generar enlace')
+  expect(text()).toContain('Escribe un correo válido.')
   expect(writes()).toEqual([])
+  await setInput('email', 'auditor.externo@demo.example')
   await click('Generar enlace')
   await settle()
   expect(writes()).toEqual([
@@ -245,6 +266,34 @@ it('invita a un auditor externo y entrega el enlace en el mismo diálogo', async
     { path: '/users/u9/audit-invitation?send=false', method: 'POST', body: undefined },
   ])
   expect(text()).toContain('Enlace listo para compartir.')
+})
+
+it.each([
+  ['audit_mail_unavailable', 710],
+  ['audit_invitation_unavailable', 700],
+] as const)('muestra y copia solo el código de soporte para %s', async (problem, code) => {
+  server.handler = call => call.path === '/users/u9/audit-invitation?send=true'
+    ? Promise.reject(new ApiError(503, problem, 'Detalle interno', 'ref-interna'))
+    : defaultServer(call)
+  await render('/usuarios')
+  await click('Invitar')
+  await click('Auditor externo')
+  await setInput('email', 'auditor.externo@demo.example')
+  await click('Enviar por correo')
+  await settle()
+  expect(document.querySelector('[role="alert"]')?.textContent).toBe(`Error ${code}`)
+  expect(text()).not.toContain('ref-interna')
+  expect(text()).not.toContain('Detalle interno')
+  const clipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+  const writeText = vi.fn(async (_report: string) => {})
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+  try {
+    await click('Copiar código')
+    expect(writeText).toHaveBeenCalledExactlyOnceWith(`Error ${code}`)
+  } finally {
+    if (clipboard) Object.defineProperty(navigator, 'clipboard', clipboard)
+    else Reflect.deleteProperty(navigator, 'clipboard')
+  }
 })
 
 it('un correo que ya tiene acceso se marca en su campo', async () => {
