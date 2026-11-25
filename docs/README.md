@@ -29,6 +29,7 @@ contradice al contrato, manda el contrato.
 | Preparar la sesión de QA y decidir el siguiente desarrollo | [Trabajo ejecutable y preguntas para QA](tareas-ejecutables-y-preguntas-qa.md) |
 | Revisar la lógica actual en diagramas | [Flujos PlantUML](flujos/README.md) |
 | Desplegar una versión en el servidor | [Instructivo de despliegue](instructivo-de-despliegue.md) |
+| Publicar o probar el portal de auditoría gubernamental | [Portal PHP de auditoría](portal-auditoria-php.md#despliegue-en-el-servidor-compartido) |
 | Entender cómo está publicado | [Despliegue en el servidor](despliegue-en-servidor.md) |
 
 ## Documentos

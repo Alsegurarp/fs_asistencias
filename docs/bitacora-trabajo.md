@@ -6,6 +6,17 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 24 de noviembre de 2026 — Portal de auditoría preparado para publicar
+
+El commit `805f943` incorpora el portal PHP en `/auditoria/`, las
+invitaciones y la revocación desde Usuarios, el alta en Keycloak y la
+migración V025. En Docker se comprobó el proxy NGINX, la generación de PDF
+y CSV y las pruebas de aislamiento, invitación y revocación. El alta usó
+un Keycloak simulado. La publicación, el correo real y el recorrido con
+doble factor quedan por comprobar. El [procedimiento y el alcance de
+la entrega](portal-auditoria-php.md#despliegue-en-el-servidor-compartido)
+incluyen los requisitos de correo y el registro que genera el despliegue.
+
 ## 17 de noviembre de 2026 — Consola de operación, pendiente de entrega
 
 Con la sesión de Administración (Mariana Ortiz) en Chrome, `/empresas`

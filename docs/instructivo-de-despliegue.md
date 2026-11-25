@@ -123,9 +123,13 @@ bash deploy/servidor/desplegar.sh zenit --detalle
 bash deploy/servidor/desplegar.sh landing --credencial D:/ruta/privada/smtp.env
 
 # Zenit con la credencial de correo de la identidad: enciende «Olvidé mi
-# contraseña». Sirve el .env de la raíz: sólo viajan sus líneas SMTP_
+# contraseña». Del archivo sólo se copian los valores SMTP y la clave de auditoría opcional.
 bash deploy/servidor/desplegar.sh zenit --credencial .env
 ```
+
+La versión con el [portal de auditoría](portal-auditoria-php.md#despliegue-en-el-servidor-compartido)
+añade la ruta `/auditoria/` al despliegue de Zenit. El mismo archivo privado
+puede incluir `AUDIT_BREVO_API_KEY` para habilitar **Enviar por correo**.
 
 ## Qué vas a ver
 
@@ -166,13 +170,13 @@ después todo su registro. Para forzar la barra en ese caso:
 | Revisar | Docker en marcha, acceso SSH completo, herramienta construida y conexión al servidor | Lo mismo |
 | Exportar | `git archive` del commit, con los fines de línea de Git | El commit de la landing y, del monorepo (HEAD), su composición y el guion del servidor |
 | Subir | Árbol a `/opt/.fastsolution/zenit/fuente`, borrando lo que ya no existe | Árbol a `/opt/.fastsolution/landing/fuente` y su configuración |
-| Credencial | Sólo con `--credencial`: copia las líneas `SMTP_` del archivo a `/opt/.fastsolution/zenit/correo-entrante/`, sin mostrarlas; el paso Identidad las guarda con los secretos y borra esa copia | Sólo con `--credencial`: copia `smtp.env` con permisos 0600, sin mostrarlo |
-| Construir | `docker compose build` de las cinco imágenes | La imagen `fastsolution-landing:<commit>` |
+| Credencial | Con `--credencial` copia las líneas `SMTP_` y `AUDIT_BREVO_API_KEY` si está presente. Identidad guarda los valores con los secretos y elimina la copia intermedia | Con `--credencial` copia `smtp.env` con permisos 0600 |
+| Construir | `docker compose build` de las imágenes de la composición de Zenit, incluido PHP-FPM para auditoría | La imagen `fastsolution-landing:<commit>` |
 | Actualizar | `docker compose up -d`: sólo recrea lo que cambió | Recrea el contenedor |
 | Esperar | Hasta 240 s a que el estado del backend responda 200 a través del borde | Hasta 120 s a que el contenedor esté sano |
-| Identidad | Crea en el realm lo que agrega el versionado y el cliente técnico; si algo difiere, se detiene. Con la credencial de correo en el servidor, configura el correo del realm y enciende la recuperación de contraseña | No aplica |
+| Identidad | Registra los clientes del portal y las cuentas técnicas, incluida la de alta de auditores. Si una configuración existente difiere de la esperada, se detiene. Con la credencial de correo configura SMTP y la recuperación de contraseña | No aplica |
 | Borde | Si cambió `deploy/servidor/borde`, prueba los bloques con `nginx -t` y recarga; si no, nada | No aplica |
-| Comprobar | Portal, estado del backend, emisor de la identidad, `401` sin token y `404` en la administración | Raíz `200` sin `X-Powered-By`, `www` `301` y contacto inválido `400` |
+| Comprobar | Portal, estado del backend, emisor de identidad, restricciones de acceso, página de auditoría y su retorno a Keycloak | Raíz `200` sin `X-Powered-By`, `www` `301` y contacto inválido `400` |
 
 La landing de Zenit sigue los pasos de la landing, con estas diferencias:
 

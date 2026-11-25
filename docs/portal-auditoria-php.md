@@ -10,8 +10,8 @@ cada uno tendrá su propia cuenta con el mismo alcance.
 
 - La empresa indica el correo del auditor y puede enviar la invitación desde
   Zenit o copiar el enlace para compartirlo por su cuenta.
-- El enlace de activación es de un solo uso, caduca y se vincula al correo
-  invitado. Se propone una vigencia de 72 horas para aceptar la invitación.
+- El enlace de activación se vincula al correo invitado, es de un solo uso
+  y caduca a las 72 horas.
 - El auditor verifica su correo. Si necesita una cuenta, crea su contraseña
   y configura el segundo factor en Keycloak. Si ya tiene cuenta, se identifica
   con ella para aceptar el acceso.
@@ -32,10 +32,9 @@ cada uno tendrá su propia cuenta con el mismo alcance.
 - **Trazabilidad.** El detalle del marcaje muestra fecha, hora, sede y
   terminal de origen. Cuando exista una corrección, muestra el registro
   original, el ajuste, quién lo realizó, cuándo y por qué.
-- **Eventos de terminal.** Consulta de las acciones que las terminales
-  registran en la base de datos. Desde un marcaje se puede abrir el evento
-  asociado cuando exista ese vínculo. La consulta de eventos también incluye
-  registros que quedaron sin un marcaje asociado.
+- **Eventos de terminal.** Desde un marcaje se puede abrir el evento
+  asociado y consultar las resoluciones y ajustes de sus incidencias.
+  La consulta de acciones de terminal sin marcaje sigue pendiente.
 - **Descargas.** La evidencia se puede descargar en PDF y CSV, con el alcance
   de empresa y los filtros aplicados a la consulta.
 
@@ -59,8 +58,14 @@ El portal se publica en `https://zenit.fastsolution.com.mx/auditoria/` con
 el certificado de Zenit. La composición del servidor añade PHP-FPM y su NGINX.
 El backend de Zenit y el canje de tokens se alcanzan por la red de Docker.
 
-Desde la estación de despliegue, ejecuta `deploy/servidor/desplegar.sh zenit`
-con un commit que contenga el portal. El despliegue aplica la migración V025,
+La primera versión está en el commit `805f943`. Incluye el portal PHP, las
+opciones de invitación de **Usuarios**, la API de alta y consulta, la
+migración V025 y la configuración de NGINX y Keycloak. El [instructivo de
+despliegue](instructivo-de-despliegue.md) describe los requisitos de la
+estación y cómo se exporta el commit.
+
+Desde esa estación, ejecuta `bash deploy/servidor/desplegar.sh zenit <commit>`
+con la revisión que vaya a publicarse. El despliegue aplica la migración V025,
 registra los dos clientes de Keycloak, les configura PKCE y la audiencia al
 cliente web, y guarda el secreto del cliente técnico para el backend. El
 paso de identidad verifica que la cuenta técnica puede consultar usuarios.
@@ -75,6 +80,22 @@ correo**, añade `AUDIT_BREVO_API_KEY` a ese archivo privado. Se utiliza
 guarda la clave y el remitente fuera del árbol de código y recrea el backend
 si cambian. **Generar enlace** funciona sin la clave API de Brevo. El alta
 de un auditor nuevo sí requiere el correo de activación de Keycloak.
+
+El script anota fecha, commit y resultado en
+`/opt/.fastsolution/zenit/despliegues.log` y deja el registro detallado en
+`build/despliegue/registros/` en la estación. Antes del primer despliegue,
+confirma que haya un respaldo recuperable de las bases de Zenit y Keycloak.
+Una vez aplicada V025, volver al commit anterior también exige planificar
+la vuelta del esquema. Flyway valida el historial al arrancar. Consulta el
+[procedimiento de reversión](despliegue-en-servidor.md#revertir).
+
+## Estado de verificación
+
+Se verificaron en Docker la ruta y el retorno de inicio de sesión a través
+de NGINX, la generación de PDF y CSV, y el aislamiento, el uso único de la
+invitación y la revocación contra PostgreSQL. La prueba de alta automática
+usó un Keycloak simulado. El despliegue publicado, la entrega real de correo
+y el recorrido completo con doble factor quedan pendientes de verificar.
 
 ## Recorrido de prueba
 
@@ -92,7 +113,3 @@ de un auditor nuevo sí requiere el correo de activación de Keycloak.
    administrador, vuelve a **Usuarios** y selecciona **Deshabilitar su
    acceso**. Al volver a consultar en el portal PHP, Zenit debe denegar el
    acceso y las descargas.
-
-Queda pendiente la consulta de acciones de terminal que no estén
-representadas por un marcaje. El detalle del marcaje muestra las
-resoluciones y ajustes disponibles en sus incidencias asociadas.
