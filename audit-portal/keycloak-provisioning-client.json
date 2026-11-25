@@ -1,0 +1,12 @@
+{
+  "clientId": "zenit-audit-provisioning",
+  "name": "Alta de auditores de Zenit",
+  "enabled": true,
+  "publicClient": false,
+  "protocol": "openid-connect",
+  "clientAuthenticatorType": "client-secret",
+  "standardFlowEnabled": false,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": true
+}

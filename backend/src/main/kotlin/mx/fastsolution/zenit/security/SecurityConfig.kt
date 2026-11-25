@@ -19,6 +19,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2Error
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
@@ -59,6 +60,14 @@ class SecurityConfig {
         // los dispositivos una aserción firmada con su propia clave. La ruta decide
         // con cuál se verifica; una credencial en la ruta equivocada no pasa.
         val users = ProviderManager(JwtAuthenticationProvider(decoder).apply { setJwtAuthenticationConverter(people) })
+        val usersWithoutAuditPortal = ProviderManager(JwtAuthenticationProvider(decoder).apply {
+            setJwtAuthenticationConverter { jwt ->
+                if (jwt.getClaimAsString("azp") == PersonAuthenticationConverter.AUDIT_PORTAL_CLIENT) {
+                    throw OAuth2AuthenticationException(OAuth2Error("invalid_token"))
+                }
+                people.convert(jwt)
+            }
+        })
         val devices = AuthenticationManager { deviceAuthenticator.authenticate(it, allowSuspended = true) }
         val workerDevices = AuthenticationManager { deviceAuthenticator.authenticate(it) }
         val credentials = AuthenticationManagerResolver<HttpServletRequest> {
@@ -66,7 +75,10 @@ class SecurityConfig {
                 it.method == "POST" && it.requestURI in DEVICE_ROUTES -> devices
                 // Lo que es del propio trabajador se puede pedir con su cuenta o con su teléfono.
                 isWorkerRoute(it) && DeviceKeys.isDeviceToken(it.getHeader("Authorization")) -> workerDevices
-                else -> users
+                it.method == "GET" && (it.requestURI in AUDIT_PORTAL_READS ||
+                    AUDIT_PORTAL_DETAILS.matches(it.requestURI)) -> users
+                it.method == "POST" && it.requestURI == "/api/v1/audit-invitations/accept" -> users
+                else -> usersWithoutAuditPortal
             }
         }
         http
@@ -109,6 +121,8 @@ class SecurityConfig {
                     .hasRole(admin)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/users", "/api/v1/users/summary", "/api/v1/users/{userId}").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole(admin)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/users/{userId}/audit-invitation").hasRole(admin)
+                it.requestMatchers(HttpMethod.POST, "/api/v1/audit-invitations/accept").authenticated()
                 it.requestMatchers(HttpMethod.PATCH, "/api/v1/users/{userId}").hasRole(admin)
                 it.requestMatchers(HttpMethod.POST, "/api/v1/users/{userId}/unlink", "/api/v1/users/{userId}/password-change").hasRole(admin)
                 it.requestMatchers(HttpMethod.GET, "/api/v1/audit-log", "/api/v1/audit-log/summary").hasAnyRole(admin, auditor)
@@ -199,6 +213,9 @@ class SecurityConfig {
         return decoder
     }
 }
+
+private val AUDIT_PORTAL_READS = setOf("/api/v1/me", "/api/v1/attendance-events")
+private val AUDIT_PORTAL_DETAILS = Regex("/api/v1/(employees/[0-9a-fA-F-]{36}/attendance|incidents/[0-9a-fA-F-]{36})")
 
 /** Vigencia, emisor, audiencia y sujeto: los cuatro deben cumplirse. */
 fun identityTokenValidator(identity: IdentityProperties): OAuth2TokenValidator<Jwt> =

@@ -20,12 +20,17 @@ import { servidorDeCorreo } from './correo.mjs'
 const base = (process.env.KEYCLOAK_URL || 'http://keycloak:8082').replace(/\/$/, '')
 const secretos = process.env.SECRETOS || '/secretos'
 const portal = process.env.PORTAL_URL || ''
+const portalAuditoria = process.env.AUDIT_PORTAL_URL || ''
 const usuario = process.env.ADMIN_USER || 'arranque'
 const clientes = process.argv.length > 2 ? process.argv.slice(2) : ['zenit-dossier']
-const tecnico = 'zenit-password-admin'
 assert.match(portal, /^https?:\/\/[^/]+$/, 'PORTAL_URL debe ser el origen del portal, sin ruta')
 
 const realm = JSON.parse(await readFile(process.env.REALM_FILE || '/realm/zenit-realm.json', 'utf8'))
+if (portalAuditoria) {
+  assert.match(portalAuditoria, /^https:\/\/[^/]+\/auditoria$/)
+  const cliente = await readFile('/trabajo/audit-client.json', 'utf8')
+  realm.clients.push(JSON.parse(cliente.replaceAll('https://auditoria.example', portalAuditoria)))
+}
 const prefijo = `/admin/realms/${encodeURIComponent(realm.realm)}`
 const flujos = new Map(realm.authenticationFlows.map(flujo => [flujo.alias, flujo]))
 const configuraciones = new Map((realm.authenticatorConfig || []).map(config => [config.alias, config.config]))
@@ -201,11 +206,11 @@ async function probarInicio(cliente) {
   await pedir('GET', direccion('https://ajeno.invalid/dossier/callback'), null, null, [400])
 }
 
-async function asegurarTecnico() {
+async function asegurarTecnico(tecnico, archivo, definicion = {}) {
   const buscar = async () => (await leer(`${prefijo}/clients?clientId=${tecnico}`))[0]
   let cliente = await buscar()
   if (!cliente) {
-    await escribir('POST', `${prefijo}/clients`, { clientId: tecnico, enabled: true, publicClient: false,
+    await escribir('POST', `${prefijo}/clients`, { ...definicion, clientId: tecnico, enabled: true, publicClient: false,
       serviceAccountsEnabled: true, standardFlowEnabled: false, directAccessGrantsEnabled: false, fullScopeAllowed: false }, [201])
     cliente = await buscar()
     console.log(`cliente ${tecnico}: creado`)
@@ -228,24 +233,29 @@ async function asegurarTecnico() {
   const claims = JSON.parse(Buffer.from(concedido.access_token.split('.')[1], 'base64url').toString())
   assert.deepEqual(claims.resource_access?.['realm-management']?.roles, ['manage-users'])
   await pedir('GET', `${prefijo}/clients`, concedido.access_token, null, [403])
-
-  // El backend lo lee al arrancar; remoto.sh lo reinicia si cambió.
-  const carpeta = join(secretos, 'identity-admin')
-  const destino = join(carpeta, 'identity_admin_client_secret')
-  await chmod(carpeta, 0o755)
-  if ((await readFile(destino, 'utf8').catch(() => null)) === secreto) {
-    console.log(`cliente ${tecnico}: comprobado; secreto sin cambios`)
-    return
+  if (tecnico === 'zenit-audit-provisioning') {
+    await pedir('GET', `${prefijo}/users?username=zenit-verificacion-despliegue&exact=true&max=1`, concedido.access_token)
   }
+
+  const cambio = await guardarSecreto(archivo, secreto)
+  console.log(`cliente ${tecnico}: comprobado; ${cambio ? 'secreto guardado para el backend' : 'secreto sin cambios'}`)
+}
+
+// El backend lee los archivos al arrancar; remoto.sh lo reinicia si cambian.
+async function guardarSecreto(archivo, valor) {
+  const carpeta = join(secretos, 'identity-admin')
+  const destino = join(carpeta, archivo)
+  await chmod(carpeta, 0o755)
+  if ((await readFile(destino, 'utf8').catch(() => null)) === valor) return false
   // Sin capacidades no se puede abrir para escribir un archivo de sólo
   // lectura: se escribe uno nuevo y se reemplaza por renombrado, que además
   // evita que el backend lea un secreto a medias.
   const nuevo = `${destino}.nuevo`
   await rm(nuevo, { force: true })
-  await writeFile(nuevo, secreto, { mode: 0o444 })
+  await writeFile(nuevo, valor, { mode: 0o444 })
   await chmod(nuevo, 0o444)
   await rename(nuevo, destino)
-  console.log(`cliente ${tecnico}: comprobado; secreto guardado para el backend`)
+  return true
 }
 
 async function asegurarRecuperacion() {
@@ -323,15 +333,32 @@ async function asegurarCorreo() {
   assert.equal(aplicado.resetPasswordAllowed, true)
   assert.equal(aplicado.verifyEmail, false, 'La verificación de correo no se enciende con este paso')
   console.log(`correo: ${smtpServer.host}:${smtpServer.port}, remitente ${smtpServer.from}; recuperación de contraseña encendida`)
+  if (portalAuditoria) {
+    await guardarSecreto('audit_mail_from', smtpServer.from)
+    const clave = texto.match(/^[ \t]*AUDIT_BREVO_API_KEY[ \t]*=[ \t]*(\S[^\r\n]*)$/m)?.[1]?.trim()
+      .replace(/^(["'])(.*)\1$/, '$2')
+    if (clave) await guardarSecreto('audit_brevo_key', clave)
+  }
 }
 
-for (const clientId of clientes) {
+for (const clientId of new Set([...clientes, ...(portalAuditoria ? ['zenit-audit-portal'] : [])])) {
   const cliente = await asegurarCliente(clientId)
   if (cliente.standardFlowEnabled && cliente.redirectUris?.length) await probarInicio(cliente)
   console.log(`cliente ${clientId}: comprobado`)
 }
-await asegurarTecnico()
+await asegurarTecnico('zenit-password-admin', 'identity_admin_client_secret')
+if (portalAuditoria) {
+  const definicion = JSON.parse(await readFile('/trabajo/audit-provisioning-client.json', 'utf8'))
+  await asegurarTecnico('zenit-audit-provisioning', 'audit_keycloak_client_secret', definicion)
+}
 await asegurarRecuperacion()
 await asegurarTema()
 await asegurarCorreo()
+if (portalAuditoria) {
+  const smtp = (await leer(prefijo)).smtpServer
+  if (!smtp?.host || !smtp?.from) console.log('auditoría: falta SMTP del realm para activar cuentas nuevas')
+  const tieneClave = await readFile(join(secretos, 'identity-admin', 'audit_brevo_key'), 'utf8')
+    .then(valor => Boolean(valor.trim()), error => { if (error.code === 'ENOENT') return false; throw error })
+  if (!tieneClave) console.log('auditoría: falta la clave API de Brevo para Enviar por correo')
+}
 console.log('identidad lista: el realm del servidor tiene lo que agrega el versionado')

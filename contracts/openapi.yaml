@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.37.0
+  version: 0.38.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -1723,6 +1723,74 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+
+  /users/{userId}/audit-invitation:
+    post:
+      tags: [identidad]
+      operationId: issueAuditInvitation
+      summary: Genera un enlace temporal para un auditor invitado
+      x-roles: [admin_empresa]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: send
+          in: query
+          schema: {type: boolean, default: false}
+      responses:
+        "200":
+          description: Invitación generada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, expiresAt, sent]
+                properties:
+                  url: {type: string, format: uri}
+                  expiresAt: {type: string, format: date-time}
+                  sent: {type: boolean}
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Portal o correo de auditoría sin configurar
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /audit-invitations/accept:
+    post:
+      tags: [identidad]
+      operationId: acceptAuditInvitation
+      summary: Acepta una invitación con el correo verificado en el portal de auditoría
+      description: Requiere un token del cliente zenit-audit-portal y un correo verificado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: {type: string}
+      responses:
+        "200":
+          description: Invitación aceptada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accepted]
+                properties:
+                  accepted: {type: boolean}
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sites:
     get:

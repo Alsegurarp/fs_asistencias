@@ -184,11 +184,11 @@ paso_subir() {
 
 paso_credencial() {
   if [ "$objetivo" = zenit ]; then
-    # Sólo viajan las líneas SMTP_: el archivo puede ser un .env con más cosas.
+    # Sólo viajan los valores SMTP y la clave opcional de correo de auditoría.
     # Llega a una carpeta de quien despliega; el paso de identidad la guarda
     # con los secretos y enciende la recuperación de contraseña por correo.
     local filtrada=$TRABAJO/smtp.env
-    (umask 077 && grep -E '^[[:space:]]*SMTP_[A-Z_]+[[:space:]]*=' "$credencial" | tr -d '\r' > "$filtrada") ||
+    (umask 077 && grep -E '^[[:space:]]*(SMTP_[A-Z_]+|AUDIT_BREVO_API_KEY)[[:space:]]*=' "$credencial" | tr -d '\r' > "$filtrada") ||
       falla "la credencial no trae líneas SMTP_"
     local estado=0
     { herramienta remoto "mkdir -p -m 700 $SERVIDOR/zenit/correo-entrante" &&
@@ -211,6 +211,9 @@ paso_comprobar() {
   if [ "$objetivo" = zenit ]; then
     herramienta comprobar << 'FIN'
 GET https://zenit.fastsolution.com.mx/api/v1/system/status 200
+GET https://zenit.fastsolution.com.mx/auditoria/ 200
+GET https://zenit.fastsolution.com.mx/auditoria/invitation.js 200
+GET https://zenit.fastsolution.com.mx/auditoria/?action=login 303
 GET https://zenit.fastsolution.com.mx/ 200
 GET https://zenit.fastsolution.com.mx/id/realms/zenit/.well-known/openid-configuration 200 "issuer":"https://zenit.fastsolution.com.mx/id/realms/zenit"
 GET https://zenit.fastsolution.com.mx/api/v1/me 401

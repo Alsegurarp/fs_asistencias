@@ -1,6 +1,10 @@
 package mx.fastsolution.zenit
 
+import com.nimbusds.jwt.SignedJWT
 import org.junit.jupiter.api.Tag
+import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
+import mx.fastsolution.zenit.identity.AuditIdentityProvisioning
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,7 +15,64 @@ import kotlin.test.assertTrue
  * servidor, el permiso de expediente en la lista y el total acotado.
  */
 @Tag("integration")
+@TestPropertySource(properties = ["ZENIT_AUDIT_PORTAL_URL=https://auditoria.zenit.invalid"])
 class AccessAndAuditIT : WorkdayTestBase() {
+    @MockitoBean
+    private lateinit var auditIdentity: AuditIdentityProvisioning
+
+    @Test
+    fun `audit link requires the invited verified identity and can only be used once`() {
+        val tenant = company()
+        val other = company()
+        val email = email("auditor")
+        val invite = call("POST", "/api/v1/users", tenant.adminToken, """{"email":"$email","roles":["auditor"]}""")
+        assertEquals(201, invite.status)
+        val id = invite.at<String>("id")
+        val path = "/api/v1/users/$id/audit-invitation"
+        assertEquals(404, call("POST", path, other.adminToken).status)
+        val first = call("POST", path, tenant.adminToken)
+        assertEquals(200, first.status, first.toString())
+        val second = call("POST", path, tenant.adminToken)
+        assertEquals(200, second.status, second.toString())
+        val code = second.at<String>("url").substringAfter("#invitacion=")
+        val subject = subject()
+        val portal = token(subject, email, authorizedParty = "zenit-audit-portal")
+        fun accept(access: String, link: String = code) =
+            call("POST", "/api/v1/audit-invitations/accept", access, """{"token":"$link"}""")
+        assertEquals("none", call("GET", "/api/v1/me", portal).at<String>("access"))
+        assertEquals(404, accept(portal, first.at<String>("url").substringAfter("#invitacion=")).status)
+        assertEquals(404, accept(token(subject(), email("impostor"), authorizedParty = "zenit-audit-portal")).status)
+        assertEquals(403, accept(token(subject, email, verified = false, authorizedParty = "zenit-audit-portal")).status)
+        assertEquals(200, accept(portal).status)
+        assertEquals(404, accept(portal).status)
+        assertEquals(tenant.id, call("GET", "/api/v1/me", portal).at<String>("tenant.id"))
+        assertEquals(200, call("PATCH", "/api/v1/users/$id", tenant.adminToken, """{"disabled":true}""").status)
+        assertEquals("none", call("GET", "/api/v1/me", portal).at<String>("access"))
+    }
+
+    @Test
+    fun `audit portal tokens only read authorized company attendance`() {
+        val company = company()
+        val other = company()
+        val auditor = member(company, "auditor", "rh")
+        val subject = SignedJWT.parse(auditor.token).jwtClaimsSet.subject
+        val portal = token(subject, auditor.email, authorizedParty = "zenit-audit-portal")
+        val me = call("GET", "/api/v1/me", portal)
+        assertEquals(200, me.status)
+        assertEquals(listOf("auditor"), me.at<List<String>>("roles"))
+        assertEquals(company.id, me.at<String>("tenant.id"))
+        val own = staffed(company, newSite(company))
+        val foreign = staffed(other, newSite(other))
+        val ownWeek = call("GET", "/api/v1/employees/${own.employeeId}/attendance?week=$today", portal)
+        assertEquals(200, ownWeek.status, ownWeek.toString())
+        val foreignWeek = call("GET", "/api/v1/employees/${foreign.employeeId}/attendance?week=$today", portal)
+        assertEquals(404, foreignWeek.status, foreignWeek.toString())
+        assertEquals(401, call("POST", "/api/v1/exports", portal, "{}").status)
+        assertEquals(401, call("GET", "/api/v1/audit-log", portal).status)
+        assertEquals(200, call("PATCH", "/api/v1/users/${auditor.id}", company.adminToken, """{"disabled":true}""").status)
+        assertEquals("none", call("GET", "/api/v1/me", portal).at<String>("access"))
+    }
+
     private fun ids(reply: Reply): List<String> {
         assertEquals(200, reply.status, reply.toString())
         return reply.list("items[*].id")

@@ -74,15 +74,25 @@ class IdentityResolver(
 
 @Component
 class PersonAuthenticationConverter(private val resolver: IdentityResolver) : Converter<Jwt, AbstractAuthenticationToken> {
-    override fun convert(jwt: Jwt): AbstractAuthenticationToken = PersonAuthentication(
-        resolver.resolve(
-            TokenIdentity(
-                // El validador de tokens ya rechazó los que vienen sin sujeto.
-                subject = requireNotNull(jwt.subject),
-                email = jwt.getClaimAsString("email"),
-                emailVerified = jwt.getClaimAsBoolean("email_verified") == true,
-                name = jwt.getClaimAsString("name") ?: jwt.getClaimAsString("preferred_username") ?: "",
-            ),
-        ),
-    )
+    override fun convert(jwt: Jwt): AbstractAuthenticationToken {
+        val token = TokenIdentity(
+            // El validador de tokens ya rechazó los que vienen sin sujeto.
+            subject = requireNotNull(jwt.subject),
+            email = jwt.getClaimAsString("email"),
+            emailVerified = jwt.getClaimAsBoolean("email_verified") == true,
+            name = jwt.getClaimAsString("name") ?: jwt.getClaimAsString("preferred_username") ?: "",
+        )
+        val person = resolver.resolve(token)
+        val scoped = if (jwt.getClaimAsString("azp") == AUDIT_PORTAL_CLIENT) {
+            person.copy(roles = person.roles.intersect(setOf(Role.AUDITOR)), employeeId = null,
+                siteIds = emptySet(), auditPortalVerifiedEmail = token.verifiedEmail)
+        } else {
+            person
+        }
+        return PersonAuthentication(scoped)
+    }
+
+    companion object {
+        const val AUDIT_PORTAL_CLIENT = "zenit-audit-portal"
+    }
 }

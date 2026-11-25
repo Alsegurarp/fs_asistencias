@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!composer.json
+!composer.lock
+!public/
+!public/**
+!src/
+!src/**

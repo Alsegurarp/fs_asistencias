@@ -1,0 +1,8 @@
+{
+  "name": "fastsolution/zenit-audit-portal",
+  "require": {
+    "php": "^8.4",
+    "ext-openssl": "*",
+    "dompdf/dompdf": "^3.1"
+  }
+}

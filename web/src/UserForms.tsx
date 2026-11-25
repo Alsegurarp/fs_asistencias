@@ -100,6 +100,13 @@ function AccessForm({ user, me, sites, onClose }: { user: UserRow; me: Me; sites
   const [draft, setDraft] = useState<AccessDraft>(() => accessDraft(user))
   const [problem, setProblem] = useState<string>()
   const [confirm, setConfirm] = useState<Confirm | null>(null)
+  const [copyStatus, setCopyStatus] = useState('')
+  const invitation = useMutation({
+    mutationFn: (send: boolean) => api<{ url: string; expiresAt: string; sent: boolean }>(
+      `/users/${user.id}/audit-invitation?send=${send}`, 'POST'),
+    onMutate: () => setCopyStatus(''),
+    onError: error => forbidden(cache, error),
+  })
   const set = <K extends keyof AccessDraft>(key: K, value: AccessDraft[K]) => { setProblem(undefined); setDraft(current => ({ ...current, [key]: value })) }
   const changes = accessChanges(user, draft)
   const changed = Object.keys(changes.body).length > 0 || changes.dossier !== undefined
@@ -142,6 +149,30 @@ function AccessForm({ user, me, sites, onClose }: { user: UserRow; me: Me; sites
           hint={canGrant || draft.dossier ? 'Permiso aparte del rol; se retira en cualquier momento. Cada descarga pide un código nuevo.' : 'Se concede cuando ya entró con su cuenta y su acceso está activo.'} />
         {problem && <Note tone="error">{problem}</Note>}
         {save.error && <Note tone="error">{problemText(save.error, 'No pudimos guardar el acceso.')}</Note>}
+        {user.status === 'invited' && user.roles.includes('auditor') && <Stack spacing={1}>
+          <Typography component="h3" sx={{ fontSize: 13, fontWeight: 600 }}>Invitación al portal de auditoría</Typography>
+          <Stack direction="row" spacing={1}>
+            <Button type="button" variant="outlined" disabled={busy || invitation.isPending}
+              onClick={() => invitation.mutate(false)}>Generar enlace</Button>
+            <Button type="button" variant="outlined" disabled={busy || invitation.isPending}
+              onClick={() => invitation.mutate(true)}>Enviar por correo</Button>
+          </Stack>
+          {invitation.isSuccess && <>
+            {invitation.data.sent && <Typography role="status">Invitación enviada a {user.email}.</Typography>}
+            <TextField label="Enlace de un solo uso" value={invitation.data.url} size="small"
+              slotProps={{ input: { readOnly: true } }} onFocus={event => event.target.select()} />
+            <Button type="button" onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(invitation.data.url)
+                setCopyStatus('Enlace copiado.')
+              } catch {
+                setCopyStatus('Selecciona el enlace y cópialo manualmente.')
+              }
+            }}>Copiar enlace</Button>
+            {copyStatus && <Typography role="status">{copyStatus}</Typography>}
+          </>}
+          {invitation.error && <Note tone="error">{problemText(invitation.error, 'No se pudo generar la invitación.')}</Note>}
+        </Stack>}
         <Box>
           <Typography component="h3" sx={{ fontSize: 13, fontWeight: 600, color: color.inkSoft, mb: 0.75 }}>Seguridad de la cuenta</Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', border: `1px solid ${color.line}`, borderRadius: '14px', overflow: 'hidden' }}>

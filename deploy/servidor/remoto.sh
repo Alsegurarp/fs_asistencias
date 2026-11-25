@@ -130,11 +130,11 @@ instalar_correo() {
 }
 
 identidad_zenit() {
-  local secreto=$BASE/zenit/secretos/identity-admin/identity_admin_client_secret antes despues
+  local carpeta=$BASE/zenit/secretos/identity-admin antes despues
   instalar_correo
-  antes=$(sha256sum "$secreto" 2> /dev/null || true)
+  antes=$(sha256sum "$carpeta/identity_admin_client_secret" "$carpeta/audit_keycloak_client_secret" "$carpeta/audit_brevo_key" "$carpeta/audit_mail_from" 2> /dev/null || true)
   zenit --profile identidad run --rm identidad
-  despues=$(sha256sum "$secreto" 2> /dev/null || true)
+  despues=$(sha256sum "$carpeta/identity_admin_client_secret" "$carpeta/audit_keycloak_client_secret" "$carpeta/audit_brevo_key" "$carpeta/audit_mail_from" 2> /dev/null || true)
   if [ "$antes" != "$despues" ]; then
     echo "el secreto del cliente técnico cambió: se recrea el backend"
     zenit up -d --force-recreate --no-deps backend

@@ -178,6 +178,7 @@ abstract class ApiTestBase {
         issuer: String = ISSUER,
         expiresIn: Long = 300,
         signer: KeyPair = keys,
+        authorizedParty: String? = null,
     ): String {
         val now = Instant.now()
         val claims = JWTClaimsSet.Builder()
@@ -187,6 +188,7 @@ abstract class ApiTestBase {
             .issueTime(Date.from(now.minusSeconds(5)))
             .expirationTime(Date.from(now.plusSeconds(expiresIn)))
             .claim("name", "Persona de prueba")
+        if (authorizedParty != null) claims.claim("azp", authorizedParty)
         if (email != null) {
             claims.claim("email", email)
             claims.claim("email_verified", verified)

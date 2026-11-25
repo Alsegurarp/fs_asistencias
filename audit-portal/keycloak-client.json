@@ -1,0 +1,29 @@
+{
+  "clientId": "zenit-audit-portal",
+  "name": "Portal de auditoría de Zenit",
+  "enabled": true,
+  "publicClient": true,
+  "protocol": "openid-connect",
+  "standardFlowEnabled": true,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": false,
+  "redirectUris": ["https://auditoria.example/?action=callback"],
+  "attributes": {
+    "pkce.code.challenge.method": "S256",
+    "post.logout.redirect.uris": "https://auditoria.example/"
+  },
+  "defaultClientScopes": ["basic", "profile", "email"],
+  "protocolMappers": [
+    {
+      "name": "audiencia-api",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-audience-mapper",
+      "config": {
+        "id.token.claim": "false",
+        "access.token.claim": "true",
+        "included.custom.audience": "zenit-api"
+      }
+    }
+  ]
+}

@@ -26,6 +26,7 @@ data class CurrentPerson(
      * acceso. No da empresa ni roles: sólo permite decírselo.
      */
     val suspendedTenantName: String? = null,
+    val auditPortalVerifiedEmail: String? = null,
 ) : AuthenticatedPrincipal {
     override fun getName(): String = subject
 

@@ -131,9 +131,31 @@ class UserRepository(private val dsl: DSLContext) {
         dsl.execute(
             "update tenant_user set subject = ?, linked_at = now(), status = 'active', " +
                 "display_name = case when display_name = '' then ? else display_name end " +
-                "where email = ? and subject is null and status = 'invited'",
+                "where email = ? and subject is null and status = 'invited' and audit_invitation_expires_at is null",
             subject, displayName, email,
         ) == 1
+
+    fun issueAuditInvitation(tenantId: UUID, id: UUID, hash: String, expires: OffsetDateTime): Boolean =
+        dsl.execute(
+            "update tenant_user u set audit_invitation_hash = ?, audit_invitation_expires_at = cast(? as timestamptz) " +
+                "where u.tenant_id = ? and u.id = ? and u.status = 'invited' and u.subject is null " +
+                "and exists (select 1 from tenant_user_role r where r.tenant_id = u.tenant_id and r.user_id = u.id and r.role = 'auditor')",
+            hash, expires.toString(), tenantId, id,
+        ) == 1
+
+    fun acceptAuditInvitation(email: String, subject: String, hash: String): UserRow? {
+        val id = dsl.fetchOne(
+            "update tenant_user u set subject = ?, linked_at = now(), status = 'active', audit_invitation_hash = null " +
+                "where u.email = ? and u.subject is null and u.status = 'invited' and u.audit_invitation_hash = ? " +
+                "and u.audit_invitation_expires_at > now() " +
+                "and not exists (select 1 from tenant_user linked where linked.subject = ?) " +
+                "and exists (select 1 from tenant t where t.id = u.tenant_id and t.status = 'active') " +
+                "and exists (select 1 from tenant_user_role r where r.tenant_id = u.tenant_id and r.user_id = u.id and r.role = 'auditor') " +
+                "returning u.tenant_id, u.id",
+            subject, email, hash, subject,
+        ) ?: return null
+        return find(id.get("tenant_id", UUID::class.java), id.get("id", UUID::class.java))
+    }
 
     /**
      * Suelta la liga con la identidad. Quien estaba activa vuelve a quedar
@@ -157,7 +179,11 @@ class UserRepository(private val dsl: DSLContext) {
     }
 
     fun setStatus(tenantId: UUID, id: UUID, status: String) {
-        dsl.execute("update tenant_user set status = ? where tenant_id = ? and id = ?", status, tenantId, id)
+        dsl.execute(
+            "update tenant_user set status = ?, audit_invitation_hash = " +
+                "case when cast(? as text) = 'disabled' then null else audit_invitation_hash end where tenant_id = ? and id = ?",
+            status, status, tenantId, id,
+        )
     }
 
     fun setSites(tenantId: UUID, id: UUID, siteIds: Set<UUID>) {

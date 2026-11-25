@@ -2,7 +2,7 @@
 // aplicación y lo último que se consultó. Sólo lectura: lo que escribe (POST,
 // PUT, PATCH, DELETE) pasa directo y no se encola; los archivos descargados y
 // el expediente no se guardan. El portal borra lo guardado al cerrar sesión.
-const SHELL = 'zenit-shell-v1'
+const SHELL = 'zenit-shell-v2'
 const API = 'zenit-api-v1'
 const NO_GUARDAR = /\/(download|manifest|challenges|authorizations)$|^\/api\/v1\/dossiers|^\/api\/v1\/exports\/[^/]+\/file/
 
@@ -39,6 +39,7 @@ self.addEventListener('fetch', event => {
   const request = event.request
   const url = new URL(request.url)
   if (request.method !== 'GET' || url.origin !== self.location.origin) return
+  if (url.pathname === '/auditoria' || url.pathname.startsWith('/auditoria/')) return
 
   if (url.pathname.startsWith('/api/')) {
     if (NO_GUARDAR.test(url.pathname)) return
