@@ -32,8 +32,9 @@ class CanvasDataIT : WorkdayTestBase() {
         )
         assertEquals(201, assigned.status, assigned.toString())
         // Ana trabaja dos días; Beto uno, con una marca fuera de su sede que se resuelve.
-        shift(ana, 52, 44)
-        shift(ana, 28, 20)
+        // Dos días distintos de la semana cerrada, dentro de 72 h a cualquier hora de hoy.
+        shift(ana, 46, 38)
+        shift(ana, 22, 14)
         val incidentId = marked(beto, before(40), location = here(latitude = 19.44)).at<String>("incident.id")
         marked(beto, before(32))
         assertEquals(200, patch(c, incidentId, resolution("justified", "El supervisor confirmó la ubicación de la persona.")).status)
