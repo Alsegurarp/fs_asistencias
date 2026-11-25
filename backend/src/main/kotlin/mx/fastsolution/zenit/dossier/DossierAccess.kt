@@ -5,6 +5,7 @@ import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.Role
 import mx.fastsolution.zenit.tenant.TenantRepository
+import mx.fastsolution.zenit.user.UserRow
 import org.jooq.DSLContext
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -55,12 +56,26 @@ class DossierAccess(private val dsl: DSLContext, private val tenants: TenantRepo
         if (dsl.fetchOne("select 1 from tenant_user_role where tenant_id = ? and user_id = ? and role = 'admin_empresa'", tenantId, person.userId) == null) throw Problems.forbidden()
         val enabled = request.enabled?.takeIf { it.isBoolean }?.asBoolean()
             ?: throw Problems.validation("enabled", "invalid_type", "enabled debe ser un booleano JSON.")
-        val user = dsl.fetchOne("select subject, linked_at, status from tenant_user where tenant_id = ? and id = ? for update", tenantId, userId)
+        val user = dsl.fetchOne("select subject, linked_at, status, external_auditor from tenant_user where tenant_id = ? and id = ? for update", tenantId, userId)
             ?: throw Problems.notFound()
+        if (user.get("external_auditor", Boolean::class.javaObjectType) == true)
+            throw Problems.conflict("external_auditor_access", "El expediente forma parte del acceso de auditoría externa.")
         val subject = user.get("subject", String::class.java)
         val linkedAt = user.get("linked_at", OffsetDateTime::class.java)
         if (enabled && subject == null) throw Problems.conflict("user_not_linked", "La persona debe vincular su cuenta.")
         if (enabled && user.get("status", String::class.java) != "active") throw Problems.conflict("user_not_active", "La cuenta debe estar activa.")
+        change(person, tenantId, userId, enabled, subject, linkedAt)
+        return DossierPermission(enabled)
+    }
+
+    fun grantExternal(person: CurrentPerson, user: UserRow) =
+        change(person, user.tenantId, user.id, true, requireNotNull(user.subject), requireNotNull(user.linkedAt))
+
+    fun revokeExternal(person: CurrentPerson, user: UserRow) {
+        if (user.subject != null) change(person, user.tenantId, user.id, false, null, null)
+    }
+
+    private fun change(person: CurrentPerson, tenantId: UUID, userId: UUID, enabled: Boolean, subject: String?, linkedAt: OffsetDateTime?) {
         val changed = dsl.execute(
             // Conceder (o volver a conceder a la cuenta nueva) fija la fecha; retirar la borra.
             "insert into dossier_permission (tenant_id, user_id, enabled, subject, linked_at, granted_at) " +
@@ -72,6 +87,5 @@ class DossierAccess(private val dsl: DSLContext, private val tenants: TenantRepo
             tenantId, userId, enabled, subject, linkedAt, enabled,
         )
         if (changed > 0) audit.record(tenantId, person, if (enabled) "dossier.permission_granted" else "dossier.permission_revoked", "user", userId)
-        return DossierPermission(enabled)
     }
 }

@@ -29,6 +29,7 @@ data class UserView(
     val siteIds: List<String>,
     val dossierPermission: Boolean,
     val dossierPermissionSince: String?,
+    val externalAuditor: Boolean,
 ) {
     companion object {
         fun of(row: UserRow) = UserView(
@@ -43,6 +44,7 @@ data class UserView(
             siteIds = row.siteIds.map(UUID::toString).sorted(),
             dossierPermission = row.dossierPermission,
             dossierPermissionSince = row.dossierPermissionSince?.toInstant()?.toString(),
+            externalAuditor = row.externalAuditor,
         )
     }
 }

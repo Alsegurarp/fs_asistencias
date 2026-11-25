@@ -25,6 +25,7 @@ data class UserRow(
     /** Permiso de expediente vigente para su cuenta de hoy; falso en la búsqueda por identidad, que no lo lee. */
     val dossierPermission: Boolean = false,
     val dossierPermissionSince: OffsetDateTime? = null,
+    val externalAuditor: Boolean = false,
 )
 
 /** `text` es el patrón ya escapado de `TextSearch`. */
@@ -51,10 +52,10 @@ data class UserSummaryView(
  */
 @Repository
 class UserRepository(private val dsl: DSLContext) {
-    fun insertInvited(tenantId: UUID, id: UUID, email: String, displayName: String) {
+    fun insertInvited(tenantId: UUID, id: UUID, email: String, displayName: String, externalAuditor: Boolean = false) {
         dsl.execute(
-            "insert into tenant_user (tenant_id, id, email, display_name, status) values (?, ?, ?, ?, 'invited')",
-            tenantId, id, email, displayName,
+            "insert into tenant_user (tenant_id, id, email, display_name, status, external_auditor) values (?, ?, ?, ?, 'invited', ?)",
+            tenantId, id, email, displayName, externalAuditor,
         )
     }
 
@@ -131,7 +132,7 @@ class UserRepository(private val dsl: DSLContext) {
         dsl.execute(
             "update tenant_user set subject = ?, linked_at = now(), status = 'active', " +
                 "display_name = case when display_name = '' then ? else display_name end " +
-                "where email = ? and subject is null and status = 'invited' and audit_invitation_expires_at is null",
+                "where email = ? and subject is null and status = 'invited' and audit_invitation_expires_at is null and not external_auditor",
             subject, displayName, email,
         ) == 1
 
@@ -141,6 +142,12 @@ class UserRepository(private val dsl: DSLContext) {
                 "where u.tenant_id = ? and u.id = ? and u.status = 'invited' and u.subject is null " +
                 "and exists (select 1 from tenant_user_role r where r.tenant_id = u.tenant_id and r.user_id = u.id and r.role = 'auditor')",
             hash, expires.toString(), tenantId, id,
+        ) == 1
+
+    fun markExternalAuditor(tenantId: UUID, id: UUID): Boolean =
+        dsl.execute(
+            "update tenant_user set external_auditor = true where tenant_id = ? and id = ? and status = 'invited' and subject is null",
+            tenantId, id,
         ) == 1
 
     fun acceptAuditInvitation(email: String, subject: String, hash: String): UserRow? {
@@ -244,6 +251,7 @@ class UserRepository(private val dsl: DSLContext) {
         roles = r.get("roles", String::class.java).split(',').filter { it.isNotEmpty() }.toSet(),
         employeeId = r.get("employee_id", UUID::class.java),
         siteIds = r.get("site_ids", String::class.java).split(',').filter(String::isNotEmpty).map(UUID::fromString).toSet(),
+        externalAuditor = r.get("external_auditor", Boolean::class.javaObjectType) == true,
     )
 
     private fun viewRow(r: Record) = row(r).copy(
@@ -263,7 +271,7 @@ class UserRepository(private val dsl: DSLContext) {
                 "join tenant_user_site s on s.tenant_id = r.tenant_id and s.user_id = r.user_id where r.tenant_id = u.tenant_id " +
                 "and r.user_id = u.id and r.role = 'supervisor' and s.site_id = cast(? as uuid)))"
         const val COLUMNS =
-            "u.tenant_id, u.id, u.email, u.subject, u.display_name, u.status, u.created_at, u.linked_at, u.employee_id, " +
+            "u.tenant_id, u.id, u.email, u.subject, u.display_name, u.status, u.created_at, u.linked_at, u.employee_id, u.external_auditor, " +
                 "coalesce((select string_agg(s.site_id::text, ',' order by s.site_id) from tenant_user_site s " +
                 "where s.tenant_id = u.tenant_id and s.user_id = u.id), '') as site_ids, " +
                 "coalesce((select string_agg(r.role, ',' order by r.role) from tenant_user_role r " +

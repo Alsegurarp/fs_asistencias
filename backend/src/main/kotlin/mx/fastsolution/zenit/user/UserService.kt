@@ -7,6 +7,7 @@ import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.api.TextSearch
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.employee.EmployeeRepository
+import mx.fastsolution.zenit.dossier.DossierAccess
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.OperatorProperties
 import mx.fastsolution.zenit.identity.Role
@@ -23,6 +24,7 @@ class UserCreateRequest {
     var roles: List<String>? = null
     var employeeId: String? = null
     var siteIds: List<String>? = null
+    var externalAuditor: Boolean = false
 }
 
 class UserUpdateRequest {
@@ -57,6 +59,7 @@ class UserService(
     private val audit: AuditLog,
     private val identity: IdentityAdministration,
     private val sites: SiteRepository,
+    private val dossiers: DossierAccess,
 ) {
     @Transactional
     fun invite(admin: CurrentPerson, request: UserCreateRequest): UserRow {
@@ -67,6 +70,9 @@ class UserService(
         val roles = parseRoles(checks, request.roles, required = true)
         val employeeId = checks.uuid("employeeId", request.employeeId, required = false)
         val siteIds = parseSites(checks, tenantId, request.siteIds)
+        if (request.externalAuditor && (roles != setOf(Role.AUDITOR.wire) || request.employeeId != null || !siteIds.isNullOrEmpty())) {
+            checks.fail("roles", "external_auditor_exclusive", "La auditoría externa usa exclusivamente el rol Auditoría y abarca toda la empresa.")
+        }
         // Una fila del padrón de otra empresa no existe para quien pregunta.
         if (employeeId != null && employees.find(tenantId, employeeId) == null) {
             checks.fail("employeeId", "employee_not_found", "La persona del padrón no existe.")
@@ -74,10 +80,23 @@ class UserService(
         checks.done()
 
         if (operators.isOperator(email!!)) throw Conflicts.emailUnavailable()
+        if (request.externalAuditor) {
+            tenants.lock(tenantId)
+            val pending = users.findByEmail(tenantId, email)
+            if (pending != null) {
+                if (pending.status != "invited" || pending.roles != setOf(Role.AUDITOR.wire) ||
+                    pending.employeeId != null || pending.siteIds.isNotEmpty() ||
+                    !users.markExternalAuditor(tenantId, pending.id)) throw Conflicts.emailUnavailable()
+                if (!pending.externalAuditor) {
+                    audit.record(tenantId, admin, "user.external_auditor_selected", "user", pending.id)
+                }
+                return users.find(tenantId, pending.id)!!
+            }
+        }
 
         val id = UUID.randomUUID()
         try {
-            users.insertInvited(tenantId, id, email, displayName)
+            users.insertInvited(tenantId, id, email, displayName, request.externalAuditor)
             if (employeeId != null) users.setEmployee(tenantId, id, employeeId)
             roles!!.forEach { users.grant(tenantId, id, it, admin.actorId) }
             if (siteIds != null) users.setSites(tenantId, id, siteIds)
@@ -138,11 +157,15 @@ class UserService(
         val before = users.find(tenantId, id) ?: throw Problems.notFound()
 
         val nextRoles = roles ?: before.roles
+        if (before.externalAuditor && (nextRoles != setOf(Role.AUDITOR.wire) || employeeId != null || !siteIds.isNullOrEmpty())) {
+            throw Problems.validation("roles", "external_auditor_exclusive", "La auditoría externa usa exclusivamente el rol Auditoría y abarca toda la empresa.")
+        }
         val nextStatus = when (request.disabled) {
             null -> before.status
             true -> "disabled"
             // Vuelve a como estaba: activa si ya entró alguna vez, invitada si no.
-            false -> if (before.subject != null) "active" else "invited"
+            false -> if (before.externalAuditor && before.status == "disabled") "invited"
+                else if (before.subject != null) "active" else "invited"
         }
         val administered = Role.ADMIN_EMPRESA.wire in before.roles && before.status != "disabled"
         val administers = Role.ADMIN_EMPRESA.wire in nextRoles && nextStatus != "disabled"
@@ -173,7 +196,9 @@ class UserService(
             audit.record(tenantId, admin, "user.updated", "user", id, mapOf("fields" to "employeeId"))
         }
         if (nextStatus != before.status) {
+            if (before.externalAuditor && nextStatus == "invited") users.unlink(tenantId, id)
             users.setStatus(tenantId, id, nextStatus)
+            if (before.externalAuditor && nextStatus == "disabled") dossiers.revokeExternal(admin, before)
             audit.record(tenantId, admin, if (nextStatus == "disabled") "user.disabled" else "user.enabled", "user", id)
         }
         if (siteIds != null && siteIds != before.siteIds) {
@@ -194,7 +219,8 @@ class UserService(
     fun unlink(admin: CurrentPerson, id: UUID): UserRow {
         val tenantId = admin.requireTenant()
         tenants.lock(tenantId)
-        if (users.find(tenantId, id) == null) throw Problems.notFound()
+        val user = users.find(tenantId, id) ?: throw Problems.notFound()
+        if (user.externalAuditor) throw Problems.conflict("external_auditor_access", "Revoca el acceso de auditoría antes de generar otra invitación.")
         if (!users.unlink(tenantId, id)) throw Problems.conflict("user_not_linked", "Esa persona no está ligada a ninguna cuenta.")
         audit.record(tenantId, admin, "user.unlinked", "user", id)
         return users.find(tenantId, id)!!

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Zenit API
-  version: 0.38.0
+  version: 0.39.0
   description: |
     Contrato del MVP de Zenit. Es la frontera entre el backend y sus canales:
     el portal web y la app Android. Describe el recorrido completo y el backend
@@ -1441,6 +1441,7 @@ paths:
                     siteIds: []
                     dossierPermission: false
                     dossierPermissionSince: null
+                    externalAuditor: false
                     employeeId: null
                 nextCursor: null
         "401":
@@ -1491,6 +1492,7 @@ paths:
                 siteIds: []
                 dossierPermission: false
                 dossierPermissionSince: null
+                externalAuditor: false
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1566,6 +1568,7 @@ paths:
                 siteIds: []
                 dossierPermission: false
                 dossierPermissionSince: null
+                externalAuditor: false
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1613,6 +1616,7 @@ paths:
                 siteIds: []
                 dossierPermission: false
                 dossierPermissionSince: null
+                externalAuditor: false
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1665,6 +1669,7 @@ paths:
                 siteIds: []
                 dossierPermission: false
                 dossierPermissionSince: null
+                externalAuditor: false
                 employeeId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -6307,7 +6312,7 @@ components:
     User:
       type: object
       description: Persona con acceso al portal de la empresa. Supervisión se limita a sus siteIds, salvo roles adicionales de alcance empresa. El permiso explícito de expediente es una capacidad independiente.
-      required: [id, email, displayName, roles, status, createdAt, linkedAt, employeeId, siteIds, dossierPermission, dossierPermissionSince]
+      required: [id, email, displayName, roles, status, createdAt, linkedAt, employeeId, siteIds, dossierPermission, dossierPermissionSince, externalAuditor]
       properties:
         id:
           type: string
@@ -6350,6 +6355,9 @@ components:
           type: [string, "null"]
           format: date-time
           description: Desde cuándo vale; nulo sin permiso, o en un permiso concedido antes de 0.22.0 sin rastro en la bitácora.
+        externalAuditor:
+          type: boolean
+          description: Acceso individual de auditoría externa con expediente incluido mientras esté activo.
     UserSummary:
       type: object
       additionalProperties: false
@@ -6389,6 +6397,10 @@ components:
       additionalProperties: false
       required: [email, roles]
       properties:
+        externalAuditor:
+          type: boolean
+          default: false
+          description: Requiere el rol Auditoría como único rol, sin sedes o empleado asignados. El acceso se activa al aceptar la invitación.
         email:
           type: string
           format: email

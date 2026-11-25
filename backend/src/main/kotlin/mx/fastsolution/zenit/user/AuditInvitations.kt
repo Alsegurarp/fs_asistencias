@@ -5,6 +5,7 @@ import mx.fastsolution.zenit.api.Problems
 import mx.fastsolution.zenit.audit.AuditLog
 import mx.fastsolution.zenit.identity.CurrentPerson
 import mx.fastsolution.zenit.identity.AuditIdentityProvisioning
+import mx.fastsolution.zenit.dossier.DossierAccess
 import mx.fastsolution.zenit.tenant.TenantRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -39,6 +40,7 @@ class AuditInvitations(
     private val audit: AuditLog,
     private val json: JsonMapper,
     private val identity: AuditIdentityProvisioning,
+    private val dossiers: DossierAccess,
     @Value("\${ZENIT_AUDIT_PORTAL_URL:}") private val portalUrl: String,
     @Value("\${audit_brevo_key:}") private val mailKey: String,
     @Value("\${ZENIT_AUDIT_FROM:}") configuredSender: String,
@@ -75,7 +77,9 @@ class AuditInvitations(
         val email = person.auditPortalVerifiedEmail ?: throw Problems.forbidden()
         if (!TOKEN.matches(token) || person.tenantId != null) throw Problems.notFound()
         val linked = users.acceptAuditInvitation(email, person.subject, hash(token)) ?: throw Problems.notFound()
-        audit.record(linked.tenantId, person.copy(tenantId = linked.tenantId, userId = linked.id),
+        val auditor = person.copy(tenantId = linked.tenantId, userId = linked.id)
+        if (linked.externalAuditor) dossiers.grantExternal(auditor, linked)
+        audit.record(linked.tenantId, auditor,
             "user.audit_invitation_accepted", "user", linked.id)
         return mapOf("accepted" to true)
     }

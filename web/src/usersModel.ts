@@ -5,7 +5,7 @@ import { shortDay } from './settingsModel'
 import type { Tone } from './ui'
 
 /** Una persona con acceso, como la devuelve `GET /users` desde el contrato 0.22.0. */
-export type UserRow = TenantUser & { siteIds: string[]; dossierPermission: boolean; dossierPermissionSince: string | null }
+export type UserRow = TenantUser & { siteIds: string[]; dossierPermission: boolean; dossierPermissionSince: string | null; externalAuditor?: boolean }
 
 export type UserSummary = {
   total: number; active: number; invited: number; disabled: number

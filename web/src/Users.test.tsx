@@ -226,6 +226,27 @@ it('invitar revisa el correo y el rol, manda sólo lo elegido y abre a la person
   expect(location).toBe('/usuarios?persona=u9')
 })
 
+it('invita a un auditor externo y entrega el enlace en el mismo diálogo', async () => {
+  server.handler = call => call.path === '/users/u9/audit-invitation?send=false'
+    ? Promise.resolve({ url: 'https://zenit.test/auditoria/#invitacion=prueba', sent: false })
+    : defaultServer(call)
+  await render('/usuarios')
+  await click('Invitar')
+  await click('Auditor externo')
+  expect(document.querySelector('[role="dialog"] input[value="rh"]')).toBeNull()
+  await setInput('email', 'auditor.externo@demo.example')
+  await click('Continuar')
+  expect(text()).toContain('Paso 2 de 2')
+  expect(writes()).toEqual([])
+  await click('Generar enlace')
+  await settle()
+  expect(writes()).toEqual([
+    { path: '/users', method: 'POST', body: { email: 'auditor.externo@demo.example', roles: ['auditor'], externalAuditor: true } },
+    { path: '/users/u9/audit-invitation?send=false', method: 'POST', body: undefined },
+  ])
+  expect(text()).toContain('Enlace listo para compartir.')
+})
+
 it('un correo que ya tiene acceso se marca en su campo', async () => {
   server.handler = call => call.method === 'POST' && call.path === '/users' ? Promise.reject(new ApiError(409, 'email_unavailable', 'El correo no está disponible.')) : defaultServer(call)
   await render('/usuarios?invitar=1')

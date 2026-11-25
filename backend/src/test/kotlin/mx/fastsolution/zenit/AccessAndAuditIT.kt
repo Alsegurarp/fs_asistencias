@@ -25,9 +25,18 @@ class AccessAndAuditIT : WorkdayTestBase() {
         val tenant = company()
         val other = company()
         val email = email("auditor")
-        val invite = call("POST", "/api/v1/users", tenant.adminToken, """{"email":"$email","roles":["auditor"]}""")
+        assertEquals(422, call("POST", "/api/v1/users", tenant.adminToken,
+            """{"email":"$email","roles":["auditor","rh"],"externalAuditor":true}""").status)
+        val invite = call("POST", "/api/v1/users", tenant.adminToken, """{"email":"$email","roles":["auditor"],"externalAuditor":true}""")
         assertEquals(201, invite.status)
+        assertEquals(true, invite.at<Boolean>("externalAuditor"))
         val id = invite.at<String>("id")
+        val retry = call("POST", "/api/v1/users", tenant.adminToken, """{"email":"$email","roles":["auditor"],"externalAuditor":true}""")
+        assertEquals(201, retry.status)
+        assertEquals(id, retry.at<String>("id"))
+        val subject = subject()
+        val portal = token(subject, email, authorizedParty = "zenit-audit-portal")
+        assertEquals("none", call("GET", "/api/v1/me", portal).at<String>("access"))
         val path = "/api/v1/users/$id/audit-invitation"
         assertEquals(404, call("POST", path, other.adminToken).status)
         val first = call("POST", path, tenant.adminToken)
@@ -35,8 +44,6 @@ class AccessAndAuditIT : WorkdayTestBase() {
         val second = call("POST", path, tenant.adminToken)
         assertEquals(200, second.status, second.toString())
         val code = second.at<String>("url").substringAfter("#invitacion=")
-        val subject = subject()
-        val portal = token(subject, email, authorizedParty = "zenit-audit-portal")
         fun accept(access: String, link: String = code) =
             call("POST", "/api/v1/audit-invitations/accept", access, """{"token":"$link"}""")
         assertEquals("none", call("GET", "/api/v1/me", portal).at<String>("access"))
@@ -46,7 +53,14 @@ class AccessAndAuditIT : WorkdayTestBase() {
         assertEquals(200, accept(portal).status)
         assertEquals(404, accept(portal).status)
         assertEquals(tenant.id, call("GET", "/api/v1/me", portal).at<String>("tenant.id"))
+        assertEquals(true, call("GET", "/api/v1/me/dossier-permission", portal).at<Boolean>("enabled"))
+        assertEquals(409, call("PUT", "/api/v1/users/$id/dossier-permission", tenant.adminToken, """{"enabled":false}""").status)
+        assertEquals(422, call("PATCH", "/api/v1/users/$id", tenant.adminToken, """{"roles":["auditor","rh"]}""").status)
         assertEquals(200, call("PATCH", "/api/v1/users/$id", tenant.adminToken, """{"disabled":true}""").status)
+        assertEquals("none", call("GET", "/api/v1/me", portal).at<String>("access"))
+        assertEquals(403, call("GET", "/api/v1/me/dossier-permission", portal).status)
+        assertEquals(false, call("GET", "/api/v1/users/$id", tenant.adminToken).at<Boolean>("dossierPermission"))
+        assertEquals("invited", call("PATCH", "/api/v1/users/$id", tenant.adminToken, """{"disabled":false}""").at<String>("status"))
         assertEquals("none", call("GET", "/api/v1/me", portal).at<String>("access"))
     }
 

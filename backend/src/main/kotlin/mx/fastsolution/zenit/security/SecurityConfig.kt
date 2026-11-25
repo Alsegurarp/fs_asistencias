@@ -214,7 +214,7 @@ class SecurityConfig {
     }
 }
 
-private val AUDIT_PORTAL_READS = setOf("/api/v1/me", "/api/v1/attendance-events")
+private val AUDIT_PORTAL_READS = setOf("/api/v1/me", "/api/v1/attendance-events", "/api/v1/me/dossier-permission")
 private val AUDIT_PORTAL_DETAILS = Regex("/api/v1/(employees/[0-9a-fA-F-]{36}/attendance|incidents/[0-9a-fA-F-]{36})")
 
 /** Vigencia, emisor, audiencia y sujeto: los cuatro deben cumplirse. */

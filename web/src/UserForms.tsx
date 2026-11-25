@@ -26,12 +26,13 @@ const legend = { fontSize: 13, fontWeight: 600, color: color.inkSoft, mb: 0.75, 
 const fieldset = { border: 0, m: 0, p: 0, minWidth: 0 } as const
 
 /** Roles como interruptores: una persona puede tener varios. */
-function RoleChips({ value, onChange, disabled, detailed = false }: { value: string[]; onChange: (roles: string[]) => void; disabled?: boolean; detailed?: boolean }) {
+function RoleChips({ value, onChange, disabled, detailed = false, teamOnly = false }: { value: string[]; onChange: (roles: string[]) => void; disabled?: boolean; detailed?: boolean; teamOnly?: boolean }) {
   const toggle = (role: string) => onChange(value.includes(role) ? value.filter(item => item !== role) : [...value, role])
+  const available = teamOnly ? tenantRoles.filter(role => role.key !== 'auditor') : tenantRoles
   if (detailed) return <Box component="fieldset" sx={fieldset}>
     <Box component="legend" sx={legend}>Rol</Box>
     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 1 }}>
-      {tenantRoles.map(role => <Box component="label" key={role.key} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, p: '8px 10px 8px 4px', borderRadius: '12px', cursor: 'pointer',
+      {available.map(role => <Box component="label" key={role.key} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, p: '8px 10px 8px 4px', borderRadius: '12px', cursor: 'pointer',
         border: `1px solid ${value.includes(role.key) ? color.fieldHover : color.line}`, background: value.includes(role.key) ? color.selected : color.white }}>
         <Checkbox name="roles" value={role.key} size="small" checked={value.includes(role.key)} disabled={disabled} onChange={() => toggle(role.key)} sx={{ p: 0.5 }} />
         <Box sx={{ pt: '3px' }}><Box component="strong" sx={{ display: 'block', fontSize: 14 }}>{role.label}</Box><Box component="span" sx={{ fontSize: 12, color: color.muted }}>{role.detail}</Box></Box>
@@ -109,11 +110,12 @@ function AccessForm({ user, me, sites, onClose }: { user: UserRow; me: Me; sites
   })
   const set = <K extends keyof AccessDraft>(key: K, value: AccessDraft[K]) => { setProblem(undefined); setDraft(current => ({ ...current, [key]: value })) }
   const changes = accessChanges(user, draft)
-  const changed = Object.keys(changes.body).length > 0 || changes.dossier !== undefined
+  const dossierChange = user.externalAuditor ? undefined : changes.dossier
+  const changed = Object.keys(changes.body).length > 0 || dossierChange !== undefined
   const save = useMutation({
     mutationFn: async () => {
       if (Object.keys(changes.body).length) await api<UserRow>(`/users/${user.id}`, 'PATCH', changes.body)
-      if (changes.dossier !== undefined) await api(`/users/${user.id}/dossier-permission`, 'PUT', { enabled: changes.dossier })
+      if (dossierChange !== undefined) await api(`/users/${user.id}/dossier-permission`, 'PUT', { enabled: dossierChange })
     },
     onSuccess: () => { refreshUsers(cache, me, user.id); onClose() },
     onError: error => { forbidden(cache, error); refreshUsers(cache, me, user.id) },
@@ -139,14 +141,15 @@ function AccessForm({ user, me, sites, onClose }: { user: UserRow; me: Me; sites
         {user.id === me.userId && <Note tone="warn">Es tu propio acceso: si te quitas Administración dejarás de ver esta sección. La empresa siempre conserva a alguien con Administración.</Note>}
         {user.status === 'disabled' && <Note tone="warn">Su acceso está deshabilitado: no entra al portal aunque tenga roles.</Note>}
         <TextField name="displayName" label="Nombre" value={draft.displayName} onChange={event => set('displayName', event.target.value)} disabled={busy} size="small" slotProps={{ htmlInput: { maxLength: 120 } }} />
-        <RoleChips value={draft.roles} onChange={roles => set('roles', roles)} disabled={busy} />
+        {user.externalAuditor ? <Note>Auditoría externa · Toda la empresa, con acceso al expediente mientras la auditoría esté activa.</Note>
+          : <RoleChips value={draft.roles} onChange={roles => set('roles', roles)} disabled={busy} />}
         {draft.roles.includes('supervisor') && <SiteChips sites={sites} value={draft.siteIds} onChange={ids => set('siteIds', ids)} disabled={busy} />}
         {(draft.roles.includes('trabajador') || draft.employeeId) && <Box>
           <LinkedPerson employeeId={draft.employeeId} onChange={value => set('employeeId', value)} disabled={busy} />
           {!draft.roles.includes('trabajador') && draft.employeeId && <Typography sx={{ mt: 0.75, fontSize: 12.5, color: color.muted }}>Sin el rol Trabajador la liga se conserva, pero no ve su asistencia.</Typography>}
         </Box>}
-        <DossierCheck checked={draft.dossier} onChange={value => set('dossier', value)} disabled={busy || (!canGrant && !draft.dossier)}
-          hint={canGrant || draft.dossier ? 'Permiso aparte del rol; se retira en cualquier momento. Cada descarga pide un código nuevo.' : 'Se concede cuando ya entró con su cuenta y su acceso está activo.'} />
+        {!user.externalAuditor && <DossierCheck checked={draft.dossier} onChange={value => set('dossier', value)} disabled={busy || (!canGrant && !draft.dossier)}
+          hint={canGrant || draft.dossier ? 'Permiso aparte del rol; se retira en cualquier momento. Cada descarga pide un código nuevo.' : 'Se concede cuando ya entró con su cuenta y su acceso está activo.'} />}
         {problem && <Note tone="error">{problem}</Note>}
         {save.error && <Note tone="error">{problemText(save.error, 'No pudimos guardar el acceso.')}</Note>}
         {user.status === 'invited' && user.roles.includes('auditor') && <Stack spacing={1}>
@@ -177,10 +180,10 @@ function AccessForm({ user, me, sites, onClose }: { user: UserRow; me: Me; sites
           <Typography component="h3" sx={{ fontSize: 13, fontWeight: 600, color: color.inkSoft, mb: 0.75 }}>Seguridad de la cuenta</Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', border: `1px solid ${color.line}`, borderRadius: '14px', overflow: 'hidden' }}>
             <SecurityRow disabled={busy || !canGrant} detail={canGrant ? undefined : 'Cuando ya entró y su acceso está activo.'} onClick={() => setConfirm('password')}>Pedir contraseña nueva en su próximo ingreso</SecurityRow>
-            <SecurityRow disabled={busy || !linked} detail={linked ? undefined : 'Todavía no hay cuenta ligada.'} onClick={() => setConfirm('unlink')}>Soltar la liga con su cuenta</SecurityRow>
+            {!user.externalAuditor && <SecurityRow disabled={busy || !linked} detail={linked ? undefined : 'Todavía no hay cuenta ligada.'} onClick={() => setConfirm('unlink')}>Soltar la liga con su cuenta</SecurityRow>}
             {user.status === 'disabled'
-              ? <SecurityRow disabled={busy} onClick={() => setConfirm('enable')}>Habilitar su acceso</SecurityRow>
-              : <SecurityRow danger disabled={busy} onClick={() => setConfirm('disable')}>Deshabilitar su acceso</SecurityRow>}
+              ? <SecurityRow disabled={busy} onClick={() => setConfirm('enable')}>{user.externalAuditor ? 'Preparar nueva invitación' : 'Habilitar su acceso'}</SecurityRow>
+              : <SecurityRow danger disabled={busy} onClick={() => setConfirm('disable')}>{user.externalAuditor ? 'Revocar acceso de auditoría' : 'Deshabilitar su acceso'}</SecurityRow>}
           </Box>
         </Box>
       </Box>
@@ -220,7 +223,11 @@ function ConfirmModal({ kind, user, me, onClose }: { kind: Confirm; user: UserRo
     onSuccess: () => { refreshUsers(cache, me, user.id); if (kind !== 'password') onClose() },
     onError: error => forbidden(cache, error),
   })
-  const text = confirmations[kind]
+  const text = user.externalAuditor && kind === 'disable'
+    ? { title: 'Revocar acceso de auditoría', submit: 'Revocar acceso', body: (name: string) => <>{name} perderá acceso a las consultas, las descargas y el expediente. Su historial de acceso se conserva.</> }
+    : user.externalAuditor && kind === 'enable'
+      ? { title: 'Preparar nueva invitación', submit: 'Preparar invitación', body: (name: string) => <>{name} deberá aceptar una nueva invitación. Después de confirmar podrás enviarla o copiar su enlace.</> }
+      : confirmations[kind]
   const name = user.displayName || user.email
   if (kind === 'password' && run.isSuccess) return <Modal id="confirmar-acceso" icon="users" title={text.title} subtitle={user.email} onClose={onClose} onSubmit={onClose}
     actions={<Button variant="contained" onClick={onClose}>Listo</Button>}>
@@ -240,6 +247,11 @@ function ConfirmModal({ kind, user, me, onClose }: { kind: Confirm; user: UserRo
  */
 export function InviteModal({ me, sites, onClose, onInvited }: { me: Me; sites: Site[]; onClose: () => void; onInvited: (id: string) => void }) {
   const cache = useQueryClient()
+  const [external, setExternal] = useState(false)
+  const [auditor, setAuditor] = useState<{ email: string; displayName: string }>()
+  const [details, setDetails] = useState({ email: '', displayName: '' })
+  const [auditorId, setAuditorId] = useState<string>()
+  const [copyMessage, setCopyMessage] = useState('')
   const [roles, setRoles] = useState<string[]>([])
   const [siteIds, setSiteIds] = useState<string[]>([])
   const [employeeId, setEmployee] = useState<string | null>(null)
@@ -247,6 +259,22 @@ export function InviteModal({ me, sites, onClose, onInvited }: { me: Me; sites: 
   const invite = useMutation({
     mutationFn: (body: Record<string, unknown>) => api<UserRow>('/users', 'POST', body),
     onSuccess: created => { for (const key of ['users', 'user-summary']) void cache.invalidateQueries({ queryKey: [key] }); onInvited(created.id) },
+    onError: error => forbidden(cache, error),
+  })
+  const deliver = useMutation({
+    mutationFn: async (send: boolean) => {
+      if (!auditor) throw new Error('Faltan los datos del auditor.')
+      let id = auditorId
+      if (!id) {
+        const created = await api<UserRow>('/users', 'POST', { email: auditor.email,
+          ...(auditor.displayName ? { displayName: auditor.displayName } : {}), roles: ['auditor'], externalAuditor: true })
+        id = created.id
+        setAuditorId(id)
+        refreshUsers(cache, me, id)
+      }
+      return api<{ url: string; sent: boolean }>(`/users/${id}/audit-invitation?send=${send}`, 'POST')
+    },
+    onMutate: () => setCopyMessage(''),
     onError: error => forbidden(cache, error),
   })
   const fieldError = (field: string) => problem?.field === field ? problem.text
@@ -257,25 +285,61 @@ export function InviteModal({ me, sites, onClose, onInvited }: { me: Me; sites: 
     const displayName = String(data.get('displayName') || '').trim()
     const email = String(data.get('email') || '').trim().toLowerCase()
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setProblem({ field: 'email', text: 'Escribe un correo válido.' }); return }
+    if (external) {
+      setProblem(undefined)
+      setDetails({ email, displayName })
+      setAuditor({ email, displayName })
+      return
+    }
     if (!roles.length) { setProblem({ field: 'roles', text: 'Elige al menos un rol.' }); return }
     setProblem(undefined)
     invite.mutate({ email, roles, ...(displayName ? { displayName } : {}), ...(roles.includes('supervisor') && siteIds.length ? { siteIds } : {}), ...(roles.includes('trabajador') && employeeId ? { employeeId } : {}) })
   }
   const busy = invite.isPending
   const general = invite.error && !fieldError('email') && !(invite.error instanceof ApiError && invite.error.errors.length) ? <Note tone="error">{problemText(invite.error, 'No pudimos enviar la invitación.')}</Note> : undefined
-  return <Modal id="invitar-titulo" icon="users" title="Invitar a alguien de tu equipo" subtitle="Entra con su correo, una contraseña y su segundo factor" onClose={onClose} onSubmit={submit}
-    submit="Invitar" busy={busy} error={general} closable>
+  if (auditor) return <Modal id="invitar-titulo" icon="users" title="Enviar invitación de auditoría" subtitle={`Paso 2 de 2 · ${auditor.email}`}
+    onClose={onClose} onSubmit={() => { if (!deliver.isSuccess) deliver.mutate(false) }} busy={deliver.isPending} closable
+    error={deliver.error ? <Note tone="error">{problemText(deliver.error, 'No se pudo preparar la invitación. Puedes intentarlo de nuevo.')}</Note> : undefined}
+    actions={deliver.isSuccess ? <Button variant="contained" onClick={onClose}>Listo</Button> : <>
+      {!auditorId && <Button variant="outlined" disabled={deliver.isPending} onClick={() => { deliver.reset(); setAuditor(undefined) }}>Atrás</Button>}
+      <Button type="button" variant="outlined" disabled={deliver.isPending} onClick={() => deliver.mutate(false)}>Generar enlace</Button>
+      <Button type="button" variant="contained" disabled={deliver.isPending} onClick={() => deliver.mutate(true)}>Enviar por correo</Button>
+    </>}>
+    {deliver.isSuccess ? <>
+      <Typography role="status">{deliver.data.sent ? 'Invitación enviada.' : 'Enlace listo para compartir.'} Caduca en 72 horas.</Typography>
+      <TextField label="Enlace de un solo uso" value={deliver.data.url} size="small" slotProps={{ input: { readOnly: true } }}
+        onFocus={event => event.target.select()} />
+      <Button sx={{ alignSelf: 'flex-start' }} onClick={async () => {
+        try { await navigator.clipboard.writeText(deliver.data.url); setCopyMessage('Enlace copiado.') }
+        catch { setCopyMessage('Selecciona el enlace y cópialo manualmente.') }
+      }}>Copiar enlace</Button>
+      {copyMessage && <Typography role="status">{copyMessage}</Typography>}
+    </> : <Note>El auditor podrá consultar toda la empresa, descargar PDF y CSV y acceder al expediente con la verificación adicional.</Note>}
+    {deliver.isPending && <Typography role="status">Preparando la invitación…</Typography>}
+  </Modal>
+  return <Modal id="invitar-titulo" icon="users" title={external ? 'Invitar a un auditor externo' : 'Invitar a alguien de tu equipo'}
+    subtitle={external ? 'Paso 1 de 2 · Datos del auditor' : 'Entra con su correo, una contraseña y su segundo factor'} onClose={onClose} onSubmit={submit}
+    submit={external ? 'Continuar' : 'Invitar'} busy={busy} error={general} closable>
+    <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1 }} role="group" aria-label="Tipo de invitación">
+      <Button variant={external ? 'outlined' : 'contained'} aria-pressed={!external} disabled={busy}
+        onClick={() => { setExternal(false); setProblem(undefined) }}>Equipo</Button>
+      <Button variant={external ? 'contained' : 'outlined'} aria-pressed={external} disabled={busy}
+        onClick={() => { setExternal(true); setProblem(undefined); invite.reset() }}>Auditor externo</Button>
+    </Stack>
     <Stack direction="row" useFlexGap sx={{ gap: 1.5, flexWrap: 'wrap', '& > *': { flex: '1 1 200px' } }}>
-      <TextField name="displayName" label="Nombre" disabled={busy} size="small" error={!!fieldError('displayName')} helperText={fieldError('displayName')} slotProps={{ htmlInput: { maxLength: 120 } }} />
-      <TextField name="email" label="Correo" type="email" required disabled={busy} size="small" error={!!fieldError('email')} helperText={fieldError('email')} slotProps={{ htmlInput: { maxLength: 254 } }}
+      <TextField name="displayName" label="Nombre" defaultValue={details.displayName} disabled={busy} size="small" error={!!fieldError('displayName')} helperText={fieldError('displayName')} slotProps={{ htmlInput: { maxLength: 120 } }} />
+      <TextField name="email" label="Correo" type="email" defaultValue={details.email} required disabled={busy} size="small" error={!!fieldError('email')} helperText={fieldError('email')} slotProps={{ htmlInput: { maxLength: 254 } }}
         onChange={() => { if (problem?.field === 'email') setProblem(undefined) }} />
     </Stack>
-    <RoleChips detailed value={roles} onChange={value => { setRoles(value); if (problem?.field === 'roles') setProblem(undefined) }} disabled={busy} />
-    {fieldError('roles') && <Note tone="error">{fieldError('roles')}</Note>}
-    {roles.includes('supervisor') && <SiteChips sites={sites} value={siteIds} onChange={setSiteIds} disabled={busy} />}
-    {roles.includes('trabajador') && <LinkedPerson employeeId={employeeId} onChange={setEmployee} disabled={busy} />}
+    {!external && <>
+      <RoleChips detailed teamOnly value={roles} onChange={value => { setRoles(value); if (problem?.field === 'roles') setProblem(undefined) }} disabled={busy} />
+      {fieldError('roles') && <Note tone="error">{fieldError('roles')}</Note>}
+      {roles.includes('supervisor') && <SiteChips sites={sites} value={siteIds} onChange={setSiteIds} disabled={busy} />}
+      {roles.includes('trabajador') && <LinkedPerson employeeId={employeeId} onChange={setEmployee} disabled={busy} />}
+    </>}
     <Typography sx={{ fontSize: 12.5, color: color.muted }}>
-      {me.tenant?.name ? `Queda invitada a ${me.tenant.name}. ` : ''}No le llega un correo: compártele la dirección del portal. El permiso del expediente se concede después de que entre por primera vez.
+      {external ? 'En el siguiente paso podrás enviar el correo o copiar el enlace de auditoría.'
+        : <>{me.tenant?.name ? `Queda invitada a ${me.tenant.name}. ` : ''}No le llega un correo: compártele la dirección del portal. El permiso del expediente se concede después de que entre por primera vez.</>}
     </Typography>
   </Modal>
 }

@@ -23,6 +23,7 @@ session_start([
 $me = $error = $week = $event = null;
 $rows = $filters = [];
 $incidents = [];
+$dossierUrl = null;
 $next = null;
 $labels = ['Fecha del marcaje', 'Empleado', 'Sede', 'Terminal', 'Tipo', 'Resultado', 'Recepción', 'ID del evento'];
 
@@ -167,6 +168,10 @@ try {
                 'Desde ' . $filters['from'], 'Hasta ' . $filters['to'],
                 'Empleado ' . ($filters['employeeId'] ?: 'Todos'), 'Sede ' . ($filters['siteId'] ?: 'Todas')]);
         }
+        if (parse_url(secureUrl('ZENIT_PORTAL_URL'), PHP_URL_PATH) === '/auditoria'
+            && (api('/me/dossier-permission')['enabled'] ?? false)) {
+            $dossierUrl = '/reportes/expediente';
+        }
     }
 } catch (PortalError $e) {
     http_response_code($e->getCode());
@@ -261,6 +266,7 @@ try {
             <nav aria-label="Descargas">
                 <a href="?<?= h(query([...$filters, 'action' => 'csv'])) ?>">Descargar CSV</a>
                 <a href="?<?= h(query([...$filters, 'action' => 'pdf'])) ?>">Descargar PDF</a>
+                <?php if ($dossierUrl): ?><a href="<?= h($dossierUrl) ?>">Expediente de la empresa</a><?php endif; ?>
             </nav>
             <?php if ($rows): ?>
                 <div class="results">
