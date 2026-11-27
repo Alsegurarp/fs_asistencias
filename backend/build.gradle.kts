@@ -19,9 +19,10 @@ kotlin {
 
 // Versiones que se adelantan a las que trae Spring Boot 4.1.1, porque las suyas
 // tienen vulnerabilidades ya corregidas: Tomcat embebido 11.0.24 (críticas) y
-// Jackson 3.1.5 (altas). Tomcat 11.0.26 tuvo después otras dos críticas y dos altas. Se retiran cuando una versión de Spring Boot traiga
-// estas o más nuevas; el análisis de vulnerabilidades lo dirá.
-extra["tomcat.version"] = "11.0.27"
+// Jackson 3.1.5 (altas). Tomcat 11.0.26 tuvo después otras dos críticas y dos altas. Tomcat 11.0.27 tuvo
+// después dos críticas y seis altas, corregidas en 11.0.29; Spring Boot 4.2.0 todavía trae 11.0.27. Se retiran
+// cuando una versión de Spring Boot traiga estas o más nuevas; el análisis de vulnerabilidades lo dirá.
+extra["tomcat.version"] = "11.0.29"
 extra["jackson-bom.version"] = "3.1.7"
 
 dependencies {

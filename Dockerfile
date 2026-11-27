@@ -6,7 +6,22 @@ WORKDIR /workspace
 
 COPY settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY backend/build.gradle.kts backend/build.gradle.kts
-RUN gradle :backend:dependencies --no-daemon
+# Maven Central y el portal de plugins a veces responden que no existe un
+# artefacto que sí existe (CI del 27 de noviembre: kotlin-gradle-plugins-bom,
+# spring-core y commons-compress). Ante una falla de red la descarga se repite
+# una vez en 30 s, como en android/Dockerfile. La segunda vuelta lleva
+# --refresh-dependencies porque Gradle recuerda lo que no encontró. Si
+# vuelve a fallar, la falla es real.
+RUN set -o pipefail; \
+    network='Could not (resolve|GET|HEAD|download)|Connection reset|Connect timed out|Read timed out|Remote host terminated the handshake|Received status code (429|5[0-9][0-9])'; \
+    refresh=''; \
+    for attempt in 1 2; do \
+        if gradle :backend:dependencies --no-daemon $refresh 2>&1 | tee /tmp/gradle.log; then rm -f /tmp/gradle.log; exit 0; fi; \
+        if [ "$attempt" = 1 ] && grep -qiE "$network" /tmp/gradle.log; then \
+            echo 'Falla de red al descargar; se repite una vez en 30 s.'; sleep 30; refresh='--refresh-dependencies'; continue; \
+        fi; \
+        exit 1; \
+    done
 
 # El contrato entra a la etapa de pruebas: las de integración validan contra él.
 COPY contracts contracts

@@ -94,6 +94,16 @@ se revisa cuando Red Hat la publique o, a más tardar, el 13 de febrero de
 2027. La PR #65 se integró antes de llevar la regla; la regla entró con la
 PR #66 y `main` volvió a pasar, desplegado en `9f21144`.
 
+**Análisis de imágenes, 27 de noviembre:** el CI volvió a fallar en toda PR,
+ahora por dos avisos críticos y seis altos nuevos de Tomcat embebido 11.0.27,
+que también corre en el ambiente publicado. Las dos críticas están en
+funciones que el backend no usa (autenticación Jakarta y la válvula de
+redirección), y varias altas son de denegación de servicio. La corrección es
+11.0.29. Esa versión trae una crítica propia, de clúster con TLS-PSK, que el
+backend no tiene; Gabriel la aceptó en `.grype.yaml` sólo para 11.0.29 hasta
+que salga 11.0.30 o, a más tardar, el 27 de diciembre de 2026. Falta integrar
+la PR y desplegar.
+
 **Acceso igual a la maqueta, 13 de noviembre:** el acceso con la marca está
 desplegado (PR #64). Con la PR #65, integrada y desplegada en `9f21144`, las pantallas que el lienzo
 dibuja (ingreso, «¿No puedes entrar?», código, configurar el segundo factor

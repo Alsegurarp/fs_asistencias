@@ -6,6 +6,34 @@ de una entrada antigua no sustituyen el [estado vigente](estado-y-pendientes.md)
 ni los avances posteriores. Se preservan los commits, conteos y límites
 originales para no atribuir pruebas de una versión a otra.
 
+## 27 de noviembre de 2026 — Tomcat embebido 11.0.29 y reintento de descargas del backend
+
+La PR #81 (`webOrigins` del portal de auditoría) falló en dos trabajos que
+su cambio no toca:
+
+- **contrato-y-seguridad.** El análisis de imágenes encontró en
+  `tomcat-embed-core` 11.0.27 dos avisos críticos y seis altos nuevos,
+  corregidos en 11.0.29. Spring Boot, hasta 4.2.0, todavía trae 11.0.27, así
+  que `tomcat.version` pasa a 11.0.29. Esa versión trae un aviso crítico
+  propio, CVE-2026-133325: deja entrar un nodo sin autenticar a un clúster de
+  Tomcat protegido con TLS 1.3 y TLS-PSK. La corrección, 11.0.30, todavía no
+  se publica. El backend no tiene clúster: `tomcat-embed-core` no incluye
+  `org.apache.catalina.ha` ni `tribes`. Gabriel lo aceptó en `.grype.yaml`
+  sólo para 11.0.29; se revisa al publicarse 11.0.30 o, a más tardar, el 27
+  de diciembre. El ambiente publicado sigue en 11.0.27 hasta el siguiente
+  despliegue.
+- **backend.** En la corrida de la PR, Gradle no encontró en Maven Central
+  artefactos que sí existen (`kotlin-gradle-plugins-bom` 2.4.21,
+  `spring-core` 7.0.9, `commons-compress` 1.27.1). En la corrida del push
+  ese paso pasó y falló «Preparar identidad aislada», que en local arranca;
+  sin el registro de GitHub no se vio la causa. La descarga de dependencias
+  del `Dockerfile` raíz ahora se repite una vez ante una falla de red, con
+  `--refresh-dependencies`, como el build de Android.
+
+En local las cinco imágenes pasan `infra/check-images.ps1`, `backend-it`
+pasa (unitarias e integración) con 11.0.29 y la identidad aislada arranca.
+El paso de dependencias pasa con red; sin red se repite una vez y falla.
+
 ## 24 de noviembre de 2026 — Portal de auditoría preparado para publicar
 
 El commit `805f943` incorpora el portal PHP en `/auditoria/`, las

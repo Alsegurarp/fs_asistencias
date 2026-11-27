@@ -55,3 +55,19 @@ ignore:
     package:
       version: 3.5.9-r1
       type: apk
+
+  # CVE-2026-133325, Tomcat embebido 11.0.29 del backend (tomcat-embed-core).
+  # Aceptado por Gabriel el 2026-11-27: 11.0.29 corrige dos críticas y seis
+  # altas de 11.0.27, pero trae ésta, que se corrige en 11.0.30, todavía sin
+  # publicar en Maven Central. Sólo deja entrar un nodo sin autenticar a un
+  # clúster de Tomcat protegido con TLS 1.3 y TLS-PSK. El backend no tiene
+  # clúster: tomcat-embed-core no trae org.apache.catalina.ha ni tribes, y no
+  # configura TLS propio, que termina en el borde. La regla vale sólo para
+  # 11.0.29: al subir a 11.0.30 deja de aplicar y se borra. Se revisa cuando
+  # se publique 11.0.30 o, a más tardar, el 2026-12-27.
+  - vulnerability: CVE-2026-133325
+    fix-state: fixed
+    package:
+      name: tomcat-embed-core
+      version: 11.0.29
+      type: java-archive
