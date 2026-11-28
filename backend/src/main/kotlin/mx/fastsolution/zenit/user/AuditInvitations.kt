@@ -61,13 +61,17 @@ class AuditInvitations(
             origin.path !in listOf("", "/", "/auditoria", "/auditoria/")) {
             throw unavailable()
         }
-        if (send && (mailKey.isBlank() || sender.isBlank())) throw mailUnconfigured()
         val token = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also(random::nextBytes))
         val expiration = OffsetDateTime.now().plusHours(72)
         if (!users.issueAuditInvitation(tenantId, id, hash(token), expiration)) throw Problems.notFound()
-        identity.prepare(user.email, user.displayName)
         val url = "${portalUrl.trimEnd('/')}/#invitacion=$token"
-        if (send) sendMail(user, tenant.name, url)
+        // Una cuenta nueva recibe un solo correo, el de activación, que termina en el enlace.
+        // Sólo quien ya activó su cuenta necesita el correo de invitación por Brevo.
+        val activationSent = identity.prepare(user.email, user.displayName, url)
+        if (send && !activationSent) {
+            if (mailKey.isBlank() || sender.isBlank()) throw mailUnconfigured()
+            sendMail(user, tenant.name, url)
+        }
         audit.record(tenantId, admin, "user.audit_invitation_issued", "user", id, mapOf("emailSent" to send.toString()))
         return AuditInvitationView(url, expiration.toInstant().toString(), send)
     }
@@ -91,7 +95,7 @@ class AuditInvitations(
             "to" to listOf(mapOf("email" to user.email)),
             "subject" to "$company te invitó a su portal de auditoría en Zenit",
             "textContent" to "Hola, $greeting.\n\n$company te invitó a consultar sus registros de auditoría en Zenit. " +
-                "Tu acceso es individual y de solo lectura. Si es tu primera vez en Zenit, primero completa el correo de activación de tu cuenta.\n\n" +
+                "Tu acceso es individual y de solo lectura. Entra con tu cuenta de Zenit.\n\n" +
                 "Acepta la invitación: $url",
         )
         try {

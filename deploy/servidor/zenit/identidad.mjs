@@ -28,8 +28,12 @@ assert.match(portal, /^https?:\/\/[^/]+$/, 'PORTAL_URL debe ser el origen del po
 const realm = JSON.parse(await readFile(process.env.REALM_FILE || '/realm/zenit-realm.json', 'utf8'))
 if (portalAuditoria) {
   assert.match(portalAuditoria, /^https:\/\/[^/]+\/auditoria$/)
-  const cliente = await readFile('/trabajo/audit-client.json', 'utf8')
-  realm.clients.push(JSON.parse(cliente.replaceAll('https://auditoria.example', portalAuditoria)))
+  // El portal inicia sesión; el de activación sólo deja que el correo de un auditor nuevo
+  // termine en su enlace de invitación, sin poder iniciar sesiones.
+  for (const archivo of ['/trabajo/audit-client.json', '/trabajo/audit-activation-client.json']) {
+    const cliente = await readFile(archivo, 'utf8')
+    realm.clients.push(JSON.parse(cliente.replaceAll('https://auditoria.example', portalAuditoria)))
+  }
 }
 const prefijo = `/admin/realms/${encodeURIComponent(realm.realm)}`
 const flujos = new Map(realm.authenticationFlows.map(flujo => [flujo.alias, flujo]))
@@ -341,7 +345,7 @@ async function asegurarCorreo() {
   }
 }
 
-for (const clientId of new Set([...clientes, ...(portalAuditoria ? ['zenit-audit-portal'] : [])])) {
+for (const clientId of new Set([...clientes, ...(portalAuditoria ? ['zenit-audit-portal', 'zenit-audit-activation'] : [])])) {
   const cliente = await asegurarCliente(clientId)
   if (cliente.standardFlowEnabled && cliente.redirectUris?.length) await probarInicio(cliente)
   console.log(`cliente ${clientId}: comprobado`)
@@ -359,6 +363,6 @@ if (portalAuditoria) {
   if (!smtp?.host || !smtp?.from) console.log('auditoría: falta SMTP del realm para activar cuentas nuevas')
   const tieneClave = await readFile(join(secretos, 'identity-admin', 'audit_brevo_key'), 'utf8')
     .then(valor => Boolean(valor.trim()), error => { if (error.code === 'ENOENT') return false; throw error })
-  if (!tieneClave) console.log('auditoría: falta la clave API de Brevo para Enviar por correo')
+  if (!tieneClave) console.log('auditoría: falta la clave API de Brevo para Enviar por correo a cuentas ya activas')
 }
 console.log('identidad lista: el realm del servidor tiene lo que agrega el versionado')

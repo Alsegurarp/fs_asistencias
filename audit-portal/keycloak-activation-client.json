@@ -1,0 +1,17 @@
+{
+  "clientId": "zenit-audit-activation",
+  "name": "Activación de auditores de Zenit",
+  "description": "Sólo autoriza que el correo de activación de un auditor nuevo termine en su enlace de invitación. No inicia sesiones.",
+  "enabled": true,
+  "publicClient": true,
+  "protocol": "openid-connect",
+  "standardFlowEnabled": false,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": false,
+  "fullScopeAllowed": false,
+  "redirectUris": ["https://auditoria.example/*"],
+  "webOrigins": [],
+  "defaultClientScopes": [],
+  "optionalClientScopes": []
+}

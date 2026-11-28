@@ -187,7 +187,7 @@ significado de los códigos publicados y deja libres los números sin asignar.
 | 712 | Invitación no disponible | `not_found` al gestionar la invitación. Comprueba su estado y que pertenezca a la empresa. |
 | 713 | Enlace de auditoría inválido, vencido, usado o abierto con otra cuenta | Revisa la vigencia del enlace emitido y el correo verificado del auditor. |
 | 714 | Datos de invitación inválidos | `validation`. Revisa el formato del nombre y el correo. |
-| 715 | Envío por correo sin configurar en este ambiente | `audit_mail_unconfigured`. Falta `audit_brevo_key` o el remitente (`ZENIT_AUDIT_FROM` / `audit_mail_from`). El despliegue lo avisa con «auditoría: falta la clave API de Brevo para Enviar por correo». |
+| 715 | Envío por correo sin configurar en este ambiente | `audit_mail_unconfigured`. Sólo al invitar por correo a una cuenta ya activa: una cuenta nueva recibe el correo de activación de Keycloak. Falta `audit_brevo_key` o el remitente (`ZENIT_AUDIT_FROM` / `audit_mail_from`). El despliegue lo avisa con «auditoría: falta la clave API de Brevo para Enviar por correo a cuentas ya activas». |
 | 720 | No se pudo preparar la cuenta del auditor | `audit_identity_unavailable`. Comprueba el cliente de alta de Keycloak y su correo de activación. |
 | 721 | Sesión vencida o sin autenticar | `unauthorized`. Repite el ingreso. Si persiste, revisa la sesión en Keycloak. |
 | 722 | Permiso insuficiente o acceso revocado | `forbidden`. Comprueba el rol de quien invita o la vigencia del acceso del auditor. |

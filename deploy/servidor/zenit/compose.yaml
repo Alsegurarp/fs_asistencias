@@ -135,6 +135,7 @@ services:
       - ./deploy/servidor/zenit/correo.mjs:/trabajo/correo.mjs:ro
       - ./infra/keycloak/realm:/realm:ro
       - ./audit-portal/keycloak-client.json:/trabajo/audit-client.json:ro
+      - ./audit-portal/keycloak-activation-client.json:/trabajo/audit-activation-client.json:ro
       - ./audit-portal/keycloak-provisioning-client.json:/trabajo/audit-provisioning-client.json:ro
       - ${ZENIT_SECRETOS}/keycloak_admin_password:/secretos/keycloak_admin_password:ro
       - ${ZENIT_SECRETOS}/identity-admin:/secretos/identity-admin

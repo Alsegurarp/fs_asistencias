@@ -2,6 +2,8 @@ package mx.fastsolution.zenit
 
 import com.nimbusds.jwt.SignedJWT
 import org.junit.jupiter.api.Tag
+import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mockito
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import mx.fastsolution.zenit.identity.AuditIdentityProvisioning
@@ -45,6 +47,14 @@ class AccessAndAuditIT : WorkdayTestBase() {
         assertEquals(503, unavailableMail.status)
         assertEquals("audit_mail_unconfigured", unavailableMail.at<String>("code"))
         assertTrue("detail" !in unavailableMail.whole())
+        // Una cuenta nueva recibe sólo el correo de activación, que termina en el enlace: no necesita Brevo.
+        Mockito.`when`(auditIdentity.prepare(anyString(), anyString(), anyString())).thenReturn(true)
+        val activationOnly = call("POST", "$path?send=true", tenant.adminToken)
+        assertEquals(200, activationOnly.status, activationOnly.toString())
+        assertEquals(true, activationOnly.at<Boolean>("sent"))
+        val prepared = Mockito.mockingDetails(auditIdentity).invocations.last().arguments
+        assertEquals(listOf(email, activationOnly.at<String>("url")), listOf(prepared[0], prepared[2]))
+        Mockito.reset(auditIdentity)
         fun revoke() = call("PATCH", "/api/v1/users/$id", tenant.adminToken, """{"disabled":true}""")
         assertEquals(200, revoke().status)
         assertEquals(409, inviteAuditor(other.adminToken).status)
