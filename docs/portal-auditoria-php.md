@@ -12,9 +12,11 @@ cada uno tendrá su propia cuenta con el mismo alcance.
   Zenit o copiar el enlace para compartirlo por su cuenta.
 - El enlace de activación se vincula al correo invitado, es de un solo uso
   y caduca a las 72 horas.
-- El auditor verifica su correo. Si necesita una cuenta, crea su contraseña
-  y configura el segundo factor en Keycloak. Si ya tiene cuenta, se identifica
-  con ella para aceptar el acceso.
+- El auditor recibe un solo correo. Si su cuenta es nueva, el correo es el de
+  activación de Keycloak: verifica su correo, crea su contraseña y configura
+  el segundo factor. Al terminar, **Volver a la aplicación** abre su enlace
+  de invitación. Si ya tiene una cuenta activa, recibe el correo de
+  invitación de Zenit y se identifica con esa cuenta para aceptar el acceso.
 - La empresa puede revocar el acceso. El portal permite consultar y descargar
   información. Los permisos de auditoría impiden modificar eventos y marcajes.
 - La invitación de **Auditor externo** tiene un rol exclusivo. Al aceptarla
@@ -72,8 +74,11 @@ estación y cómo se exporta el commit.
 
 Desde esa estación, ejecuta `bash deploy/servidor/desplegar.sh zenit <commit>`
 con la revisión que vaya a publicarse. El despliegue aplica las migraciones,
-registra los dos clientes de Keycloak, les configura PKCE y la audiencia al
-cliente web, y guarda el secreto del cliente técnico para el backend. El
+registra los clientes de Keycloak, les configura PKCE y la audiencia al
+cliente web, y guarda el secreto del cliente técnico para el backend.
+`zenit-audit-activation` no puede iniciar sesiones. Sólo admite como retorno
+las direcciones bajo `/auditoria/`, para que el correo de activación termine
+en el enlace de invitación. El portal conserva su retorno exacto. El
 paso de identidad verifica que la cuenta técnica puede consultar usuarios.
 El paso final comprueba la página, el script de invitación y la redirección
 de inicio de sesión por HTTPS.
@@ -81,11 +86,15 @@ de inicio de sesión por HTTPS.
 El correo de activación de Keycloak requiere SMTP. Usa la opción
 `--credencial /ruta/privada/smtp.env` del [despliegue de Zenit](despliegue-en-servidor.md#correo-de-la-identidad)
 si el archivo aún no está en el servidor. Para habilitar **Enviar por
-correo**, añade `AUDIT_BREVO_API_KEY` a ese archivo privado. Se utiliza
-`SMTP_FROM` como remitente verificado de ambas notificaciones. El despliegue
-guarda la clave y el remitente fuera del árbol de código y recrea el backend
-si cambian. **Generar enlace** funciona sin la clave API de Brevo. El alta
-de un auditor nuevo sí requiere el correo de activación de Keycloak.
+correo** a auditores que ya tienen una cuenta activa, añade
+`AUDIT_BREVO_API_KEY` a ese archivo privado. Se utiliza `SMTP_FROM` como
+remitente verificado de ambas notificaciones. El despliegue guarda la clave y
+el remitente fuera del árbol de código y recrea el backend si cambian.
+
+Un auditor nuevo sólo necesita el SMTP de Keycloak, con cualquiera de los dos
+botones. **Generar enlace** también le manda el correo de activación, que
+termina en el enlace nuevo. La clave API de Brevo sólo hace falta para
+**Enviar por correo** a una cuenta que ya está activa.
 
 El script anota fecha, commit y resultado en
 `/opt/.fastsolution/zenit/despliegues.log` y deja el registro detallado en
@@ -111,10 +120,10 @@ y el recorrido completo con doble factor quedan pendientes de verificar.
    Si generas el enlace, puedes copiarlo desde la confirmación. Un enlace
    nuevo reemplaza al anterior y caduca a las 72 horas.
 3. Si el correo es nuevo, Zenit crea la cuenta en Keycloak al generar la
-   invitación. Keycloak le envía al auditor las acciones para verificar
-   su correo, crear su contraseña y configurar OTP. El auditor completa
-   esas acciones y luego abre el enlace de la empresa. Si ya tiene una cuenta,
-   abre el enlace e inicia sesión con ese correo verificado.
+   invitación. Keycloak le envía al auditor un solo correo para verificar
+   su correo, crear su contraseña y configurar OTP. Al terminar, el botón
+   **Volver a la aplicación** abre el enlace de la invitación. Si ya tiene
+   una cuenta, abre el enlace e inicia sesión con ese correo verificado.
 4. Consulta marcajes, descarga PDF y CSV, y abre **Expediente de la empresa**
    para comprobar su verificación adicional. En una sesión separada de
    administrador, abre **Usuarios → Editar acceso → Revocar acceso de

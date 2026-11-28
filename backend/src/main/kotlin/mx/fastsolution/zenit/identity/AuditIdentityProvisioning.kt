@@ -27,7 +27,12 @@ class AuditIdentityProvisioning(
     private val http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(4))
         .followRedirects(HttpClient.Redirect.NEVER).build()
 
-    fun prepare(email: String, name: String) {
+    /**
+     * Deja lista la cuenta del auditor. Si es nueva o sigue sin activar, Keycloak
+     * le manda un solo correo: activar la cuenta y, al terminar, abrir [invitationUrl].
+     * Devuelve si mandó ese correo; una cuenta ya activa no recibe nada.
+     */
+    fun prepare(email: String, name: String, invitationUrl: String): Boolean {
         try {
             val origin = URI.create(identityUrl)
             check(origin.host != null && origin.rawUserInfo == null && origin.rawQuery == null &&
@@ -56,7 +61,7 @@ class AuditIdentityProvisioning(
             val existing = find()
             if (existing != null) {
                 check(existing.path("enabled").asBoolean())
-                if (!isPendingAuditAccount(existing, username)) return
+                if (!isPendingAuditAccount(existing, username)) return false
             }
             val id = if (existing == null) {
                 val payload = mapOf(
@@ -70,7 +75,7 @@ class AuditIdentityProvisioning(
                 if (created.statusCode() == 409) {
                     val concurrent = checkNotNull(find())
                     check(concurrent.path("enabled").asBoolean())
-                    if (!isPendingAuditAccount(concurrent, username)) return
+                    if (!isPendingAuditAccount(concurrent, username)) return false
                     concurrent.path("id").asText()
                 } else {
                     created.headers().firstValue("Location").orElseThrow().substringAfterLast('/')
@@ -79,12 +84,15 @@ class AuditIdentityProvisioning(
                 existing.path("id").asText()
             }
             val accountId = UUID.fromString(id)
+            // El cliente de activación no inicia sesiones: sólo autoriza volver al enlace de invitación.
+            val activation = "lifespan=259200&client_id=$ACTIVATION_CLIENT&redirect_uri=${encode(invitationUrl)}"
             send(
-                request("$users/$accountId/execute-actions-email?lifespan=259200")
+                request("$users/$accountId/execute-actions-email?$activation")
                     .header("Content-Type", "application/json")
                     .PUT(body(json.writeValueAsString(ACTIONS))),
                 204,
             )
+            return true
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
             throw unavailable()
@@ -118,5 +126,6 @@ class AuditIdentityProvisioning(
 
     companion object {
         private val ACTIONS = listOf("VERIFY_EMAIL", "UPDATE_PASSWORD", "CONFIGURE_TOTP")
+        const val ACTIVATION_CLIENT = "zenit-audit-activation"
     }
 }

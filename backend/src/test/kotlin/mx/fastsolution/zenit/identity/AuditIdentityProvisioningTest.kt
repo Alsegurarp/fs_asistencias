@@ -2,6 +2,7 @@ package mx.fastsolution.zenit.identity
 
 import com.sun.net.httpserver.HttpServer
 import java.net.InetSocketAddress
+import java.net.URLDecoder
 import java.util.UUID
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper
@@ -13,10 +14,11 @@ import kotlin.test.assertTrue
 
 class AuditIdentityProvisioningTest {
     @Test
-    fun `new auditors receive their required actions and existing accounts are left alone`() {
+    fun `new auditors receive one activation email that ends in the invitation and existing accounts are left alone`() {
         val json = JsonMapper.builder().build()
         val id = UUID.randomUUID()
         val email = "auditor@example.invalid"
+        val invitation = "https://auditoria.example.invalid/auditoria/#invitacion=" + "A".repeat(43)
         val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         var account: JsonNode? = null
         var invitations = 0
@@ -47,6 +49,12 @@ class AuditIdentityProvisioningTest {
                 uri.path.endsWith("/$id/execute-actions-email") && exchange.requestMethod == "PUT" -> {
                     invitations++
                     assertEquals(actions, values(json.readTree(payload)))
+                    val query = uri.rawQuery.split('&').associate {
+                        it.substringBefore('=') to URLDecoder.decode(it.substringAfter('='), Charsets.UTF_8)
+                    }
+                    assertEquals("259200", query["lifespan"])
+                    assertEquals("zenit-audit-activation", query["client_id"])
+                    assertEquals(invitation, query["redirect_uri"])
                     204 to ""
                 }
                 else -> 404 to ""
@@ -58,12 +66,12 @@ class AuditIdentityProvisioningTest {
         server.start()
         try {
             val service = AuditIdentityProvisioning(json, "http://127.0.0.1:${server.address.port}", "test-secret")
-            service.prepare(email, "Auditor de Prueba")
-            service.prepare(email, "Auditor de Prueba")
+            assertTrue(service.prepare(email, "Auditor de Prueba", invitation))
+            assertTrue(service.prepare(email, "Auditor de Prueba", invitation))
             assertEquals(1, creates)
             assertEquals(2, invitations)
             account = json.readTree("""{"email":"$email","username":"existente","enabled":true,"emailVerified":true}""")
-            service.prepare(email, "Auditor de Prueba")
+            assertFalse(service.prepare(email, "Auditor de Prueba", invitation))
             assertEquals(1, creates)
             assertEquals(2, invitations)
         } finally {
