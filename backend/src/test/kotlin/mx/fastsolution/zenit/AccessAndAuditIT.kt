@@ -43,7 +43,7 @@ class AccessAndAuditIT : WorkdayTestBase() {
         assertEquals(404, call("POST", path, other.adminToken).status)
         val unavailableMail = call("POST", "$path?send=true", tenant.adminToken)
         assertEquals(503, unavailableMail.status)
-        assertEquals("audit_mail_unavailable", unavailableMail.at<String>("code"))
+        assertEquals("audit_mail_unconfigured", unavailableMail.at<String>("code"))
         assertTrue("detail" !in unavailableMail.whole())
         fun revoke() = call("PATCH", "/api/v1/users/$id", tenant.adminToken, """{"disabled":true}""")
         assertEquals(200, revoke().status)

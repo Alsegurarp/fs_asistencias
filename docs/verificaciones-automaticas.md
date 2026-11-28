@@ -104,10 +104,39 @@ imprime el motivo y guarda los informes bajo `build/security/`. Mantiene las
 excepciones ya aprobadas en `.grype.yaml`; no acepta automáticamente hallazgos
 nuevos. Las pruebas Android de CI no ejecutan un teléfono ni una tarjeta NFC.
 
-El workflow queda habilitado en `main`. Si se quiere exigir los trabajos antes
-de integrar cambios, falta configurar su obligatoriedad. No se ha cambiado esa
-protección. Los resultados por commit se consultan en
+El workflow queda habilitado en `main`. Los resultados por commit se consultan en
 [GitHub Actions](https://github.com/Alsegurarp/fs_asistencias/actions/workflows/verificaciones.yml).
+
+### Regla para integrar en `main`
+
+Una petición de cambios se integra sólo si los cuatro trabajos (`backend`,
+`portal`, `android` y `contrato-y-seguridad`) aprobaron en su último commit.
+Si alguno queda en rojo, se corrige en la misma rama antes de integrar, aunque
+el fallo parezca ajeno al cambio. Por ejemplo, una vulnerabilidad nueva en una
+imagen también bloquea la integración.
+
+Antes de abrir o actualizar la petición, repite en local con Docker los
+trabajos que toca el cambio. Los dos que más fallan sin que se note son
+`backend` y `contrato-y-seguridad`:
+
+```powershell
+docker compose --profile setup run --rm secrets-init
+docker compose --profile test run --rm --build backend-it
+docker compose --profile tools run --rm contract-lint
+docker compose build backend web db keycloak backup
+.\infra\check-images.ps1
+```
+
+Aprobar en local no sustituye a Actions. Antes de integrar, revisa en la
+petición que los cuatro trabajos estén en verde.
+
+El 27 de noviembre de 2026 se integró la
+[PR #81](https://github.com/Alsegurarp/fs_asistencias/pull/81) con `backend` y
+`contrato-y-seguridad` en rojo, porque GitHub todavía no exige los trabajos.
+Para que GitHub bloquee el botón de integrar, un administrador del repositorio
+debe activar en *Settings → Branches* una regla para `main` con
+*Require status checks to pass before merging* y marcar los cuatro trabajos.
+Mientras esa regla no exista, cumplir esta norma depende de quien integra.
 
 ## Repetir el análisis local
 
