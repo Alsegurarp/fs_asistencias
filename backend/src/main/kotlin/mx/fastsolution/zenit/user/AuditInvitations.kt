@@ -61,7 +61,7 @@ class AuditInvitations(
             origin.path !in listOf("", "/", "/auditoria", "/auditoria/")) {
             throw unavailable()
         }
-        if (send && (mailKey.isBlank() || sender.isBlank())) throw mailUnavailable()
+        if (send && (mailKey.isBlank() || sender.isBlank())) throw mailUnconfigured()
         val token = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also(random::nextBytes))
         val expiration = OffsetDateTime.now().plusHours(72)
         if (!users.issueAuditInvitation(tenantId, id, hash(token), expiration)) throw Problems.notFound()
@@ -117,6 +117,9 @@ class AuditInvitations(
 
     private fun mailUnavailable() = ApiException(HttpStatus.SERVICE_UNAVAILABLE, "audit-mail-unavailable",
         "audit_mail_unavailable", "Invitación no disponible")
+
+    private fun mailUnconfigured() = ApiException(HttpStatus.SERVICE_UNAVAILABLE, "audit-mail-unconfigured",
+        "audit_mail_unconfigured", "Invitación no disponible")
 
     companion object {
         private val TOKEN = Regex("[A-Za-z0-9_-]{43}")

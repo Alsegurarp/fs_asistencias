@@ -1764,7 +1764,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
-          description: El portal, el envío de correo o la activación de la cuenta de auditoría no están disponibles
+          description: El portal, el envío de correo o la activación de la cuenta de auditoría no están disponibles. `audit_mail_unconfigured` indica que el ambiente no tiene clave o remitente de correo; `audit_mail_unavailable`, que el proveedor rechazó o no recibió el envío.
           content:
             application/problem+json:
               schema:

@@ -270,6 +270,7 @@ it('invita a un auditor externo y entrega el enlace en el mismo diálogo', async
 
 it.each([
   ['audit_mail_unavailable', 710],
+  ['audit_mail_unconfigured', 715],
   ['audit_invitation_unavailable', 700],
 ] as const)('muestra y copia solo el código de soporte para %s', async (problem, code) => {
   server.handler = call => call.path === '/users/u9/audit-invitation?send=true'

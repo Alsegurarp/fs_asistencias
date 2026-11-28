@@ -10,6 +10,7 @@ const supportCodes: Record<string, number> = {
   email_unavailable: 711,
   not_found: 712,
   validation: 714,
+  audit_mail_unconfigured: 715,
   audit_identity_unavailable: 720,
   unauthorized: 721,
   forbidden: 722,

@@ -182,11 +182,12 @@ significado de los códigos publicados y deja libres los números sin asignar.
 | 700 | Portal de auditoría sin configurar en este ambiente | `audit_invitation_unavailable`. Valida la URL HTTPS y la configuración del portal PHP. |
 | 701 | No se pudo completar la operación | Revisa la conexión y los registros del portal y del backend a la hora del intento. |
 | 702 | Demasiados intentos seguidos | `rate_limited`. Consulta la cuota de solicitudes del ambiente. |
-| 710 | No se pudo enviar el correo de invitación | `audit_mail_unavailable`. Comprueba el remitente, la clave de Brevo y la entrega del correo. |
+| 710 | Brevo no aceptó o no recibió el correo de invitación | `audit_mail_unavailable`. El ambiente tiene clave y remitente, pero Brevo no respondió 201 o falló la red. Revisa en Brevo la clave, el remitente verificado, la cuota y el intento a esa hora. |
 | 711 | Correo ya asociado a un acceso incompatible con la invitación | `email_unavailable`. Revisa el acceso existente desde la empresa autorizada. |
 | 712 | Invitación no disponible | `not_found` al gestionar la invitación. Comprueba su estado y que pertenezca a la empresa. |
 | 713 | Enlace de auditoría inválido, vencido, usado o abierto con otra cuenta | Revisa la vigencia del enlace emitido y el correo verificado del auditor. |
 | 714 | Datos de invitación inválidos | `validation`. Revisa el formato del nombre y el correo. |
+| 715 | Envío por correo sin configurar en este ambiente | `audit_mail_unconfigured`. Falta `audit_brevo_key` o el remitente (`ZENIT_AUDIT_FROM` / `audit_mail_from`). El despliegue lo avisa con «auditoría: falta la clave API de Brevo para Enviar por correo». |
 | 720 | No se pudo preparar la cuenta del auditor | `audit_identity_unavailable`. Comprueba el cliente de alta de Keycloak y su correo de activación. |
 | 721 | Sesión vencida o sin autenticar | `unauthorized`. Repite el ingreso. Si persiste, revisa la sesión en Keycloak. |
 | 722 | Permiso insuficiente o acceso revocado | `forbidden`. Comprueba el rol de quien invita o la vigencia del acceso del auditor. |
